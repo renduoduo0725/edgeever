@@ -8,6 +8,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import CodeBlock from "@tiptap/extension-code-block";
 import { TableKit } from "@tiptap/extension-table";
 import { Markdown } from "@tiptap/markdown";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { NodeSelection } from "@tiptap/pm/state";
 import mermaid from "mermaid";
 import { createEdgeEverMathematics } from "./mathematics";
@@ -807,7 +808,7 @@ const serializeEditorMarkdown = (ed: Editor) => {
     : ed.getText({ blockSeparator: "\n\n" });
 };
 
-let pendingAiSelection: { from: number; to: number; documentFingerprint: string } | null = null;
+let pendingAiSelection: { from: number; to: number; isInline: boolean; documentFingerprint: string } | null = null;
 
 const serializeSelectionMarkdown = (ed: Editor, from: number, to: number) => {
   const manager = (ed.storage as { markdown?: { manager?: { serialize?: (doc: unknown) => string } } })
@@ -819,6 +820,101 @@ const serializeSelectionMarkdown = (ed: Editor, from: number, to: number) => {
       .replaceAll(LITERAL_DOLLAR_PLACEHOLDER, "\\$");
   }
   return ed.state.doc.textBetween(from, to, "\n\n");
+};
+
+type AiSelectionContext = {
+  from: number;
+  to: number;
+  isInline: boolean;
+  markdown: string;
+  text: string;
+};
+
+type ParsedMarkdownNode = {
+  type?: string;
+  text?: string;
+  content?: ParsedMarkdownNode[];
+  [key: string]: unknown;
+};
+
+const AI_INLINE_SENTINEL = "edgeever-inline-sentinel";
+
+const serializeInlineSelectionMarkdown = (ed: Editor, content: unknown[], fallback: string) => {
+  const manager = (ed.storage as { markdown?: { manager?: { serialize?: (doc: unknown) => string } } })
+    .markdown?.manager;
+  if (!manager?.serialize) return fallback;
+  return manager
+    .serialize(protectLiteralDollarPairs({ type: "doc", content: [{ type: "paragraph", content }] }))
+    .replaceAll(LITERAL_DOLLAR_PLACEHOLDER, "\\$");
+};
+
+const getAiSelectionContext = (ed: Editor): AiSelectionContext | null => {
+  const selection = ed.state.selection;
+  if (selection.empty || selection.from >= selection.to) return null;
+
+  const selectedTextblocks: Array<{
+    node: ProseMirrorNode;
+    contentFrom: number;
+    contentTo: number;
+    from: number;
+    to: number;
+  }> = [];
+  ed.state.doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+    if (!node.isTextblock) return true;
+    const contentFrom = pos + 1;
+    const contentTo = contentFrom + node.content.size;
+    const from = Math.max(selection.from, contentFrom);
+    const to = Math.min(selection.to, contentTo);
+    if (to > from) selectedTextblocks.push({ node, contentFrom, contentTo, from, to });
+    return false;
+  });
+
+  if (selectedTextblocks.length === 1) {
+    const block = selectedTextblocks[0];
+    const selectedBlock = block.node.cut(
+      block.from - block.contentFrom,
+      block.to - block.contentFrom,
+    ).toJSON() as { content?: unknown[] };
+    const text = ed.state.doc.textBetween(block.from, block.to, "\n");
+    const markdown = serializeInlineSelectionMarkdown(ed, selectedBlock.content ?? [], text).trim();
+    return markdown
+      ? { from: block.from, to: block.to, isInline: true, markdown, text }
+      : null;
+  }
+
+  const markdown = serializeSelectionMarkdown(ed, selection.from, selection.to).trim();
+  return markdown
+    ? {
+        from: selection.from,
+        to: selection.to,
+        isInline: false,
+        markdown,
+        text: ed.state.doc.textBetween(selection.from, selection.to, "\n\n"),
+      }
+    : null;
+};
+
+const parseAiSelectionReplacement = (ed: Editor, draft: string, isInline: boolean): unknown[] => {
+  const manager = (ed.storage as { markdown?: { manager?: { parse?: (value: string) => { content?: unknown[] } } } })
+    .markdown?.manager;
+  const normalizedDraft = draft.trim();
+  const blockContent = manager?.parse?.(normalizedDraft).content ?? [{ type: "text", text: normalizedDraft }];
+  if (!isInline) return blockContent;
+
+  const inlineDraft = normalizedDraft.replace(/\s*\n+\s*/g, " ");
+  const inlineContent = manager?.parse?.(`${AI_INLINE_SENTINEL}${inlineDraft}`).content;
+  const paragraph = inlineContent?.length === 1 ? inlineContent[0] as ParsedMarkdownNode : null;
+  const paragraphContent = paragraph?.type === "paragraph" ? paragraph.content ?? [] : [];
+  const firstNode = paragraphContent[0];
+  if (firstNode?.type !== "text" || typeof firstNode.text !== "string" || !firstNode.text.startsWith(AI_INLINE_SENTINEL)) {
+    return [{ type: "text", text: inlineDraft }];
+  }
+
+  const firstText = firstNode.text.slice(AI_INLINE_SENTINEL.length);
+  return [
+    ...(firstText ? [{ ...firstNode, text: firstText }] : []),
+    ...paragraphContent.slice(1),
+  ];
 };
 
 function emitChange(ed: Editor) {
@@ -1063,17 +1159,22 @@ const api: EdgeEverEditorAPI = {
   },
 
   captureSelection() {
-    const { from, to, empty } = editor.state.selection;
-    if (empty || from >= to) {
+    const context = getAiSelectionContext(editor);
+    if (!context) {
       pendingAiSelection = null;
       return null;
     }
-    pendingAiSelection = { from, to, documentFingerprint: JSON.stringify(editor.getJSON()) };
+    pendingAiSelection = {
+      from: context.from,
+      to: context.to,
+      isInline: context.isInline,
+      documentFingerprint: JSON.stringify(editor.getJSON()),
+    };
     return JSON.stringify({
-      from,
-      to,
-      markdown: serializeSelectionMarkdown(editor, from, to),
-      text: editor.state.doc.textBetween(from, to, "\n\n"),
+      from: context.from,
+      to: context.to,
+      markdown: context.markdown,
+      text: context.text,
     });
   },
 
@@ -1091,7 +1192,9 @@ const api: EdgeEverEditorAPI = {
       const manager = (editor.storage as { markdown?: { manager?: { parse?: (value: string) => { content?: unknown[] } } } })
         .markdown?.manager;
       const parsed = manager?.parse?.(markdown);
-      const content = parsed?.content ?? markdown;
+      const content = applyMode === "replace"
+        ? parseAiSelectionReplacement(editor, markdown, range.isInline)
+        : parsed?.content ?? markdown;
       const insertRange = applyMode === "append" ? { from: to, to } : { from, to };
       editor.chain().focus().insertContentAt(insertRange, content as never).run();
       pendingAiSelection = null;

@@ -240,6 +240,32 @@ describe("AI route contracts", () => {
     sqlite.close();
   });
 
+  test("caps normalized AI tag suggestions at three", async () => {
+    const { sqlite, environment: databaseEnvironment } = createDatabaseEnvironment();
+    const app = createApp({
+      suggestTags: async () => ["one", "two", "three", "four"],
+    });
+    const response = await app.request(
+      "/api/v1/ai/tag-suggestions",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "Tagged note", contentMarkdown: "Body" }),
+      },
+      databaseEnvironment,
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      suggestions: [
+        { name: "one", existing: false },
+        { name: "two", existing: false },
+        { name: "three", existing: false },
+      ],
+    });
+    sqlite.close();
+  });
+
   test("defers prompt-specific action and parameter validation to the saved prompt", () => {
     expect(AiGenerateSchema.safeParse({
       action: "custom",

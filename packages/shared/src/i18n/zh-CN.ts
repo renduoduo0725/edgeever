@@ -575,7 +575,7 @@ export const zhCN = {
     unknown: "未知",
     copy: "复制信息",
     updateAvailableTitle: "发现新版本",
-    updateAvailableDescription: "当前版本较旧，最新版本为 {{version}}。",
+    updateAvailableDescription: "已有新版本 {{version}}，可查看更新内容后升级。",
     viewRelease: "查看更新",
     latestVersion: "当前已是最新版本",
     closeUpdateNotice: "关闭新版本提示",

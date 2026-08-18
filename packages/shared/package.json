@@ -21,6 +21,7 @@
     "@tiptap/extension-mathematics": "3.27.1",
     "@tiptap/extension-table": "3.27.1",
     "@tiptap/markdown": "3.27.1",
+    "@tiptap/pm": "3.27.1",
     "@tiptap/starter-kit": "3.27.1",
     "katex": "0.16.22"
   }

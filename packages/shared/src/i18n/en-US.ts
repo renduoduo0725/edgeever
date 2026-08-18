@@ -575,7 +575,7 @@ export const enUS = {
     unknown: "Unknown",
     copy: "Copy info",
     updateAvailableTitle: "New version available",
-    updateAvailableDescription: "This version is out of date. The latest version is {{version}}.",
+    updateAvailableDescription: "Version {{version}} is available. Review what’s new before updating.",
     viewRelease: "View update",
     latestVersion: "You are running the latest version",
     closeUpdateNotice: "Close update notice",

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CircleAlert, Check, ChevronDown, Loader2, Sparkles, Tags, X } from "lucide-react";
+import { CircleAlert, Check, ChevronDown, Loader2, TagPlus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { normalizeTags, type TagSummary } from "@edgeever/shared";
 import { Button } from "@/components/ui/button";
@@ -151,11 +151,10 @@ export const EditorTagPicker = ({ contentMarkdown, disabled, loadTags, title, va
         <button
           type="button"
           disabled={disabled}
-          className="flex h-8 min-w-0 max-w-[32rem] items-center gap-2 rounded-md border border-transparent px-2 text-left text-sm text-slate-500 outline-none transition hover:border-slate-200 hover:bg-slate-50 focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-500/15 disabled:opacity-50"
+          className="flex h-8 min-w-0 max-w-[32rem] items-center gap-1.5 rounded-md border border-transparent px-2 text-left text-sm text-slate-500 outline-none transition hover:border-slate-200 hover:bg-slate-50 focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-500/15 disabled:opacity-50"
           aria-label={t("editor.tagPicker.open")}
           onClick={() => setOpen(true)}
         >
-          <Tags className="h-4 w-4 shrink-0" />
           <span className="min-w-0 truncate">
             {selectedTags.length > 0 ? selectedTags.map((tag) => `#${tag}`).join(", ") : t("editor.tagPlaceholder")}
           </span>
@@ -182,7 +181,7 @@ export const EditorTagPicker = ({ contentMarkdown, disabled, loadTags, title, va
                     ? <Check className="h-4 w-4" />
                     : aiStatus.kind === "error"
                     ? <CircleAlert className="h-4 w-4" />
-                    : <Sparkles className="h-4 w-4" />}
+                    : <TagPlus className="h-4 w-4" />}
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">{aiDescription}</TooltipContent>

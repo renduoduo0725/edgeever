@@ -51,6 +51,32 @@ describe("production authentication guard", () => {
     });
   });
 
+  test("reports a missing R2 binding as object_storage_not_ready", async () => {
+    const response = await fetchApi("/api/health", {
+      DB: createDatabase({ userId: "owner" }),
+      EDGE_EVER_AUTH_PASSWORD: "configured-secret",
+    });
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: {
+        code: "object_storage_not_ready",
+        message: "Object storage is not configured. Bind RESOURCES and redeploy.",
+      },
+    });
+  });
+
+  test("reports healthy only when D1, authentication, and object storage are ready", async () => {
+    const response = await fetchApi("/api/health", {
+      DB: createDatabase({ userId: "owner" }),
+      RESOURCES: {},
+      EDGE_EVER_AUTH_PASSWORD: "configured-secret",
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true });
+  });
+
   test("does not misreport transient D1 failures as unapplied migrations", async () => {
     const response = await fetchApi("/api/health", {
       DB: createDatabase({ error: new Error("D1_ERROR: Network connection lost.") }),

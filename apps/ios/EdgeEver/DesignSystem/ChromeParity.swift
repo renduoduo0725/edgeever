@@ -14,6 +14,7 @@ enum CreateMemoChrome {
     static let metaRow = "createMemoMetaRow"
     static let notebook = "createMemoNotebookButton"
     static let tags = "createMemoTagsInput"
+    static let smartTags = "createMemoSmartTagsButton"
     static let editorFrame = "createMemoEditorFrame"
     static let imageTool = "createMemoImageTool"
 }

@@ -137,6 +137,10 @@ export const verifyOnlineHealth = async ({
         lastFailure = new Error(
           `Deployed Worker reports database_not_ready at ${healthUrl}. The D1 database verified by Wrangler may differ from the DB binding used by the live Worker.`,
         );
+      } else if (payload?.error?.code === "object_storage_not_ready") {
+        lastFailure = new Error(
+          `Deployed Worker reports object_storage_not_ready at ${healthUrl}. Check that the RESOURCES binding points to the configured R2 bucket.`,
+        );
       } else {
         const diagnostic = payload?.error?.code || `${response.status} ${response.statusText}`.trim();
         lastFailure = new Error(`Deployed Worker health check failed at ${healthUrl}: ${diagnostic}.`);

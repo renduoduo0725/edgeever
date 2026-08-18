@@ -1,10 +1,12 @@
 import Feather from "@expo/vector-icons/Feather";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ComponentProps } from "react";
 import { ActivityIndicator as NativeActivityIndicator, type ActivityIndicatorProps } from "react-native";
 import { resolveMobileThemeColor, useMobileTheme } from "../lib/mobile-theme";
 
 type FeatherName = ComponentProps<typeof Feather>["name"];
 type IconProps = Omit<ComponentProps<typeof Feather>, "name">;
+type MaterialCommunityIconProps = Omit<ComponentProps<typeof MaterialCommunityIcons>, "name">;
 
 export const ActivityIndicator = ({ color, ...props }: ActivityIndicatorProps) => {
   const { resolvedTheme } = useMobileTheme();
@@ -77,6 +79,10 @@ export const Sparkles = createIcon("star");
 export const Square = createIcon("square");
 export const Sun = createIcon("sun");
 export const Tag = createIcon("tag");
+export const TagPlus = ({ color, ...props }: MaterialCommunityIconProps) => {
+  const { resolvedTheme } = useMobileTheme();
+  return <MaterialCommunityIcons name="tag-plus-outline" {...props} color={resolveMobileThemeColor(color as string | undefined, resolvedTheme)} />;
+};
 export const Trash2 = createIcon("trash-2");
 export const Upload = createIcon("upload");
 export const UserRound = createIcon("user");

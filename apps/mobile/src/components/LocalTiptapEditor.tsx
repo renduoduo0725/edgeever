@@ -20,10 +20,13 @@ import {
   docToMarkdown,
   getDefaultAiTargetLanguage,
   getAiDocumentFingerprint,
+  getRichTextAiSelectionContext,
+  getRichTextAiSelectionReplacement,
   isAiSelectionSnapshotCurrent,
   markdownToDoc,
   MEMO_CONTENT_STYLE,
   MergeDivider,
+  normalizeAiSelectionReplacement,
   getImageReferrerPolicy,
   getResourceIdFromUrl,
   type AiAction,
@@ -153,6 +156,7 @@ type MobileAiSelection = {
   from: number;
   to: number;
   wholeNote: boolean;
+  isInline: boolean;
   markdown: string;
   documentFingerprint: string;
 };
@@ -863,12 +867,17 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
     if (isViewer || !editor || editor.isDestroyed || !onAiRequestRef.current) return false;
     const sourceRange = getMobileAiSourceRange(editor.state.selection, editor.state.doc.content.size);
     if (!sourceRange) return false;
-    const { from, to, wholeNote } = sourceRange;
-    const selectionDoc = getPersistableEditorDoc({
+    const { from: sourceFrom, to: sourceTo, wholeNote } = sourceRange;
+    const richSelection = wholeNote
+      ? null
+      : getRichTextAiSelectionContext(editor.state.doc, editor.state.selection);
+    if (!wholeNote && !richSelection) return false;
+    const from = richSelection?.from ?? sourceFrom;
+    const to = richSelection?.to ?? sourceTo;
+    const markdown = richSelection?.contentMarkdown ?? docToMarkdown(getPersistableEditorDoc({
       type: "doc",
       content: editor.state.doc.slice(from, to).content.toJSON(),
-    } as EditorDoc, props.baseUrl);
-    const markdown = docToMarkdown(selectionDoc).trim();
+    } as EditorDoc, props.baseUrl)).trim();
     if (!markdown) return false;
     const preferredAction = wholeNote ? "summarize" : "improve-writing";
     const preferredPrompt = aiPrompts.find((prompt) => prompt.seedKey === preferredAction)
@@ -880,6 +889,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
         from,
         to,
         wholeNote,
+        isInline: richSelection?.isInline ?? false,
         markdown,
         documentFingerprint: getAiDocumentFingerprint(getPersistableEditorDoc(editor.getJSON() as EditorDoc, props.baseUrl)),
       },
@@ -992,7 +1002,14 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
     }
     if (mode === "append" && aiPanel.resultMode === "replace") return;
     if (mode === "replace" && aiPanel.resultMode === "append") return;
-    const parsed = resolveImageSources(markdownToDoc(aiPanel.output), props.baseUrl);
+    const replacementDraft = mode === "replace"
+      ? normalizeAiSelectionReplacement(aiPanel.output)
+      : aiPanel.output;
+    if (!replacementDraft) return;
+    const replacementDoc = mode === "replace"
+      ? { type: "doc", content: getRichTextAiSelectionReplacement(replacementDraft, aiPanel.selection.isInline) } as EditorDoc
+      : markdownToDoc(replacementDraft);
+    const parsed = resolveImageSources(replacementDoc, props.baseUrl);
     const content = parsed.content ?? [];
     const range = mode === "append"
       ? { from: aiPanel.selection.to, to: aiPanel.selection.to }
@@ -2853,6 +2870,21 @@ const getEditorStyles = (theme: "light" | "dark", options?: { viewer?: boolean }
     border-collapse: separate;
     border-spacing: 0;
     table-layout: fixed;
+  }
+  /* Let compact tables use the full content width. The fallback on
+     .tableWrapper remains the minimum column budget for 5+ columns, so only
+     wider tables scroll. TipTap always renders one <col> per logical column. */
+  .edgeever-editor-content table:has(> colgroup > col:first-child:last-child) {
+    --mobile-table-column-width: 100cqi;
+  }
+  .edgeever-editor-content table:has(> colgroup > col:first-child:nth-last-child(2)) {
+    --mobile-table-column-width: 50cqi;
+  }
+  .edgeever-editor-content table:has(> colgroup > col:first-child:nth-last-child(3)) {
+    --mobile-table-column-width: calc(100cqi / 3);
+  }
+  .edgeever-editor-content table:has(> colgroup > col:first-child:nth-last-child(4)) {
+    --mobile-table-column-width: 25cqi;
   }
   /* Override TipTap/desktop col widths with the mobile equal-ish column budget. */
   .edgeever-editor-content table col {

@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
   setSessionToken: (value) => ipcRenderer.invoke("desktop:set-session-token", value),
   clearSessionToken: () => ipcRenderer.invoke("desktop:clear-session-token"),
   clearLocalData: () => ipcRenderer.invoke("desktop:clear-local-data"),
+  recordRendererError: (details) => ipcRenderer.invoke("desktop:record-renderer-error", details),
+  openRendererIssue: (details) => ipcRenderer.invoke("desktop:open-renderer-issue", details),
   updateStatus: () => ipcRenderer.invoke("desktop:update-status"),
   downloadUpdate: () => ipcRenderer.invoke("desktop:download-update"),
   installUpdate: () => ipcRenderer.invoke("desktop:install-update"),

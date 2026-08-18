@@ -1,6 +1,47 @@
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+
+export const PLACEHOLDER_D1_ID = "00000000-0000-0000-0000-000000000000";
+
+const REPOSITORY_WRANGLER_VALUES = {
+  name: "edgeever",
+  workers_dev: "true",
+  database_name: "edgeever",
+  database_id: PLACEHOLDER_D1_ID,
+  bucket_name: "edgeever-resources",
+  preview_bucket_name: "edgeever-resources-preview",
+};
+const REPOSITORY_WRANGLER_SHA256 = "d49ed530169a8597d2c17d5c6b99e03e371c8710124bbce4e526cf2b3a720f7a";
+
+const configValue = (config, key) => {
+  const match = config.match(new RegExp(`^${key}\\s*=\\s*(?:"([^"]*)"|(true|false))`, "m"));
+  return match?.[1] ?? match?.[2];
+};
+
+export const repositoryWranglerConfigError = (config, usesRepositoryConfig) => {
+  if (!usesRepositoryConfig) return undefined;
+
+  const changedEntry = Object.entries(REPOSITORY_WRANGLER_VALUES)
+    .find(([key, expected]) => configValue(config, key) !== expected);
+  const instanceSection = ["[[routes]]", "[vars]", "[triggers]"]
+    .find((section) => config.includes(section));
+  const normalizedConfig = config.replace(/\r\n/g, "\n");
+  const repositoryConfigChanged = createHash("sha256")
+    .update(normalizedConfig)
+    .digest("hex") !== REPOSITORY_WRANGLER_SHA256;
+  if (!changedEntry && !instanceSection && !repositoryConfigChanged) return undefined;
+
+  const changedSetting = changedEntry?.[0] ?? instanceSection ?? "tracked file contents";
+
+  return [
+    `Refusing instance-specific setting ${changedSetting} in the repository wrangler.toml.`,
+    "Restore the tracked file from upstream.",
+    "Provide deployment settings through EDGE_EVER_* Workers Builds variables,",
+    "or point WRANGLER_CONFIG at an external configuration file for an advanced deployment.",
+  ].join(" ");
+};
 
 export const resolveWranglerCliPath = (cwd = resolve(".")) =>
   resolve(cwd, "node_modules", "wrangler", "bin", "wrangler.js");
@@ -91,6 +132,58 @@ export const findD1DatabaseIdByName = (json, databaseName) => {
 
   const databaseId = matches[0]?.uuid;
   return typeof databaseId === "string" ? databaseId : undefined;
+};
+
+const parseWranglerObject = (json, description) => {
+  let value;
+  try {
+    value = JSON.parse(json);
+  } catch {
+    throw new Error(`Wrangler returned invalid JSON while reading ${description}.`);
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Wrangler returned an unexpected response while reading ${description}.`);
+  }
+  return value;
+};
+
+export const productionVersionIds = (json) => {
+  const deployment = parseWranglerObject(json, "the production Worker deployment");
+  if (!Array.isArray(deployment.versions)) {
+    throw new Error(
+      "Wrangler returned an unexpected response while reading the production Worker deployment.",
+    );
+  }
+  return deployment.versions
+    .filter((version) =>
+      typeof version?.version_id === "string" && Number(version?.percentage) > 0
+    )
+    .sort((left, right) => Number(right.percentage) - Number(left.percentage))
+    .map((version) => version.version_id);
+};
+
+export const deployedWorkerSettings = (json) => {
+  const version = parseWranglerObject(json, "the deployed Worker version");
+  const bindings = version.resources?.bindings;
+  if (!Array.isArray(bindings)) {
+    throw new Error(
+      "Wrangler returned an unexpected response while reading the deployed Worker version.",
+    );
+  }
+  const resources = bindings.filter((binding) =>
+    binding?.name === "RESOURCES" && binding?.type === "r2_bucket"
+  );
+  const usernames = bindings.filter((binding) =>
+    binding?.name === "EDGE_EVER_AUTH_USERNAME" && binding?.type === "plain_text"
+  );
+  return {
+    r2BucketName: resources.length === 1 && typeof resources[0].bucket_name === "string"
+      ? resources[0].bucket_name
+      : undefined,
+    authUsername: usernames.length === 1 && typeof usernames[0].text === "string"
+      ? usernames[0].text
+      : undefined,
+  };
 };
 
 export const buildWranglerSpawnOptions = (args, options = {}) => {

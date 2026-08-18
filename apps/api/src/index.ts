@@ -270,6 +270,18 @@ app.get("/api/health", async (c) => {
     return authNotConfigured(c);
   }
 
+  if (!c.env.storage.resources) {
+    return c.json(
+      {
+        error: {
+          code: "object_storage_not_ready",
+          message: "Object storage is not configured. Bind RESOURCES and redeploy.",
+        },
+      },
+      503,
+    );
+  }
+
   return c.json({
     ok: true,
     name: "edgeever",

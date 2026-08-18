@@ -112,4 +112,14 @@ describe("deployment verification", () => {
       }, { status: 503 }),
     })).rejects.toThrow("may differ from the DB binding used by the live Worker");
   });
+
+  test("diagnoses a live Worker without its R2 binding", async () => {
+    expect(verifyOnlineHealth({
+      deploymentUrl: "https://notes.example.com",
+      attempts: 1,
+      fetchImpl: async () => Response.json({
+        error: { code: "object_storage_not_ready" },
+      }, { status: 503 }),
+    })).rejects.toThrow("RESOURCES binding points to the configured R2 bucket");
+  });
 });

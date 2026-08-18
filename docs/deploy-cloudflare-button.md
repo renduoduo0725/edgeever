@@ -32,29 +32,28 @@ Log into your [Cloudflare Dashboard](https://dash.cloudflare.com/):
    - Database name: exactly `edgeever`, then click **Create**.
 2. **Create an R2 Bucket** (for note attachments & images):
    - Navigate to **Workers & Pages** -> **R2**, then click **Create bucket**.
-   - Enter a globally unique bucket name (e.g., `my-edgeever-resources`), then click **Create bucket**.
+   - Bucket name: exactly `edgeever-resources`, then click **Create bucket**.
 
 ---
 
-### Step 3: Import Project & Configure Resources (Bindings & Secrets)
+### Step 3: Import Project & Configure the Login Secret
 
 1. In Cloudflare Dashboard, navigate to **Workers & Pages** -> **Overview**, click **Create application** -> **Pages** / **Workers** (Import Git Repository).
 2. Click **Connect to Git**, authorize Cloudflare, and select your Forked `edgeever` repository.
 3. Project settings:
    - **Production branch**: `main`
    - **Root directory**: Leave blank or default `/`
-4. **Configure Bindings & Variables** (under **Settings** -> **Variables and Bindings**):
+4. Under **Settings** -> **Variables and Secrets**, add the login password:
 
-| Type | Binding / Variable Name | Value / Bound Resource | Purpose |
+| Type | Name | Value | Purpose |
 | :--- | :--- | :--- | :--- |
-| **D1 Database Binding** | `DB` | Select `edgeever` database | Stores notes & structured data |
-| **R2 Bucket Binding** | `RESOURCES` | Select your created R2 bucket | Stores images & file attachments |
-| **Environment Variable** | `EDGE_EVER_AUTH_USERNAME` | `admin` (customizable) | Admin login username |
-| **Environment Variable (Secret)** | `EDGE_EVER_AUTH_PASSWORD` | Set your admin password | Initial login credential |
-
-> `EDGE_EVER_AUTH_USERNAME` is prefilled with `admin`. Most users can keep this value. Advanced users can replace it with a custom administrator username; the configured username is required at login.
+| **Secret** | `EDGE_EVER_AUTH_PASSWORD` | Set a strong admin password | Initial login credential |
 
 > `EDGE_EVER_AUTH_PASSWORD` is a Worker runtime Secret, not a Workers Builds variable. The standard deploy command reuses and verifies this Secret; do not duplicate the password in build variables.
+
+The repository's deployment command creates the `DB` and `RESOURCES` bindings from the standard resource names. Do not edit `wrangler.toml` or add duplicate bindings in the Dashboard.
+
+Existing deployments created from older instructions do not need to rename or migrate a custom R2 bucket. When no explicit Builds variable is set, the deploy command reads the live Worker's current `RESOURCES` binding and keeps using that bucket automatically.
 
 ---
 
@@ -69,9 +68,9 @@ Deploy command: bun run deploy:cloudflare-builds
 
 Click **Save and Deploy** to trigger the initial build.
 
-The deploy command automatically looks up the D1 UUID by the `edgeever` database name. Do not edit `wrangler.toml` or manually copy the D1 ID. The Workers Builds API token must have D1 read/edit permission.
+The deploy command automatically looks up the D1 UUID by the `edgeever` database name. Keep the tracked `wrangler.toml` unchanged; deployment rejects instance-specific values committed there. The Workers Builds API token must have D1 read/edit permission.
 
-After publishing, the CI deployment records the actual public target reported by Wrangler and requests its `/api/health` endpoint. The build fails if the live Worker is missing its `DB` binding, uses an unprepared D1 database, or does not return a healthy response.
+After publishing, the CI deployment records the actual public target reported by Wrangler and requests its `/api/health` endpoint. The build fails if the live Worker is missing its `DB` or `RESOURCES` binding, uses an unprepared D1 database, or does not return a healthy response.
 
 ---
 
@@ -97,15 +96,32 @@ EDGE_EVER_UPDATE_CHANNEL=edge
 
 You can also pick `stable` / `edge` when manually running the workflow.
 
+## Advanced Configuration: Instance Settings
+
+Ordinary deployments do not need these settings. To customize an instance, add non-secret values under **Settings -> Builds -> Variables and secrets** instead of changing repository files:
+
+| Build variable | Purpose |
+| :--- | :--- |
+| `EDGE_EVER_AUTH_USERNAME` | Administrator username; defaults to `admin` |
+| `EDGE_EVER_WORKER_NAME` | Worker name |
+| `EDGE_EVER_D1_DATABASE_NAME` | D1 database name; its UUID is discovered automatically |
+| `EDGE_EVER_D1_DATABASE_ID` | Optional UUID fallback when discovery is unavailable |
+| `EDGE_EVER_R2_BUCKET_NAME` | Optional explicit production R2 bucket override; upgrades otherwise reuse the live binding |
+| `EDGE_EVER_R2_PREVIEW_BUCKET_NAME` | Preview R2 bucket name |
+| `EDGE_EVER_WORKERS_DEV` | Enable or disable the `workers.dev` route |
+| `EDGE_EVER_CUSTOM_DOMAIN` / `EDGE_EVER_ROUTE_PATTERN` | Custom routing |
+
+Passwords and other credentials remain Worker runtime Secrets and must never be added to Builds variables. An advanced local deployment may instead use the git-ignored `.env.local` or an external `WRANGLER_CONFIG` file.
+
 ---
 
 ## Troubleshooting
 
-- **Initial build failed**: Check the Worker **Deployments** log. Verify that the D1 binding is `DB`, its database is named exactly `edgeever`, the R2 binding is `RESOURCES`, and the Workers Builds API token has D1 read/edit permission. For an intentionally different D1 database, add the build variable `EDGE_EVER_D1_DATABASE_ID` with its UUID.
+- **Initial build failed**: Check the Worker **Deployments** log. Verify that the standard resources are named exactly `edgeever` and `edgeever-resources`, and that the Workers Builds API token has D1 read/edit permission. For an intentionally different D1 database, set `EDGE_EVER_D1_DATABASE_NAME`; add `EDGE_EVER_D1_DATABASE_ID` only if automatic UUID discovery is unavailable.
 - **Updates not syncing**:
   1. On the Fork **Actions** tab, enable **Update deployed EdgeEver** (scheduled workflows are off by default on public forks).
-  2. Run it once with **Run workflow**. Open the job **Summary**: it states the upstream target version and whether the fork was updated, already aligned, or failed.
-  3. A green run with *Already on upstream target* means Git already matches that channel — not a broken skip. If the live site is still old, check Cloudflare **Deployments** commit SHA, or re-run with **force_redeploy**.
+  2. Run it once with **Run workflow**. Open the bilingual job **Summary**: it separately reports the upstream target, Git publish result, deployment trigger, and whether the live deployment was verified.
+  3. A scheduled green run with *Already on upstream target* means Git already matches that channel — not a broken skip. A manual run automatically republishes the selected version when already aligned. If the live site is still old afterward, compare the Cloudflare **Deployments** commit SHA.
   4. Prefer this workflow over GitHub **Sync fork** for day-to-day upgrades.
   5. If an old updater fails with `without workflows permission`, use **Sync fork** once as the repository owner, then re-run **Update deployed EdgeEver**. The current updater preserves `.github/workflows/**`, so later product updates do not hit this permission boundary.
 - **Push succeeded but site unchanged**: Confirm Workers Builds ran for the new `main` SHA. Optionally add repository secret `EDGE_EVER_CLOUDFLARE_DEPLOY_HOOK_URL` so the workflow can call a Deploy Hook after publish.

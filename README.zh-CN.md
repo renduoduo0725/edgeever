@@ -71,8 +71,8 @@ EdgeEver 采用纯 Serverless 架构，完全运行在 Cloudflare 免费配额�
 请在线完成 EdgeEver 部署：
 1. Fork https://github.com/tianma-if/edgeever。
 2. 将这个 Fork 导入 Cloudflare Workers & Pages。
-3. 配置 D1、R2、`EDGE_EVER_AUTH_USERNAME`（预填为 `admin`，可自定义）、
-   `EDGE_EVER_AUTH_PASSWORD` Worker Secret 和生产环境 `main` 构建。
+3. 创建 D1 `edgeever` 与 R2 `edgeever-resources`，设置
+   `EDGE_EVER_AUTH_PASSWORD` Worker Secret，并配置生产环境 `main` 构建。
 4. 启动首次构建，验证 `/api/health`、`/api/openapi.json` 和登录。
 5. 启用并手动运行一次名为 `Update deployed EdgeEver` 的 GitHub Actions 工作流，
    以便后续自动同步更新，持续获得 EdgeEver 最新的产品特性和问题修复。
@@ -87,7 +87,7 @@ EdgeEver 采用纯 Serverless 架构，完全运行在 Cloudflare 免费配额�
 1. **Fork 仓库**：在 GitHub 点击右上角 **Fork**，将项目 Fork 到您的个人账户下。
 2. **启用 Actions**：进入 Fork 的 **Actions** 标签页，点击 **I understand my workflows, go ahead and enable them**，确保名为 **Update deployed EdgeEver** 的 GitHub Actions 工作流能够自动运行，从而持续获得 **EdgeEver** 最新的产品特性和问题修复。
 3. **导入 Cloudflare**：登录 Cloudflare 控制台，进入 **Workers & Pages**，选择导入该 Fork 仓库。
-4. **绑定资源与登录凭据**：绑定 D1 数据库（`DB`）、R2 存储桶（`RESOURCES`），设置 `EDGE_EVER_AUTH_USERNAME`（默认为 `admin`，可自定义），并添加 Worker Secret `EDGE_EVER_AUTH_PASSWORD` 作为管理员登录密码。
+4. **创建资源与登录凭据**：创建 D1 `edgeever` 与 R2 `edgeever-resources`，并添加 Worker Secret `EDGE_EVER_AUTH_PASSWORD` 作为管理员登录密码。binding 由部署命令生成，不要修改 Fork 中的文件。
 5. **启动构建与验证**：使用默认构建配置启动首次构建，部署完成后访问 `/api/health` 确认返回 `200` 即可开始使用。
 
 > 📖 包含具体参数与构建命令的详细步骤，请查看 [在线部署完整文档](docs/deploy-cloudflare-button.zh-CN.md)。

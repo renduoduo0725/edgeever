@@ -135,6 +135,7 @@
         "expo-file-system": "~57.0.1",
         "expo-image-manipulator": "~57.0.5",
         "expo-image-picker": "~57.0.5",
+        "expo-intent-launcher": "~57.0.1",
         "expo-router": "latest",
         "expo-secure-store": "latest",
         "expo-sharing": "~57.0.8",
@@ -230,6 +231,7 @@
         "@tiptap/extension-mathematics": "3.27.1",
         "@tiptap/extension-table": "3.27.1",
         "@tiptap/markdown": "3.27.1",
+        "@tiptap/pm": "3.27.1",
         "@tiptap/starter-kit": "3.27.1",
         "katex": "0.16.22",
       },
@@ -2155,6 +2157,8 @@
     "expo-image-manipulator": ["expo-image-manipulator@57.0.5", "", { "dependencies": { "expo-image-loader": "~57.0.1" }, "peerDependencies": { "expo": "*" } }, "sha512-gEZ6tEsLwtz+dRXPC2QDObcQhAW7c9J6WW4W+5qQ4T6DlgkjtunLpHijM79W8fc99ER2X2IQS1ogJ8u9VAF7qA=="],
 
     "expo-image-picker": ["expo-image-picker@57.0.8", "", { "dependencies": { "expo-image-loader": "~57.0.1" }, "peerDependencies": { "expo": "*" } }, "sha512-LXJCGxunnQ4beqk+TW3+llRyss/XITOKWdIjqgF1H9mL3CgKN+hvABWAqLVWapGz7RoJBf+r53FO9i48yicbbw=="],
+
+    "expo-intent-launcher": ["expo-intent-launcher@57.0.1", "", { "peerDependencies": { "expo": "*" } }, "sha512-BYiPEOUeW3AkW/uxEESbS2UBw9LasJ8Heb6A8kF9Ueh6pqrXQHMNJFHzfrOP8qZfv9G2e8CTzrtzpN5p0vH5fA=="],
 
     "expo-json-utils": ["expo-json-utils@57.0.1", "", {}, "sha512-cgTe1NqzQdYs/WN+3nIY5IZg8s0pb0xaTUbhYvxQDn137GbwRfHoGM2se3m3Vsl4Qu+B9G4RPEK5WJDEU2Do7g=="],
 

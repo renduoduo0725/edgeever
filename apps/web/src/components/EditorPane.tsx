@@ -4100,7 +4100,7 @@ const RichEditorPane = ({
               : "min-h-full items-start px-6 py-6 sm:px-10",
             desktopFocusMode
               ? "mx-auto w-full max-w-[1400px] justify-center"
-              : "w-full justify-start"
+              : "w-full justify-center"
           )}
         >
           <div

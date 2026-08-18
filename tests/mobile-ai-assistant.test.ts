@@ -70,16 +70,16 @@ describe("native mobile AI note assistant", () => {
     expect(iosDetailSource).toContain("AiAssistantSheet(memo: memo)");
   });
 
-  test("suggests tags from native drafts and waits for confirmation before adding them", () => {
+  test("suggests tags from native drafts and merges them without duplicates", () => {
     expect(androidWorkspaceSource).toContain("client.suggestAiTags({");
     expect(androidWorkspaceSource).toContain("contentMarkdown,");
     expect(androidWorkspaceSource).toContain("currentTags: selectedTags");
-    expect(androidWorkspaceSource).toContain("commit([...selectedTags, ...selectedAiSuggestions])");
+    expect(androidWorkspaceSource).toContain("onChange(Array.from(new Set([...selectedTags, ...additions])).slice(0, 24))");
 
     expect(iosApiSource).toContain('path: "/api/v1/ai/tag-suggestions"');
     expect(iosEditorSource).toContain("env.session.client.suggestAiTags(input)");
     expect(iosEditorSource).toContain("contentMarkdown: contentMarkdown");
-    expect(iosEditorSource).toContain("currentTags: selection");
-    expect(iosEditorSource).toContain("selection.append(suggestion.name)");
+    expect(iosEditorSource).toContain("currentTags: currentTags");
+    expect(iosEditorSource).toContain("tagsText = (currentTags + additions).joined(separator: \", \")");
   });
 });

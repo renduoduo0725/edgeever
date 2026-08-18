@@ -10,20 +10,22 @@ import { useMobileTheme, resolveMobileThemeStyles } from "../lib/mobile-theme";
 export const MobileUpdateCard = () => {
   const { resolvedLocale } = useMobileLocale();
   const { resolvedTheme } = useMobileTheme();
-  const { checkForUpdate, hasUpdate, isSupported, openUpdate, status, updateKind } = useMobileUpdate();
+  const { checkForUpdate, downloadProgress, hasUpdate, isSupported, openUpdate, status, updateKind } = useMobileUpdate();
   const english = resolvedLocale === "en-US";
-  const busy = status === "checking" || status === "downloading";
+  const busy = status === "checking" || status === "downloading" || status === "installing";
   const styles = resolveMobileThemeStyles(baseStyles, resolvedTheme);
   const checkLabel = status === "checking"
     ? (english ? "Checking…" : "正在检查…")
     : (english ? "Check for updates" : "检查更新");
   const openLabel = status === "downloading"
-    ? (english ? "Downloading…" : "正在下载…")
+    ? (english ? `Downloading ${Math.round((downloadProgress ?? 0) * 100)}%` : `正在下载 ${Math.round((downloadProgress ?? 0) * 100)}%`)
+    : status === "installing"
+      ? (english ? "Opening installer…" : "正在打开安装器…")
     : status === "ready"
       ? (english ? "Restart to apply" : "重启以应用")
       : updateKind === "ota"
         ? (english ? "Download update" : "下载更新")
-        : (english ? "Get update" : "前往更新");
+        : (english ? "Download & install" : "下载并安装");
 
   return (
     <View style={styles.card}>
@@ -31,8 +33,8 @@ export const MobileUpdateCard = () => {
         <Text style={styles.title}>{english ? "App updates" : "应用更新"}</Text>
         <Text style={styles.description}>
           {english
-            ? "EdgeEver automatically checks for compatible in-app updates. Manual checks also look for newer installable versions."
-            : "EdgeEver 会自动检查兼容的应用内热更新；手动检查还会查找更新的安装包版本。"}
+            ? "EdgeEver automatically checks for compatible in-app updates and newer installable versions."
+            : "EdgeEver 会自动检查兼容的应用内热更新和新版安装包。"}
         </Text>
         <Text style={styles.version}>
           {english ? "Current version" : "当前版本"}: v{Updates.runtimeVersion ?? Constants.expoConfig?.version ?? "unknown"}
@@ -41,12 +43,12 @@ export const MobileUpdateCard = () => {
       {hasUpdate ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ busy: status === "downloading", disabled: status === "downloading" }}
-          disabled={status === "downloading"}
+          accessibilityState={{ busy, disabled: busy }}
+          disabled={busy}
           onPress={() => void openUpdate()}
-          style={[styles.button, status === "downloading" && styles.buttonDisabled]}
+          style={[styles.button, busy && styles.buttonDisabled]}
         >
-          {status === "downloading" ? <ActivityIndicator color="#047857" size="small" /> : <RefreshCw color="#047857" size={16} />}
+          {status === "downloading" || status === "installing" ? <ActivityIndicator color="#047857" size="small" /> : <RefreshCw color="#047857" size={16} />}
           <Text style={styles.buttonText}>{openLabel}</Text>
         </Pressable>
       ) : null}

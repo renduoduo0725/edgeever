@@ -24,12 +24,13 @@ export const MobileUpdateToast = () => {
   const insets = useSafeAreaInsets();
   const { resolvedLocale } = useMobileLocale();
   const { resolvedTheme } = useMobileTheme();
-  const { hasUpdate, installedVersion, openUpdate, status, updateKind } = useMobileUpdate();
+  const { downloadProgress, hasUpdate, installedVersion, openUpdate, status, updateKind } = useMobileUpdate();
   const english = resolvedLocale === "en-US";
   const styles = resolveMobileThemeStyles(baseStyles, resolvedTheme);
   const [storageReady, setStorageReady] = useState(false);
   const [visible, setVisible] = useState(false);
   const dismissedForVersionRef = useRef<string | null>(null);
+  const showingDownloadRef = useRef(false);
   const showingRef = useRef(false);
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -46,7 +47,32 @@ export const MobileUpdateToast = () => {
   }, []);
 
   useEffect(() => {
-    if (!storageReady || !hasUpdate || status === "downloading") {
+    if (!storageReady || !hasUpdate) {
+      return;
+    }
+    if (status === "downloading" || status === "installing") {
+      showingDownloadRef.current = true;
+      showingRef.current = true;
+      setVisible(true);
+      Animated.timing(opacity, {
+        duration: FADE_MS,
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+    if (showingDownloadRef.current) {
+      showingDownloadRef.current = false;
+      Animated.timing(opacity, {
+        duration: FADE_MS,
+        toValue: 0,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setVisible(false);
+          showingRef.current = false;
+        }
+      });
       return;
     }
     if (!shouldShowMobileUpdateToastForVersion(installedVersion, dismissedForVersionRef.current)) {
@@ -87,8 +113,16 @@ export const MobileUpdateToast = () => {
     return null;
   }
 
-  const title = english ? "Update available" : "发现新版本";
-  const detail = status === "ready"
+  const title = status === "downloading"
+    ? (english ? "Downloading update" : "正在下载更新")
+    : status === "installing"
+      ? (english ? "Installer ready" : "安装包已就绪")
+      : (english ? "Update available" : "发现新版本");
+  const detail = status === "downloading"
+    ? `${Math.round((downloadProgress ?? 0) * 100)}%`
+    : status === "installing"
+      ? (english ? "Opening the system installer" : "正在打开系统安装器")
+    : status === "ready"
     ? (english ? "Restart in System info" : "可在系统信息中重启")
     : updateKind === "ota"
       ? (english ? "Optional in-app update" : "可选的应用内更新")
@@ -125,8 +159,10 @@ export const MobileUpdateToast = () => {
           accessibilityLabel={`${title}. ${detail}`}
           accessibilityRole="button"
           onPress={() => {
-            dismiss();
-            void openUpdate();
+            if (status !== "downloading" && status !== "installing") {
+              dismiss();
+              void openUpdate();
+            }
           }}
           style={styles.toastBody}
         >

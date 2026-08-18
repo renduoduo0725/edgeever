@@ -21,12 +21,13 @@
    - 登录 Cloudflare **Workers & Pages** 控制台，导入该 Fork 仓库。
    - 配置项目使用仓库根目录、生产环境 `main` 分支，并读取仓库根目录下的 `wrangler.toml`。
 
-4. **绑定资源与凭据 (Bindings & Secrets)**
-   - **D1 数据库绑定**：Binding 名称填 `DB`，关联名称严格为 `edgeever` 的数据库。
-   - **R2 存储桶绑定**：Binding 名称填 `RESOURCES`，关联全局唯一的 R2 Bucket。
-   - **管理员用户名**：配置 `EDGE_EVER_AUTH_USERNAME`，默认值为 `admin`；如需自定义，可替换为其他用户名。
+4. **资源与凭据 (Resources & Secrets)**
+   - 创建名称严格为 `edgeever` 的 D1 数据库。
+   - 创建名称严格为 `edgeever-resources` 的 R2 存储桶。
    - **Worker Secret**：添加密钥 `EDGE_EVER_AUTH_PASSWORD`，值为初始管理员登录密码。
    - 该密码只配置为 Worker 运行时 Secret，不要复制到 Workers Builds 构建变量；标准部署入口会复用并验证已存在的 Secret。
+   - 不要修改 `wrangler.toml`，也不要在控制台重复添加 binding。部署命令会根据标准资源名称生成 `DB` 与 `RESOURCES` binding。
+   - 对按旧版文档部署的已有 Worker，不要要求用户重命名或重新配置自定义 R2 存储桶。没有显式覆盖时，部署会自动保留线上 `RESOURCES` binding 与管理员用户名。
 
 5. **配置 Workers Builds 命令**
    - 在 Cloudflare 项目的构建设置中，填入以下标准命令：
@@ -36,17 +37,17 @@
      Deploy command: bun run deploy:cloudflare-builds
      ```
 
-   - 部署命令会根据 `edgeever` 数据库名称自动查询 D1 UUID，并且只写入临时生成的 Wrangler 配置。用户无需修改 `wrangler.toml`，也无需手工把 D1 ID 复制到构建变量。
-   - 请确保 Workers Builds API Token 具有 D1 读取和编辑权限。使用其他数据库名称的高级部署需要显式设置构建变量 `EDGE_EVER_D1_DATABASE_ID`。
+   - 部署命令会根据 `edgeever` 数据库名称自动查询 D1 UUID，并把所有实例参数仅写入临时生成的 Wrangler 配置。受版本控制的 `wrangler.toml` 必须保持不变；若把实例专属配置提交到该文件，部署会直接拒绝，避免 Fork 因基础设施配置产生分叉。
+   - 请确保 Workers Builds API Token 具有 D1 读取和编辑权限。高级非敏感自定义参数应放在 `EDGE_EVER_*` Workers Builds 构建变量中。如使用其他数据库名称，设置 `EDGE_EVER_D1_DATABASE_NAME`；仅在无法自动查询 UUID 时设置 `EDGE_EVER_D1_DATABASE_ID`。密码始终属于运行时 Secret。
 
 6. **启动首次构建与服务验证**
    - 触发启动首次构建，待构建部署完成后，进行如下自动化验证：
      - 检查 `https://<你的 Worker 域名>/api/health` 返回 `200` 状态码且 JSON 内容为 `{"ok": true}`。
      - 检查 `https://<你的 Worker 域名>/api/openapi.json` 能够正常加载 OpenAPI 规范。
-     - 使用之前配置的 `EDGE_EVER_AUTH_USERNAME`（默认 `admin`）和 `EDGE_EVER_AUTH_PASSWORD` 验证登录 API 是否可用。
+     - 使用用户名 `admin` 和 `EDGE_EVER_AUTH_PASSWORD` 验证登录 API；若高级部署设置了 `EDGE_EVER_AUTH_USERNAME` 构建变量，则改用对应用户名。
 
 7. **验证上游更新通道**
-   - 在 Fork 的 **Actions** 中手动运行一次 **Update deployed EdgeEver**。
+   - 在 Fork 的 **Actions** 中手动运行一次 **Update deployed EdgeEver**。即使 Fork 已对齐，手动运行也会重新发布所选版本，确保 Cloudflare 收到新的构建事件。
    - 打开 Job **Summary**，确认 Fork mode 为 `mirror`，并显示上游目标（stable Release 或 edge `main`），以及「已发布更新」或明确的「已对齐」结果。
    - 若发生了 push，确认 Cloudflare **Deployments** 构建的是对应的 `main` commit。
    - 普通部署 Fork 不应修改部署文件，日常升级也不要依赖 GitHub **Sync fork**；本工作流就是唯一需要的同步路径。只有旧 Fork 必须取得新版更新工作流本身时，才使用一次 **Sync fork**，之后继续使用 **Update deployed EdgeEver**。

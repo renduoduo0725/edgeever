@@ -1211,8 +1211,7 @@ const baseWorkspaceStyles = StyleSheet.create({
     color: "#64748b",
     flex: 1,
     fontSize: 15,
-    lineHeight: 23,
-    minHeight: 36,
+    lineHeight: 20,
     minWidth: 0,
     padding: 0,
   },
@@ -1226,6 +1225,16 @@ const baseWorkspaceStyles = StyleSheet.create({
   },
   createMemoTagsPlaceholder: {
     color: "#94a3b8",
+  },
+  smartTagButton: {
+    alignItems: "center",
+    borderRadius: 8,
+    height: 34,
+    justifyContent: "center",
+    width: 34,
+  },
+  smartTagButtonSuccess: {
+    backgroundColor: "#ecfdf5",
   },
   createMemoToolButton: {
     alignItems: "center",
@@ -1561,109 +1570,6 @@ const baseWorkspaceStyles = StyleSheet.create({
   tagPickerCreateText: {
     color: "#047857",
     fontSize: 13,
-    fontWeight: "800",
-  },
-  tagPickerAiCard: {
-    backgroundColor: "#ecfdf5",
-    borderColor: "#bbf7d0",
-    borderRadius: 10,
-    borderWidth: 1,
-    gap: 10,
-    marginBottom: 8,
-    padding: 12,
-  },
-  tagPickerAiHeader: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 10,
-    justifyContent: "space-between",
-  },
-  tagPickerAiHeaderText: {
-    flex: 1,
-    gap: 3,
-    minWidth: 0,
-  },
-  tagPickerAiTitleRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 5,
-  },
-  tagPickerAiTitle: {
-    color: "#065f46",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  tagPickerAiDescription: {
-    color: "#047857",
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  tagPickerAiGenerateButton: {
-    alignItems: "center",
-    backgroundColor: "#047857",
-    borderRadius: 8,
-    flexDirection: "row",
-    gap: 5,
-    minHeight: 34,
-    paddingHorizontal: 10,
-  },
-  tagPickerAiGenerateText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  tagPickerAiError: {
-    color: "#be123c",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  tagPickerAiSuggestions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 7,
-  },
-  tagPickerAiSuggestion: {
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderColor: "#a7f3d0",
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 4,
-    minHeight: 30,
-    paddingHorizontal: 10,
-  },
-  tagPickerAiSuggestionSelected: {
-    backgroundColor: "#047857",
-    borderColor: "#047857",
-  },
-  tagPickerAiSuggestionAdded: {
-    backgroundColor: "#d1fae5",
-    borderColor: "#a7f3d0",
-  },
-  tagPickerAiSuggestionText: {
-    color: "#065f46",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  tagPickerAiSuggestionTextSelected: {
-    color: "#ffffff",
-  },
-  tagPickerAiSuggestionTextAdded: {
-    color: "#047857",
-  },
-  tagPickerAiApplyButton: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "#0f172a",
-    borderRadius: 8,
-    minHeight: 34,
-    justifyContent: "center",
-    paddingHorizontal: 11,
-  },
-  tagPickerAiApplyText: {
-    color: "#ffffff",
-    fontSize: 12,
     fontWeight: "800",
   },
   tagPickerLoading: {

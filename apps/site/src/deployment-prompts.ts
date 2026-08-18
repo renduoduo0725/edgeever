@@ -2,16 +2,16 @@ export const deploymentPrompts = {
   "en-US": `Deploy EdgeEver online:
 1. Fork https://github.com/tianma-if/edgeever.
 2. Import the Fork into Cloudflare Workers & Pages.
-3. Configure D1, R2, \`EDGE_EVER_AUTH_USERNAME\` (prefilled as \`admin\`, customizable),
-   the \`EDGE_EVER_AUTH_PASSWORD\` Worker Secret, and the production \`main\` build.
+3. Create D1 \`edgeever\` and R2 \`edgeever-resources\`, set the
+   \`EDGE_EVER_AUTH_PASSWORD\` Worker Secret, and configure the production \`main\` build.
 4. Start the first build and verify \`/api/health\`, \`/api/openapi.json\`, and login.
 5. Enable and manually run the GitHub Actions workflow named \`Update deployed EdgeEver\`
    once so the Fork can automatically receive the latest EdgeEver features and fixes.`,
   "zh-CN": `请在线完成 EdgeEver 部署：
 1. Fork https://github.com/tianma-if/edgeever。
 2. 将这个 Fork 导入 Cloudflare Workers & Pages。
-3. 配置 D1、R2、\`EDGE_EVER_AUTH_USERNAME\`（预填为 \`admin\`，可自定义）、
-   \`EDGE_EVER_AUTH_PASSWORD\` Worker Secret 和生产环境 \`main\` 构建。
+3. 创建 D1 \`edgeever\` 与 R2 \`edgeever-resources\`，设置
+   \`EDGE_EVER_AUTH_PASSWORD\` Worker Secret，并配置生产环境 \`main\` 构建。
 4. 启动首次构建，验证 \`/api/health\`、\`/api/openapi.json\` 和登录。
 5. 启用并手动运行一次名为 \`Update deployed EdgeEver\` 的 GitHub Actions 工作流，
    以便后续自动同步更新，持续获得 EdgeEver 最新的产品特性和问题修复。`,
@@ -34,8 +34,8 @@ export const manualDeploymentCopy = {
         body: "Log into the Cloudflare Dashboard, navigate to Workers & Pages, and choose to import your Fork repository.",
       },
       {
-        title: "Bind Resources & Credentials",
-        body: "Bind the D1 database (DB), R2 bucket (RESOURCES), set EDGE_EVER_AUTH_USERNAME (default admin, customizable), and set the Worker Secret EDGE_EVER_AUTH_PASSWORD as your admin password.",
+        title: "Create Resources & Credentials",
+        body: "Create D1 edgeever and R2 edgeever-resources, then set the Worker Secret EDGE_EVER_AUTH_PASSWORD as your admin password. The deploy command creates the bindings; do not edit Fork files.",
       },
       {
         title: "Build & Verify",
@@ -59,8 +59,8 @@ export const manualDeploymentCopy = {
         body: "登录 Cloudflare 控制台，进入 Workers & Pages，选择导入该 Fork 仓库。",
       },
       {
-        title: "绑定资源与登录凭据",
-        body: "绑定 D1 数据库（DB）、R2 存储桶（RESOURCES），设置 EDGE_EVER_AUTH_USERNAME（默认为 admin，可自定义），并添加 Worker Secret EDGE_EVER_AUTH_PASSWORD 作为管理员登录密码。",
+        title: "创建资源与登录凭据",
+        body: "创建 D1 edgeever 与 R2 edgeever-resources，并添加 Worker Secret EDGE_EVER_AUTH_PASSWORD 作为管理员登录密码。binding 由部署命令生成，不要修改 Fork 中的文件。",
       },
       {
         title: "启动构建与验证",

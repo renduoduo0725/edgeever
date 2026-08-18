@@ -20,6 +20,8 @@ interface EdgeEverDesktopBridge {
   setSessionToken(value: string): Promise<{ stored: boolean }>;
   clearSessionToken(): Promise<{ stored: false }>;
   clearLocalData(): Promise<{ scheduled: true }>;
+  recordRendererError(details: DesktopRendererErrorDetails): Promise<{ recorded: true }>;
+  openRendererIssue(details: DesktopRendererErrorDetails): Promise<{ opened: true }>;
   sidecarStatus(): Promise<{ available: boolean; path: string; scope: string }>;
   setAccountScope(accountId: string | null): Promise<{ ready: true; scope: string }>;
   updateStatus(): Promise<{ state: "idle" | "available" | "downloaded" }>;
@@ -33,6 +35,15 @@ interface EdgeEverDesktopBridge {
   removeStagedResource(id: string): Promise<void>;
   onCommand(callback: (command: string) => void): () => void;
   onImportMarkdown(callback: (payload: { name: string; content: string }) => void): () => void;
+}
+
+interface DesktopRendererErrorDetails {
+  kind: string;
+  message?: string;
+  stack?: string;
+  componentStack?: string;
+  reason?: string;
+  exitCode?: number;
 }
 
 interface Window {

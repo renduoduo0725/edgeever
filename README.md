@@ -71,8 +71,8 @@ Copy the prompt below directly into an AI Agent (such as Codex, Claude, Cursor, 
 Deploy EdgeEver online:
 1. Fork https://github.com/tianma-if/edgeever.
 2. Import the Fork into Cloudflare Workers & Pages.
-3. Configure D1, R2, `EDGE_EVER_AUTH_USERNAME` (prefilled as `admin`, customizable),
-   the `EDGE_EVER_AUTH_PASSWORD` Worker Secret, and the production `main` build.
+3. Create D1 `edgeever` and R2 `edgeever-resources`, set the
+   `EDGE_EVER_AUTH_PASSWORD` Worker Secret, and configure the production `main` build.
 4. Start the first build and verify `/api/health`, `/api/openapi.json`, and login.
 5. Enable and manually run the GitHub Actions workflow named `Update deployed EdgeEver`
    once so the Fork can automatically receive the latest EdgeEver features and fixes.
@@ -87,7 +87,7 @@ Complete setup in 5 simple web steps:
 1. **Fork the Repository**: Click **Fork** at the top right of GitHub to fork EdgeEver into your personal account.
 2. **Enable Actions**: Open the Fork's **Actions** tab and click **I understand my workflows, go ahead and enable them** so the GitHub Actions workflow named **Update deployed EdgeEver** can run automatically, keeping you up to date with the latest **EdgeEver** features and fixes.
 3. **Import into Cloudflare**: Log into the Cloudflare Dashboard, navigate to **Workers & Pages**, and choose to import your Fork repository.
-4. **Bind Resources & Credentials**: Bind the D1 database (`DB`), R2 bucket (`RESOURCES`), set `EDGE_EVER_AUTH_USERNAME` (default `admin`, customizable), and set the Worker Secret `EDGE_EVER_AUTH_PASSWORD` as your admin password.
+4. **Create Resources & Credentials**: Create D1 `edgeever` and R2 `edgeever-resources`, then set the Worker Secret `EDGE_EVER_AUTH_PASSWORD` as your admin password. The deploy command creates the bindings; do not edit Fork files.
 5. **Build & Verify**: Start the first build with default settings. Once complete, visit `/api/health` to verify a `200` response before logging in.
 
 > 📖 For full step-by-step instructions and configuration details, see the [Online Deployment Guide](docs/deploy-cloudflare-button.md).
