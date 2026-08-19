@@ -10,7 +10,8 @@ export type Pane = "notebooks" | "memos" | "editor";
 export type MemoView = "notebook" | "trash";
 export type MemoFilterMode = "all" | "tagged" | "untagged" | "pinned";
 export type MemoSortMode = "updated-desc" | "created-desc" | "title-asc";
-export type NotebookSortMode = "name-asc" | "memo-count-desc" | "updated-desc";
+export type NotebookSortMode = "custom" | "name-asc" | "memo-count-desc" | "updated-desc";
+export type EditorContentAlignment = "start" | "center";
 export type MemoListDensity = "preview" | "compact";
 export type ShortcutAction = "createMemo" | "createNotebook" | "focusSearch" | "focusReplace";
 export type ShortcutBinding = {
@@ -109,6 +110,7 @@ export const IMAGE_COMPRESSION_STORAGE_KEY = "edgeever.imageCompressionEnabled";
 export const SYNC_INTERVAL_STORAGE_KEY = "edgeever.syncInterval";
 const LEGACY_AUTO_SAVE_INTERVAL_STORAGE_KEY = "edgeever.autoSaveInterval";
 export const DESKTOP_FOCUS_MODE_STORAGE_KEY = "edgeever.desktopFocusMode";
+export const EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY = "edgeever.editorContentAlignment";
 export const MEMO_LIST_DENSITY_STORAGE_KEY = "edgeever.memoListDensity";
 export const MEMO_LIST_WIDTH_STORAGE_KEY = "edgeever.memoListWidth";
 export const NOTEBOOK_SORT_STORAGE_KEY = "edgeever.notebookSort";
@@ -139,9 +141,10 @@ export const getMemoSortOptions = (t: TFunction): Array<{ value: MemoSortMode; l
   { value: "title-asc", label: t("options.memoSort.titleAsc") },
 ];
 
-const NOTEBOOK_SORT_VALUES: NotebookSortMode[] = ["name-asc", "memo-count-desc", "updated-desc"];
+const NOTEBOOK_SORT_VALUES: NotebookSortMode[] = ["custom", "name-asc", "memo-count-desc", "updated-desc"];
 
 export const getNotebookSortOptions = (t: TFunction): Array<{ value: NotebookSortMode; label: string }> => [
+  { value: "custom", label: t("options.notebookSort.custom") },
   { value: "name-asc", label: t("options.notebookSort.nameAsc") },
   { value: "memo-count-desc", label: t("options.notebookSort.memoCountDesc") },
   { value: "updated-desc", label: t("options.notebookSort.updatedDesc") },
@@ -270,6 +273,22 @@ export const readDesktopFocusModePreference = () => {
 export const writeDesktopFocusModePreference = (enabled: boolean) => {
   try {
     window.localStorage.setItem(DESKTOP_FOCUS_MODE_STORAGE_KEY, enabled ? "true" : "false");
+  } catch {
+    // Local storage can be unavailable in private or restricted browser contexts.
+  }
+};
+
+export const readEditorContentAlignmentPreference = (): EditorContentAlignment => {
+  try {
+    return window.localStorage.getItem(EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY) === "center" ? "center" : "start";
+  } catch {
+    return "start";
+  }
+};
+
+export const writeEditorContentAlignmentPreference = (alignment: EditorContentAlignment) => {
+  try {
+    window.localStorage.setItem(EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY, alignment);
   } catch {
     // Local storage can be unavailable in private or restricted browser contexts.
   }
@@ -457,6 +476,10 @@ const compareNotebookUpdatedDesc = (first: Notebook, second: Notebook) => {
 };
 
 export const getNotebookSortComparator = (sortMode: NotebookSortMode): NotebookNodeComparator => {
+  if (sortMode === "custom") {
+    return (first, second) => first.sortOrder - second.sortOrder || compareNotebookNameAsc(first, second);
+  }
+
   if (sortMode === "memo-count-desc") {
     return (first, second) => second.memoCount - first.memoCount || compareNotebookNameAsc(first, second);
   }

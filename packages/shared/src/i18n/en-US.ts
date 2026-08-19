@@ -204,6 +204,12 @@ export const enUS = {
     mermaidThemeDescription: "Choose the visual theme for diagrams in notes.",
     editorThemeTitle: "Editor theme",
     editorThemeDescription: "Choose a writing style for the note editor. Saved in this browser.",
+    editorContentAlignmentTitle: "Note content layout",
+    editorContentAlignmentDescription: "Choose how note content is displayed across all notes on desktop. Saved in this browser.",
+    editorContentAlignments: {
+      center: "Optimize readability (centered)",
+      start: "Align left",
+    },
     editorThemes: {
       default: "System default",
       "minimal-emerald": "Minimal Emerald",
@@ -695,6 +701,7 @@ export const enUS = {
       titleAsc: "Title A-Z",
     },
     notebookSort: {
+      custom: "Custom",
       nameAsc: "Name",
       memoCountDesc: "Note count",
       updatedDesc: "Updated date",
@@ -870,6 +877,11 @@ export const enUS = {
     imageSizeLarge: "Large",
     imageSizeFull: "Full",
     resizeImage: "Drag to resize image width",
+    previewImage: "Preview image",
+    imageViewer: "Image viewer",
+    imageZoomIn: "Zoom in image",
+    imageZoomOut: "Zoom out image",
+    closeImagePreview: "Close image viewer",
     resourceActions: {
       download: "Download",
       saveAs: "Export",
@@ -1194,7 +1206,12 @@ export const enUS = {
     warning: "This action cannot be undone. Any notes or changes that have not been synced will be permanently lost.",
     confirm: "Clear local data",
     clearing: "Clearing...",
-    error: "Local data could not be cleared. Please try again.",
+    errors: {
+      unsafeDataDirectory: "EdgeEver could not verify that the local data folder is safe to remove. Your data was not changed.",
+      applicationBundleNotFound: "EdgeEver could not identify the installed app needed to restart after clearing. Reinstall EdgeEver in Applications and try again.",
+      helperStartFailed: "EdgeEver could not start the macOS data-clearing helper. Your data was not changed. Restart the app and try again.",
+      unexpected: "An unexpected error occurred before local data could be cleared. Your data was not changed. Restart the app and try again.",
+    },
   },
   loginDevices: {
     title: "Signed-in devices",

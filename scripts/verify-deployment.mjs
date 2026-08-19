@@ -223,6 +223,9 @@ const main = async () => {
 if (import.meta.main) {
   main().catch((error) => {
     console.error(`[fail] ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
+    // Cloudflare Builds captures stderr through a pipe. Let the stream flush
+    // before Bun exits so the actionable failure is not lost behind the
+    // generic parent-script exit messages.
+    process.exitCode = 1;
   });
 }

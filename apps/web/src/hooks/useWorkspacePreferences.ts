@@ -3,16 +3,19 @@ import {
   DEFAULT_MEMO_LIST_WIDTH_PX,
   clampMemoListWidth,
   readDesktopFocusModePreference,
+  readEditorContentAlignmentPreference,
   readImageCompressionPreference,
   readMemoListWidthPreference,
   readShortcutSettingsPreference,
   readSyncIntervalPreference,
   writeDesktopFocusModePreference,
+  writeEditorContentAlignmentPreference,
   writeImageCompressionPreference,
   writeMemoListWidthPreference,
   writeShortcutSettingsPreference,
   writeSyncIntervalPreference,
   type ShortcutSettings,
+  type EditorContentAlignment,
 } from "@/lib/app-helpers";
 
 export type SyncIntervalPreference = "off" | "30s" | "5m" | "15m" | "30m" | "1h" | "2h";
@@ -33,6 +36,7 @@ export const useWorkspacePreferences = () => {
   const [imageCompressionEnabled, setImageCompressionEnabled] = useState(readImageCompressionPreference);
   const [syncIntervalMs, setSyncIntervalMs] = useState(readSyncIntervalPreference);
   const [desktopFocusMode, setDesktopFocusModeState] = useState(readDesktopFocusModePreference);
+  const [editorContentAlignment, setEditorContentAlignmentState] = useState(readEditorContentAlignmentPreference);
   const [shortcutSettings, setShortcutSettings] = useState<ShortcutSettings>(readShortcutSettingsPreference);
   const [memoListWidth, setMemoListWidthState] = useState(readMemoListWidthPreference);
 
@@ -43,6 +47,11 @@ export const useWorkspacePreferences = () => {
   const setDesktopFocusMode = useCallback((enabled: boolean) => {
     setDesktopFocusModeState(enabled);
     writeDesktopFocusModePreference(enabled);
+  }, []);
+
+  const setEditorContentAlignment = useCallback((alignment: EditorContentAlignment) => {
+    setEditorContentAlignmentState(alignment);
+    writeEditorContentAlignmentPreference(alignment);
   }, []);
 
   const setMemoListWidth = useCallback((width: number) => {
@@ -57,10 +66,12 @@ export const useWorkspacePreferences = () => {
 
   return {
     desktopFocusMode,
+    editorContentAlignment,
     imageCompressionEnabled,
     memoListWidth,
     resetMemoListWidth,
     setDesktopFocusMode,
+    setEditorContentAlignment,
     setImageCompressionEnabled,
     setMemoListWidth,
     setShortcutSettings,

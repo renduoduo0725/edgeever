@@ -112,6 +112,13 @@ describe("Cloudflare deployment entrypoints", () => {
     expect(wranglerConfig).toContain('globs = ["modules/*.js"]');
   });
 
+  test("deployment verification lets piped diagnostics flush before exiting", () => {
+    const verificationScript = readRepositoryFile("scripts/verify-deployment.mjs");
+
+    expect(verificationScript).toContain("process.exitCode = 1");
+    expect(verificationScript).not.toContain("process.exit(1)");
+  });
+
   test("online deployment declares the required authentication Secret", () => {
     const example = readRepositoryFile(".dev.vars.example");
     expect(example).toMatch(/^EDGE_EVER_AUTH_PASSWORD=\s*$/m);

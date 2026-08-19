@@ -204,6 +204,12 @@ export const zhCN = {
     mermaidThemeDescription: "选择笔记中图表的视觉主题。",
     editorThemeTitle: "编辑器主题",
     editorThemeDescription: "选择正文编辑区的排版风格，偏好会保存在当前浏览器中。",
+    editorContentAlignmentTitle: "笔记正文布局",
+    editorContentAlignmentDescription: "选择桌面端所有笔记的正文显示方式，偏好会保存在当前浏览器中。",
+    editorContentAlignments: {
+      center: "优化可读性（居中）",
+      start: "靠左显示",
+    },
     editorThemes: {
       default: "系统默认",
       "minimal-emerald": "minimal品牌绿",
@@ -695,6 +701,7 @@ export const zhCN = {
       titleAsc: "标题 A-Z",
     },
     notebookSort: {
+      custom: "自定义",
       nameAsc: "名称",
       memoCountDesc: "笔记数量",
       updatedDesc: "更新日期",
@@ -870,6 +877,11 @@ export const zhCN = {
     imageSizeLarge: "较大",
     imageSizeFull: "铺满",
     resizeImage: "拖拽调整图片宽度",
+    previewImage: "预览大图",
+    imageViewer: "图片查看器",
+    imageZoomIn: "放大图片",
+    imageZoomOut: "缩小图片",
+    closeImagePreview: "关闭图片查看器",
     resourceActions: {
       download: "下载",
       saveAs: "导出",
@@ -1194,7 +1206,12 @@ export const zhCN = {
     warning: "此操作无法撤销。尚未同步的笔记和更改将永久丢失。",
     confirm: "清除本地数据",
     clearing: "正在清除...",
-    error: "无法清除本地数据，请重试。",
+    errors: {
+      unsafeDataDirectory: "无法确认本地数据目录可以安全删除，尚未更改任何数据。",
+      applicationBundleNotFound: "无法识别清除后需要重新启动的已安装应用。请将 EdgeEver 重新安装到“应用程序”后再试。",
+      helperStartFailed: "无法启动 macOS 数据清理助手，尚未更改任何数据。请重新启动应用后再试。",
+      unexpected: "清除本地数据前发生意外错误，尚未更改任何数据。请重新启动应用后再试。",
+    },
   },
   loginDevices: {
     title: "登录设备",

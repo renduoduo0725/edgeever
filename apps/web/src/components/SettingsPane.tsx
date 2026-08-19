@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import * as m from "motion/react-m";
 import { SystemInfoDialog } from "@/components/SystemInfoDialog";
 import { Button } from "@/components/ui/button";
-import type { ShortcutSettings } from "@/lib/app-helpers";
+import type { EditorContentAlignment, ShortcutSettings } from "@/lib/app-helpers";
 import { WORKSPACE_PAGE_TITLE_CLASSNAME } from "@/lib/workspace-ui";
 import { cn } from "@/lib/utils";
 import { AdvancedPlayCard } from "./settings/AdvancedPlayCard";
@@ -52,6 +52,8 @@ interface SettingsPaneProps {
   onSyncIntervalChange: (intervalMs: number | null) => void;
   shortcutSettings: ShortcutSettings;
   onShortcutSettingsChange: (settings: ShortcutSettings) => void;
+  editorContentAlignment: EditorContentAlignment;
+  onEditorContentAlignmentChange: (alignment: EditorContentAlignment) => void;
   onLogout: () => void;
   isLoggingOut: boolean;
   authRequired: boolean;
@@ -93,6 +95,8 @@ export const SettingsPane = ({
   onSyncIntervalChange,
   shortcutSettings,
   onShortcutSettingsChange,
+  editorContentAlignment,
+  onEditorContentAlignmentChange,
   onLogout,
   isLoggingOut,
   authRequired,
@@ -214,6 +218,8 @@ export const SettingsPane = ({
               onSyncIntervalChange={onSyncIntervalChange}
               shortcutSettings={shortcutSettings}
               onShortcutSettingsChange={onShortcutSettingsChange}
+              editorContentAlignment={editorContentAlignment}
+              onEditorContentAlignmentChange={onEditorContentAlignmentChange}
             />
             <FeedbackLink className="hidden lg:flex" />
           </SettingsGroup>

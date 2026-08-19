@@ -126,6 +126,7 @@ import {
   EDITOR_LOCAL_SAVE_DELAY_MS,
   getEditableMemoTitle,
   getNotebookMoveOptions,
+  type EditorContentAlignment,
   type MemoDocumentActionRequest,
 } from "@/lib/app-helpers";
 import { copyEditorToWeChat, copyMarkdownToWeChat } from "@/lib/wechat-copy";
@@ -164,9 +165,12 @@ import { getAttachmentFilenameFromLabel, getAttachmentResourceId } from "@/lib/a
 import {
   IMAGE_MENU_HIDE_EVENT,
   IMAGE_MENU_SHOW_EVENT,
+  IMAGE_PREVIEW_SHOW_EVENT,
   ResizableImage,
   type ImageMenuRequestDetail,
+  type ImagePreviewRequestDetail,
 } from "./editor/ResizableImage";
+import { ImageViewer } from "./editor/ImageViewer";
 import {
   createNoteSearchHighlightPlugin,
   formatNoteSearchMatchLabel,
@@ -601,6 +605,7 @@ type EditorPaneProps = {
   repository: EdgeEverRepository;
   desktopFocusMode: boolean;
   onToggleDesktopFocusMode: () => void;
+  editorContentAlignment: EditorContentAlignment;
   mobileDefaultEditMemoId: string | null;
   preserveUnsavedContentFromMemoId?: string | null;
   saveBlocked?: boolean;
@@ -667,6 +672,7 @@ const RichEditorPane = ({
   repository,
   desktopFocusMode,
   onToggleDesktopFocusMode,
+  editorContentAlignment,
   mobileDefaultEditMemoId,
   preserveUnsavedContentFromMemoId: _preserveUnsavedContentFromMemoId,
   saveBlocked: _saveBlocked = false,
@@ -720,6 +726,7 @@ const RichEditorPane = ({
   const [editorStateVersion, setEditorStateVersion] = useState(0);
   const [editorContentVersion, setEditorContentVersion] = useState(0);
   const [imageUploadState, setImageUploadState] = useState<"idle" | "compressing" | "uploading" | "error">("idle");
+  const [imagePreview, setImagePreview] = useState<ImagePreviewRequestDetail | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
@@ -1404,6 +1411,20 @@ const RichEditorPane = ({
       window.removeEventListener(IMAGE_MENU_HIDE_EVENT, hideImageMenu);
     };
   }, [cancelResourceMenuHide, isMobileViewport, scheduleResourceMenuHide, showResourceMenu]);
+
+  useEffect(() => {
+    const showImagePreview = (event: Event) => {
+      const detail = (event as CustomEvent<ImagePreviewRequestDetail>).detail;
+      if (!detail?.url) return;
+      setImagePreview(detail);
+    };
+    window.addEventListener(IMAGE_PREVIEW_SHOW_EVENT, showImagePreview);
+    return () => window.removeEventListener(IMAGE_PREVIEW_SHOW_EVENT, showImagePreview);
+  }, []);
+
+  useEffect(() => {
+    setImagePreview(null);
+  }, [memo?.id]);
 
   const showAttachmentMenu = useCallback((target: EventTarget | null) => {
     if (isMobileViewport) return false;
@@ -4100,7 +4121,9 @@ const RichEditorPane = ({
               : "min-h-full items-start px-6 py-6 sm:px-10",
             desktopFocusMode
               ? "mx-auto w-full max-w-[1400px] justify-center"
-              : "w-full justify-center"
+              : editorContentAlignment === "center"
+                ? "w-full justify-center"
+                : "w-full justify-start"
           )}
         >
           <div
@@ -4224,6 +4247,17 @@ const RichEditorPane = ({
           position={noteLinkHintPosition}
         />
       )}
+
+      <ImageViewer
+        alt={imagePreview?.alt ?? ""}
+        closeLabel={t("editor.closeImagePreview")}
+        open={Boolean(imagePreview)}
+        src={imagePreview?.url ?? ""}
+        viewerLabel={t("editor.imageViewer")}
+        zoomInLabel={t("editor.imageZoomIn")}
+        zoomOutLabel={t("editor.imageZoomOut")}
+        onClose={() => setImagePreview(null)}
+      />
 
       {resourceMenuTarget && (
         <ResourceActionMenu

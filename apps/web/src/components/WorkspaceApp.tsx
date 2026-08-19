@@ -761,10 +761,12 @@ export const WorkspaceApp = ({
   const [multiSelectKeyDown, setMultiSelectKeyDown] = useState(false);
   const {
     desktopFocusMode,
+    editorContentAlignment,
     imageCompressionEnabled,
     memoListWidth,
     resetMemoListWidth,
     setDesktopFocusMode,
+    setEditorContentAlignment,
     setImageCompressionEnabled,
     setMemoListWidth,
     setShortcutSettings,
@@ -2965,6 +2967,8 @@ export const WorkspaceApp = ({
                     onSyncIntervalChange={setSyncIntervalMs}
                     shortcutSettings={shortcutSettings}
                     onShortcutSettingsChange={setShortcutSettings}
+                    editorContentAlignment={editorContentAlignment}
+                    onEditorContentAlignmentChange={setEditorContentAlignment}
                     onLogout={onLogout}
                     isLoggingOut={isLoggingOut}
                     authRequired={authRequired}
@@ -3011,6 +3015,7 @@ export const WorkspaceApp = ({
                     onOpenAiPrompts={handleOpenAiPrompts}
                     desktopFocusMode={desktopFocusModeActive}
                     onToggleDesktopFocusMode={toggleDesktopFocusMode}
+                    editorContentAlignment={editorContentAlignment}
                     mobileDefaultEditMemoId={createdMemoEditId}
                     isTrashView={memoView === "trash"}
                     notebooks={notebooks}

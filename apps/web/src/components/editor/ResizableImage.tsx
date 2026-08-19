@@ -2,6 +2,7 @@ import { useCallback, useRef, useState, type MouseEvent, type PointerEvent as Re
 import { mergeAttributes } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from "@tiptap/react";
+import { Maximize2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getImageReferrerPolicy } from "@edgeever/shared";
 import {
@@ -13,6 +14,7 @@ import {
 import { getAttachmentResourceId } from "@/lib/attachment-links";
 import { createMarkdownImagePasteRule } from "@/lib/markdown-image-paste";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export type ImageMenuRequestDetail = {
   element: HTMLElement;
@@ -23,8 +25,14 @@ export type ImageMenuRequestDetail = {
   deleteNode: () => void;
 };
 
+export type ImagePreviewRequestDetail = {
+  url: string;
+  alt: string;
+};
+
 export const IMAGE_MENU_SHOW_EVENT = "edgeever:image-menu-show";
 export const IMAGE_MENU_HIDE_EVENT = "edgeever:image-menu-hide";
+export const IMAGE_PREVIEW_SHOW_EVENT = "edgeever:image-preview-show";
 
 const ResizableImageNodeView = ({
   editor,
@@ -61,6 +69,17 @@ const ResizableImageNodeView = ({
   const hideImageMenu = useCallback(() => {
     window.dispatchEvent(new CustomEvent(IMAGE_MENU_HIDE_EVENT));
   }, []);
+
+  const requestImagePreview = useCallback(() => {
+    if (!src) return;
+    hideImageMenu();
+    window.dispatchEvent(new CustomEvent<ImagePreviewRequestDetail>(IMAGE_PREVIEW_SHOW_EVENT, {
+      detail: {
+        url: src,
+        alt: title || alt,
+      },
+    }));
+  }, [alt, hideImageMenu, src, title]);
 
   const updateWidth = useCallback((nextWidth: number) => {
     updateAttributes({ width: clampImageWidth(nextWidth) });
@@ -101,6 +120,28 @@ const ResizableImageNodeView = ({
     previewFromPointer(event.clientX);
   }, [editable, nodeWidth, updateWidth]);
 
+  const previewButton = (
+    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="edgeever-image-preview-button"
+            aria-label={t("editor.previewImage")}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={(event) => {
+              event.stopPropagation();
+              requestImagePreview();
+            }}
+          >
+            <Maximize2 aria-hidden="true" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">{t("editor.previewImage")}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   return (
     <NodeViewWrapper
       ref={wrapperRef}
@@ -121,9 +162,15 @@ const ResizableImageNodeView = ({
         title={title || undefined}
         draggable={false}
         referrerPolicy={getImageReferrerPolicy(src)}
+        onDoubleClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          requestImagePreview();
+        }}
       />
       {editable && selected && (
         <div className="edgeever-image-controls" contentEditable={false}>
+          {previewButton}
           <div className="edgeever-image-presets" aria-label={t("editor.imageScale")}>
             {IMAGE_WIDTH_PRESETS.map((preset) => (
               <button
@@ -145,6 +192,11 @@ const ResizableImageNodeView = ({
             aria-label={t("editor.resizeImage")}
             onPointerDown={startResize}
           />
+        </div>
+      )}
+      {(!editable || !selected) && (
+        <div className="edgeever-image-preview-control" contentEditable={false}>
+          {previewButton}
         </div>
       )}
     </NodeViewWrapper>

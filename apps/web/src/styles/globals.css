@@ -897,6 +897,61 @@ textarea {
   line-height: 1;
 }
 
+.ProseMirror .edgeever-image-preview-control {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  z-index: 2;
+  border: 1px solid rgba(var(--brand-green-200-rgb), 0.95);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 0.3rem;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
+}
+
+.ProseMirror .edgeever-image-node:hover .edgeever-image-preview-control,
+.ProseMirror .edgeever-image-preview-control:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ProseMirror .edgeever-image-preview-button {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #475569;
+}
+
+.ProseMirror .edgeever-image-preview-button:hover,
+.ProseMirror .edgeever-image-preview-button:focus-visible {
+  background: var(--brand-green-muted);
+  color: var(--brand-green-text);
+}
+
+.ProseMirror .edgeever-image-preview-button:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: 2px;
+}
+
+.ProseMirror .edgeever-image-preview-button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (hover: none) {
+  .ProseMirror .edgeever-image-preview-control {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .ProseMirror .edgeever-image-presets {
   display: flex;
   align-items: center;

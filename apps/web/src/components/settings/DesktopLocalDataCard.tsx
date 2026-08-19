@@ -12,23 +12,34 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+const localDataResetErrorKeys: Record<DesktopLocalDataResetErrorCode, string> = {
+  "unsafe-data-directory": "localDataReset.errors.unsafeDataDirectory",
+  "application-bundle-not-found": "localDataReset.errors.applicationBundleNotFound",
+  "helper-start-failed": "localDataReset.errors.helperStartFailed",
+  unexpected: "localDataReset.errors.unexpected",
+};
+
 export const DesktopLocalDataCard = () => {
   const { t } = useTranslation();
   const bridge = window.edgeeverDesktop;
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
-  const [error, setError] = useState(false);
+  const [errorCode, setErrorCode] = useState<DesktopLocalDataResetErrorCode | null>(null);
 
   if (!bridge?.canClearLocalData) return null;
 
   const handleClear = async () => {
     setIsClearing(true);
-    setError(false);
+    setErrorCode(null);
     try {
-      await bridge.clearLocalData();
+      const result = await bridge.clearLocalData();
+      if (!result.scheduled) {
+        setIsClearing(false);
+        setErrorCode(result.errorCode);
+      }
     } catch {
       setIsClearing(false);
-      setError(true);
+      setErrorCode("unexpected");
     }
   };
 
@@ -43,10 +54,10 @@ export const DesktopLocalDataCard = () => {
           <CardDescription className="text-xs leading-5">{t("localDataReset.description")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 p-4 pt-0 sm:px-5 sm:pb-5">
-          {error ? (
+          {errorCode ? (
             <p className="flex items-center gap-1.5 text-xs text-rose-700" role="alert">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              {t("localDataReset.error")}
+              {t(localDataResetErrorKeys[errorCode])}
             </p>
           ) : null}
           <div>
@@ -55,7 +66,7 @@ export const DesktopLocalDataCard = () => {
               variant="danger"
               className="bg-rose-600 font-semibold text-white shadow-sm hover:bg-rose-700"
               onClick={() => {
-                setError(false);
+                setErrorCode(null);
                 setConfirmationOpen(true);
               }}
             >

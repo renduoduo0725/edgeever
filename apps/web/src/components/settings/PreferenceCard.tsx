@@ -1,7 +1,7 @@
-import { ChartNoAxesCombined, Image, Languages, MousePointerClick, Palette, RefreshCw, Sparkles } from "lucide-react";
+import { AlignHorizontalJustifyCenter, ChartNoAxesCombined, Image, Languages, MousePointerClick, Palette, RefreshCw, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { writeSyncIntervalPreference, type ShortcutSettings, type SyncIntervalPreference } from "@/lib/app-helpers";
+import { writeSyncIntervalPreference, type EditorContentAlignment, type ShortcutSettings, type SyncIntervalPreference } from "@/lib/app-helpers";
 import {
   EDITOR_LINK_OPEN_MODE_CHANGED_EVENT,
   getStoredEditorLinkOpenMode,
@@ -42,6 +42,8 @@ interface PreferenceCardProps {
   onSyncIntervalChange: (intervalMs: number | null) => void;
   shortcutSettings: ShortcutSettings;
   onShortcutSettingsChange: (settings: ShortcutSettings) => void;
+  editorContentAlignment: EditorContentAlignment;
+  onEditorContentAlignmentChange: (alignment: EditorContentAlignment) => void;
 }
 
 export const PreferenceCard = ({
@@ -51,6 +53,8 @@ export const PreferenceCard = ({
   onSyncIntervalChange,
   shortcutSettings,
   onShortcutSettingsChange,
+  editorContentAlignment,
+  onEditorContentAlignmentChange,
 }: PreferenceCardProps) => {
   const { t } = useTranslation();
   const {
@@ -189,6 +193,30 @@ export const PreferenceCard = ({
                     {localeLabels[locale]}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="hidden min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:flex">
+          <div className="flex min-w-0 items-start gap-3">
+            <AlignHorizontalJustifyCenter className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-slate-900">{t("settings.editorContentAlignmentTitle")}</div>
+              <div className="mt-0.5 text-xs leading-4 text-slate-500">{t("settings.editorContentAlignmentDescription")}</div>
+            </div>
+          </div>
+          <div className="w-full shrink-0 sm:w-44">
+            <Select
+              value={editorContentAlignment}
+              onValueChange={(value) => onEditorContentAlignmentChange(value as EditorContentAlignment)}
+            >
+              <SelectTrigger aria-label={t("settings.editorContentAlignmentTitle")} className="h-9 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="start">{t("settings.editorContentAlignments.start")}</SelectItem>
+                <SelectItem value="center">{t("settings.editorContentAlignments.center")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -15,7 +15,6 @@ import * as m from "motion/react-m";
 import {
   X,
   ChevronLeft,
-  ChevronRight,
   ChevronDown,
   Search,
   MoreHorizontal,
@@ -54,6 +53,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -473,7 +475,6 @@ export const MemoListPane = ({
 }) => {
   const { t } = useTranslation();
   const [memoContextMenu, setMemoContextMenu] = useState<MemoContextMenuState | null>(null);
-  const [contextMoveOpen, setContextMoveOpen] = useState(false);
   const [listDensity, setListDensity] = useState<MemoListDensity>(() => readMemoListDensityPreference());
   const [lastSelectedMemoId, setLastSelectedMemoId] = useState<string | null>(null);
   const [moveTargetNotebookId, setMoveTargetNotebookId] = useState("");
@@ -740,7 +741,6 @@ export const MemoListPane = ({
     setDesktopActionsOpen(false);
     setDesktopFilterOpen(false);
     setDesktopSortOpen(false);
-    setContextMoveOpen(false);
     setMemoContextMenu(null);
     setMobileListActionsOpen(false);
     setMobileMoveOpen(false);
@@ -786,7 +786,6 @@ export const MemoListPane = ({
     const x = Math.min(clientX, Math.max(12, window.innerWidth - menuWidth - 12));
     const y = Math.min(clientY, Math.max(12, window.innerHeight - menuHeight - 12));
 
-    setContextMoveOpen(false);
     setMemoContextMenu({ memo, x, y });
   };
 
@@ -804,7 +803,6 @@ export const MemoListPane = ({
     }
 
     event.preventDefault();
-    setContextMoveOpen(false);
     setMemoContextMenu(null);
   };
 
@@ -817,7 +815,6 @@ export const MemoListPane = ({
       handleToggleMemo(memo.id);
     }
 
-    setContextMoveOpen(false);
     setMemoContextMenu(null);
   };
 
@@ -1522,40 +1519,36 @@ export const MemoListPane = ({
                 </>
               ) : (
                 <>
-                  <DropdownMenuItem
-                    className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
-                    disabled={moveNotebookOptions.length === 0}
-                    onClick={() => setContextMoveOpen((value) => !value)}
-                  >
-                    <Folder className="h-4 w-4" />
-                    <span className="min-w-0 flex-1 truncate">{t("memoList.moveToNotebook")}</span>
-                    <ChevronRight className={cn("h-4 w-4 transition-transform duration-200", contextMoveOpen && "rotate-90")} />
-                  </DropdownMenuItem>
-                  {contextMoveOpen && (
-                    <div className="max-h-52 overflow-y-auto border-y border-slate-100 bg-slate-50/60 py-1">
-                      {moveNotebookOptions.map((option: any) => (
-                        <button
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                      disabled={moveNotebookOptions.length === 0}
+                    >
+                      <Folder className="h-4 w-4" />
+                      <span className="min-w-0 flex-1 truncate">{t("memoList.moveToNotebook")}</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="max-h-64 w-56 overflow-y-auto">
+                      {moveNotebookOptions.map((option) => (
+                        <DropdownMenuItem
                           key={option.id}
                           className={cn(
-                            "flex h-9 w-full items-center gap-2 px-3 text-left text-sm transition hover:bg-white",
+                            "flex h-9 items-center gap-2 px-3 text-sm",
                             option.id === memoContextMenu.memo.notebookId ? "font-semibold text-slate-950" : "text-slate-700"
                           )}
                           style={{ paddingLeft: `${12 + option.depth * 14}px` }}
-                          type="button"
                           disabled={option.id === memoContextMenu.memo.notebookId}
-                          onClick={() => {
+                          onSelect={() => {
                             const { memo } = memoContextMenu;
-                            setContextMoveOpen(false);
                             setMemoContextMenu(null);
                             onMoveMemo(memo.id, option.id);
                           }}
                         >
                           <NotebookIcon className="h-4 w-4 shrink-0" />
                           <span className="min-w-0 flex-1 truncate">{option.name}</span>
-                        </button>
+                        </DropdownMenuItem>
                       ))}
-                    </div>
-                  )}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
                   <DropdownMenuSeparator className="my-1 h-px bg-slate-100" />
                   <DropdownMenuItem
                     className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"

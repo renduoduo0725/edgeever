@@ -6,6 +6,7 @@ import {
   buildReleaseTitle,
   nextVersion,
   parseReleaseArgs,
+  RELEASE_WORKFLOWS,
   RELEASE_VALIDATIONS,
   resolveReleaseVersion,
   reusedAssetMatches,
@@ -13,6 +14,10 @@ import {
 } from "./release.mjs";
 
 describe("release automation", () => {
+  test("prepares and audits the official Docker image with every formal release", () => {
+    expect(RELEASE_WORKFLOWS.docker).toBe("docker-image.yml");
+  });
+
   test("runs the complete project regression suite before release", () => {
     expect(RELEASE_VALIDATIONS).toContainEqual({
       label: "Project regression tests",

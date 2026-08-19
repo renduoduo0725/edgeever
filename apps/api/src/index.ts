@@ -594,18 +594,29 @@ app.post("/api/v1/demo/reset", async (c) => {
   });
 });
 
-const worker = {
-  async fetch(request: Request, env: WorkerBindings, ctx: ExecutionContext) {
-    const runtimeEnv = {
-      ...env,
-      storage: createCloudflareStorageAdapter(env),
-    } as Bindings;
-
+/**
+ * Executes the platform-neutral EdgeEver application with an injected storage
+ * adapter. Runtime entrypoints must remain thin and call this function rather
+ * than introducing platform-specific route or service implementations.
+ */
+export const fetchEdgeEverApp = async (
+  request: Request,
+  runtimeEnv: Bindings,
+  ctx: ExecutionContext,
+) => {
     if (isLocalDemoSeedEnabled(runtimeEnv)) {
       await ensureLocalDemoSeed(runtimeEnv);
     }
 
     return app.fetch(request, runtimeEnv, ctx);
+};
+
+const worker = {
+  async fetch(request: Request, env: WorkerBindings, ctx: ExecutionContext) {
+    return fetchEdgeEverApp(request, {
+      ...env,
+      storage: createCloudflareStorageAdapter(env),
+    }, ctx);
   },
   async scheduled(controller: ScheduledController, env: WorkerBindings, ctx: ExecutionContext) {
     const runtimeEnv = {

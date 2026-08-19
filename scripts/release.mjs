@@ -21,9 +21,10 @@ const DEFAULT_REPOSITORY = "tianma-if/edgeever";
 const VERSION_BUMPS = new Set(["patch", "minor", "major"]);
 const POLL_INTERVAL_MS = 10_000;
 const RUN_DISCOVERY_TIMEOUT_MS = 60_000;
-const RELEASE_WORKFLOWS = {
+export const RELEASE_WORKFLOWS = {
   desktop: "desktop-build.yml",
   mobile: "mobile-build.yml",
+  docker: "docker-image.yml",
   demo: "deploy-demo.yml",
 };
 
@@ -947,7 +948,7 @@ const releaseMain = async (options) => {
     console.log(`[release] Draft created: ${draftUrl}`);
   }
 
-  const [desktopRunId, mobileRunId] = await Promise.all([
+  const [desktopRunId, mobileRunId, dockerRunId] = await Promise.all([
     dispatchReleaseWorkflow({
       repository: options.repository,
       workflow: RELEASE_WORKFLOWS.desktop,
@@ -957,6 +958,12 @@ const releaseMain = async (options) => {
     dispatchReleaseWorkflow({
       repository: options.repository,
       workflow: RELEASE_WORKFLOWS.mobile,
+      tag,
+      headSha: releaseSha,
+    }),
+    dispatchReleaseWorkflow({
+      repository: options.repository,
+      workflow: RELEASE_WORKFLOWS.docker,
       tag,
       headSha: releaseSha,
     }),
@@ -971,6 +978,11 @@ const releaseMain = async (options) => {
       repository: options.repository,
       runId: mobileRunId,
       label: "Draft Android assets",
+    }),
+    waitForRun({
+      repository: options.repository,
+      runId: dockerRunId,
+      label: "Draft Docker image",
     }),
   ]);
 
@@ -1010,7 +1022,7 @@ const releaseMain = async (options) => {
   ], { capture: true });
   console.log(`[release] published: ${releaseUrl}`);
 
-  const [desktopAudit, mobileAudit] = await Promise.all([
+  const [desktopAudit, mobileAudit, dockerAudit] = await Promise.all([
     findReleaseRun({
       repository: options.repository,
       workflow: RELEASE_WORKFLOWS.desktop,
@@ -1021,6 +1033,13 @@ const releaseMain = async (options) => {
     findReleaseRun({
       repository: options.repository,
       workflow: RELEASE_WORKFLOWS.mobile,
+      tag,
+      headSha: releaseSha,
+      publishedAfter: publishedAt,
+    }),
+    findReleaseRun({
+      repository: options.repository,
+      workflow: RELEASE_WORKFLOWS.docker,
       tag,
       headSha: releaseSha,
       publishedAfter: publishedAt,
@@ -1052,6 +1071,11 @@ const releaseMain = async (options) => {
         runId: mobileAudit.databaseId,
         label: "Published Android asset audit",
       }),
+      waitForRun({
+        repository: options.repository,
+        runId: dockerAudit.databaseId,
+        label: "Published Docker image audit",
+      }),
     ]);
   } catch (error) {
     run("gh", [
@@ -1072,7 +1096,7 @@ const releaseMain = async (options) => {
     "--repo",
     options.repository,
     "--body",
-    `Released in [${tag}](${releaseUrl}).\n\nRequired local validations, Draft asset preparation, and post-publication native asset audits passed.`,
+    `Released in [${tag}](${releaseUrl}).\n\nRequired local validations, Draft asset and image preparation, and post-publication audits passed.`,
   ]);
   run("gh", [
     "issue",

@@ -51,17 +51,18 @@ installed and launched after the Release.
   Release asset rather than the overall GitHub tag. This prevents a Web-only or
   API-only Release from prompting an unnecessary native update.
 - The script creates the tracking Issue and Draft Release, validates or reuses
-  native assets, publishes, closes the Issue, and installs the matching DMG.
+  native assets, prepares the multi-platform Docker image, publishes, closes
+  the Issue, and installs the matching DMG.
   Demo deployment continues independently after its Actions URL is printed.
 - Mobile store delivery is not part of this command. See
   [Mobile Store Delivery](store-delivery.md).
 
 ## Failure and Resume
 
-- Validation or Draft asset failures leave the Release unpublished.
+- Validation, Draft asset, or Docker image failures leave the Release unpublished.
 - Rerunning the same command resumes a matching Draft created by an interrupted
   run instead of creating another Issue, commit, or Release.
-- A failed post-publication native audit attempts to return the Release to
+- A failed post-publication native or Docker audit attempts to return the Release to
   Draft and leaves the Issue open.
 - If application replacement fails, the script restores the previous app from
   its macOS Trash backup when possible.

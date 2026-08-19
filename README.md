@@ -5,12 +5,12 @@
 
 [简体中文](README.zh-CN.md) | English
 
-> **EdgeEver: A serverless, 100% free, open-source, and AI-native self-hosted Evernote alternative.**
+> **EdgeEver: An open-source, AI-native, and portable self-hosted Evernote alternative.**
 
 EdgeEver is a modern, open-source notes workspace built for effortless knowledge management. It revives the beloved Evernote-style three-pane layout while offering an open data architecture and seamless AI Agent integration for complete ownership and smart productivity.
 
 > 💡 **Serverless & 100% Free Forever**
-> EdgeEver uses a pure Serverless architecture. **No server purchase or VPS rental is required**, and there is no need to configure Docker or SSL certificates. By running within Cloudflare's free quotas, personal use is **100% free with zero maintenance**.
+> EdgeEver can run within Cloudflare's free quotas with no server purchase or VPS maintenance. Users who prefer a VPS, NAS, or home server can deploy the same application with Docker.
 
 > ⭐ If EdgeEver is useful to you, consider giving it a Star. Your support helps more people discover the project.
 
@@ -35,7 +35,7 @@ The public demo resets every day at 3:00 AM (China Standard Time) and restores s
 
 ## Features
 
-- **Zero Server, Zero Ops, Truly Free**: Powered by Cloudflare Serverless. No cloud servers to rent or maintain. Free tiers easily accommodate up to 150k notes and 50k images with blazing-fast global edge delivery.
+- **Deploy Your Way**: Run the same application on Cloudflare's free serverless platform or with Docker on a VPS, NAS, or home server—without forking the product code.
 - **Open Data, No Vendor Lock-in**: Built on standard SQLite with complete REST API, MCP, and CLI access. Your knowledge is stored transparently and accessible anytime without being locked to a single app.
 - **Lossless ZIP Backup & Portability**: Export your complete library as a clean archive containing Markdown, Front Matter, nested folders, relative attachment links, and version histories for instant restoration anywhere.
 - **Native AI Agent Synergy**: Deep integration with Model Context Protocol (MCP) allows AI tools like Claude Code, Codex, and Antigravity to read, organize, and summarize your notes, or sync seamlessly with Notion and Feishu Bitable.
@@ -55,13 +55,13 @@ The public demo resets every day at 3:00 AM (China Standard Time) and restores s
 - **Batch Operations & Flexible Sorting**: Easily merge or relocate multiple notes, with drag-and-drop notebook reordering.
 - **Offline Drafts & Queueing**: Draft and edit uninterrupted while offline; changes automatically sync once reconnected.
 - **Multi-Tenant Account Isolation**: Host multiple user accounts on a single instance with strictly partitioned spaces and clean admin account management.
-- **Everywhere You Need It**: Available on the Web, [Android](https://play.google.com/store/apps/details?id=org.edgeever.mobile), and [macOS](https://github.com/tianma-if/edgeever/releases), with the iOS app under App Store review and Windows coming soon; the Web Clipper supports [Chrome](https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo), [Edge](https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo), and [Firefox](https://addons.mozilla.org/firefox/addon/edgeever-web-clipper/).
+- **Everywhere You Need It**: Available on the Web, [Android](https://play.google.com/store/apps/details?id=org.edgeever.mobile), [macOS](https://github.com/tianma-if/edgeever/releases), and [iOS](https://apps.apple.com/us/app/edgeever/id6792625631), with Windows coming soon; the Web Clipper supports [Chrome](https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo), [Edge](https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo), and [Firefox](https://addons.mozilla.org/firefox/addon/edgeever-web-clipper/).
 
 ## Deployment
 
-EdgeEver uses a pure Serverless architecture that runs entirely within Cloudflare's free tiers. **No VPS or server rental is required, and there is no need to configure Docker or SSL certificates.**
+Cloudflare is the recommended zero-server deployment. Docker is available for users who prefer a VPS, NAS, or home server; both runtimes share the same application and migrations.
 
-You can deploy online using either of the following two options:
+For Cloudflare, choose either of the following online deployment options:
 
 ### Option A: Deploy with an AI Agent (Recommended)
 
@@ -92,6 +92,16 @@ Complete setup in 5 simple web steps:
 
 > 📖 For full step-by-step instructions and configuration details, see the [Online Deployment Guide](docs/deploy-cloudflare-button.md).
 
+### Option C: Docker on a VPS or NAS
+
+```sh
+export EDGE_EVER_VERSION=vX.Y.Z
+export EDGE_EVER_AUTH_PASSWORD='replace-with-a-long-random-password'
+docker compose up -d
+```
+
+Docker persists SQLite and local attachments in one `/data` volume and also supports S3-compatible attachment storage. See the [Docker deployment guide](docs/deploy-docker.md) for HTTPS, secrets, NAS permissions, backup, and upgrade instructions.
+
 ---
 
 > 💡 **Deployment Tip (Cloudflare R2 Billing)**: Although Cloudflare R2 offers a generous [free storage allowance](https://developers.cloudflare.com/r2/pricing/#free-tier) that note-taking workloads are unlikely to ever exceed, you must first activate an R2 subscription and add a payment method. Cloudflare [officially supports](https://developers.cloudflare.com/billing/get-started/update-billing-info/#supported-payment-methods) UnionPay, Visa, Mastercard, and other cards, as well as PayPal, Apple Pay, Google Pay, and other payment methods.
@@ -106,8 +116,11 @@ The instance administrator can create, disable, or reset member accounts in **Pr
 
 The Web Clipper is officially published for Chrome, Microsoft Edge, and Firefox. Install it from the store for your browser (Microsoft Edge users can install the Chrome Web Store version directly):
 
-- [Chrome Web Store Link](https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo)
-- [Firefox Add-ons Link](https://addons.mozilla.org/firefox/addon/edgeever-web-clipper/)
+<p>
+  <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/chrome/chrome.svg" alt="Install EdgeEver Web Clipper for Google Chrome" width="36" height="36" /></a>&nbsp;&nbsp;
+  <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/edge/edge.svg" alt="Install EdgeEver Web Clipper for Microsoft Edge" width="36" height="36" /></a>&nbsp;&nbsp;
+  <a href="https://addons.mozilla.org/firefox/addon/edgeever-web-clipper/"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/firefox/firefox.svg" alt="Install EdgeEver Web Clipper for Firefox" width="36" height="36" /></a>
+</p>
 
 Developers can also use the [extension development guide](apps/extension/README.md) to build and load the extension from source.
 
@@ -115,7 +128,7 @@ Developers can also use the [extension development guide](apps/extension/README.
 
 Native clients offer a smoother, more reliable experience with deeper system integration, local storage, and offline editing. Changes sync incrementally when connectivity returns, making them ideal for frequent use and unreliable network conditions.
 
-The Android app is now available on [Google Play](https://play.google.com/store/apps/details?id=org.edgeever.mobile), with signed APKs also available from [GitHub Releases](https://github.com/tianma-if/edgeever/releases). The iOS client is a native SwiftUI app in `apps/ios` and has been submitted for App Store review.
+The Android app is now available on [Google Play](https://play.google.com/store/apps/details?id=org.edgeever.mobile), with signed APKs also available from [GitHub Releases](https://github.com/tianma-if/edgeever/releases). The iOS app is available on the [App Store](https://apps.apple.com/us/app/edgeever/id6792625631); use a non-mainland China Apple ID to download it.
 
 The macOS app is available from [GitHub Releases](https://github.com/tianma-if/edgeever/releases). The Windows version will be released once the code-signing certificate issue is resolved.
 
@@ -145,7 +158,7 @@ Welcome to the EdgeEver AI community group, home to many Vibe Coding builders an
 - iOS app: Native SwiftUI in `apps/ios` (iOS 17+), with a packaged TipTap EditorBundle, GRDB local mirror/outbox, and Android-aligned shell chrome.
 - Native desktop app: Electron + Rust sidecar combines a consistent cross-platform experience with high-performance local data services; SQLite enables offline editing, incremental sync when back online, and local backups.
 - Web clipper: Manifest V3, Mozilla Readability, and Turndown for Chrome, Microsoft Edge, and Firefox.
-- Backend: Cloudflare Workers, Hono, Zod, D1, and R2, with REST API, OpenAPI, and Remote MCP.
+- Backend: one Hono/Zod business application with REST API, OpenAPI, and Remote MCP; Cloudflare uses Workers/D1/R2, while Docker uses Bun/SQLite/local files or S3.
 
 ## Quick Start
 
@@ -169,7 +182,7 @@ packages/shared   Shared types, Zod schemas, TipTap / Markdown conversion
 crates/desktop-sidecar
                    Rust sidecar for local SQLite, offline data, backups, and resources
 scripts           Wrangler wrapper, password hash, CLI, MCP stdio bridge, Evernote ENEX import
-migrations        D1 database migrations
+migrations        Shared append-only D1/SQLite database migrations
 docs              OpenAPI schema, architecture, migration, and deployment docs
 .github/workflows CI for web, mobile, iOS, desktop packaging, deployment, and releases
 wrangler.toml     Cloudflare Workers, Assets, D1, R2 configuration
@@ -215,7 +228,7 @@ Open **Profile → AI Integrations** to add one or more OpenAI-compatible, Anthr
 
 Note AI includes six focused built-in prompts across Web, Android, and iOS: summarize, translate, polish, make concise, convert to Xiaohongshu style, and convert to X (Twitter) style. You can add custom prompts for more specialized workflows. Editors on all three platforms can also run AI directly on selected text and replace only that selection. Results stream into a reviewable draft that you can retry, refine with a follow-up instruction, append, or explicitly accept as a replacement. Translation uses a language picker whose default follows the interface language: Chinese defaults to English, while English defaults to Simplified Chinese.
 
-AI requests are sent by the EdgeEver server rather than directly by the browser or native client. Model credentials are isolated by personal workspace and encrypted before being stored. Standard deployments automatically derive an AI-specific encryption key from the existing instance authentication secret, so no additional deployment variable is required. The same AI business code runs in Cloudflare Workers and the planned Docker/Bun runtime.
+AI requests are sent by the EdgeEver server rather than directly by the browser or native client. Model credentials are isolated by personal workspace and encrypted before being stored. Standard deployments automatically derive an AI-specific encryption key from the existing instance authentication secret, so no additional deployment variable is required. The same AI business code runs in Cloudflare Workers and the Docker/Bun runtime.
 
 ## Image Compression
 
@@ -238,9 +251,9 @@ If you want to migrate notes from other platforms to EdgeEver, please refer to t
 - **Memos Migration**: Please refer to [docs/memos-migration-guide.md](docs/memos-migration-guide.md)
 - **Notion Migration**: Please refer to [docs/notion-migration-guide.md](docs/notion-migration-guide.md)
 
-## Docker Deployment Roadmap
+## Docker Deployment
 
-> 🐳 Docker-based self-hosting for VPS, NAS, and home servers is planned but is not yet a supported release. An experimental Bun runtime is already available for adapter development, with SQLite + local files or S3-compatible storage; PostgreSQL remains reserved at the contract level. See [Self-hosting and Docker architecture](docs/self-hosting-architecture.md).
+Docker runs the same frontend, API routes, services, authentication, MCP implementation, and migrations as Cloudflare. The container uses SQLite with local files or S3-compatible attachment storage and supports `amd64` and `arm64`. See [Deploy EdgeEver with Docker](docs/deploy-docker.md) and [Self-hosting and Docker architecture](docs/self-hosting-architecture.md).
 
 ## Acknowledgements
 

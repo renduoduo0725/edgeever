@@ -353,6 +353,11 @@ export const NotebookPane = ({
   const [expandSiblingsRequest, setExpandSiblingsRequest] = useState<{ parentId: string | null; token: number } | null>(null);
   const [notebookSortMode, setNotebookSortMode] = useState<NotebookSortMode>(readNotebookSortPreference);
 
+  const handleMoveNotebook = useCallback((notebookId: string, targetNotebookId: string, position: NotebookDropPosition) => {
+    setNotebookSortMode("custom");
+    onMoveNotebook(notebookId, targetNotebookId, position);
+  }, [onMoveNotebook]);
+
   const stopNotebookDragAutoScroll = useCallback(() => {
     if (notebookDragScrollFrameRef.current === null) {
       return;
@@ -550,16 +555,24 @@ export const NotebookPane = ({
               <BookPlus className="h-3.5 w-3.5" />
             </button>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70"
-                  type="button"
-                  title={t("notebookPane.sortTitle", { label: activeNotebookSortLabel })}
-                  aria-label={t("notebookPane.sortTitle", { label: activeNotebookSortLabel })}
-                >
-                  <ArrowDownWideNarrow className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
+              <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-slate-500 transition-colors duration-200 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70"
+                        type="button"
+                        aria-label={t("notebookPane.sortTitle", { label: activeNotebookSortLabel })}
+                      >
+                        <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {t("notebookPane.sortTitle", { label: activeNotebookSortLabel })}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <DropdownMenuContent align="end" className="w-36">
                 {notebookSortOptions.map((option) => (
                   <DropdownMenuCheckboxItem
@@ -589,7 +602,7 @@ export const NotebookPane = ({
                 onCreateNotebook={onCreateNotebook}
                 onRenameNotebook={onRenameNotebook}
                 onDeleteNotebook={onDeleteNotebook}
-                onMoveNotebook={onMoveNotebook}
+                onMoveNotebook={handleMoveNotebook}
                 onMoveMemos={onMoveMemos}
                 onDragScroll={handleNotebookScrollDragOver}
                 expandSiblingsRequest={expandSiblingsRequest}
