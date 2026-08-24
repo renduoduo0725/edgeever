@@ -26,6 +26,7 @@ import type {
 } from "./api-context";
 import { hashPassword, verifyPassword } from "./auth-crypto";
 import type { InstanceAuthMode } from "./auth-state";
+import { isPasswordLoginEnabled, oidcSessionHints } from "./oidc-config";
 import { isoNow } from "./entity-utils";
 import {
   apiError,
@@ -103,6 +104,7 @@ export const registerAuthRoutes = (
         authRequired: false,
         authenticated: true,
         demoMode: dependencies.isDemoEnvironment(context.env),
+        ...oidcSessionHints(context.env),
         user: {
           id: "local",
           username: "owner",
@@ -117,6 +119,7 @@ export const registerAuthRoutes = (
       authRequired: true,
       authenticated: Boolean(auth && auth.kind === "user"),
       demoMode: dependencies.isDemoEnvironment(context.env),
+      ...oidcSessionHints(context.env),
       user: auth?.kind === "user" ? {
         id: auth.actorId,
         username: auth.username,
@@ -238,6 +241,9 @@ export const registerAuthRoutes = (
   app.post("/api/v1/auth/login", zValidator("json", LoginSchema), async (context) => {
     const authMode = await dependencies.getInstanceAuthMode(context.env);
     if (authMode === "unconfigured") return authNotConfigured(context);
+    if (!isPasswordLoginEnabled(context.env)) {
+      return forbidden(context, "Password login is disabled. Sign in with the identity provider.");
+    }
 
     const input = context.req.valid("json");
     const loginAttemptKeys = await dependencies.getLoginAttemptKeys(context, input.username);
@@ -297,6 +303,7 @@ export const registerAuthRoutes = (
       authRequired: true,
       authenticated: true,
       demoMode: dependencies.isDemoEnvironment(context.env),
+      ...oidcSessionHints(context.env),
       sessionToken: session.token,
       user: {
         id: user.id,
