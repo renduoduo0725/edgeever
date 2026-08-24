@@ -492,15 +492,6 @@ export const api = {
       body: JSON.stringify({ ...payload, deviceId: getOrCreateWebDeviceId() }),
     }),
 
-  startOidcLogin: () => {
-    const apiBase = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-    const params = new URLSearchParams({
-      deviceId: getOrCreateWebDeviceId(),
-      redirect_to: `${window.location.origin}/`,
-    });
-    window.location.assign(`${apiBase}/api/v1/auth/oidc/login?${params.toString()}`);
-  },
-
   changePassword: (payload: { currentPassword: string; newPassword: string; confirmPassword: string }) =>
     request<{ ok: true }>("/api/v1/auth/change-password", {
       method: "POST",
