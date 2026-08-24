@@ -10,7 +10,10 @@ interface LoginScreenProps {
   error: { message: string; diagnosticCode: string; rayId?: string } | null;
   instanceUrl?: string;
   isSubmitting: boolean;
+  oidcEnabled?: boolean;
+  passwordLoginEnabled?: boolean;
   onSubmit: (payload: { instanceUrl?: string; username: string; password: string }) => void;
+  onOidcLogin?: () => void;
 }
 
 const DEMO_LOGIN_CREDENTIALS = {
@@ -25,11 +28,22 @@ const getDefaultLoginCredentials = () => {
   return isDemoHost ? DEMO_LOGIN_CREDENTIALS : { username: "admin", password: "" };
 };
 
-export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitting, onSubmit }: LoginScreenProps) => {
+export const LoginScreen = ({
+  error,
+  instanceUrl: initialInstanceUrl,
+  isSubmitting,
+  oidcEnabled = false,
+  passwordLoginEnabled = true,
+  onSubmit,
+  onOidcLogin,
+}: LoginScreenProps) => {
   const { t } = useTranslation();
   const [instanceUrl, setInstanceUrl] = useState(initialInstanceUrl ?? "");
   const [username, setUsername] = useState(() => getDefaultLoginCredentials().username);
   const [password, setPassword] = useState(() => getDefaultLoginCredentials().password);
+  const isDesktop = initialInstanceUrl !== undefined;
+  const showOidc = oidcEnabled && !isDesktop;
+  const showPassword = passwordLoginEnabled || isDesktop;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -79,6 +93,28 @@ export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitti
             </div>
           ) : null}
 
+          {showOidc ? (
+            <Button
+              className="w-full h-11 justify-center rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold"
+              size="md"
+              type="button"
+              variant="solid"
+              onClick={() => onOidcLogin?.()}
+            >
+              {t("login.oidcSubmit")}
+            </Button>
+          ) : null}
+
+          {oidcEnabled && isDesktop ? (
+            <p className="text-xs leading-5 text-slate-500">{t("login.oidcWebOnly")}</p>
+          ) : null}
+
+          {showOidc && showPassword ? (
+            <p className="text-center text-xs font-medium uppercase tracking-wider text-slate-400">
+              {t("login.passwordFallback")}
+            </p>
+          ) : null}
+
           {initialInstanceUrl !== undefined ? (
             <label className="block">
               <span className="mb-2 block text-sm font-semibold text-slate-700">{t("login.desktopInstanceUrl")}</span>
@@ -94,6 +130,8 @@ export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitti
             </label>
           ) : null}
 
+          {showPassword ? (
+            <>
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-slate-700">{t("login.username")}</span>
             <Input
@@ -127,6 +165,8 @@ export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitti
             <LockKeyhole className="h-4 w-4 mr-1" />
             {isSubmitting ? t("login.submitting") : t("login.submit")}
           </Button>
+            </>
+          ) : null}
         </form>
       </section>
     </main>

@@ -71,6 +71,7 @@ import {
 import { registerTagRoutes } from "./tag-routes";
 import { registerTemplateRoutes } from "./template-routes";
 import { registerAuthRoutes } from "./auth-routes";
+import { registerOidcRoutes } from "./oidc-routes";
 import { registerApiTokenRoutes } from "./api-token-routes";
 import { registerObjectStorageRoutes } from "./object-storage-routes";
 import { registerAiRoutes } from "./ai-routes";
@@ -237,6 +238,11 @@ registerAuthRoutes(app, {
   setSessionCookie: (...args) => setSessionCookie(...args),
   tooManyLoginAttempts: (...args) => tooManyLoginAttempts(...args),
   verifyLogin: (...args) => verifyLogin(...args),
+});
+registerOidcRoutes(app, {
+  createSession: (...args) => createSession(...args),
+  ensureUserWorkspace: (...args) => ensureUserWorkspace(...args),
+  setSessionCookie: (...args) => setSessionCookie(...args),
 });
 registerUserRoutes(app, {
   authenticateRequest: (...args) => authenticateRequest(...args),

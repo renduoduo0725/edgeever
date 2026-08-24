@@ -257,6 +257,15 @@ export const api = {
     return session;
   },
 
+  startOidcLogin: () => {
+    const apiBase = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+    const params = new URLSearchParams({
+      deviceId: getOrCreateWebDeviceId(),
+      redirect_to: `${window.location.origin}/`,
+    });
+    window.location.assign(`${apiBase}/api/v1/auth/oidc/login?${params.toString()}`);
+  },
+
   login: async (payload: { username: string; password: string }) => {
     const session = await client.login({ ...payload, deviceId: getOrCreateWebDeviceId() });
     desktopSessionRejected = false;

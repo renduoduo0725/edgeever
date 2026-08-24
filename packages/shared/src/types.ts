@@ -221,6 +221,8 @@ export type AuthSession = {
   authRequired: boolean;
   authenticated: boolean;
   demoMode: boolean;
+  oidcEnabled?: boolean;
+  passwordLoginEnabled?: boolean;
   user: AuthUser | null;
   sessionToken?: string;
 };
