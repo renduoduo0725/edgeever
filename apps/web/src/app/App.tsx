@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Navigate, Route, Routes, useNavigate } from "react-router";
+import { Navigate, Route, Routes, useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { PwaUpdateNotice } from "@/components/PwaUpdateNotice";
 import { PwaInstallProvider } from "@/components/PwaInstallContext";
@@ -55,9 +55,28 @@ const EvernoteMigrationRoute = () => {
   );
 };
 
+const oidcErrorMessageKey = (code: string | null) => {
+  switch (code) {
+    case "oidc_email_not_allowed":
+      return "login.oidcEmailNotAllowed";
+    case "oidc_provisioning_disabled":
+      return "login.oidcProvisioningDisabled";
+    case "oidc_invalid_state":
+      return "login.oidcInvalidState";
+    case "oidc_not_configured":
+      return "login.oidcNotConfigured";
+    case null:
+    case "":
+      return null;
+    default:
+      return "login.oidcCallbackFailed";
+  }
+};
+
 const AuthenticatedWorkspace = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
   const desktopBridge = window.edgeeverDesktop;
   const [desktopScopeReady, setDesktopScopeReady] = useState(() => !desktopBridge?.isAvailable);
   const [desktopScopeError, setDesktopScopeError] = useState<Error | null>(null);
@@ -155,6 +174,8 @@ const AuthenticatedWorkspace = () => {
   }
 
   const session = sessionQuery.data;
+  const oidcErrorCode = searchParams.get("oidc_error");
+  const oidcMessageKey = oidcErrorMessageKey(oidcErrorCode);
   const problem = loginMutation.error
     ? classifyLoginError(loginMutation.error, "login")
     : sessionQuery.error
@@ -166,7 +187,12 @@ const AuthenticatedWorkspace = () => {
         diagnosticCode: problem.diagnosticCode,
         rayId: problem.rayId,
       }
-    : null;
+    : oidcMessageKey
+      ? {
+          message: t(oidcMessageKey),
+          diagnosticCode: oidcErrorCode ?? "oidc_callback_failed",
+        }
+      : null;
 
   if (desktopBridge?.isAvailable && !desktopScopeReady) {
     if (desktopScopeError) {
@@ -191,6 +217,9 @@ const AuthenticatedWorkspace = () => {
           error={loginError}
           instanceUrl={desktopBridge?.isAvailable ? configuredDesktopApiBaseUrl : undefined}
           isSubmitting={loginMutation.isPending}
+          oidcEnabled={session?.oidcEnabled}
+          passwordLoginEnabled={session?.passwordLoginEnabled ?? true}
+          onOidcLogin={() => api.startOidcLogin()}
           onSubmit={(payload) => loginMutation.mutate(payload)}
         />
       </Suspense>

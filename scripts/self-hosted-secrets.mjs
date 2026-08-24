@@ -7,6 +7,7 @@ const FILE_SECRET_NAMES = [
   "EDGE_EVER_CREDENTIALS_ENCRYPTION_KEY",
   "EDGE_EVER_S3_ACCESS_KEY_ID",
   "EDGE_EVER_S3_SECRET_ACCESS_KEY",
+  "EDGE_EVER_OIDC_CLIENT_SECRET",
 ];
 
 export const loadSelfHostedEnvironment = async (environment = process.env) => {
