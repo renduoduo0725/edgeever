@@ -19,9 +19,9 @@ describe("native release planning", () => {
       "packages/shared/src/index.ts",
       "bun.lock",
       "scripts/build-android-local.sh",
-      "scripts/configure-android-package-permissions.mjs",
       "scripts/verify-android-apk-signature.mjs",
       ".github/workflows/mobile-build.yml",
+      ".github/workflows/android-play-signature-audit.yml",
       ".github/workflows/store-delivery.yml",
       "scripts/download-play-universal-apk.mjs",
     ];
@@ -69,11 +69,17 @@ describe("native release planning", () => {
 
   test("rebuilds desktop when its architecture packaging pipeline changes", () => {
     const changedFiles = [
+      ".cargo/config.toml",
       ".github/workflows/desktop-build.yml",
       "scripts/create-mac-update-metadata.mjs",
+      "scripts/create-windows-update-metadata.mjs",
       "scripts/prepare-desktop-icons.mjs",
       "scripts/desktop-icns.mjs",
+      "scripts/pe-imports.mjs",
       "scripts/run-desktop-builder.mjs",
+      "scripts/sign-windows-update-manifest.mjs",
+      "scripts/verify-windows-update-release.mjs",
+      "scripts/verify-packaged-desktop-startup.mjs",
     ];
     expect(planNativeRelease("desktop", changedFiles)).toEqual({
       rebuild: true,

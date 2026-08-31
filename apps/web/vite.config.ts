@@ -144,6 +144,7 @@ export default defineConfig({
     __EDGEEVER_DEPLOYMENT_TRIGGER__: JSON.stringify(deploymentTrigger),
     __EDGEEVER_DEPLOYMENT_METHOD__: JSON.stringify(deploymentMethod),
     __EDGEEVER_DEVELOPMENT_PROFILE__: JSON.stringify(process.env.EDGE_EVER_DEVELOPMENT_PROFILE ?? ""),
+    __EDGEEVER_DESKTOP_BUILD__: JSON.stringify(isDesktopBuild),
   },
   plugins: [
     developmentServiceWorkerReset,
@@ -199,6 +200,11 @@ export default defineConfig({
           "**/*mermaid.core-*.js",
           "**/vendor-mermaid-*.js",
           "**/*Diagram-*.js",
+          "**/vendor-codemirror-*.js",
+          // PDF.js is loaded only when a PDF preview or thumbnail is rendered.
+          // Keep its runtime out of the install-time app-shell precache and cache
+          // it after first use instead.
+          "**/vendor~pdf-*.js",
         ],
         navigateFallback: null,
         navigationPreload: true,
@@ -234,13 +240,24 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: ({ url }) => /\/assets\/(?:.*beautiful-mermaid|vendor-mermaid|.*mermaid\.core|.*Diagram-)/.test(url.pathname),
+            urlPattern: ({ url }) => /\/assets\/(?:.*beautiful-mermaid|vendor-mermaid|.*mermaid\.core|.*Diagram-|vendor-codemirror)/.test(url.pathname),
             handler: "CacheFirst",
             options: {
               cacheName: "edgeever-optional-diagrams",
               expiration: {
                 maxEntries: 120,
                 maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url }) => /\/assets\/(?:vendor~pdf-|pdf\.worker\.min-)/.test(url.pathname),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "edgeever-optional-pdf",
+              expiration: {
+                maxEntries: 4,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               },
             },
           },
@@ -281,7 +298,7 @@ export default defineConfig({
       ? false
       : {
           resolveDependencies: (_filename, dependencies) => dependencies.filter((dependency) =>
-            !/(?:vendor-code-highlight|vendor-(?:mermaid|D3|tiptap|prosemirror|floating)|ui-primitives)/.test(dependency),
+            !/(?:vendor-code-highlight|vendor-(?:mermaid|D3|tiptap|prosemirror|floating|codemirror|zod)|vendor-radix(?!-slot)|ui-primitives|ui-button-tooltip)/.test(dependency),
           ),
         },
     rolldownOptions: {
@@ -324,6 +341,11 @@ export default defineConfig({
               priority: 38,
             },
             {
+              name: "vendor-codemirror",
+              test: /[\\/]node_modules[\\/](?:@codemirror|@lezer|@uiw[\\/](?:react-)?codemirror|@uiw[\\/]codemirror-themes|codemirror)[\\/]/,
+              priority: 37,
+            },
+            {
               name: "vendor-tiptap-pm",
               test: /node_modules[\\/]@tiptap[\\/]pm[\\/]/,
               priority: 36,
@@ -340,7 +362,7 @@ export default defineConfig({
             },
             {
               name: "vendor-tiptap-extensions",
-              test: /node_modules[\\/]@tiptap[\\/](extension-|extensions)[\\/]/,
+              test: /node_modules[\\/](?:@tiptap[\\/](?:extension-|extensions)|tiptap-)[\\/]/,
               priority: 30,
             },
             {
@@ -362,6 +384,16 @@ export default defineConfig({
               name: "vendor-query",
               test: /node_modules[\\/]@tanstack[\\/]react-query[\\/]/,
               priority: 25,
+            },
+            {
+              name: "vendor-zod",
+              test: /node_modules[\\/]zod[\\/]/,
+              priority: 22,
+            },
+            {
+              name: "vendor-i18n",
+              test: /node_modules[\\/](i18next|react-i18next)[\\/]/,
+              priority: 21,
             },
             {
               name: "vendor-storage",

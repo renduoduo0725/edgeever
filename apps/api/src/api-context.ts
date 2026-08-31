@@ -1,11 +1,13 @@
 import type { Context } from "hono";
-import type { CloudflareStorageBindings, StorageAdapter } from "./storage-contract";
+import type { CloudflareStorageBindings } from "./cloudflare-storage-adapter";
+import type { StorageAdapter } from "./storage-contract";
 
-export type Bindings = CloudflareStorageBindings & {
+export type Bindings = {
   /** The only persistence dependency exposed to application code. */
   storage: StorageAdapter;
   EDGE_EVER_AUTH_USERNAME?: string;
   EDGE_EVER_RUNTIME?: string;
+  EDGE_EVER_CONTAINER_IMAGE?: string;
   EDGE_EVER_AUTH_PASSWORD?: string;
   EDGE_EVER_AUTH_PASSWORD_HASH?: string;
   EDGE_EVER_SESSION_TTL_DAYS?: string;
@@ -14,16 +16,6 @@ export type Bindings = CloudflareStorageBindings & {
   EDGE_EVER_AUTH_LOGIN_USERNAME_COOLDOWN_SECONDS?: string;
   EDGE_EVER_AUTH_LOGIN_IP_MAX_ATTEMPTS?: string;
   EDGE_EVER_AUTH_LOGIN_IP_COOLDOWN_SECONDS?: string;
-  EDGE_EVER_OIDC_ISSUER?: string;
-  EDGE_EVER_OIDC_CLIENT_ID?: string;
-  EDGE_EVER_OIDC_CLIENT_SECRET?: string;
-  EDGE_EVER_OIDC_REDIRECT_URI?: string;
-  EDGE_EVER_OIDC_SCOPES?: string;
-  EDGE_EVER_OIDC_USERNAME_CLAIM?: string;
-  EDGE_EVER_OIDC_AUTO_PROVISION?: string;
-  EDGE_EVER_OIDC_ALLOWED_EMAILS?: string;
-  EDGE_EVER_OIDC_ALLOWED_DOMAINS?: string;
-  EDGE_EVER_PASSWORD_LOGIN_ENABLED?: string;
   EDGE_EVER_R2_BUCKET_NAME?: string;
   EDGE_EVER_STORAGE_ENCRYPTION_KEY?: string;
   EDGE_EVER_CREDENTIALS_ENCRYPTION_KEY?: string;
@@ -32,7 +24,7 @@ export type Bindings = CloudflareStorageBindings & {
   EDGE_EVER_ALLOW_UNAUTHENTICATED?: string;
 };
 
-export type WorkerBindings = Omit<Bindings, "storage">;
+export type WorkerBindings = Omit<Bindings, "storage"> & CloudflareStorageBindings;
 
 export type AuthContext = {
   kind: "user" | "agent";

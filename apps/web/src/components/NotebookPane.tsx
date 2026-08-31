@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import * as m from "motion/react-m";
@@ -7,7 +7,6 @@ import {
   Plus,
   LayoutList,
   LayoutTemplate,
-  Sparkles,
   BookPlus,
   ArrowDownWideNarrow,
   Notebook as NotebookIcon,
@@ -24,7 +23,6 @@ import {
   Download,
   ExternalLink,
   RotateCcw,
-  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -33,7 +31,10 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NotebookTreeItem } from "./NotebookTreeItem";
@@ -50,16 +51,35 @@ import {
   writeNotebookSortPreference,
 } from "@/lib/app-helpers";
 import type { EdgeEverRepository } from "@/lib/repository";
+import type { EdgeEverPluginHost } from "@/lib/plugins/plugin-host";
 import { statusSettleMotion } from "@/lib/motion";
+import { DesktopUpdateNotice } from "./DesktopUpdateNotice";
+import { PluginToolbarMenu } from "./plugins/PluginToolbarMenu";
+
+const DesktopSyncIssuesDialog = lazy(() => import("./DesktopSyncIssuesDialog").then((module) => ({ default: module.DesktopSyncIssuesDialog })));
 
 const NOTEBOOK_DRAG_SCROLL_EDGE_PX = 56;
 const NOTEBOOK_DRAG_SCROLL_MAX_STEP_PX = 18;
 const DESKTOP_DOWNLOAD_URL = "https://github.com/tianma-if/edgeever/releases/latest";
+const ANDROID_PLAY_URL = "https://play.google.com/store/apps/details?id=org.edgeever.mobile";
+const ANDROID_APK_URL = "https://github.com/tianma-if/edgeever/releases/latest";
+const IOS_DOWNLOAD_URL = "https://apps.apple.com/us/app/edgeever/id6792625631";
 const CHROMIUM_CLIPPER_URL = "https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo";
 const FIREFOX_CLIPPER_URL = "https://addons.mozilla.org/firefox/addon/edgeever-web-clipper/";
 
-const BrowserBrandIcon = ({ path, color }: { path: string; color: string }) => (
-  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" style={{ color }}>
+const BrandIconContainer = ({ children, className }: { children: ReactNode; className?: string }) => (
+  <span
+    className={cn(
+      "flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+      className
+    )}
+  >
+    {children}
+  </span>
+);
+
+const BrandIcon = ({ path, color, className }: { path: string; color: string; className?: string }) => (
+  <svg className={cn("h-3.5 w-3.5 shrink-0", className)} viewBox="0 0 24 24" aria-hidden="true" style={{ color }}>
     <path fill="currentColor" d={path} />
   </svg>
 );
@@ -87,14 +107,14 @@ const SidebarNavButton = ({
       tone === "warning"
         ? "text-amber-700 hover:bg-amber-50/70 hover:text-amber-800"
         : active
-          ? "edgeever-workspace-selection text-slate-950"
+          ? "edgeever-workspace-selection text-slate-950 font-medium"
           : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
     )}
     type="button"
     aria-current={active ? "page" : undefined}
     onClick={onClick}
   >
-    <span className="flex h-4 w-4 shrink-0 items-center justify-center">{icon}</span>
+    <span className={cn("flex h-4 w-4 shrink-0 items-center justify-center transition-colors duration-200", active && "text-emerald-600 dark:text-emerald-400")}>{icon}</span>
     <span className="min-w-0 flex-1 truncate">{label}</span>
   </button>
 );
@@ -116,7 +136,7 @@ const SidebarShortcutButton = ({
     <button
       className={cn(
         "flex h-9 min-w-0 w-full items-center justify-center rounded-md px-0 text-xs font-medium transition-colors duration-200",
-        active ? "edgeever-workspace-selection text-slate-900" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+        active ? "edgeever-workspace-selection text-emerald-600 dark:text-emerald-400" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
       )}
       type="button"
       aria-current={active ? "page" : undefined}
@@ -205,14 +225,17 @@ const SyncStatusBar = ({
   isSyncing,
   onSyncNow,
   onDiscardConflicts,
+  notebooks,
 }: {
   summary: SyncQueueSummary;
   isOnline: boolean;
   isSyncing: boolean;
   onSyncNow: () => void;
   onDiscardConflicts: () => void;
+  notebooks: Notebook[];
 }) => {
   const { t } = useTranslation();
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const hasQueuedWork = summary.total > 0;
   const label = getSyncStatusLabel(summary, isOnline, isSyncing, t);
   const statusClassName = !isOnline
@@ -245,7 +268,13 @@ const SyncStatusBar = ({
           <CheckCircle2 className="h-4 w-4" />
         )}
       </m.span>
-      <span className="min-w-0 flex-1 truncate text-xs font-medium">{label}</span>
+      <button
+        className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+        type="button"
+        onClick={() => setDetailsOpen(true)}
+      >
+        {label}
+      </button>
       {summary.conflict > 0 && (
         <button
           className="shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold text-amber-800 transition-colors hover:bg-white/70 disabled:opacity-50"
@@ -257,16 +286,32 @@ const SyncStatusBar = ({
         </button>
       )}
       {hasQueuedWork && (
-        <button
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-white/70 disabled:opacity-50 transition-colors"
-          type="button"
-          title={t("notebookPane.syncNow")}
-          aria-label={t("notebookPane.syncNow")}
-          disabled={!isOnline || isSyncing}
-          onClick={onSyncNow}
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </button>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-white/70 disabled:opacity-50 transition-colors"
+                type="button"
+                aria-label={t("notebookPane.syncNow")}
+                disabled={!isOnline || isSyncing}
+                onClick={onSyncNow}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{t("notebookPane.syncNow")}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {detailsOpen && (
+        <Suspense fallback={null}>
+          <DesktopSyncIssuesDialog
+            open={detailsOpen}
+            onOpenChange={setDetailsOpen}
+            notebooks={notebooks}
+            onSyncNow={onSyncNow}
+          />
+        </Suspense>
       )}
     </div>
   );
@@ -287,8 +332,8 @@ export const NotebookPane = ({
   onOpenTags,
   onOpenAssets,
   onOpenTemplates,
-  onOpenAiPrompts,
-  onOpenPluginMarketplace,
+  pluginHost,
+  onOpenPluginManager,
   onOpenTrash,
   onEmptyTrash,
   onOpenSettings,
@@ -323,8 +368,8 @@ export const NotebookPane = ({
   onOpenTags: () => void;
   onOpenAssets: () => void;
   onOpenTemplates: () => void;
-  onOpenAiPrompts: () => void;
-  onOpenPluginMarketplace: () => void;
+  pluginHost: EdgeEverPluginHost;
+  onOpenPluginManager: () => void;
   onOpenTrash: () => void;
   onEmptyTrash: () => void;
   onOpenSettings: () => void;
@@ -460,12 +505,16 @@ export const NotebookPane = ({
       </header>
 
       <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-        <nav className="grid shrink-0 grid-cols-2 gap-0.5 border-b border-slate-100 px-2 py-1.5 sm:grid-cols-3 lg:grid-cols-6" aria-label={t("notebookPane.secondaryEntries")}>
+        <nav className="grid shrink-0 grid-cols-2 gap-0.5 border-b border-slate-100 px-2 py-1.5 sm:grid-cols-3 lg:grid-cols-5" aria-label={t("notebookPane.secondaryEntries")}>
           <SidebarShortcutButton icon={<Tags className="h-4 w-4" />} label={t("mobileSheets.tags")} onClick={onOpenTags} />
           <SidebarShortcutButton icon={<Archive className="h-4 w-4" />} label={t("mobileSheets.assets")} onClick={onOpenAssets} />
           {showTemplateEntry && <SidebarShortcutButton icon={<LayoutTemplate className="h-4 w-4" />} label={t("nav.templates")} onClick={onOpenTemplates} />}
-          <SidebarShortcutButton icon={<Sparkles className="h-4 w-4" />} label={t("nav.prompts")} onClick={onOpenAiPrompts} />
-          <SidebarShortcutButton icon={<Store className="h-4 w-4" />} label={t("plugins.marketplace.title")} onClick={onOpenPluginMarketplace} />
+          <PluginToolbarMenu
+            host={pluginHost}
+            onManage={onOpenPluginManager}
+            align="start"
+            className="h-9 w-full rounded-md px-0 text-slate-600"
+          />
           <SidebarTrashShortcut active={view === "trash"} onOpenTrash={onOpenTrash} onEmptyTrash={onEmptyTrash} />
         </nav>
       </TooltipProvider>
@@ -478,12 +527,13 @@ export const NotebookPane = ({
             isSyncing={isSyncingQueuedChanges}
             onSyncNow={onSyncQueuedChanges}
             onDiscardConflicts={onDiscardConflicts}
+            notebooks={notebooks}
           />
         </div>
       )}
 
       <div className="hidden shrink-0 px-3 pb-4 pt-4 lg:block">
-        <div className="flex overflow-hidden rounded-full border border-slate-200 bg-white shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+        <div className="flex overflow-hidden rounded-full border border-slate-200/90 bg-white shadow-[0_8px_22px_rgba(15,23,42,0.06)] transition-all duration-200 hover:border-emerald-200/80 hover:shadow-[0_8px_24px_rgba(22,160,110,0.12)]">
           <button
             className="group flex h-14 min-w-0 flex-1 items-center gap-3 px-3 text-left transition-all duration-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             type="button"
@@ -616,77 +666,196 @@ export const NotebookPane = ({
 
       <footer className="edgeever-workspace-sidebar-footer border-t border-slate-200 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-sm">
         <div className="space-y-1">
-          {!window.edgeeverDesktop?.isAvailable && (
-            <a
-              href={DESKTOP_DOWNLOAD_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="flex min-h-11 w-full items-start gap-3 rounded-md px-3 py-2 text-left text-emerald-700 transition-colors duration-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70"
-              title={t("pwa.sidebarInstallTitle") || "下载 EdgeEver 桌面客户端"}
-              aria-label={t("pwa.sidebarInstallTitle") || "下载 EdgeEver 桌面客户端"}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex h-8 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-medium leading-none text-slate-700 transition-colors duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 data-[state=open]:bg-slate-100 data-[state=open]:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:data-[state=open]:bg-slate-800"
+                type="button"
+                aria-label={t("pwa.sidebarDownloadsTitle") || "下载 EdgeEver 客户端与浏览器插件"}
+              >
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center text-emerald-600 dark:text-emerald-400">
+                  <Download className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1 truncate">{t("pwa.sidebarDownloads") || "下载客户端"}</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="top"
+              align="start"
+              sideOffset={6}
+              className="w-64 rounded-lg border border-slate-200 bg-white p-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900"
             >
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center mt-0.5">
-                <Download className="h-4 w-4 text-emerald-600" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold leading-4">
-                  {t("pwa.sidebarInstall") || "下载桌面客户端"}
-                </span>
-                <span className="mt-1 block whitespace-nowrap text-[11px] font-normal leading-4 text-slate-500">
-                  {t("pwa.sidebarInstallAvailability") ||
-                    "Mac/iOS/安卓可用 · Windows 敬请期待"}
-                </span>
-              </span>
-            </a>
-          )}
-          {demoMode && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex h-8 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-medium leading-none text-slate-500 transition-colors duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70"
-                  type="button"
-                  title={t("pwa.sidebarClipperTitle") || "安装 EdgeEver 浏览器剪藏插件"}
-                  aria-label={t("pwa.sidebarClipperTitle") || "安装 EdgeEver 浏览器剪藏插件"}
-                >
-                  <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                    <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">{t("pwa.sidebarClipper") || "安装浏览器剪藏插件"}</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="top" className="w-52">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  {t("pwa.sidebarGroupApps") || "客户端应用"}
+                </DropdownMenuLabel>
                 <DropdownMenuItem asChild>
-                  <a className="gap-2" href={CHROMIUM_CLIPPER_URL} target="_blank" rel="noreferrer">
-                    <span className="flex w-9 items-center gap-1">
-                      <BrowserBrandIcon path={CHROME_ICON_PATH} color="#4285F4" />
-                      <BrowserBrandIcon path={EDGE_ICON_PATH} color="#0C59A4" />
-                    </span>
-                    <span>Chrome / Edge</span>
+                  <a
+                    href={DESKTOP_DOWNLOAD_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <BrandIconContainer>
+                        <img src="/icons/platforms/macos.svg" alt="" className="h-3.5 w-3.5 shrink-0" />
+                      </BrandIconContainer>
+                      <span className="truncate font-medium">{t("pwa.sidebarMac") || "macOS"}</span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                      <span className="text-[11px]">DMG</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a className="gap-2" href={FIREFOX_CLIPPER_URL} target="_blank" rel="noreferrer">
-                    <span className="flex w-9 items-center">
-                      <BrowserBrandIcon path={FIREFOX_ICON_PATH} color="#FF7139" />
-                    </span>
-                    <span>Firefox</span>
+                  <a
+                    href={DESKTOP_DOWNLOAD_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`${t("pwa.sidebarWindows")} ${t("pwa.sidebarWindowsBadge")}`}
+                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <BrandIconContainer>
+                        <img src="/icons/platforms/windows.svg" alt="" className="h-3.5 w-3.5 shrink-0" />
+                      </BrandIconContainer>
+                      <span className="truncate font-medium">{t("pwa.sidebarWindows") || "Windows"}</span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-amber-700 dark:text-amber-400">
+                      <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold dark:bg-amber-950/40">
+                        {t("pwa.sidebarWindowsBadge") || "Preview"}
+                      </span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
                   </a>
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          <button
-            onClick={onOpenSettings}
-            className="flex h-8 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-medium leading-none text-slate-700 transition-colors duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70"
-            type="button"
-            title={t("notebookPane.profile")}
-            aria-label={t("notebookPane.profile")}
-          >
-            <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-              <CircleUserRound className="h-4 w-4" />
-            </span>
-            <span className="min-w-0 flex-1 truncate">{t("notebookPane.profile")}</span>
-          </button>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={ANDROID_PLAY_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={t("pwa.sidebarAndroidTitle") || "在 Google Play 下载 EdgeEver 安卓端"}
+                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <BrandIconContainer>
+                        <img src="/icons/platforms/google-play.svg" alt="" className="h-3.5 w-3.5 shrink-0" />
+                      </BrandIconContainer>
+                      <span className="truncate font-medium">{t("pwa.sidebarAndroid") || "Android"}</span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                      <span className="text-[11px]">{t("pwa.sidebarAndroidGooglePlay") || "Google Play"}</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={ANDROID_APK_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <BrandIconContainer>
+                        <Download className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      </BrandIconContainer>
+                      <span className="truncate font-medium">{t("pwa.sidebarAndroidApk") || "APK 下载"}</span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                      <span className="text-[11px]">Releases</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={IOS_DOWNLOAD_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={t("pwa.sidebarIosTitle") || "在 App Store 下载 EdgeEver iOS 端（仅支持非大陆区 Apple ID）"}
+                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <BrandIconContainer>
+                        <img src="/icons/platforms/app-store.svg" alt="" className="h-3.5 w-3.5 shrink-0" />
+                      </BrandIconContainer>
+                      <span className="truncate font-medium">{t("pwa.sidebarIos") || "iOS"}</span>
+                      <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                        {t("pwa.sidebarIosRegionBadge") || "非大陆区"}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                      <span className="text-[11px]">{t("pwa.sidebarIosBadge") || "App Store"}</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  {t("pwa.sidebarGroupClippers") || "浏览器剪藏插件"}
+                </DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={CHROMIUM_CLIPPER_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <BrandIconContainer>
+                        <div className="flex items-center -space-x-1">
+                          <BrandIcon path={CHROME_ICON_PATH} color="#4285F4" className="h-3 w-3" />
+                          <BrandIcon path={EDGE_ICON_PATH} color="#0C59A4" className="h-3 w-3" />
+                        </div>
+                      </BrandIconContainer>
+                      <span className="truncate font-medium">{t("pwa.sidebarChromeEdge") || "Chrome / Edge"}</span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                      <span className="text-[11px]">{t("pwa.sidebarWebStoreBadge") || "扩展商店"}</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a
+                    href={FIREFOX_CLIPPER_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <BrandIconContainer>
+                        <BrandIcon path={FIREFOX_ICON_PATH} color="#FF7139" />
+                      </BrandIconContainer>
+                      <span className="truncate font-medium">{t("pwa.sidebarFirefox") || "Firefox"}</span>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">
+                      <span className="text-[11px]">{t("pwa.sidebarAddonsBadge") || "附加组件"}</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </div>
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onOpenSettings}
+              className="flex h-8 min-w-0 flex-1 items-center gap-3 rounded-md px-3 text-left text-sm font-medium leading-none text-slate-700 transition-colors duration-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70"
+              type="button"
+              aria-label={t("notebookPane.profile")}
+            >
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                <CircleUserRound className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1 truncate">{t("notebookPane.profile")}</span>
+            </button>
+            <DesktopUpdateNotice />
+          </div>
         </div>
       </footer>
     </div>

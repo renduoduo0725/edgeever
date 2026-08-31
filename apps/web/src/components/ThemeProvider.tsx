@@ -34,22 +34,44 @@ export interface MermaidThemePalette {
 }
 
 export const MERMAID_THEME_PALETTES: Record<MermaidThemeName, MermaidThemePalette> = {
-  "zinc-light": { bg: "#FFFFFF", fg: "#27272A" },
-  "zinc-dark": { bg: "#18181B", fg: "#FAFAFA" },
-  "tokyo-night": { bg: "#1a1b26", fg: "#a9b1d6", line: "#3d59a1", accent: "#7aa2f7", muted: "#565f89" },
-  "tokyo-night-storm": { bg: "#24283b", fg: "#a9b1d6", line: "#3d59a1", accent: "#7aa2f7", muted: "#565f89" },
-  "tokyo-night-light": { bg: "#d5d6db", fg: "#343b58", line: "#34548a", accent: "#34548a", muted: "#9699a3" },
-  "catppuccin-mocha": { bg: "#1e1e2e", fg: "#cdd6f4", line: "#585b70", accent: "#cba6f7", muted: "#6c7086" },
-  "catppuccin-latte": { bg: "#eff1f5", fg: "#4c4f69", line: "#9ca0b0", accent: "#8839ef", muted: "#9ca0b0" },
-  nord: { bg: "#2e3440", fg: "#d8dee9", line: "#4c566a", accent: "#88c0d0", muted: "#616e88" },
-  "nord-light": { bg: "#eceff4", fg: "#2e3440", line: "#aab1c0", accent: "#5e81ac", muted: "#7b88a1" },
-  dracula: { bg: "#282a36", fg: "#f8f8f2", line: "#6272a4", accent: "#bd93f9", muted: "#6272a4" },
+  "zinc-light": { bg: "#FFFFFF", fg: "#27272A", line: "#a1a1aa", accent: "#52525b", muted: "#71717a" },
+  "zinc-dark": { bg: "#18181B", fg: "#FAFAFA", line: "#52525b", accent: "#a1a1aa", muted: "#a1a1aa" },
+  "tokyo-night": { bg: "#1a1b26", fg: "#a9b1d6", line: "#3d59a1", accent: "#7aa2f7", muted: "#7c85ac" },
+  "tokyo-night-storm": { bg: "#24283b", fg: "#a9b1d6", line: "#3d59a1", accent: "#7aa2f7", muted: "#8991b8" },
+  "tokyo-night-light": { bg: "#d5d6db", fg: "#343b58", line: "#34548a", accent: "#34548a", muted: "#545a71" },
+  "catppuccin-mocha": { bg: "#1e1e2e", fg: "#cdd6f4", line: "#585b70", accent: "#cba6f7", muted: "#9399b2" },
+  "catppuccin-latte": { bg: "#eff1f5", fg: "#4c4f69", line: "#9ca0b0", accent: "#8839ef", muted: "#666a80" },
+  nord: { bg: "#2e3440", fg: "#d8dee9", line: "#4c566a", accent: "#88c0d0", muted: "#97a0b4" },
+  "nord-light": { bg: "#eceff4", fg: "#2e3440", line: "#aab1c0", accent: "#5e81ac", muted: "#5f6a7e" },
+  dracula: { bg: "#282a36", fg: "#f8f8f2", line: "#6272a4", accent: "#bd93f9", muted: "#8894b8" },
   "github-light": { bg: "#ffffff", fg: "#1f2328", line: "#d1d9e0", accent: "#0969da", muted: "#59636e" },
   "github-dark": { bg: "#0d1117", fg: "#e6edf3", line: "#3d444d", accent: "#4493f8", muted: "#9198a1" },
-  "solarized-light": { bg: "#fdf6e3", fg: "#657b83", line: "#93a1a1", accent: "#268bd2", muted: "#93a1a1" },
-  "solarized-dark": { bg: "#002b36", fg: "#839496", line: "#586e75", accent: "#268bd2", muted: "#586e75" },
-  "one-dark": { bg: "#282c34", fg: "#abb2bf", line: "#4b5263", accent: "#c678dd", muted: "#5c6370" },
+  "solarized-light": { bg: "#fdf6e3", fg: "#586e75", line: "#93a1a1", accent: "#268bd2", muted: "#5f747b" },
+  "solarized-dark": { bg: "#002b36", fg: "#839496", line: "#586e75", accent: "#268bd2", muted: "#93a1a1" },
+  "one-dark": { bg: "#282c34", fg: "#abb2bf", line: "#4b5263", accent: "#c678dd", muted: "#8f96a3" },
 };
+
+export const MARKDOWN_THEME_NAMES = [
+  "github-light",
+  "github-dark",
+  "one-dark",
+  "tokyo-night",
+  "tokyo-night-storm",
+  "dracula",
+  "nord",
+  "monokai",
+  "solarized-light",
+  "solarized-dark",
+  "vscode-dark",
+  "xcode-light",
+  "sublime",
+  "duotone-light",
+  "duotone-dark",
+  "gruvbox-dark",
+] as const;
+export type MarkdownThemeName = (typeof MARKDOWN_THEME_NAMES)[number];
+export const MARKDOWN_THEME_PREFERENCES = ["auto", ...MARKDOWN_THEME_NAMES] as const;
+export type MarkdownThemePreference = (typeof MARKDOWN_THEME_PREFERENCES)[number];
 
 export const EDITOR_THEME_NAMES = [
   "default",
@@ -120,6 +142,12 @@ interface MermaidThemeContextValue {
   setMermaidTheme: (theme: MermaidThemePreference) => void;
 }
 
+interface MarkdownThemeContextValue {
+  markdownTheme: MarkdownThemeName;
+  markdownThemePreference: MarkdownThemePreference;
+  setMarkdownTheme: (theme: MarkdownThemePreference) => void;
+}
+
 interface EditorThemeContextValue {
   editorTheme: EditorThemeName;
   setEditorTheme: (theme: EditorThemeName) => void;
@@ -135,13 +163,15 @@ interface ThemeProviderProps {
 
 const THEME_STORAGE_KEY = "edgeever.theme";
 const MERMAID_THEME_STORAGE_KEY = "edgeever.mermaid-theme";
+const MARKDOWN_THEME_STORAGE_KEY = "edgeever.markdown-theme";
 const EDITOR_THEME_STORAGE_KEY = "edgeever.editor-theme";
 const CUSTOM_EDITOR_THEME_STORAGE_KEY = "edgeever.custom-editor-theme";
 const CUSTOM_EDITOR_THEMES_STORAGE_KEY = "edgeever.custom-editor-themes";
-const LIGHT_THEME_COLOR = "#f8fafc";
-const DARK_THEME_COLOR = "#0f172a";
+const LIGHT_THEME_COLOR = "#f8f9fa";
+const DARK_THEME_COLOR = "#101311";
 const AppearanceThemeContext = createContext<AppearanceThemeContextValue | null>(null);
 const MermaidThemeContext = createContext<MermaidThemeContextValue | null>(null);
+const MarkdownThemeContext = createContext<MarkdownThemeContextValue | null>(null);
 const EditorThemeContext = createContext<EditorThemeContextValue | null>(null);
 
 const getSystemTheme = () =>
@@ -179,6 +209,21 @@ export const resolveMermaidTheme = (
 ): MermaidThemeName => preference === "auto"
   ? appearance === "dark" ? "zinc-dark" : "zinc-light"
   : preference;
+
+export const getStoredMarkdownTheme = (): MarkdownThemePreference => {
+  const stored = readLocalStorageItem(MARKDOWN_THEME_STORAGE_KEY);
+  return MARKDOWN_THEME_PREFERENCES.includes(stored as MarkdownThemePreference)
+    ? (stored as MarkdownThemePreference)
+    : "tokyo-night";
+};
+
+export const resolveMarkdownTheme = (
+  preference: MarkdownThemePreference,
+  appearance: ResolvedTheme,
+): MarkdownThemeName =>
+  preference === "auto"
+    ? appearance === "dark" ? "tokyo-night" : "github-light"
+    : preference;
 
 export const getStoredEditorTheme = (): string => {
   return readLocalStorageItem(EDITOR_THEME_STORAGE_KEY) || "default";
@@ -269,6 +314,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const [preference, setPreferenceState] = useState<ThemePreference>(getStoredThemePreference);
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveTheme(preference));
   const [mermaidThemePreference, setMermaidThemePreference] = useState<MermaidThemePreference>(getStoredMermaidTheme);
+  const [markdownThemePreference, setMarkdownThemePreference] = useState<MarkdownThemePreference>(getStoredMarkdownTheme);
   const [editorTheme, setEditorThemeState] = useState<string>(getStoredEditorTheme);
   const [customEditorThemes, setCustomEditorThemesState] = useState<CustomEditorTheme[]>(getStoredCustomEditorThemes);
 
@@ -326,6 +372,13 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     window.localStorage.setItem(MERMAID_THEME_STORAGE_KEY, nextTheme);
   }, []);
 
+  const markdownTheme = resolveMarkdownTheme(markdownThemePreference, resolvedTheme);
+
+  const setMarkdownTheme = useCallback((nextTheme: MarkdownThemePreference) => {
+    setMarkdownThemePreference(nextTheme);
+    window.localStorage.setItem(MARKDOWN_THEME_STORAGE_KEY, nextTheme);
+  }, []);
+
   const setEditorTheme = useCallback((nextTheme: string) => {
     setEditorThemeState(nextTheme);
     window.localStorage.setItem(EDITOR_THEME_STORAGE_KEY, nextTheme);
@@ -349,6 +402,15 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     [mermaidTheme, mermaidThemePreference, setMermaidTheme]
   );
 
+  const markdownValue = useMemo(
+    () => ({
+      markdownTheme,
+      markdownThemePreference,
+      setMarkdownTheme,
+    }),
+    [markdownTheme, markdownThemePreference, setMarkdownTheme]
+  );
+
   const editorValue = useMemo(
     () => ({
       editorTheme,
@@ -364,9 +426,11 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   return (
     <AppearanceThemeContext.Provider value={appearanceValue}>
       <MermaidThemeContext.Provider value={mermaidValue}>
-        <EditorThemeContext.Provider value={editorValue}>
-          {children}
-        </EditorThemeContext.Provider>
+        <MarkdownThemeContext.Provider value={markdownValue}>
+          <EditorThemeContext.Provider value={editorValue}>
+            {children}
+          </EditorThemeContext.Provider>
+        </MarkdownThemeContext.Provider>
       </MermaidThemeContext.Provider>
     </AppearanceThemeContext.Provider>
   );
@@ -387,6 +451,16 @@ export const useMermaidTheme = () => {
 
   if (!context) {
     throw new Error("useMermaidTheme must be used within ThemeProvider");
+  }
+
+  return context;
+};
+
+export const useMarkdownTheme = () => {
+  const context = useContext(MarkdownThemeContext);
+
+  if (!context) {
+    throw new Error("useMarkdownTheme must be used within ThemeProvider");
   }
 
   return context;

@@ -1,9 +1,11 @@
 import { expect, test } from "bun:test";
 import {
+  ANDROID_APPLICATION_ID,
   ANDROID_INSTALL_UPDATE_SOURCES,
   findNewerMobileRelease,
-  getDefaultMobileInstallUpdateUrl,
   GITHUB_LATEST_RELEASE_URL,
+  GOOGLE_PLAY_APP_URL,
+  GOOGLE_PLAY_WEB_URL,
 } from "./mobile-release";
 
 const responseWithTag = (tagName: string, androidVersion = tagName.replace(/^v/, "")) => new Response(JSON.stringify({
@@ -69,8 +71,21 @@ test("rejects invalid release responses instead of claiming the app is current",
   })))).rejects.toThrow("exactly one Android APK");
 });
 
-test("uses GitHub Releases as the only install update destination", () => {
-  expect(getDefaultMobileInstallUpdateUrl("android")).toBe(GITHUB_LATEST_RELEASE_URL);
-  expect(getDefaultMobileInstallUpdateUrl("ios")).toBe(GITHUB_LATEST_RELEASE_URL);
-  expect(ANDROID_INSTALL_UPDATE_SOURCES.map((source) => source.url)).toEqual([GITHUB_LATEST_RELEASE_URL]);
+test("offers Google Play and the latest GitHub Release as manual update destinations", () => {
+  expect(ANDROID_INSTALL_UPDATE_SOURCES).toEqual([
+    {
+      applicationId: ANDROID_APPLICATION_ID,
+      fallbackUrl: GOOGLE_PLAY_WEB_URL,
+      id: "google-play",
+      labelEn: "Update on Google Play",
+      labelZh: "在 Google Play 更新",
+      url: GOOGLE_PLAY_APP_URL,
+    },
+    {
+      id: "github",
+      labelEn: "Download from GitHub",
+      labelZh: "从 GitHub 下载",
+      url: GITHUB_LATEST_RELEASE_URL,
+    },
+  ]);
 });

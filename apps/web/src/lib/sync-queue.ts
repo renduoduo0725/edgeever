@@ -31,6 +31,7 @@ import { getMemoSaveConflictInfo, parseMemoSaveConflictDetails } from "@/lib/mem
 import { getCachedLocalResourceBytes, removeCachedLocalResourceBytes } from "@/lib/local-resource-cache";
 import { isBrowserOffline } from "@/lib/network-status";
 import { parseTagsText } from "@/lib/utils";
+import { createClientUuid } from "@/lib/client-id";
 
 export type { SyncQueueSummary, SyncRunResult } from "@edgeever/shared";
 export type SyncQueueResult = MemoDetail | Notebook | MemoTemplate | Resource | null;
@@ -66,43 +67,44 @@ export const queueLocalAction = async (scope: string, kind: LocalActionKind, ent
   });
 };
 
-export const queueMemoUpdate = async (payload: MemoUpdateSyncPayload, scope?: string) => {
+export const putMemoUpdateQueueItem = async (payload: MemoUpdateSyncPayload, scope?: string) => {
   const id = getMemoUpdateQueueId(payload.memoId);
   const now = new Date().toISOString();
-  await localDb.transaction("rw", localDb.syncQueue, async () => {
-    const existing = await localDb.syncQueue.get(id);
-    const existingPayload = existing?.kind === "memo.update"
-      ? existing.payload as MemoUpdateSyncPayload
-      : null;
-    // A previous in-flight save may already have advanced this queue row to a
-    // newer acknowledged server base. A local autosave that started just
-    // before that acknowledgement must not move the successor back again.
-    const nextPayload = existingPayload && existingPayload.expectedRevision > payload.expectedRevision
-      ? {
-          ...payload,
-          expectedRevision: existingPayload.expectedRevision,
-          expectedContentHash: existingPayload.expectedContentHash,
-        }
-      : payload;
+  const existing = await localDb.syncQueue.get(id);
+  const existingPayload = existing?.kind === "memo.update"
+    ? existing.payload as MemoUpdateSyncPayload
+    : null;
+  // A previous in-flight save may already have advanced this queue row to a
+  // newer acknowledged server base. A local autosave that started just
+  // before that acknowledgement must not move the successor back again.
+  const nextPayload = existingPayload && existingPayload.expectedRevision > payload.expectedRevision
+    ? {
+        ...payload,
+        expectedRevision: existingPayload.expectedRevision,
+        expectedContentHash: existingPayload.expectedContentHash,
+      }
+    : payload;
 
-    await localDb.syncQueue.put({
-      id,
-      kind: "memo.update",
-      scope: scope ?? existing?.scope,
-      memoId: payload.memoId,
-      status: "pending",
-      payload: nextPayload,
-      attemptCount: existing?.attemptCount ?? 0,
-      lastError: null,
-      lastErrorCode: null,
-      lastErrorDetails: null,
-      nextAttemptAt: null,
-      claimId: null,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    });
+  await localDb.syncQueue.put({
+    id,
+    kind: "memo.update",
+    scope: scope ?? existing?.scope,
+    memoId: payload.memoId,
+    status: "pending",
+    payload: nextPayload,
+    attemptCount: existing?.attemptCount ?? 0,
+    lastError: null,
+    lastErrorCode: null,
+    lastErrorDetails: null,
+    nextAttemptAt: null,
+    claimId: null,
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
   });
 };
+
+export const queueMemoUpdate = async (payload: MemoUpdateSyncPayload, scope?: string) =>
+  localDb.transaction("rw", localDb.syncQueue, () => putMemoUpdateQueueItem(payload, scope));
 
 export const queueMemoCreate = async (scope: string, payload: MemoCreateSyncPayload) => {
   const id = getMemoCreateQueueId(payload.temporaryId);
@@ -458,7 +460,7 @@ const claimQueueItem = (id: string) =>
       return null;
     }
 
-    const claimId = crypto.randomUUID();
+    const claimId = createClientUuid();
     const claimedItem: SyncQueueItem = {
       ...item,
       status: "syncing",

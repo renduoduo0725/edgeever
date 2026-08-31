@@ -16,12 +16,17 @@ Cloudflare 使用 Workers + D1 + R2。
 已安装 Docker Compose v2 的主机可直接执行：
 
 ```sh
-curl -fsSL https://edgeever-installer-1256854452.cos.ap-guangzhou.myqcloud.com/install.sh | bash -s -- --mirror tcr
+curl -fsSL https://edgeever.org/install.sh | bash
 ```
 
 脚本会创建 `~/edgeever`、生成管理员密码、拉取 `latest`、启动容器并等待健康
-检查通过。中国大陆命令从腾讯云 COS 获取脚本与 Compose 配置，并从腾讯云 TCR
-拉取镜像。再次执行同一命令即可升级，已有密码和 `/data` 卷保持不变。
+检查通过。安装脚本和 Compose 配置使用官方 GHCR 镜像。再次执行同一命令即可
+升级，已有密码和 `/data` 卷保持不变。
+
+EdgeEver 官方容器镜像托管于 GitHub Container Registry（GHCR）。部分中国大陆
+网络环境可能出现连接缓慢或超时。如果无法正常拉取，请在部署前自行配置可用的
+网络代理或可信的镜像加速服务。第三方网络及镜像服务的可用性和安全性由
+用户自行评估。
 
 默认情况下，脚本会通过当前用户的 crontab 设置每日自动更新，于服务器本地时间
 04:17 执行 `~/edgeever/update.sh`。更新程序会刷新 Compose 配置、拉取已配置的
@@ -31,11 +36,11 @@ curl -fsSL https://edgeever-installer-1256854452.cos.ap-guangzhou.myqcloud.com/i
 `EDGE_EVER_AUTO_UPDATE=false` 可关闭自动更新。如果系统没有 `crontab`，安装脚本
 会保留 `update.sh`，并提示通过 NAS 的任务计划程序执行。
 
-海外服务器可去掉 `--mirror tcr` 使用 GHCR。按需使用 `--version vX.Y.Z`、
-`--port PORT` 或 `--install-dir DIR`；执行以下命令可查看全部参数：
+按需使用 `--version vX.Y.Z`、`--port PORT` 或 `--install-dir DIR`；执行以下命令
+可查看全部参数：
 
 ```sh
-curl -fsSL https://edgeever-installer-1256854452.cos.ap-guangzhou.myqcloud.com/install.sh | bash -s -- --help
+curl -fsSL https://edgeever.org/install.sh | bash -s -- --help
 ```
 
 ## 手动使用 Compose
@@ -54,19 +59,8 @@ docker compose ps
 
 ### 镜像地址
 
-默认镜像为 `ghcr.io/tianma-if/edgeever`。中国大陆用户可以切换到腾讯云 TCR：
-
-```sh
-export EDGE_EVER_IMAGE=ccr.ccs.tencentyun.com/edgeever/edgeever
-export EDGE_EVER_VERSION=vX.Y.Z
-docker compose pull
-docker compose up -d
-```
-
-腾讯云公共镜像无需执行 `docker login`，支持 `linux/amd64` 与 `linux/arm64`。
-正式发布会向 GHCR 和 TCR 同时写入相同的版本标签与 `latest` 多平台镜像；发布
-审计会拒绝缺失、滞后或内容不一致的镜像。生产环境应通过
-`EDGE_EVER_VERSION` 固定正式版本标签。
+官方镜像为 `ghcr.io/tianma-if/edgeever`，支持 `linux/amd64` 与 `linux/arm64`。
+生产环境应通过 `EDGE_EVER_VERSION` 固定正式版本标签。
 
 Compose 会创建一个命名卷。所有需要在容器替换后保留的数据都位于 `/data`：
 
@@ -85,15 +79,15 @@ Compose 会创建一个命名卷。所有需要在容器替换后保留的数据
 
 常用环境变量：
 
-| 变量 | 默认值 | 用途 |
-| --- | --- | --- |
-| `EDGE_EVER_AUTH_USERNAME` | `admin` | 初始管理员用户名 |
-| `EDGE_EVER_AUTH_PASSWORD` | 无 | 初始密码；新数据库必须提供 |
-| `EDGE_EVER_AUTH_PASSWORD_HASH` | 无 | 可替代明文引导密码的 PBKDF2 hash |
-| `EDGE_EVER_SESSION_TTL_DAYS` | `400` | 登录会话有效期 |
-| `EDGE_EVER_IDLE_TIMEOUT_SECONDS` | `120` | Bun 流式响应空闲超时，可设为 10 到 255 秒 |
-| `EDGE_EVER_STORAGE_ENCRYPTION_KEY` | 无 | 加密保存的外部对象存储凭据 |
-| `EDGE_EVER_CREDENTIALS_ENCRYPTION_KEY` | 自动派生 | 可选的独立 AI 凭据加密密钥 |
+| 变量                                   | 默认值   | 用途                                      |
+| -------------------------------------- | -------- | ----------------------------------------- |
+| `EDGE_EVER_AUTH_USERNAME`              | `admin`  | 初始管理员用户名                          |
+| `EDGE_EVER_AUTH_PASSWORD`              | 无       | 初始密码；新数据库必须提供                |
+| `EDGE_EVER_AUTH_PASSWORD_HASH`         | 无       | 可替代明文引导密码的 PBKDF2 hash          |
+| `EDGE_EVER_SESSION_TTL_DAYS`           | `400`    | 登录会话有效期                            |
+| `EDGE_EVER_IDLE_TIMEOUT_SECONDS`       | `120`    | Bun 流式响应空闲超时，可设为 10 到 255 秒 |
+| `EDGE_EVER_STORAGE_ENCRYPTION_KEY`     | 无       | 加密保存的外部对象存储凭据                |
+| `EDGE_EVER_CREDENTIALS_ENCRYPTION_KEY` | 自动派生 | 可选的独立 AI 凭据加密密钥                |
 
 Secret 可在受支持的变量名后追加 `_FILE`，并指向 Docker secret，例如
 `EDGE_EVER_AUTH_PASSWORD_FILE=/run/secrets/auth_password`。密码/hash、存储加密

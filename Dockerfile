@@ -12,6 +12,7 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages/client/package.json packages/client/package.json
 COPY packages/plugin-api/package.json packages/plugin-api/package.json
 COPY packages/shared/package.json packages/shared/package.json
+COPY packages/wrangler/package.json packages/wrangler/package.json
 COPY patches patches
 
 FROM manifests AS dependencies
@@ -34,7 +35,9 @@ RUN bun run build:web
 
 FROM oven/bun:1.3.14-alpine AS runtime
 WORKDIR /app
+ARG EDGE_EVER_BUILD_ID=unknown
 ENV NODE_ENV=production \
+    EDGE_EVER_BUILD_ID=${EDGE_EVER_BUILD_ID} \
     EDGE_EVER_DATA_DIR=/data \
     EDGE_EVER_WEB_DIR=/app/apps/web/dist \
     PORT=8787

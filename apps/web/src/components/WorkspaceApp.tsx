@@ -61,6 +61,7 @@ import {
   MAX_MEMO_LIST_WIDTH_PX,
   DEFAULT_MEMO_LIST_WIDTH_PX,
   isTextEntryTarget,
+  getSearchShortcutScope,
   getShortcutActionForEvent,
   getNotebookDropSortOrder,
   buildNotebookTree,
@@ -74,6 +75,7 @@ import { useBrowserBackLayer } from "@/lib/app-hooks";
 import { updateMemoSummaryInLists, type MemoListQueryData } from "@/lib/memo-list-cache";
 import { shouldAcceptRemoteMemoDetail } from "@/lib/memo-detail-freshness";
 import {
+  clearLocalScope,
   createLocalDataScope,
   putLocalMemo,
   putLocalNotebook,
@@ -92,6 +94,8 @@ import { useWorkspacePreferences } from "@/hooks/useWorkspacePreferences";
 import { useWorkspaceSelection } from "@/hooks/useWorkspaceSelection";
 import { useWorkspaceQueuedSync } from "@/hooks/useWorkspaceQueuedSync";
 import { EdgeEverPluginHost } from "@/lib/plugins/plugin-host";
+import { clearRendererRecoveryRequired, isRendererRecoveryRequired } from "@/lib/renderer-recovery";
+import { EditorPaneErrorBoundary, EditorRecoveryPane } from "./EditorPaneErrorBoundary";
 
 const isDesktopViewport = () => window.matchMedia("(min-width: 1024px)").matches;
 const PULL_TO_REFRESH_TRIGGER_PX = 72;
@@ -683,6 +687,9 @@ export const WorkspaceApp = ({
   const isInitialAiPromptsRoute = route.isAiPrompts;
   const isInitialMobileEditorReturn = Boolean(route.mobileEditorReturnMemoId);
   const isTrashRoute = route.isTrash;
+  const [rendererRecoveryMode, setRendererRecoveryMode] = useState(() =>
+    Boolean(window.edgeeverDesktop?.recoveredAfterAbnormalExit) || isRendererRecoveryRequired()
+  );
   const [activePane, setActivePane] = useState<Pane>(() => ((isInitialSettingsRoute || isInitialPluginsRoute || isInitialTemplatesRoute || isInitialAiPromptsRoute) && !isInitialMobileEditorReturn ? "editor" : "memos"));
   const [memoView, setMemoView] = useState<MemoView>(() => (isTrashRoute ? "trash" : "notebook"));
   const {
@@ -737,13 +744,26 @@ export const WorkspaceApp = ({
   }, [pluginHost]);
 
   const resetDemoMutation = useMutation({
-    mutationFn: () => api.resetDemo(),
-    onSuccess: () => {
+    mutationFn: async () => {
+      await api.resetDemo();
+      await clearLocalScope(localDataScope);
+      await repository.sync();
+    },
+    onMutate: () => {
+      const previousSelectedMemoId = selectedMemoIdRef.current;
+      setSelectedMemoId(null);
+      setCreatedMemoEditId(null);
+      pendingCreatedMemoIdRef.current = null;
+      pendingQuickSwitcherMemoIdRef.current = null;
+      return { previousSelectedMemoId };
+    },
+    onSuccess: async () => {
       setDemoResetConfirmationOpen(false);
-      void Promise.all([
+      queryClient.removeQueries({ queryKey: ["memo"] });
+      await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["memos"] }),
-        queryClient.invalidateQueries({ queryKey: ["memo"] }),
         queryClient.invalidateQueries({ queryKey: ["notebooks"] }),
+        queryClient.invalidateQueries({ queryKey: ["templates"] }),
         queryClient.invalidateQueries({ queryKey: ["resources"] }),
         queryClient.invalidateQueries({ queryKey: ["tags"] }),
       ]);
@@ -752,8 +772,11 @@ export const WorkspaceApp = ({
         description: t("demo.resetSuccess"),
       });
     },
-    onError: () => {
+    onError: (_error, _variables, context) => {
       setDemoResetConfirmationOpen(false);
+      if (context?.previousSelectedMemoId) {
+        setSelectedMemoId(context.previousSelectedMemoId);
+      }
       setAppNoticeDialog({
         title: t("demo.resetFailed"),
         description: t("demo.resetFailed"),
@@ -772,9 +795,7 @@ export const WorkspaceApp = ({
     setImageCompressionEnabled,
     setMemoListWidth,
     setShortcutSettings,
-    setSyncIntervalMs,
     shortcutSettings,
-    syncIntervalMs,
   } = useWorkspacePreferences();
   const [rightView, setRightView] = useState<"editor" | "settings" | "plugins" | "assets" | "tags" | "templates" | "ai-prompts" | "evernote-migration">(() =>
     isInitialSettingsRoute
@@ -1288,12 +1309,11 @@ export const WorkspaceApp = ({
   }, [mobilePullToRefreshActive, refreshLatestMemos]);
 
   useWorkspaceSyncLifecycle({
-    pendingSyncCount: syncSummary.total,
+    failedSyncCount: syncSummary.error,
     backgroundRefreshKey: localDataScope,
     refreshWorkspace: refreshWorkspaceFromServer,
     runQueuedSync,
     setOnline: setIsOnline,
-    syncIntervalMs,
   });
 
   const selectedNotebookDescendantIds = useMemo(
@@ -1353,10 +1373,14 @@ export const WorkspaceApp = ({
   const previousMemoId = selectedMemoIndex > 0 ? memos[selectedMemoIndex - 1]?.id : null;
   const nextMemoId =
     selectedMemoIndex >= 0 && selectedMemoIndex < memos.length - 1 ? memos[selectedMemoIndex + 1]?.id : null;
-  const detailMemoId = selectedMemoId ?? memos[0]?.id ?? null;
+  const detailMemoId = rendererRecoveryMode ? null : selectedMemoId ?? memos[0]?.id ?? null;
 
   useEffect(() => {
     const selectedMemoInList = selectedMemoId ? memos.some((memo) => memo.id === selectedMemoId) : false;
+
+    if (rendererRecoveryMode) {
+      return;
+    }
 
     if (creatingMemoSelectionRef.current || pendingCreatedMemoIdRef.current) {
       return;
@@ -1384,7 +1408,13 @@ export const WorkspaceApp = ({
     if (!selectedMemoId || !selectedMemoInList) {
       setSelectedMemoId(memos[0].id);
     }
-  }, [createdMemoEditId, memos, selectedMemoId]);
+  }, [createdMemoEditId, memos, rendererRecoveryMode, selectedMemoId]);
+
+  useEffect(() => {
+    if (!rendererRecoveryMode || !selectedMemoId) return;
+    clearRendererRecoveryRequired();
+    setRendererRecoveryMode(false);
+  }, [rendererRecoveryMode, selectedMemoId]);
 
   const memoQuery = useQuery({
     queryKey: detailMemoId ? memoDetailQueryKey(detailMemoId, memoView) : ["memo", detailMemoId, memoView],
@@ -2649,7 +2679,7 @@ export const WorkspaceApp = ({
 
       if (action === "focusSearch") {
         event.preventDefault();
-        if (!selectedMemoId || !isDesktopViewport()) {
+        if (getSearchShortcutScope(selectedMemoId) === "memo-list") {
           clearMemoSelection();
           handleMobileSearch();
           return;
@@ -2888,8 +2918,8 @@ export const WorkspaceApp = ({
                   onOpenAssets={handleOpenAssets}
                   onOpenTags={handleOpenTags}
                   onOpenTemplates={handleOpenTemplates}
-                  onOpenAiPrompts={handleOpenAiPrompts}
-                  onOpenPluginMarketplace={handleOpenPluginManager}
+                  pluginHost={pluginHost}
+                  onOpenPluginManager={handleOpenPluginManager}
                   onOpenSettings={handleOpenSettings}
                   onOpenTrash={() => {
                     navigateWorkspaceTrash();
@@ -3067,8 +3097,6 @@ export const WorkspaceApp = ({
                   onOpenAiPrompts={handleOpenAiPrompts}
                     imageCompressionEnabled={imageCompressionEnabled}
                     onImageCompressionChange={setImageCompressionEnabled}
-                    syncIntervalMs={syncIntervalMs}
-                    onSyncIntervalChange={setSyncIntervalMs}
                     shortcutSettings={shortcutSettings}
                     onShortcutSettingsChange={setShortcutSettings}
                     editorContentAlignment={editorContentAlignment}
@@ -3082,8 +3110,6 @@ export const WorkspaceApp = ({
                     refreshWorkspaceAfterImport={async () => {
                       await refreshWorkspaceFromServer("manual");
                     }}
-                    pluginHost={pluginHost}
-                    onOpenPluginMarketplace={handleOpenPluginManager}
                   />
                   ) : rightView === "plugins" ? (
                     <PluginMarketplacePane host={pluginHost} onClose={handleClosePluginMarketplace} />
@@ -3110,12 +3136,21 @@ export const WorkspaceApp = ({
                     <AiPromptsPane onClose={handleCloseAiPrompts} />
                   ) : rightView === "evernote-migration" ? (
                     <EvernoteImportGuidePane onClose={() => setRightView("settings")} />
+                  ) : rendererRecoveryMode ? (
+                    <EditorRecoveryPane />
                   ) : (
-                    <EditorPane
+                    <EditorPaneErrorBoundary
+                      resetKey={selectedMemo?.id ?? selectedMemoId}
+                      onBackToList={() => {
+                        setRendererRecoveryMode(true);
+                        setSelectedMemoId(null);
+                        setActivePane("memos");
+                      }}
+                    >
+                      <EditorPane
                       memo={selectedMemo}
                       repository={repository}
                       pluginHost={pluginHost}
-                      onOpenPluginManager={handleOpenPluginManager}
                     onOpenAiPrompts={handleOpenAiPrompts}
                     desktopFocusMode={desktopFocusModeActive}
                     onToggleDesktopFocusMode={toggleDesktopFocusMode}
@@ -3206,6 +3241,7 @@ export const WorkspaceApp = ({
                     onMobileDefaultEditConsumed={handleMobileDefaultEditConsumed}
                     onSaveAsTemplate={handleSaveAsTemplate}
                     />
+                    </EditorPaneErrorBoundary>
                   )}
                 </m.div>
               </Suspense>

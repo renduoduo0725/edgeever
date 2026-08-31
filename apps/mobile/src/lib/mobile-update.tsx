@@ -1,20 +1,25 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Constants from "expo-constants";
-import { AppState, Platform, type AppStateStatus } from "react-native";
+import { AppState, Linking, Platform, type AppStateStatus } from "react-native";
 import * as Updates from "expo-updates";
 import { Alert } from "../components/LocalizedText";
+import { openGooglePlayDetails } from "../../modules/edgeever-app-store";
 import { useMobileLocale } from "./mobile-locale";
-import { downloadAndInstallAndroidApk } from "./android-apk-update";
-import { findNewerMobileRelease, type MobileRelease } from "./mobile-release";
+import {
+  ANDROID_INSTALL_UPDATE_SOURCES,
+  findNewerMobileRelease,
+  type MobileInstallUpdateSource,
+  type MobileRelease,
+} from "./mobile-release";
+import { openMobileInstallUpdateSource } from "./mobile-update-destination";
 
 const FOREGROUND_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
-type MobileUpdateStatus = "idle" | "checking" | "available" | "downloading" | "ready" | "installing";
+type MobileUpdateStatus = "idle" | "checking" | "available" | "downloading" | "ready";
 export type MobileUpdateKind = "install" | "ota";
 
 type MobileUpdateContextValue = {
   checkForUpdate: () => Promise<void>;
-  downloadProgress: number | null;
   hasUpdate: boolean;
   installedVersion: string | null;
   isSupported: boolean;
@@ -25,7 +30,6 @@ type MobileUpdateContextValue = {
 
 const MobileUpdateContext = createContext<MobileUpdateContextValue>({
   checkForUpdate: async () => undefined,
-  downloadProgress: null,
   hasUpdate: false,
   installedVersion: null,
   isSupported: false,
@@ -33,10 +37,10 @@ const MobileUpdateContext = createContext<MobileUpdateContextValue>({
   status: "idle",
   updateKind: null,
 });
+const MobileUpdateAvailableContext = createContext(false);
 
 export const MobileUpdateProvider = ({ children }: { children: ReactNode }) => {
   const { resolvedLocale } = useMobileLocale();
-  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [installRelease, setInstallRelease] = useState<MobileRelease | null>(null);
   const [status, setStatus] = useState<MobileUpdateStatus>("idle");
   const [updateKind, setUpdateKind] = useState<MobileUpdateKind | null>(null);
@@ -45,6 +49,91 @@ export const MobileUpdateProvider = ({ children }: { children: ReactNode }) => {
   const isSupported = !__DEV__ && Updates.isEnabled;
   const english = resolvedLocale === "en-US";
   const installedVersion = Updates.runtimeVersion ?? Constants.expoConfig?.version ?? null;
+
+  const showLinkError = useCallback(() => {
+    Alert.alert(
+      english ? "Could not open link" : "无法打开链接",
+      english ? "Check your browser settings and try again." : "请检查浏览器设置后重试。"
+    );
+  }, [english]);
+
+  const openManualUpdateSource = useCallback((source: MobileInstallUpdateSource) => {
+    void openMobileInstallUpdateSource(source, {
+      openGooglePlayDetails,
+      openUrl: Linking.openURL,
+    }).then((result) => {
+      if (result.status !== "google-play-unavailable") {
+        return;
+      }
+      if (result.reason === "not-installed") {
+        Alert.alert(
+          english ? "Google Play is not installed" : "未安装 Google Play",
+          english
+            ? "Google Play Store is not installed on this device, so this update channel is unavailable."
+            : "这台设备未安装 Google Play 商店，无法通过该渠道更新。"
+        );
+        return;
+      }
+      const { fallbackUrl, reason } = result;
+      const copy = reason === "disabled"
+        ? {
+          message: english
+            ? "Google Play Store is disabled. Enable it in system settings, or open the web listing instead."
+            : "Google Play 商店已被停用，请先在系统设置中启用，或改用网页版。",
+          title: english ? "Google Play is disabled" : "Google Play 已停用",
+        }
+        : {
+          message: english
+            ? "Google Play Store could not handle this update link. Try again later, or open the web listing instead."
+            : "Google Play 商店无法处理这个更新链接，请稍后重试，或改用网页版。",
+          title: english ? "Could not open Google Play" : "无法打开 Google Play",
+        };
+      Alert.alert(copy.title, copy.message, [
+        {
+          text: english ? "Cancel" : "取消",
+          style: "cancel",
+        },
+        {
+          text: english ? "Open web listing" : "打开网页版",
+          onPress: () => {
+            void Linking.openURL(fallbackUrl).catch(showLinkError);
+          },
+        },
+      ]);
+    }).catch(() => {
+      showLinkError();
+    });
+  }, [english, showLinkError]);
+
+  const openInstallUpdateOptions = useCallback((release: MobileRelease) => {
+    const googlePlay = ANDROID_INSTALL_UPDATE_SOURCES.find((source) => source.id === "google-play");
+    const github = ANDROID_INSTALL_UPDATE_SOURCES.find((source) => source.id === "github");
+    if (!googlePlay || !github) {
+      return;
+    }
+    Alert.alert(
+      english ? "Update available" : "发现新版本",
+      english
+        ? `EdgeEver ${release.version} is available. Choose where to update.`
+        : `EdgeEver ${release.version} 已发布，请选择更新渠道。`,
+      [
+        {
+          text: english ? "Later" : "稍后",
+          style: "cancel",
+        },
+        {
+          icon: "github",
+          text: english ? github.labelEn : github.labelZh,
+          onPress: () => openManualUpdateSource(github),
+        },
+        {
+          icon: "google-play",
+          text: english ? googlePlay.labelEn : googlePlay.labelZh,
+          onPress: () => openManualUpdateSource(googlePlay),
+        },
+      ]
+    );
+  }, [english, openManualUpdateSource]);
 
   const runCheck = useCallback((userInitiated: boolean) => {
     if (activeCheckRef.current) {
@@ -132,46 +221,10 @@ export const MobileUpdateProvider = ({ children }: { children: ReactNode }) => {
 
   const openUpdate = useCallback(async () => {
     if (updateKind === "install") {
-      if (Platform.OS !== "android" || !installRelease || status === "downloading" || status === "installing") {
+      if (Platform.OS !== "android" || !installRelease) {
         return;
       }
-      const sizeMb = Math.max(1, Math.ceil(installRelease.size / 1024 / 1024));
-      Alert.alert(
-        english ? "Update available" : "发现新版本",
-        english
-          ? `EdgeEver ${installRelease.version} is available. Download ${sizeMb} MB and install it now?`
-          : `EdgeEver ${installRelease.version} 已发布。是否立即下载 ${sizeMb} MB 安装包并更新？`,
-        [
-          {
-            text: english ? "Cancel" : "取消",
-            style: "cancel",
-          },
-          {
-            text: english ? "Download & install" : "下载并安装",
-            onPress: () => {
-              setDownloadProgress(0);
-              setStatus("downloading");
-              void downloadAndInstallAndroidApk(
-                installRelease,
-                ({ progress }) => setDownloadProgress(progress),
-                () => setStatus("installing")
-              ).then(() => {
-                setDownloadProgress(null);
-                setStatus("available");
-              }).catch(() => {
-                setDownloadProgress(null);
-                setStatus("available");
-                Alert.alert(
-                  english ? "Update failed" : "更新失败",
-                  english
-                    ? "Could not download or open the installer. Try again later."
-                    : "无法下载安装包或打开系统安装器，请稍后重试。"
-                );
-              });
-            },
-          },
-        ]
-      );
+      openInstallUpdateOptions(installRelease);
       return;
     }
 
@@ -224,25 +277,30 @@ export const MobileUpdateProvider = ({ children }: { children: ReactNode }) => {
           : "无法下载应用内更新，请稍后再试。"
       );
     }
-  }, [english, installRelease, isSupported, status, updateKind]);
+  }, [english, installRelease, isSupported, openInstallUpdateOptions, status, updateKind]);
 
+  const hasUpdate = status === "available" || status === "ready" || status === "downloading";
   const value = useMemo<MobileUpdateContextValue>(
     () => ({
       checkForUpdate: () => {
         return runCheck(true);
       },
-      downloadProgress,
-      hasUpdate: status === "available" || status === "ready" || status === "downloading" || status === "installing",
+      hasUpdate,
       installedVersion,
       isSupported,
       openUpdate,
       status,
       updateKind,
     }),
-    [downloadProgress, installedVersion, isSupported, openUpdate, runCheck, status, updateKind]
+    [hasUpdate, installedVersion, isSupported, openUpdate, runCheck, status, updateKind]
   );
 
-  return <MobileUpdateContext.Provider value={value}>{children}</MobileUpdateContext.Provider>;
+  return (
+    <MobileUpdateAvailableContext.Provider value={hasUpdate}>
+      <MobileUpdateContext.Provider value={value}>{children}</MobileUpdateContext.Provider>
+    </MobileUpdateAvailableContext.Provider>
+  );
 };
 
 export const useMobileUpdate = () => useContext(MobileUpdateContext);
+export const useMobileUpdateAvailable = () => useContext(MobileUpdateAvailableContext);

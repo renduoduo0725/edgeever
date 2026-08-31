@@ -38,6 +38,7 @@ const createEnvironment = () => ({
   storage: {
     db: {
       prepare: (sql) => ({
+        first: async () => null,
         bind: () => ({
           all: async () => ({ results: sql.includes("ORDER BY r.created_at") ? [resourceRow] : [] }),
           first: async () => sql.includes("COUNT(*)") ? {
@@ -54,8 +55,9 @@ const createEnvironment = () => ({
   },
 });
 
-const createApp = (auth = agentAuth) => {
+const createApp = (auth = agentAuth, getResourceRow = async () => null) => {
   const app = new Hono();
+  app.onError((error, context) => context.json({ error: { message: error.message } }, 500));
   app.use("/api/v1/*", async (context, next) => {
     context.set("auth", auth);
     await next();
@@ -65,7 +67,7 @@ const createApp = (auth = agentAuth) => {
     createAttachmentResource: async () => { throw new Error("Unexpected upload"); },
     createImageResource: async () => { throw new Error("Unexpected upload"); },
     getMemoDetail: async () => null,
-    getResourceRow: async () => null,
+    getResourceRow,
   });
   return app;
 };
@@ -104,5 +106,142 @@ describe("resource route contracts", () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toMatchObject({ error: { code: "forbidden" } });
+  });
+
+  test("serves PDF attachments with UTF-8 filenames inline using an ASCII-safe header", async () => {
+    const environment = createEnvironment();
+    environment.storage.resources = {
+      get: async () => ({
+        body: new Blob([new Uint8Array(256)]).stream(),
+        size: 256,
+        writeHttpMetadata: () => {},
+      }),
+    };
+    const response = await createApp(agentAuth, async () => ({
+      ...resourceRow,
+      filename: "季度报告.pdf",
+      storage_config_id: null,
+    })).request(
+      "/api/v1/resources/res_1/blob",
+      {},
+      environment,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("application/pdf");
+    expect(response.headers.get("Content-Disposition")).toBe(
+      "inline; filename=\"download.pdf\"; filename*=UTF-8''%E5%AD%A3%E5%BA%A6%E6%8A%A5%E5%91%8A.pdf",
+    );
+    expect(response.headers.get("Accept-Ranges")).toBe("bytes");
+  });
+
+  test("serves a validated PDF byte range without reading the whole object", async () => {
+    const environment = createEnvironment();
+    let requestedOptions;
+    environment.storage.resources = {
+      get: async (_key, options) => {
+        requestedOptions = options;
+        return {
+          body: new Blob([new TextEncoder().encode("2345")]).stream(),
+          size: 256,
+          range: { offset: 2, length: 4 },
+          writeHttpMetadata: () => {},
+        };
+      },
+    };
+    const response = await createApp(agentAuth, async () => ({ ...resourceRow, storage_config_id: null })).request(
+      "/api/v1/resources/res_1/blob",
+      { headers: { Range: "bytes=2-5" } },
+      environment,
+    );
+
+    expect(requestedOptions).toEqual({ range: { offset: 2, length: 4 } });
+    expect(response.status).toBe(206);
+    expect(response.headers.get("Content-Range")).toBe("bytes 2-5/256");
+    expect(response.headers.get("Content-Length")).toBe("4");
+    expect(await response.text()).toBe("2345");
+  });
+
+  test("rejects unsatisfiable ranges before object storage is read", async () => {
+    const environment = createEnvironment();
+    let reads = 0;
+    environment.storage.resources = { get: async () => { reads += 1; return null; } };
+    const response = await createApp(agentAuth, async () => ({ ...resourceRow, storage_config_id: null })).request(
+      "/api/v1/resources/res_1/blob",
+      { headers: { Range: "bytes=999-" } },
+      environment,
+    );
+
+    expect(response.status).toBe(416);
+    expect(response.headers.get("Content-Range")).toBe("bytes */256");
+    expect(reads).toBe(0);
+  });
+
+  test("deletes object bytes before marking the resource deleted", async () => {
+    const events = [];
+    const environment = createEnvironment();
+    environment.storage.resources = {
+      delete: async (key) => { events.push(`object:${key}`); },
+    };
+    environment.storage.db.batch = async () => { events.push("database"); return []; };
+    let includeDeleted = false;
+    const response = await createApp(
+      { ...agentAuth, scopes: ["write:resources"] },
+      async (_database, _workspaceId, _resourceId, requestedIncludeDeleted) => {
+        includeDeleted = requestedIncludeDeleted;
+        return { ...resourceRow, storage_config_id: null, is_deleted: 0 };
+      },
+    ).request(
+      "/api/v1/resources/res_1",
+      { method: "DELETE" },
+      environment,
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(includeDeleted).toBe(true);
+    expect(events).toEqual(["object:resource-key", "database"]);
+  });
+
+  test("leaves the database active when object deletion fails so the request can be retried", async () => {
+    const environment = createEnvironment();
+    let batches = 0;
+    environment.storage.resources = {
+      delete: async () => { throw new Error("storage unavailable"); },
+    };
+    environment.storage.db.batch = async () => { batches += 1; return []; };
+    const response = await createApp(
+      { ...agentAuth, scopes: ["write:resources"] },
+      async () => ({ ...resourceRow, storage_config_id: null, is_deleted: 0 }),
+    ).request(
+      "/api/v1/resources/res_1",
+      { method: "DELETE" },
+      environment,
+    );
+
+    expect(response.status).toBe(500);
+    expect(batches).toBe(0);
+  });
+
+  test("retries object cleanup for an already deleted resource without duplicating its audit event", async () => {
+    const environment = createEnvironment();
+    let deletes = 0;
+    let batches = 0;
+    environment.storage.resources = {
+      delete: async () => { deletes += 1; },
+    };
+    environment.storage.db.batch = async () => { batches += 1; return []; };
+    const response = await createApp(
+      { ...agentAuth, scopes: ["write:resources"] },
+      async () => ({ ...resourceRow, storage_config_id: null, is_deleted: 1 }),
+    ).request(
+      "/api/v1/resources/res_1",
+      { method: "DELETE" },
+      environment,
+    );
+
+    expect(response.status).toBe(200);
+    expect(deletes).toBe(1);
+    expect(batches).toBe(0);
   });
 });

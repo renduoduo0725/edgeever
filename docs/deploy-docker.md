@@ -21,17 +21,16 @@ With Docker Compose v2 already installed:
 curl -fsSL https://edgeever.org/install.sh | bash
 ```
 
-Use Tencent Cloud TCR in mainland China:
-
-```sh
-curl -fsSL https://edgeever-installer-1256854452.cos.ap-guangzhou.myqcloud.com/install.sh | bash -s -- --mirror tcr
-```
-
 The installer creates `~/edgeever`, generates an administrator password, pulls
 `latest`, starts the container, and waits for it to become healthy. Run the same
 command again to upgrade without replacing the password or `/data` volume. The
-mainland command downloads the installer and Compose configuration from Tencent
-COS and pulls the image from Tencent TCR.
+installer and Compose configuration use the official GHCR image.
+
+Some network environments in mainland China may experience slow connections or
+timeouts when accessing GHCR. If the image cannot be pulled normally, configure
+an available network proxy or a trusted registry mirror before deployment.
+Users are responsible for evaluating the availability and security of
+third-party network and registry services.
 
 By default, the installer schedules `~/edgeever/update.sh` with the current
 user's crontab at 04:17 server time every day. The updater refreshes the Compose
@@ -64,21 +63,8 @@ storage are ready.
 
 ### Image registry
 
-The default image is `ghcr.io/tianma-if/edgeever`. Users in mainland China can
-switch to Tencent Cloud TCR:
-
-```sh
-export EDGE_EVER_IMAGE=ccr.ccs.tencentyun.com/edgeever/edgeever
-export EDGE_EVER_VERSION=vX.Y.Z
-docker compose pull
-docker compose up -d
-```
-
-The public TCR image requires no `docker login` and supports `linux/amd64` and
-`linux/arm64`. Formal releases publish the same version tags and `latest`
-multi-platform image to GHCR and TCR; the release audit rejects missing, stale,
-or mismatched mirror content. Pin `EDGE_EVER_VERSION` to a release tag in
-production.
+The official image is `ghcr.io/tianma-if/edgeever` and supports `linux/amd64`
+and `linux/arm64`. Pin `EDGE_EVER_VERSION` to a release tag in production.
 
 Compose creates one named volume. Everything that must survive a container
 replacement is under `/data`:
@@ -101,15 +87,15 @@ data permissions automatically.
 
 Common environment variables:
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `EDGE_EVER_AUTH_USERNAME` | `admin` | Initial administrator username |
-| `EDGE_EVER_AUTH_PASSWORD` | none | Initial password; required for a new database |
-| `EDGE_EVER_AUTH_PASSWORD_HASH` | none | PBKDF2 hash alternative to the plaintext bootstrap password |
-| `EDGE_EVER_SESSION_TTL_DAYS` | `400` | Login session lifetime |
-| `EDGE_EVER_IDLE_TIMEOUT_SECONDS` | `120` | Bun streaming idle timeout, from 10 to 255 seconds |
-| `EDGE_EVER_STORAGE_ENCRYPTION_KEY` | none | Encrypts saved external object-storage credentials |
-| `EDGE_EVER_CREDENTIALS_ENCRYPTION_KEY` | derived | Optional independent AI credential encryption key |
+| Variable                               | Default | Purpose                                                     |
+| -------------------------------------- | ------- | ----------------------------------------------------------- |
+| `EDGE_EVER_AUTH_USERNAME`              | `admin` | Initial administrator username                              |
+| `EDGE_EVER_AUTH_PASSWORD`              | none    | Initial password; required for a new database               |
+| `EDGE_EVER_AUTH_PASSWORD_HASH`         | none    | PBKDF2 hash alternative to the plaintext bootstrap password |
+| `EDGE_EVER_SESSION_TTL_DAYS`           | `400`   | Login session lifetime                                      |
+| `EDGE_EVER_IDLE_TIMEOUT_SECONDS`       | `120`   | Bun streaming idle timeout, from 10 to 255 seconds          |
+| `EDGE_EVER_STORAGE_ENCRYPTION_KEY`     | none    | Encrypts saved external object-storage credentials          |
+| `EDGE_EVER_CREDENTIALS_ENCRYPTION_KEY` | derived | Optional independent AI credential encryption key           |
 
 For secrets, append `_FILE` to a supported variable and point it at a Docker
 secret, for example `EDGE_EVER_AUTH_PASSWORD_FILE=/run/secrets/auth_password`.

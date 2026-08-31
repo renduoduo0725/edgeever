@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { formatShortcutBinding, getActiveBlockValue, type ShortcutBinding } from "@/lib/app-helpers";
 import { CODE_BLOCK_LANGUAGES, getCodeBlockLanguageValue } from "@/lib/code-block";
 import { EditorTableMenu } from "@/components/EditorTableMenu";
+import { wrapIndentedParagraphInList } from "@/lib/editor-shortcuts";
 
 const EditorToolbarButton = ({
   active = false,
@@ -111,6 +112,21 @@ const insertMermaidDiagram = (editor: Editor) => {
       }
     )
     .run();
+};
+
+const toggleListAtSelection = (editor: Editor, listType: "bulletList" | "orderedList" | "taskList") => {
+  editor.commands.focus();
+  if (wrapIndentedParagraphInList(editor.state, editor.view.dispatch, listType)) {
+    return;
+  }
+
+  if (listType === "bulletList") {
+    editor.commands.toggleBulletList();
+  } else if (listType === "orderedList") {
+    editor.commands.toggleOrderedList();
+  } else {
+    editor.commands.toggleTaskList();
+  }
 };
 
 export const EditorToolbar = ({
@@ -208,7 +224,7 @@ export const EditorToolbar = ({
 
   return (
     <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-      <div className="relative min-w-0 max-w-full border-t border-slate-200 bg-white">
+      <div className="relative min-w-0 max-w-full border-t border-slate-100 bg-white">
         <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-gradient-to-r from-white to-transparent sm:hidden" />
         <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-4 bg-gradient-to-l from-white to-transparent sm:hidden" />
         <div
@@ -222,10 +238,10 @@ export const EditorToolbar = ({
                 <TooltipTrigger asChild>
                   <button
                     className={cn(
-                      "flex h-8 shrink-0 items-center rounded-md border px-2.5 text-xs font-medium transition disabled:pointer-events-none disabled:opacity-40",
+                      "flex h-8 shrink-0 items-center rounded-md border px-2.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
                       markdownMode
                         ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        : "border-slate-200/80 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                     )}
                     type="button"
                     aria-label={markdownMode ? t("editorToolbar.richText") : t("editorToolbar.markdown")}
@@ -365,7 +381,7 @@ export const EditorToolbar = ({
             title={`${t("editorToolbar.bulletList")} · ${t("editorToolbar.listIndentHint")}`}
             active={isActive("bulletList")}
             disabled={disabled}
-            onClick={() => run((current) => current.chain().focus().toggleBulletList().run())}
+            onClick={() => run((current) => toggleListAtSelection(current, "bulletList"))}
           >
             <List className="h-4 w-4" />
           </EditorToolbarButton>
@@ -373,7 +389,7 @@ export const EditorToolbar = ({
             title={`${t("editorToolbar.taskList")} · ${t("editorToolbar.listIndentHint")}`}
             active={isActive("taskList")}
             disabled={!canRun((current) => current.can().chain().focus().toggleTaskList().run())}
-            onClick={() => run((current) => current.chain().focus().toggleTaskList().run())}
+            onClick={() => run((current) => toggleListAtSelection(current, "taskList"))}
           >
             <ListTodo className="h-4 w-4" />
           </EditorToolbarButton>
@@ -381,7 +397,7 @@ export const EditorToolbar = ({
             title={`${t("editorToolbar.orderedList")} · ${t("editorToolbar.listIndentHint")}`}
             active={isActive("orderedList")}
             disabled={disabled}
-            onClick={() => run((current) => current.chain().focus().toggleOrderedList().run())}
+            onClick={() => run((current) => toggleListAtSelection(current, "orderedList"))}
           >
             <ListOrdered className="h-4 w-4" />
           </EditorToolbarButton>

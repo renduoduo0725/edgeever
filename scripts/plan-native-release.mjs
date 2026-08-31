@@ -39,22 +39,28 @@ export const planNativeRelease = (platform, changedFiles) => {
     platform === "mobile"
       ? new Set([
           ".github/workflows/mobile-build.yml",
+          ".github/workflows/android-play-signature-audit.yml",
           ".github/workflows/store-delivery.yml",
           "bun.lock",
           "scripts/build-android-local.sh",
-          "scripts/configure-android-package-permissions.mjs",
           "scripts/download-play-universal-apk.mjs",
           "scripts/verify-android-apk-signature.mjs",
           ...mobileOnlyDependencyPatches,
         ])
       : new Set([
+          ".cargo/config.toml",
           ".github/workflows/desktop-build.yml",
           "bun.lock",
           "scripts/create-mac-update-metadata.mjs",
+          "scripts/create-windows-update-metadata.mjs",
           "scripts/desktop-icns.mjs",
           "scripts/prepare-desktop-icons.mjs",
+          "scripts/pe-imports.mjs",
           "scripts/run-desktop-builder.mjs",
+          "scripts/sign-windows-update-manifest.mjs",
+          "scripts/verify-windows-update-release.mjs",
           "scripts/verify-desktop-package.mjs",
+          "scripts/verify-packaged-desktop-startup.mjs",
         ]);
 
   const relevantChanges = runtimeChangedFiles.filter(

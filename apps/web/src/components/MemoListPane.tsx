@@ -192,7 +192,7 @@ export const MemoSelectionActionBar = ({
           onClick={onPin}
           disabled={selectedCount === 0 || isPinning || isTrashView}
         >
-          <Star className={cn("h-4 w-4", !pinTarget && "fill-current text-slate-700")} />
+          <Star className={cn("h-4 w-4", !pinTarget && "fill-amber-400 text-amber-500")} />
           {pinLabel}
         </Button>
         <Button
@@ -1264,10 +1264,10 @@ export const MemoListPane = ({
         <div className={cn("items-center gap-2", mobileSearchActive ? "hidden lg:flex" : "flex")}>
           <div
             className={cn(
-              "flex h-mobile-control min-w-0 flex-1 items-center gap-2 rounded-full border px-3 text-sm transition focus-within:ring-2 lg:rounded-md",
+              "flex h-mobile-control min-w-0 flex-1 items-center gap-2 rounded-full border px-3 text-sm transition-all duration-200 focus-within:ring-2 lg:rounded-md",
               searchActive
                 ? "border-emerald-400 bg-emerald-50/80 text-emerald-700 shadow-[0_0_0_1px_rgba(52,211,153,0.18)] ring-1 ring-emerald-200 focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-emerald-300/50"
-                : "border-transparent bg-slate-100 text-slate-500 focus-within:border-slate-300 focus-within:bg-white focus-within:ring-slate-400/20 lg:border-slate-200 lg:bg-slate-50"
+                : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 focus-within:border-emerald-400/90 focus-within:bg-white focus-within:ring-emerald-200/60"
             )}
           >
             <Search className={cn("h-4 w-4 shrink-0", searchActive && "text-emerald-600")} />
@@ -1367,7 +1367,7 @@ export const MemoListPane = ({
 
       <div
         ref={listScrollRef}
-        className="relative min-h-0 flex-1 overflow-y-auto p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-3 lg:pr-3"
+        className="relative min-h-0 flex-1 overflow-y-auto p-3 pb-[calc(7rem+env(safe-area-inset-bottom))] lg:px-0 lg:pb-3 lg:[scrollbar-gutter:stable_both-edges]"
       >
         {isLoading || (isRefreshing && memos.length === 0) ? (
           <div className="px-2 py-4 text-sm text-slate-500">{t("memoList.fetchingLatest")}</div>
@@ -1480,7 +1480,7 @@ export const MemoListPane = ({
                     onTogglePinMemo(memo);
                   }}
                 >
-                  <Star className={cn("h-4 w-4", memoContextMenu.memo.isPinned && "fill-current text-slate-700")} />
+                  <Star className={cn("h-4 w-4", memoContextMenu.memo.isPinned && "fill-amber-400 text-amber-500")} />
                   {memoContextMenu.memo.isPinned ? t("memoList.unpin") : t("memoList.pinMemo")}
                 </DropdownMenuItem>
               )}
@@ -1557,7 +1557,7 @@ export const MemoListPane = ({
                     onClick={() => requestContextDocumentAction("share")}
                   >
                     <Link2 className="h-4 w-4 text-slate-500" />
-                    {t("sharing.action")}
+                    {t(isLocalMemoId(memoContextMenu.memo.id) ? "sharing.afterSync" : "sharing.action")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
