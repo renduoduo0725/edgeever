@@ -41,6 +41,10 @@ on:
         description: "Google Play delivery Run ID when Android was rebuilt"
         required: false
         type: string
+      attempt_run_ids:
+        description: "Comma-separated Draft workflow Run IDs across every release attempt"
+        required: false
+        type: string
 
 permissions:
   actions: read
@@ -168,6 +172,7 @@ jobs:
           DOCKER_RUN_ID: ${{ inputs.docker_run_id }}
           MOBILE_RUN_ID: ${{ inputs.mobile_run_id }}
           STORE_RUN_ID: ${{ inputs.store_run_id }}
+          ATTEMPT_RUN_IDS: ${{ inputs.attempt_run_ids }}
           TCR_RUN_ID: ${{ steps.release.outputs.tcr_run_id }}
         run: |
           collect_run() {
@@ -190,6 +195,26 @@ jobs:
           collect_run cloudflare "$DEMO_RUN_ID"
           collect_run tcr-source "$TCR_RUN_ID"
 
+          mkdir -p "$RUNNER_TEMP/attempts"
+          attempt_files=()
+          IFS=',' read -ra attempt_run_ids <<<"$ATTEMPT_RUN_IDS"
+          for run_id in "${attempt_run_ids[@]}"; do
+            [[ -z "$run_id" ]] && continue
+            [[ "$run_id" =~ ^[0-9]+$ ]]
+            gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" > "$RUNNER_TEMP/attempts/${run_id}-run.json"
+            gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs?filter=latest&per_page=100" > "$RUNNER_TEMP/attempts/${run_id}-jobs.json"
+            jq -s '{run: .[0], jobs: .[1].jobs}' \
+              "$RUNNER_TEMP/attempts/${run_id}-run.json" \
+              "$RUNNER_TEMP/attempts/${run_id}-jobs.json" \
+              > "$RUNNER_TEMP/attempts/${run_id}.json"
+            attempt_files+=("$RUNNER_TEMP/attempts/${run_id}.json")
+          done
+          if (( ${#attempt_files[@]} > 0 )); then
+            jq -s 'unique_by(.run.id)' "${attempt_files[@]}" > "$RUNNER_TEMP/attempts.json"
+          else
+            printf '[]\n' > "$RUNNER_TEMP/attempts.json"
+          fi
+
       - name: Generate unified Release timing report
         env:
           RELEASE_URL: ${{ steps.release.outputs.release_url }}
@@ -211,6 +236,7 @@ jobs:
             --mobile-mode "${{ inputs.mobile_mode }}" \
             --docker "$RUNNER_TEMP/docker.json" \
             "${store_args[@]}" \
+            --attempts "$RUNNER_TEMP/attempts.json" \
             --cloudflare "$RUNNER_TEMP/cloudflare.json" \
             --tcr-source "$RUNNER_TEMP/tcr-source.json" \
             --tcr-ready-at "$TCR_READY_AT" \

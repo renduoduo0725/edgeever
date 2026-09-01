@@ -77,6 +77,13 @@ import { registerObjectStorageRoutes } from "./object-storage-routes";
 import { registerAiRoutes } from "./ai-routes";
 import { registerAiPromptRoutes } from "./ai-prompt-routes";
 import { registerResourceRoutes } from "./resource-routes";
+import {
+  abortResourceUpload,
+  completeResourceUpload,
+  initiateResourceRestoreUpload,
+  initiateResourceUpload,
+  uploadResourcePart,
+} from "./resource-upload-service";
 import { registerPluginDistributionRoutes } from "./plugin-distribution-routes";
 import { registerSyncRoutes } from "./sync-routes";
 import { registerMemoRoutes } from "./memo-routes";
@@ -339,6 +346,7 @@ registerBackupRoutes(app, {
   restoreJsonMemos: restoreJsonMemosService,
   restoreJsonNotebooks: restoreJsonNotebooksService,
   sha256Bytes,
+  initiateResourceRestoreUpload: (...args) => initiateResourceRestoreUpload(...args),
 });
 
 registerMcpRoutes(app, {
@@ -353,6 +361,10 @@ registerResourceRoutes(app, {
   createImageResource: (...args) => createImageResource(...args),
   getMemoDetail: (...args) => getMemoDetail(...args),
   getResourceRow: (...args) => getResourceRow(...args),
+  initiateResourceUpload: (...args) => initiateResourceUpload(...args),
+  uploadResourcePart: (...args) => uploadResourcePart(...args),
+  completeResourceUpload: (...args) => completeResourceUpload(...args),
+  abortResourceUpload: (...args) => abortResourceUpload(...args),
 });
 
 app.post("/api/v1/demo/reset", async (c) => {

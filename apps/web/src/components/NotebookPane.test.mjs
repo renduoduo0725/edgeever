@@ -9,4 +9,12 @@ describe("NotebookPane client downloads", () => {
     expect(source).toContain('t("pwa.sidebarWindows") || "Windows"');
     expect(source).not.toContain("!window.edgeeverDesktop?.isAvailable");
   });
+
+  test("renders platform icons inline so desktop protocols do not break them", () => {
+    expect(source).toContain("<BrandIcon path={APPLE_ICON_PATH}");
+    expect(source).toContain("<BrandIcon path={WINDOWS_ICON_PATH}");
+    expect(source).toContain("<GooglePlayIcon />");
+    expect(source).toContain("<AppStoreIcon />");
+    expect(source).not.toContain('src="/icons/platforms/');
+  });
 });
