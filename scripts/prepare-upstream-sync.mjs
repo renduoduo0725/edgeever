@@ -107,6 +107,10 @@ function prepareSnapshot(cwd, baseCommit, targetCommit) {
 }
 
 function resolveCustomizedMergeBase(cwd, baseCommit, targetCommit) {
+  const topologyMergeBase = runGit(["merge-base", baseCommit, targetCommit], {
+    allowFailure: true,
+    cwd,
+  }).stdout.trim();
   const message = runGit(
     [
       "log",
@@ -123,12 +127,35 @@ function resolveCustomizedMergeBase(cwd, baseCommit, targetCommit) {
       ["rev-parse", "--verify", `${recordedRevision}^{commit}`],
       { allowFailure: true, cwd },
     );
-    if (recordedCommit.status === 0 && recordedCommit.stdout.trim()) {
-      return recordedCommit.stdout.trim();
+    const recorded = recordedCommit.stdout.trim();
+    if (recordedCommit.status === 0 && recorded) {
+      if (!topologyMergeBase || recorded === topologyMergeBase) return recorded;
+
+      // A deployment Fork can be updated manually between scheduled runs. In
+      // that case the history still contains an older updater trailer, while
+      // the real Git topology already has a newer upstream merge base. Always
+      // choose the newer comparable upstream commit so previously integrated
+      // product changes are not mistaken for downstream customizations.
+      const recordedIsOlder = runGit(
+        ["merge-base", "--is-ancestor", recorded, topologyMergeBase],
+        { allowFailure: true, cwd },
+      ).status === 0;
+      if (recordedIsOlder) return topologyMergeBase;
+
+      const topologyIsOlder = runGit(
+        ["merge-base", "--is-ancestor", topologyMergeBase, recorded],
+        { allowFailure: true, cwd },
+      ).status === 0;
+      if (topologyIsOlder) return recorded;
+
+      // If histories are incomparable, the actual topology is the only base
+      // Git can prove belongs to both sides. Falling back to it is safer than
+      // replaying an unrelated or stale snapshot trailer.
+      return topologyMergeBase;
     }
   }
 
-  return runGit(["merge-base", baseCommit, targetCommit], { cwd }).stdout.trim();
+  return topologyMergeBase;
 }
 
 function prepareCustomizedMerge(cwd, baseCommit, targetCommit) {
