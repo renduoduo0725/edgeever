@@ -143,7 +143,7 @@ export const saveDesktopApiBaseUrl = async (value: string) => {
 
 const createWebDeviceId = () => `web-${createClientUuid()}`;
 
-const getOrCreateWebDeviceId = () => {
+export const getOrCreateClientDeviceId = () => {
   try {
     const existing = window.localStorage.getItem(WEB_DEVICE_ID_STORAGE_KEY);
     if (existing) return existing;
@@ -260,14 +260,14 @@ export const api = {
   startOidcLogin: () => {
     const apiBase = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
     const params = new URLSearchParams({
-      deviceId: getOrCreateWebDeviceId(),
+      deviceId: getOrCreateClientDeviceId(),
       redirect_to: `${window.location.origin}/`,
     });
     window.location.assign(`${apiBase}/api/v1/auth/oidc/login?${params.toString()}`);
   },
 
   login: async (payload: { username: string; password: string }) => {
-    const session = await client.login({ ...payload, deviceId: getOrCreateWebDeviceId() });
+    const session = await client.login({ ...payload, deviceId: getOrCreateClientDeviceId() });
     desktopSessionRejected = false;
     return session;
   },
