@@ -87,6 +87,7 @@ import {
 import { registerPluginDistributionRoutes } from "./plugin-distribution-routes";
 import { registerSyncRoutes } from "./sync-routes";
 import { registerMemoRoutes } from "./memo-routes";
+import { registerScheduledTaskRoutes } from "./scheduled-task-routes";
 import { registerBackupRoutes } from "./backup-routes";
 import { registerMcpRoutes } from "./mcp-routes";
 import { callMcpTool as callMcpToolService } from "./mcp-tool-service";
@@ -131,6 +132,7 @@ import {
   createAttachmentResource,
   createImageResource,
   getResourceRow,
+  replaceResourceContent,
 } from "./resource-service";
 
 // Compatibility aliases keep the existing SQL-heavy implementation small
@@ -316,6 +318,7 @@ registerSyncRoutes(app, {
 });
 registerTagRoutes(app);
 registerPluginDistributionRoutes(app);
+registerScheduledTaskRoutes(app);
 registerMemoShareRoutes(app);
 registerTemplateRoutes(app, {
   createMemoRecord: (...args) => createMemoRecord(...args),
@@ -365,6 +368,7 @@ registerResourceRoutes(app, {
   uploadResourcePart: (...args) => uploadResourcePart(...args),
   completeResourceUpload: (...args) => completeResourceUpload(...args),
   abortResourceUpload: (...args) => abortResourceUpload(...args),
+  replaceResourceContent: (...args) => replaceResourceContent(...args),
 });
 
 app.post("/api/v1/demo/reset", async (c) => {

@@ -8,6 +8,8 @@ import {
   MERGE_DIVIDER_NODE_TYPE,
   FILE_ATTACHMENT_NODE_TYPE,
   PDF_ATTACHMENT_NODE_TYPE,
+  PLUGIN_EMBED_NODE_TYPE,
+  pluginEmbedToMarkdown,
   mergeMemoDocs,
   resolvePdfDisplayMode,
   resolveMemoContentDoc,
@@ -401,6 +403,29 @@ describe("Theme block compatibility", () => {
   });
 });
 
+describe("image gallery compatibility", () => {
+  const galleryDoc = {
+    type: "doc",
+    content: [{
+      type: "edgeeverImageGallery",
+      attrs: { layout: "auto" },
+      content: [
+        { type: "image", attrs: { src: "/one.png", alt: "one" } },
+        { type: "image", attrs: { src: "/two.png", alt: "two" } },
+      ],
+    }],
+  };
+
+  test("exports gallery images as portable sequential Markdown", () => {
+    expect(docToMarkdown(galleryDoc)).toBe("![one](/one.png)\n\n![two](/two.png)");
+  });
+
+  test("keeps the richer gallery JSON when a Markdown projection also exists", () => {
+    expect(resolveMemoContentDoc(galleryDoc, "![one](/one.png)\n\n![two](/two.png)"))
+      .toEqual(galleryDoc);
+  });
+});
+
 describe("merge divider", () => {
   test("joins source docs with a semantic merge divider node", () => {
     const merged = mergeMemoDocs([
@@ -451,5 +476,25 @@ describe("merge divider", () => {
 
     const resolved = resolveMemoContentDoc(legacyDoc, markdown);
     expect(resolved.content.some((node) => node.type === MERGE_DIVIDER_NODE_TYPE)).toBe(true);
+  });
+});
+
+describe("plugin embed Markdown compatibility", () => {
+  test("round-trips a generic plugin embed without requiring the plugin renderer", () => {
+    const attributes = {
+      id: "embed_1",
+      pluginId: "org.edgeever.excalidraw",
+      type: "drawing",
+      resourceId: "res_scene",
+      previewResourceId: "res_preview",
+      title: "Architecture",
+      dataJson: JSON.stringify({ mode: "view" }),
+    };
+    const markdown = pluginEmbedToMarkdown(attributes);
+    const parsed = markdownToDoc(markdown);
+
+    expect(parsed.content[0]).toMatchObject({ type: PLUGIN_EMBED_NODE_TYPE, attrs: attributes });
+    expect(docToMarkdown(parsed)).toBe(markdown);
+    expect(resolveMemoContentDoc(parsed, "fallback").content[0].type).toBe(PLUGIN_EMBED_NODE_TYPE);
   });
 });
