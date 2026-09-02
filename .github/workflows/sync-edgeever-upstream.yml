@@ -223,11 +223,10 @@ jobs:
           git config user.email "edgeever-updater[bot]@users.noreply.github.com"
 
           helper_path="${RUNNER_TEMP}/prepare-upstream-sync.mjs"
-          if git cat-file -e "${TARGET_COMMIT}:scripts/prepare-upstream-sync.mjs" 2>/dev/null; then
-            git show "${TARGET_COMMIT}:scripts/prepare-upstream-sync.mjs" > "${helper_path}"
-          else
-            cp scripts/prepare-upstream-sync.mjs "${helper_path}"
-          fi
+          # This helper is part of the protected downstream updater layer.
+          # Always run the Fork's copy so a target Release cannot replace a
+          # compatibility fix before that fix has prepared the update.
+          cp scripts/prepare-upstream-sync.mjs "${helper_path}"
 
           EDGE_SYNC_ALIGN_MODE="${ALIGN_MODE}" \
           EDGE_SYNC_BASE_COMMIT="HEAD" \
