@@ -152,6 +152,8 @@ type LocalTiptapViewerModeProps = LocalTiptapEditorSharedProps & {
   mode: "viewer";
   /** JSON: `{ alt: string; source: string }` for fullscreen image preview. */
   onImagePreview?: (payloadJson: string) => Promise<void>;
+  /** Enter note editing after a deliberate double tap on ordinary body content. */
+  onDoublePress?: () => Promise<void>;
 };
 
 type LocalTiptapEditorProps = LocalTiptapEditorModeProps | LocalTiptapViewerModeProps;
@@ -589,6 +591,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
   const onLoadResourceRef = useRef(props.onLoadResource);
   const onResourcePressRef = useRef(props.onResourcePress);
   const onImagePreviewRef = useRef(props.mode === "viewer" ? props.onImagePreview : undefined);
+  const onDoublePressRef = useRef(props.mode === "viewer" ? props.onDoublePress : undefined);
   const onPickImageRef = useRef(props.mode === "viewer" ? undefined : props.onPickImage);
   const onAiRequestRef = useRef(props.mode === "viewer" ? undefined : props.onAiRequest);
   const onAiCancelRef = useRef(props.mode === "viewer" ? undefined : props.onAiCancel);
@@ -645,6 +648,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
   onLoadResourceRef.current = props.onLoadResource;
   onResourcePressRef.current = props.onResourcePress;
   onImagePreviewRef.current = props.mode === "viewer" ? props.onImagePreview : undefined;
+  onDoublePressRef.current = props.mode === "viewer" ? props.onDoublePress : undefined;
   onPickImageRef.current = props.mode === "viewer" ? undefined : props.onPickImage;
   onAiRequestRef.current = props.mode === "viewer" ? undefined : props.onAiRequest;
   onAiCancelRef.current = props.mode === "viewer" ? undefined : props.onAiCancel;
@@ -730,6 +734,17 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
           allowImagePreview: false,
           onImagePreview: onImagePreviewRef.current,
         }),
+        dblclick: (_view, event) => {
+          if (!isViewer || !onDoublePressRef.current) return false;
+          const target = event.target as HTMLElement | null;
+          if (!target || target.closest("a, button, img, input, textarea, select, .edgeever-image-node")) {
+            return false;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          void onDoublePressRef.current();
+          return true;
+        },
       },
     },
     onUpdate: ({ editor: activeEditor, transaction }) => {

@@ -34,7 +34,7 @@ export type ShortcutBinding = {
   alt: boolean;
 };
 export type ShortcutSettings = Record<ShortcutAction, ShortcutBinding>;
-export type MobileBottomNavItem = "home" | "search" | "templates" | "settings";
+export type MobileBottomNavItem = "home" | "search" | "templates" | "settings" | "companion";
 export type MemoContextMenuState = { memo: MemoSummary; x: number; y: number };
 export type MemoDocumentAction =
   | "share"
@@ -131,7 +131,9 @@ export { DEFAULT_MEMO_TITLE };
 export const IMAGE_COMPRESSION_STORAGE_KEY = "edgeever.imageCompressionEnabled";
 export const DESKTOP_FOCUS_MODE_STORAGE_KEY = "edgeever.desktopFocusMode";
 export const DESKTOP_READING_PROTECTION_STORAGE_KEY = "edgeever.desktopReadingProtection";
+export const EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY = "edgeever.editorOutlineCollapsed";
 export const EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY = "edgeever.editorContentAlignment";
+export const EDITOR_TOOLBAR_EXPANDED_STORAGE_KEY = "edgeever.editorToolbarExpanded";
 export const MEMO_LIST_DENSITY_STORAGE_KEY = "edgeever.memoListDensity";
 export const MEMO_LIST_WIDTH_STORAGE_KEY = "edgeever.memoListWidth";
 export const NOTEBOOK_SORT_STORAGE_KEY = "edgeever.notebookSort";
@@ -355,6 +357,22 @@ export const writeDesktopReadingProtectionPreference = (enabled: boolean) => {
   }
 };
 
+export const readEditorOutlineCollapsedPreference = () => {
+  try {
+    return window.localStorage.getItem(EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY) !== "false";
+  } catch {
+    return true;
+  }
+};
+
+export const writeEditorOutlineCollapsedPreference = (collapsed: boolean) => {
+  try {
+    window.localStorage.setItem(EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY, collapsed ? "true" : "false");
+  } catch {
+    // Local storage can be unavailable in private or restricted browser contexts.
+  }
+};
+
 export const readEditorContentAlignmentPreference = (): EditorContentAlignment => {
   try {
     return window.localStorage.getItem(EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY) === "center" ? "center" : "start";
@@ -366,6 +384,22 @@ export const readEditorContentAlignmentPreference = (): EditorContentAlignment =
 export const writeEditorContentAlignmentPreference = (alignment: EditorContentAlignment) => {
   try {
     window.localStorage.setItem(EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY, alignment);
+  } catch {
+    // Local storage can be unavailable in private or restricted browser contexts.
+  }
+};
+
+export const readEditorToolbarExpandedPreference = () => {
+  try {
+    return window.localStorage.getItem(EDITOR_TOOLBAR_EXPANDED_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
+
+export const writeEditorToolbarExpandedPreference = (expanded: boolean) => {
+  try {
+    window.localStorage.setItem(EDITOR_TOOLBAR_EXPANDED_STORAGE_KEY, expanded ? "true" : "false");
   } catch {
     // Local storage can be unavailable in private or restricted browser contexts.
   }

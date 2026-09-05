@@ -5,6 +5,7 @@ import Pow
 /// Wrapper so `fullScreenCover(item:)` can present edit for a memo id.
 struct EditingMemoRoute: Identifiable, Hashable {
     let id: String
+    let initialFocus: MemoEditInitialFocus
 }
 
 struct WorkspaceView: View {
@@ -69,9 +70,9 @@ struct WorkspaceView: View {
             .ignoresSafeArea(.container, edges: .bottom)
             .navigationBarHidden(true)
             .navigationDestination(for: String.self) { memoId in
-                MemoDetailView(memoId: memoId) { editId in
+                MemoDetailView(memoId: memoId) { editId, initialFocus in
                     // 1) Show edit cover over detail.
-                    editingMemo = EditingMemoRoute(id: editId)
+                    editingMemo = EditingMemoRoute(id: editId, initialFocus: initialFocus)
                     // 2) After the cover is up, silently drop detail so the underlay is the list.
                     //    Dismissing edit then reveals list only — no detail flash.
                     DispatchQueue.main.async {
@@ -126,6 +127,7 @@ struct WorkspaceView: View {
             .fullScreenCover(item: $editingMemo) { route in
                 MemoEditView(
                     mode: .edit(memoId: route.id),
+                    initialFocus: route.initialFocus,
                     onLeaveToList: {
                         // Pop detail first (no animation) while cover still covers the stack,
                         // then dismiss the cover so the user only ever sees the list.

@@ -9,7 +9,7 @@ struct MemoDetailView: View {
     @Environment(\.colorScheme) private var colorScheme
     let memoId: String
     /// Present editor from the parent `WorkspaceView` (more reliable than cover on a pushed page).
-    var onEdit: (String) -> Void = { _ in }
+    var onEdit: (String, MemoEditInitialFocus) -> Void = { _, _ in }
 
     @State private var memo: MemoDetail?
     @State private var showRevisions = false
@@ -79,7 +79,7 @@ struct MemoDetailView: View {
                 EditFabButton(
                     accessibilityLabel: env.preferences.t("编辑笔记", en: "Edit note")
                 ) {
-                    onEdit(memo.id)
+                    onEdit(memo.id, .body)
                 }
                 .frame(width: 56, height: 56)
                 .padding(.trailing, 12)
@@ -304,7 +304,7 @@ struct MemoDetailView: View {
             titleVisibility: .visible
         ) {
             if let memo {
-                Button(env.preferences.t("编辑", en: "Edit")) { onEdit(memo.id) }
+                Button(env.preferences.t("编辑", en: "Edit")) { onEdit(memo.id, .body) }
                 if !memo.isDeleted && !isTemporaryMemoId(memo.id) {
                     Button(env.preferences.t("AI 笔记助手", en: "AI note assistant")) {
                         showAiAssistant = true
@@ -634,19 +634,7 @@ struct MemoDetailView: View {
     private func detailBody(_ memo: MemoDetail) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 6) {
-                    if memo.isPinned {
-                        Text("★")
-                            .font(.system(size: 16))
-                            .foregroundStyle(AppTheme.secondary)
-                    }
-                    Text(localizedTitle(for: memo))
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(AppTheme.title)
-                        .lineLimit(4)
-                        .textSelection(.enabled)
-                        .accessibilityIdentifier(DetailMemoChrome.title)
-                }
+                detailTitleRow(memo)
                 .padding(.top, 16)
                 .edgeEverSuccessShine(trigger: pinPulse)
 
@@ -684,6 +672,16 @@ struct MemoDetailView: View {
                 .frame(minHeight: 32)
                 .padding(.top, 12)
                 .accessibilityIdentifier(DetailMemoChrome.metaRow)
+
+                Text(
+                    "\(env.preferences.t("创建于", en: "Created")) \(MemoDetailDate.format(memo.createdAt, locale: env.preferences.resolvedLocale))"
+                    + " · "
+                    + "\(env.preferences.t("更新于", en: "Updated")) \(MemoDetailDate.format(memo.updatedAt, locale: env.preferences.resolvedLocale))"
+                )
+                .font(.system(size: 12))
+                .foregroundStyle(AppTheme.muted)
+                .padding(.top, 4)
+                .textSelection(.enabled)
 
                 if searchOpen {
                     HStack(spacing: 8) {
@@ -776,6 +774,9 @@ struct MemoDetailView: View {
                     onImagePreview: { source, alt in
                         imagePreview = (source, alt)
                     },
+                    onDoubleTap: {
+                        onEdit(memo.id, .body)
+                    },
                     onPickImage: nil,
                     onSearchResult: { count, index in
                         searchMatchCount = count
@@ -838,6 +839,30 @@ struct MemoDetailView: View {
             }
         case .synced, .syncing:
             break
+        }
+    }
+
+    private func detailTitleRow(_ memo: MemoDetail) -> some View {
+        HStack(spacing: 6) {
+            if memo.isPinned {
+                Text("★")
+                    .font(.system(size: 16))
+                    .foregroundStyle(AppTheme.secondary)
+            }
+            Button {
+                onEdit(memo.id, .title)
+            } label: {
+                Text(localizedTitle(for: memo))
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(AppTheme.title)
+                    .lineLimit(4)
+                    .multilineTextAlignment(.leading)
+            }
+            .buttonStyle(.plain)
+            .disabled(memo.isDeleted)
+            .accessibilityLabel(env.preferences.t("编辑笔记标题", en: "Edit note title"))
+            .accessibilityHint(env.preferences.t("进入编辑并聚焦标题", en: "Opens editing with the title focused"))
+            .accessibilityIdentifier(DetailMemoChrome.title)
         }
     }
 

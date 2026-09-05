@@ -21,6 +21,7 @@ struct TipTapWebView: UIViewRepresentable {
     let onChange: ((String, String) -> Void)?
     var onResourcePress: ((ResourceTarget) -> Void)? = nil
     var onImagePreview: ((_ source: String, _ alt: String) -> Void)? = nil
+    var onDoubleTap: (() -> Void)? = nil
     var onPickImage: (() -> Void)? = nil
     var onSearchResult: ((_ count: Int, _ index: Int) -> Void)? = nil
     var onImageExportEvent: (([String: Any]) -> Void)? = nil
@@ -54,6 +55,7 @@ struct TipTapWebView: UIViewRepresentable {
                 onChange: onChange,
                 onResourcePress: onResourcePress,
                 onImagePreview: onImagePreview,
+                onDoubleTap: onDoubleTap,
                 onPickImage: onPickImage,
                 onSearchResult: onSearchResult,
                 onImageExportEvent: onImageExportEvent,
@@ -452,6 +454,11 @@ enum TipTapResourceLoader {
         if (suppress || mode !== 'editor') return;
         const md = htmlToMd(editor.innerHTML);
         post({ type: 'change', contentMarkdown: md, contentJson: JSON.stringify({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:md}]}]}) });
+      });
+      editor.addEventListener('dblclick', (event) => {
+        if (mode !== 'viewer' || event.target.closest('a,button,img,input,textarea,select')) return;
+        event.preventDefault();
+        post({ type: 'doubleTap' });
       });
       post({ type: 'ready', startupMs: 0 });
     })();

@@ -535,6 +535,9 @@ export const CreateMemoModal = ({
       const uploadAsset = await prepareUploadAsset(asset, imageCompressionEnabled);
       const { resource } = await client!.uploadMemoResource(memo.id, new ExpoFile(uploadAsset.uri));
       applyMobileEditorUpload(editorRef, resource, uploadId, uploadAsset.name || (resource.kind === "image" ? "图片" : "附件"));
+      if (resource.kind === "image" && !keepBusy) {
+        safeDomCall(() => editorRef.current?.finishImageBatch([resource.url]));
+      }
       return resource.kind === "image" ? resource.url : null;
     } catch (error) {
       cancelMobileEditorUpload(editorRef, uploadId);
@@ -802,6 +805,7 @@ export const CreateMemoModal = ({
 export const RichEditorModal = ({
   baseUrl,
   initialDraft,
+  initialFocus = "body",
   imageCompressionEnabled,
   memo,
   notebooks,
@@ -810,6 +814,7 @@ export const RichEditorModal = ({
 }: {
   baseUrl: string;
   initialDraft: MobileMemoDraft | null;
+  initialFocus?: "body" | "title";
   imageCompressionEnabled: boolean;
   memo: MemoDetail | null;
   notebooks: Notebook[];
@@ -1057,7 +1062,7 @@ export const RichEditorModal = ({
   const editorElement = useMemo(
     () => memo && baseUrl ? (
       <LocalTiptapEditor
-        autoFocus
+        autoFocus={initialFocus === "body"}
         aiPromptsJson={aiPromptsJson}
         baseUrl={baseUrl}
         content={contentJsonRef.current}
@@ -1084,7 +1089,7 @@ export const RichEditorModal = ({
           }
           // The DOM editor performs its own bounded focus retry. Reveal the Android
           // keyboard only after that retry instead of issuing another competing focus.
-          if (Platform.OS === "android") {
+          if (Platform.OS === "android" && initialFocus === "body") {
             initialFocusTimerRef.current = setTimeout(() => {
               initialFocusTimerRef.current = null;
               showEdgeEverKeyboard();
@@ -1097,7 +1102,7 @@ export const RichEditorModal = ({
         theme={resolvedTheme}
       />
     ) : null,
-    [aiPromptsJson, baseUrl, cancelSelectionAi, editorStartup.attempt, loadEditorResource, memo?.id, requestSelectionAi, resolvedLocale, resolvedTheme, selectResource]
+    [aiPromptsJson, baseUrl, cancelSelectionAi, editorStartup.attempt, initialFocus, loadEditorResource, memo?.id, requestSelectionAi, resolvedLocale, resolvedTheme, selectResource]
   );
 
   useEffect(() => {
@@ -1157,6 +1162,7 @@ export const RichEditorModal = ({
         {memo && baseUrl ? (
           <View style={styles.richEditorContainer}>
             <TextInput
+              autoFocus={initialFocus === "title"}
               onChangeText={(value) => {
                 setTitle(value);
                 dirtyRef.current = true;
@@ -1164,6 +1170,7 @@ export const RichEditorModal = ({
               }}
               placeholder={DEFAULT_MEMO_TITLE}
               placeholderTextColor="#94a3b8"
+              selectTextOnFocus={initialFocus === "title"}
               style={styles.createMemoTitleInput}
               value={title}
             />

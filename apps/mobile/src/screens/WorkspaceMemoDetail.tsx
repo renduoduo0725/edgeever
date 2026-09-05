@@ -37,7 +37,7 @@ import { useMobileTheme } from "../lib/mobile-theme";
 import { useSession } from "../lib/session";
 import { beginEditorStartup } from "../lib/startup-performance";
 import type { MobileSyncQueueItem } from "../lib/sync-queue";
-import { getTextSearchMatches } from "./workspace-utils";
+import { formatMemoDetailDate, getTextSearchMatches } from "./workspace-utils";
 import { styles } from "./workspace-styles";
 
 const ANDROID_SYSTEM_NAVIGATION_FALLBACK = 48;
@@ -444,7 +444,7 @@ export const MemoDetailModal = ({
   onCopyLocalDraft: (memo: MemoDetail) => void;
   onDelete: (memo: MemoDetail) => void;
   onDeleteResource: (memo: MemoDetail, target: MobileResourceTarget) => Promise<void>;
-  onRichEdit: (memo: MemoDetail) => void;
+  onRichEdit: (memo: MemoDetail, initialFocus?: "body" | "title") => void;
   onOpenRevisions: (memo: MemoDetail) => void;
   onRenameResource: (memo: MemoDetail, target: MobileResourceTarget, filename: string) => Promise<void>;
   onResolveSyncConflict: (memo: MemoDetail) => void;
@@ -960,13 +960,33 @@ export const MemoDetailModal = ({
         ) : memo ? (
           <View style={detailLayoutStyles.body}>
             <View style={detailLayoutStyles.meta}>
-              <HighlightedMetadataText
-                activeIndex={activeMatchIndex}
-                matchOffset={0}
-                matches={metadataSearchMatches.title}
-                style={styles.detailTitle}
-                text={memoTitle}
-              />
+              {!memo.isDeleted ? (
+                <Pressable
+                  accessibilityHint="进入编辑并聚焦标题"
+                  accessibilityLabel="编辑笔记标题"
+                  accessibilityRole="button"
+                  onPress={() => {
+                    beginEditorStartup();
+                    onRichEdit(memo, "title");
+                  }}
+                >
+                  <HighlightedMetadataText
+                    activeIndex={activeMatchIndex}
+                    matchOffset={0}
+                    matches={metadataSearchMatches.title}
+                    style={styles.detailTitle}
+                    text={memoTitle}
+                  />
+                </Pressable>
+              ) : (
+                <HighlightedMetadataText
+                  activeIndex={activeMatchIndex}
+                  matchOffset={0}
+                  matches={metadataSearchMatches.title}
+                  style={styles.detailTitle}
+                  text={memoTitle}
+                />
+              )}
               <View style={styles.detailMetaRow}>
                 <View style={styles.detailNotebookButton}>
                   <Text numberOfLines={1} selectable style={styles.detailNotebookName}>{notebookName}</Text>
@@ -984,6 +1004,11 @@ export const MemoDetailModal = ({
                   />
                 </View>
               </View>
+              <Text selectable style={styles.detailTimestamps}>
+                {resolvedLocale === "en-US" ? "Created" : "创建于"} {formatMemoDetailDate(memo.createdAt, resolvedLocale)}
+                {" · "}
+                {resolvedLocale === "en-US" ? "Updated" : "更新于"} {formatMemoDetailDate(memo.updatedAt, resolvedLocale)}
+              </Text>
               {searchOpen ? (
                 <View style={styles.noteSearchPanel}>
                   <View style={styles.searchBox}>
@@ -1044,6 +1069,10 @@ export const MemoDetailModal = ({
                 locale={resolvedLocale}
                 mode="viewer"
                 onImagePreview={onImagePreview}
+                onDoublePress={async () => {
+                  beginEditorStartup();
+                  onRichEdit(memo, "body");
+                }}
                 onImageExportEvent={handleImageExportEvent}
                 onLoadResource={loadViewerResource}
                 onReady={async () => {
@@ -1080,7 +1109,7 @@ export const MemoDetailModal = ({
             accessibilityRole="button"
             onPress={() => {
               beginEditorStartup();
-              onRichEdit(memo);
+              onRichEdit(memo, "body");
             }}
             style={[styles.detailEditFab, { bottom: editFabBottom }]}
           >

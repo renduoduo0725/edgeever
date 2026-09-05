@@ -134,6 +134,7 @@ type BridgeMessage =
   | { type: "loadResource"; requestId: string; source: string }
   | { type: "resourcePress"; targetJson: string }
   | { type: "imagePreview"; source: string; alt: string }
+  | { type: "doubleTap" }
   | { type: "pickImage" }
   | { type: "searchResult"; count: number; index: number }
   | { type: "imageExportChunk"; requestId: string; chunk: string }
@@ -802,6 +803,17 @@ const editor = new Editor({
       },
     },
   },
+});
+
+// Evernote-style viewer shortcut: a deliberate double tap on ordinary note
+// content enters edit mode. Resource controls keep their existing gestures.
+editorEl.addEventListener("dblclick", (event) => {
+  if (mode !== "viewer") return;
+  const target = event.target as HTMLElement | null;
+  if (!target || target.closest("a, button, img, input, textarea, select, .edgeever-image-node")) return;
+  event.preventDefault();
+  event.stopPropagation();
+  post({ type: "doubleTap" });
 });
 
 /**

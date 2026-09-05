@@ -15,6 +15,7 @@ struct TipTapSession {
     var onChange: ((String, String) -> Void)?
     var onResourcePress: ((ResourceTarget) -> Void)?
     var onImagePreview: ((_ source: String, _ alt: String) -> Void)?
+    var onDoubleTap: (() -> Void)?
     var onPickImage: (() -> Void)?
     var onSearchResult: ((_ count: Int, _ index: Int) -> Void)?
     var onImageExportEvent: (([String: Any]) -> Void)?
@@ -148,6 +149,7 @@ final class SharedTipTapRuntime: NSObject, WKScriptMessageHandler, WKNavigationD
             s.onChange = nil
             s.onResourcePress = nil
             s.onImagePreview = nil
+            s.onDoubleTap = nil
             s.onPickImage = nil
             s.onSearchResult = nil
             s.onBodyReady = nil
@@ -705,6 +707,9 @@ final class SharedTipTapRuntime: NSObject, WKScriptMessageHandler, WKNavigationD
             guard !source.isEmpty else { break }
             let cb = session?.onImagePreview
             DispatchQueue.main.async { cb?(source, alt) }
+        case "doubleTap":
+            let cb = session?.onDoubleTap
+            DispatchQueue.main.async { cb?() }
         case "pickImage":
             let cb = session?.onPickImage
             DispatchQueue.main.async { cb?() }

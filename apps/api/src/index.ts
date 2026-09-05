@@ -46,6 +46,7 @@ import {
 } from "./backup-service";
 import { sha256, sha256Bytes } from "./hash-utils";
 import { INSTANCE_BUILD_ID } from "./instance-build";
+import { resolveInstanceDeploymentMetadata } from "./instance-deployment";
 import type {
   DatabaseAdapter,
   PreparedStatementAdapter,
@@ -60,7 +61,7 @@ import {
   unauthorized,
 } from "./http-errors";
 import { audit } from "./audit";
-import { createId, isoNow } from "./entity-utils";
+import { clampNumber, createId, isoNow } from "./entity-utils";
 import {
   upsertMemoSearchDocumentStatement,
 } from "./memo-search-index";
@@ -75,6 +76,8 @@ import { registerOidcRoutes } from "./oidc-routes";
 import { registerApiTokenRoutes } from "./api-token-routes";
 import { registerObjectStorageRoutes } from "./object-storage-routes";
 import { registerAiRoutes } from "./ai-routes";
+import { registerPluginCapabilityRoutes } from "./plugin-capability-routes";
+import { registerCompanionRoutes } from "./companion-routes";
 import { registerAiPromptRoutes } from "./ai-prompt-routes";
 import { registerResourceRoutes } from "./resource-routes";
 import {
@@ -90,7 +93,7 @@ import { registerMemoRoutes } from "./memo-routes";
 import { registerScheduledTaskRoutes } from "./scheduled-task-routes";
 import { registerBackupRoutes } from "./backup-routes";
 import { registerMcpRoutes } from "./mcp-routes";
-import { callMcpTool as callMcpToolService } from "./mcp-tool-service";
+import { executeWorkspaceTool } from "./mcp-tool-executor";
 import {
   createMemoEditSession,
   createMemoRecord,
@@ -220,6 +223,7 @@ app.get("/api/health", async (c) => {
       : {}),
     authMode,
     build: INSTANCE_BUILD_ID.slice(0, 12),
+    deployment: resolveInstanceDeploymentMetadata(c.env),
     migration: await getAppliedMigration(c.env),
     storage: {
       database: c.env.storage.diagnostics.database,
@@ -301,6 +305,8 @@ registerObjectStorageRoutes(app, {
 registerAiRoutes(app, {
   isDemoMode: (...args) => isDemoMode(...args),
 });
+registerPluginCapabilityRoutes(app, { isDemoMode: (...args) => isDemoMode(...args) });
+registerCompanionRoutes(app, { isDemoMode: (...args) => isDemoMode(...args) });
 registerAiPromptRoutes(app, {
   isDemoMode: (...args) => isDemoMode(...args),
 });
@@ -426,6 +432,8 @@ const worker = {
     return fetchEdgeEverApp(request, {
       ...env,
       storage: createCloudflareStorageAdapter(env),
+      // workerd's default Internet egress checks resolved addresses against its public-only network policy.
+      publicNetworkFetch: (url, init) => fetch(url, init),
     }, ctx);
   },
   async scheduled(controller: ScheduledController, env: WorkerBindings, ctx: ExecutionContext) {
@@ -475,22 +483,7 @@ export const callMcpTool = (
   auth: AuthContext,
   name: string,
   args: Record<string, unknown>,
-) => callMcpToolService(context, auth, name, args, {
-  clampNumber,
-  createMemoRecord,
-  deleteMemosRecord,
-  getCurrentWorkspaceIdentity,
-  getMemoDetail,
-  getMemoDetailRow,
-  getMemosForBulkAction,
-  importMemosRecord,
-  listMemosForMcp,
-  mergeMemosRecord,
-  moveMemosToNotebook,
-  restoreMemosRecord,
-  searchMemoSummaries,
-  updateMemoRecord,
-});
+) => executeWorkspaceTool(context, auth, name, args);
 
 const isDemoMode = (env: Bindings) => isDemoModeEnabled(env.EDGE_EVER_DEMO_MODE);
 const isLocalDemoSeedEnabled = (env: Bindings) =>
@@ -931,12 +924,4 @@ const resetDemoData = async (
     ).bind(leaseOwnerId).run();
     throw error;
   }
-};
-
-const clampNumber = (value: number, min: number, max: number) => {
-  if (Number.isNaN(value)) {
-    return min;
-  }
-
-  return Math.min(Math.max(value, min), max);
 };

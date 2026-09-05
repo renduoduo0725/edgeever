@@ -6,6 +6,7 @@ const mobileWorkflow = readFileSync(new URL("../.github/workflows/mobile-build.y
 const desktopPackageVerifier = readFileSync(new URL("./verify-desktop-package.mjs", import.meta.url), "utf8");
 const packagedStartupVerifier = readFileSync(new URL("./verify-packaged-desktop-startup.mjs", import.meta.url), "utf8");
 const cargoConfig = readFileSync(new URL("../.cargo/config.toml", import.meta.url), "utf8");
+const desktopBuilderConfig = readFileSync(new URL("../apps/desktop/electron-builder.yml", import.meta.url), "utf8");
 
 function step(name) {
   const start = workflow.indexOf(`      - name: ${name}\n`);
@@ -92,6 +93,12 @@ describe("desktop release workflow", () => {
     expect(desktopPackageVerifier).toContain("isVisualCppRuntimeDll");
     expect(cargoConfig).toContain('target.x86_64-pc-windows-msvc');
     expect(cargoConfig).toContain('target-feature=+crt-static');
+    expect(desktopBuilderConfig).toContain([
+      "nsis:",
+      "  oneClick: true",
+      "  perMachine: false",
+    ].join("\n"));
+    expect(desktopBuilderConfig).not.toContain("allowToChangeInstallationDirectory");
     expect(desktopPackageVerifier).toContain(
       'path.replaceAll("\\\\", "/")',
     );

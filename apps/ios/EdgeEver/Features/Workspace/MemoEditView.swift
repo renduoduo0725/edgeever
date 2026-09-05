@@ -15,6 +15,11 @@ enum MemoEditMode: Equatable {
     case edit(memoId: String)
 }
 
+enum MemoEditInitialFocus: Hashable {
+    case body
+    case title
+}
+
 /// Android CreateMemoModal / rich-edit shell parity (createMemo* tokens).
 struct MemoEditView: View {
     @Environment(AppEnvironment.self) private var env
@@ -22,6 +27,7 @@ struct MemoEditView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let mode: MemoEditMode
+    var initialFocus: MemoEditInitialFocus = .body
     var initialSharedImages: [ShareHandoffStore.SharedImage] = []
     /// When set (edit-from-detail), close by popping to the list under the cover first —
     /// never `dismiss()` onto a still-pushed detail page.
@@ -58,6 +64,8 @@ struct MemoEditView: View {
     @State private var smartTagAlertTitle = ""
     @State private var smartTagAlertMessage = ""
     @State private var smartTagTask: Task<Void, Never>?
+    @State private var didApplyInitialTitleFocus = false
+    @FocusState private var titleFocused: Bool
 
     private var title: String { get { viewModel.title } nonmutating set { viewModel.title = newValue } }
     private var tagsText: String { get { viewModel.tagsText } nonmutating set { viewModel.tagsText = newValue } }
@@ -295,8 +303,12 @@ struct MemoEditView: View {
             try? await Task.sleep(nanoseconds: 800_000_000)
             if !Task.isCancelled, !editorReady {
                 editorReady = true
-                // One open-edit focus only (SharedTipTapRuntime also focuses once per document).
-                SharedTipTapRuntime.editor.focusEnd()
+                if initialFocus == .title {
+                    focusTitleOnce()
+                } else {
+                    // One open-edit focus only (SharedTipTapRuntime also focuses once per document).
+                    SharedTipTapRuntime.editor.focusEnd()
+                }
             }
             await importInitialSharedImagesIfNeeded()
         }
@@ -435,6 +447,7 @@ struct MemoEditView: View {
             .font(.system(size: 28, weight: .heavy))
             .foregroundStyle(AppTheme.title)
             .textFieldStyle(.plain)
+            .focused($titleFocused)
             .padding(.top, 14)
             .padding(.bottom, 8)
             .onChange(of: title) { _, _ in markDirtyAndScheduleSave() }
@@ -564,6 +577,9 @@ struct MemoEditView: View {
                             // Do not focusEnd here — bodyReady also fires on typing re-binds.
                             // Open-edit focus is owned by SharedTipTapRuntime (once per document).
                             editorReady = true
+                            if initialFocus == .title {
+                                focusTitleOnce()
+                            }
                         }
                     )
                     .opacity(1)
@@ -950,6 +966,12 @@ struct MemoEditView: View {
         }
     }
 
+    private func focusTitleOnce() {
+        guard !didApplyInitialTitleFocus else { return }
+        didApplyInitialTitleFocus = true
+        titleFocused = true
+    }
+
     /// After server-side rename/delete, pull the latest memo body into the editor.
     private func reloadAfterResourceChange() async {
         guard case .edit(let id) = mode, let scope = env.session.dataScope else { return }
@@ -1201,7 +1223,7 @@ struct MemoEditView: View {
             let succeeded = await insertImageData(image.data, filename: image.filename) { sources.append($0) }
             if !succeeded { break }
         }
-        if sources.count > 1 {
+        if !sources.isEmpty {
             _ = await SharedTipTapRuntime.editor.groupImages(sources: sources)
             await pullEditorSnapshotIfPossible()
         }
@@ -1266,6 +1288,9 @@ struct MemoEditView: View {
                 )
             }
             onInserted?(imageSrc)
+            if !isImportingImageBatch {
+                _ = await SharedTipTapRuntime.editor.groupImages(sources: [imageSrc])
+            }
             // Snapshot TipTap JSON (order is authoritative). Only inject if the resource
             // is truly missing — never append a second image node at document end.
             await pullEditorSnapshotIfPossible()

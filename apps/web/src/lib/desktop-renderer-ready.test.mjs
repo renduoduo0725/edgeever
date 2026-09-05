@@ -17,6 +17,8 @@ describe("desktop renderer readiness", () => {
       edgeeverDesktop: { rendererBootstrapReady: () => { reports += 1; } },
       requestAnimationFrame: (callback) => { frames.push(callback); return frames.length; },
       cancelAnimationFrame: () => {},
+      setTimeout: () => 1,
+      clearTimeout: () => {},
     };
     globalThis.document = {
       documentElement: { dataset: {} },
@@ -28,6 +30,29 @@ describe("desktop renderer readiness", () => {
     frames.shift()(16);
     expect(reports).toBe(0);
     frames.shift()(32);
+
+    expect(reports).toBe(1);
+    expect(document.documentElement.dataset.edgeeverRendererReady).toBe("true");
+  });
+
+  test("reports readiness when animation frames are suspended", () => {
+    let fallback;
+    let reports = 0;
+    globalThis.window = {
+      edgeeverDesktop: { rendererBootstrapReady: () => { reports += 1; } },
+      requestAnimationFrame: () => 1,
+      cancelAnimationFrame: () => {},
+      setTimeout: (callback) => { fallback = callback; return 1; },
+      clearTimeout: () => {},
+    };
+    globalThis.document = {
+      documentElement: { dataset: {} },
+      querySelector: (selector) => selector === "#root > *" ? {} : null,
+    };
+
+    reportDesktopRendererReadyAfterPaint();
+    expect(reports).toBe(0);
+    fallback();
 
     expect(reports).toBe(1);
     expect(document.documentElement.dataset.edgeeverRendererReady).toBe("true");

@@ -11,7 +11,7 @@ describe("desktop update flow", () => {
   test("downloads updates in the background and relaunches after installation", () => {
     expect(mainSource).toContain('autoUpdater.autoDownload = process.platform !== "win32"');
     expect(mainSource).toContain("autoUpdater.autoRunAppAfterInstall = true");
-    expect(mainSource).toContain("isQuitting = true;\n  autoUpdater.quitAndInstall(false, true)");
+    expect(mainSource).toContain('autoUpdater.quitAndInstall(process.platform === "win32", true)');
     expect(mainSource).toContain("result?.downloadPromise");
     expect(mainSource).toContain("downloadTrustedDesktopUpdate(reason)");
   });

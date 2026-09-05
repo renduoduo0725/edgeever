@@ -122,6 +122,7 @@ type MobileView = "notes" | "settings";
 type MemoView = "notebook" | "trash";
 type RichEditingSession = {
   draft: MobileMemoDraft | null;
+  initialFocus: "body" | "title";
   memo: MemoDetail;
 };
 type MobileMemoListCacheSnapshot = Array<[QueryKey, InfiniteData<ListMemosResponse> | undefined]>;
@@ -433,7 +434,7 @@ export const WorkspaceScreen = ({
     return pending;
   }, []);
 
-  const openRichEditor = useCallback(async (memo: MemoDetail) => {
+  const openRichEditor = useCallback(async (memo: MemoDetail, initialFocus: "body" | "title" = "body") => {
     // Unmount detail DomWebView before the editable instance mounts (Android IME).
     beginEditorStartup();
     let editingMemo = memo;
@@ -454,7 +455,7 @@ export const WorkspaceScreen = ({
     const draft = await loadMemoDraft(editingMemo.id);
     memoDraftPrefetchRef.current.delete(memo.id);
     setSelectedMemoId(null);
-    setRichEditingSession({ draft, memo: editingMemo });
+    setRichEditingSession({ draft, initialFocus, memo: editingMemo });
   }, [client, dataScope, loadMemoDraft, queryClient, syncQueueScope]);
 
   const memos = useMemo(() => memosQuery.data?.pages.flatMap((page) => page.memos) ?? [], [memosQuery.data]);
@@ -1140,6 +1141,7 @@ export const WorkspaceScreen = ({
     return <RichEditorModal
       baseUrl={session?.baseUrl ?? ""}
       initialDraft={richEditingSession.draft}
+      initialFocus={richEditingSession.initialFocus}
       imageCompressionEnabled={imageCompressionEnabled}
       memo={richEditingSession.memo}
       notebooks={notebooks}
@@ -1194,6 +1196,7 @@ export const WorkspaceScreen = ({
           isRefreshing={isRefreshing}
           memoFilterMode={memoFilterMode}
           memoListDensity={memoListDensity}
+          memoSortMode={memoSortMode}
           memoView={memoView}
           memos={visibleMemos}
           notebooks={notebooks}
@@ -1256,7 +1259,7 @@ export const WorkspaceScreen = ({
         onClose={closeDetail}
         onDelete={handleDeleteMemo}
         onDeleteResource={handleDeleteResource}
-        onRichEdit={(memo) => void openRichEditor(memo)}
+        onRichEdit={(memo, initialFocus) => void openRichEditor(memo, initialFocus)}
         onOpenRevisions={setRevisionMemo}
         onRenameResource={handleRenameResource}
         onAdoptCloudVersion={(memo) => void handleAdoptCloudVersion(memo)}

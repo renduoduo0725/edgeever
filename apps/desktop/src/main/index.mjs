@@ -34,11 +34,13 @@ import { buildDesktopDiagnosticIssueUrl, normalizeDesktopDiagnostic } from "./de
 import { createRendererStartupGuard } from "./renderer-startup-guard.mjs";
 import { waitForChildProcessSpawn } from "./child-process-start.mjs";
 import { ScheduledTaskScheduler } from "./scheduled-task-scheduler.mjs";
+import { desktopMenuCopy } from "./desktop-menu.mjs";
 import {
   fetchTrustedWindowsUpdate,
   verifyDownloadedWindowsUpdate,
 } from "./windows-update-trust.mjs";
 import electronUpdater from "electron-updater";
+import { createPluginPublicNetworkRuntime } from "./plugin-public-network.mjs";
 
 const { autoUpdater } = electronUpdater;
 
@@ -108,6 +110,7 @@ let rendererCrashDialogOpen = false;
 let rendererStartupFailureDialogOpen = false;
 let rendererStartupGuard = null;
 let rendererUnresponsiveTimer = null;
+const pluginPublicNetwork = createPluginPublicNetworkRuntime();
 let rendererUnresponsiveDialogOpen = false;
 let recoveredAfterAbnormalExit = false;
 const pendingScheduledTaskRuns = [];
@@ -515,42 +518,44 @@ const handleOpenTarget = (commandLine) => {
 };
 
 const buildApplicationMenu = () => {
+  const copy = desktopMenuCopy(app.getLocale());
   const template = [
-    ...(process.platform === "darwin" ? [{ label: app.name, submenu: [{ role: "about" }, { type: "separator" }, { role: "hide" }, { role: "quit" }] }] : []),
+    ...(process.platform === "darwin" ? [{ label: app.name, submenu: [{ label: copy.about, role: "about" }, { type: "separator" }, { label: copy.hide, role: "hide" }, { label: copy.quit, role: "quit" }] }] : []),
     {
-      label: "File",
+      label: copy.file,
       submenu: [
-        { label: "New Note", accelerator: "CmdOrCtrl+N", click: () => sendDesktopCommand("new-memo") },
-        { label: "New Notebook", accelerator: "CmdOrCtrl+Shift+N", click: () => sendDesktopCommand("new-notebook") },
+        { label: copy.newMemo, accelerator: "CmdOrCtrl+N", click: () => sendDesktopCommand("new-memo") },
+        { label: copy.newNotebook, accelerator: "CmdOrCtrl+Shift+N", click: () => sendDesktopCommand("new-notebook") },
         { type: "separator" },
-        { role: "close" },
+        { label: copy.close, role: "close" },
       ],
     },
     {
-      label: "Edit",
+      label: copy.edit,
       submenu: [
-        { role: "undo" }, { role: "redo" }, { type: "separator" },
-        { role: "cut" }, { role: "copy" }, { role: "paste" }, { role: "selectAll" },
+        { label: copy.undo, role: "undo" }, { label: copy.redo, role: "redo" }, { type: "separator" },
+        { label: copy.cut, role: "cut" }, { label: copy.copy, role: "copy" }, { label: copy.paste, role: "paste" }, { label: copy.selectAll, role: "selectAll" },
       ],
     },
     {
-      label: "View",
+      label: copy.view,
       submenu: [
-        { label: "Focus Search", accelerator: "CmdOrCtrl+Shift+F", click: () => sendDesktopCommand("focus-search") },
-        { label: "Toggle Focus Mode", click: () => sendDesktopCommand("toggle-focus-mode") },
+        { label: copy.focusSearch, accelerator: "CmdOrCtrl+Shift+F", click: () => sendDesktopCommand("focus-search") },
+        { label: copy.toggleFocusMode, click: () => sendDesktopCommand("toggle-focus-mode") },
         { type: "separator" },
-        { role: "togglefullscreen" }, { role: "resetZoom" }, { role: "zoomIn" }, { role: "zoomOut" },
+        { label: copy.toggleFullScreen, role: "togglefullscreen" }, { label: copy.resetZoom, role: "resetZoom" }, { label: copy.zoomIn, role: "zoomIn" }, { label: copy.zoomOut, role: "zoomOut" },
       ],
     },
     {
-      label: "Window",
-      submenu: [{ role: "minimize" }, { role: "zoom" }, ...(process.platform === "darwin" ? [{ role: "front" }] : [])],
+      label: copy.window,
+      submenu: [{ label: copy.minimize, role: "minimize" }, { label: copy.zoom, role: "zoom" }, ...(process.platform === "darwin" ? [{ label: copy.front, role: "front" }] : [])],
     },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 };
 
 const createTray = () => {
+  const copy = desktopMenuCopy(app.getLocale());
   const iconPath = trayIconPath({
     isPackaged: app.isPackaged,
     platform: process.platform,
@@ -562,12 +567,12 @@ const createTray = () => {
   tray = new Tray(icon);
   tray.setToolTip("EdgeEver");
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: "Show EdgeEver", click: () => showWindow(mainWindow) },
-    { label: "Sync now", click: () => sendDesktopCommand("sync-now") },
-    { label: "Backup now", click: () => sendDesktopCommand("backup-now") },
-    ...(updateState === "downloaded" ? [{ label: "Restart to update", click: () => installDownloadedUpdate() }] : []),
+    { label: copy.show, click: () => showWindow(mainWindow) },
+    { label: copy.syncNow, click: () => sendDesktopCommand("sync-now") },
+    { label: copy.backupNow, click: () => sendDesktopCommand("backup-now") },
+    ...(updateState === "downloaded" ? [{ label: copy.restartToUpdate, click: () => installDownloadedUpdate() }] : []),
     { type: "separator" },
-    { label: "Quit EdgeEver", click: () => { isQuitting = true; app.quit(); } },
+    { label: copy.quit, click: () => { isQuitting = true; app.quit(); } },
   ]));
   tray.on("double-click", () => showWindow(mainWindow));
 };
@@ -736,7 +741,8 @@ const installDownloadedUpdate = () => {
   // The normal window close handler hides the app. Mark this as a real quit
   // before electron-updater closes windows so installation can proceed.
   isQuitting = true;
-  autoUpdater.quitAndInstall(false, true);
+  // Keep Windows updates silent and reuse the registered installation directory.
+  autoUpdater.quitAndInstall(process.platform === "win32", true);
   return { started: true };
 };
 
@@ -1249,6 +1255,13 @@ const startApplication = async () => {
     scheduledTaskScheduler.clear();
     await saveDesktopSessionToken("");
     return { stored: false };
+  });
+  ipcMain.handle("desktop:public-network-fetch", async (event, requestId, input) => {
+    if (event.sender !== mainWindow?.webContents) throw new Error("Public network requests must come from the main window");
+    return pluginPublicNetwork.fetch(requestId, input);
+  });
+  ipcMain.on("desktop:cancel-public-network-fetch", (event, requestId) => {
+    if (event.sender === mainWindow?.webContents && typeof requestId === "string") pluginPublicNetwork.cancel(requestId);
   });
   ipcMain.handle("desktop:sync-scheduled-tasks", async (event, tasks) => {
     if (event.sender !== mainWindow?.webContents) throw new Error("Scheduled tasks must come from the main window");

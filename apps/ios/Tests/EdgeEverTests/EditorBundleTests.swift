@@ -99,6 +99,15 @@ final class EditorBundleTests: XCTestCase {
         )
     }
 
+    func testPackagedViewerExposesDoubleTapEditBridge() throws {
+        let url = try XCTUnwrap(TipTapWebView.Coordinator.packagedEditorHTMLURL())
+        let html = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(
+            html.contains("doubleTap"),
+            "viewer body must expose the double-tap edit bridge"
+        )
+    }
+
     /// Caret must not be forced to document end on every content set / keystroke path.
     func testNativeBridgeDoesNotForceCaretToEndOnPush() throws {
         // Tests/EdgeEverTests/ThisFile.swift → apps/ios/
