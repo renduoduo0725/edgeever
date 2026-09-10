@@ -57,6 +57,7 @@ export type DesktopMemoListParams = {
   notebookId?: string | null;
   notebookIds?: string[];
   q?: string;
+  tag?: string;
   trash?: boolean;
   sort?: "updated-desc" | "created-desc" | "title-asc";
   filter?: "all" | "pinned" | "tagged" | "untagged";
@@ -67,7 +68,9 @@ export type DesktopMemoListParams = {
 export type DesktopMemoCreateParams = {
   notebookId: string;
   title?: string;
+  contentJson?: TiptapDoc;
   contentMarkdown?: string;
+  contentText?: string;
   tags?: string[];
 };
 

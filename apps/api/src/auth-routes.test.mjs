@@ -60,8 +60,6 @@ describe("auth route contracts", () => {
       authRequired: false,
       authenticated: true,
       demoMode: true,
-      oidcEnabled: false,
-      passwordLoginEnabled: true,
       user: {
         id: "local",
         username: "owner",
@@ -79,28 +77,8 @@ describe("auth route contracts", () => {
     expect(await response.json()).toMatchObject({
       authRequired: true,
       authenticated: false,
-      oidcEnabled: false,
-      passwordLoginEnabled: true,
       user: null,
     });
-  });
-
-  test("rejects password login when it is disabled", async () => {
-    const app = createApp();
-    const response = await app.request(
-      "/api/v1/auth/login",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: "admin", password: "secret-password" }),
-      },
-      {
-        ...environment,
-        EDGE_EVER_PASSWORD_LOGIN_ENABLED: "false",
-      },
-    );
-
-    expect(response.status).toBe(403);
   });
 
   test("does not allow the current session to revoke itself", async () => {

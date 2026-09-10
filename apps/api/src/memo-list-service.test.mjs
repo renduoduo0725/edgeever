@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { listMemos, toFtsQuery } from "./memo-list-service.ts";
+import { createDefaultDiagramDocument, serializeDiagramDocument } from "@edgeever/shared";
+import { listMemos, mapMemoSummary, toFtsQuery } from "./memo-list-service.ts";
 
 const memoRow = (id, overrides = {}) => ({
   id,
@@ -37,6 +38,13 @@ const createDatabase = ({ rows = [], totalCount = rows.length } = {}) => {
 };
 
 describe("memo list service", () => {
+  test("identifies diagram notes without exposing their source as the note type", () => {
+    const content_markdown = serializeDiagramDocument(createDefaultDiagramDocument("architecture"));
+
+    expect(mapMemoSummary(memoRow("memo_1", { content_markdown })).diagramKind).toBe("architecture");
+    expect(mapMemoSummary(memoRow("memo_2")).diagramKind).toBeNull();
+  });
+
   test("paginates with an opaque cursor and reuses its sort position", async () => {
     const firstDatabase = createDatabase({
       rows: [memoRow("memo_1"), memoRow("memo_2"), memoRow("memo_3")],

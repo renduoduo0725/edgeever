@@ -1,0 +1,449 @@
+import { Base64 } from "js-base64";
+import {
+  architectureMermaidBoundaryStyle,
+  architectureMermaidClassDefs,
+  architectureMermaidClassName,
+} from "./diagram-architecture-style";
+import { flowchartMermaidClassDefs, flowchartMermaidClassName } from "./diagram-flowchart-style";
+
+export const DIAGRAM_SCHEMA_VERSION = 1 as const;
+export const ARCHITECTURE_DIAGRAM_SCHEMA_VERSION = 2 as const;
+
+export type DiagramKind = "mind-map" | "flowchart" | "architecture";
+export type DiagramNodeShape =
+  | "topic"
+  | "process"
+  | "decision"
+  | "terminator"
+  | "client"
+  | "frontend"
+  | "service"
+  | "database"
+  | "storage"
+  | "queue"
+  | "security"
+  | "external"
+  | "boundary";
+export type DiagramEdgeKind = "dependency" | "request" | "async" | "data";
+export const DIAGRAM_SELECTABLE_THEMES = [
+  "brand", "sun", "wa", "island", "rose", "mint", "cosmos", "tea", "naive", "macaron",
+] as const;
+export const DIAGRAM_THEMES = [
+  "brand", "ocean", "ink", "classic", "sky", "sunset", "violet", "rose", "sand", "slate", "aurora", "mono",
+  "sun", "wa", "island", "mint", "cosmos", "tea", "naive", "macaron", "paper",
+] as const;
+export type DiagramTheme = (typeof DIAGRAM_THEMES)[number];
+export const DIAGRAM_SELECTABLE_STRUCTURES = [
+  "map", "line", "capsule", "box", "circle", "ellipse", "hexagon",
+  "logic", "tree", "brace", "org", "timeline", "fishbone",
+] as const;
+export const DIAGRAM_STRUCTURE_GROUPS = [
+  { id: "map", items: ["map", "line", "capsule", "box", "circle", "ellipse", "hexagon"] },
+  { id: "logic", items: ["logic"] },
+  { id: "brace", items: ["brace"] },
+  { id: "org", items: ["org"] },
+  { id: "tree", items: ["tree"] },
+  { id: "timeline", items: ["timeline"] },
+  { id: "fishbone", items: ["fishbone"] },
+] as const satisfies ReadonlyArray<{
+  id: string;
+  items: ReadonlyArray<typeof DIAGRAM_SELECTABLE_STRUCTURES[number]>;
+}>;
+export const DIAGRAM_STRUCTURES = [
+  ...DIAGRAM_SELECTABLE_STRUCTURES, "rect", "diamond", "cloud",
+] as const;
+export type DiagramStructure = (typeof DIAGRAM_STRUCTURES)[number];
+
+const THEME_ALIASES: Partial<Record<DiagramTheme, typeof DIAGRAM_SELECTABLE_THEMES[number]>> = {
+  ocean: "brand",
+  ink: "brand",
+  classic: "sun",
+  sky: "cosmos",
+  sunset: "sun",
+  violet: "rose",
+  sand: "island",
+  slate: "cosmos",
+  aurora: "mint",
+  mono: "cosmos",
+  paper: "brand",
+};
+
+export const resolveDiagramTheme = (theme?: DiagramTheme): typeof DIAGRAM_SELECTABLE_THEMES[number] => {
+  if (theme && (DIAGRAM_SELECTABLE_THEMES as readonly string[]).includes(theme)) return theme as typeof DIAGRAM_SELECTABLE_THEMES[number];
+  return THEME_ALIASES[theme ?? "brand"] ?? "brand";
+};
+
+export const resolveDiagramStructure = (structure?: DiagramStructure): DiagramStructure => (
+  structure && (DIAGRAM_SELECTABLE_STRUCTURES as readonly string[]).includes(structure) ? structure : "map"
+);
+
+export const ARCHITECTURE_RESOURCE_ICONS = [
+  "client", "webApp", "mobileApp", "website", "apiClient",
+  "service", "virtualMachine", "container", "kubernetes", "serverless",
+  "relationalDatabase", "noSqlDatabase", "cache", "dataWarehouse", "searchEngine",
+  "objectStorage", "fileStorage", "blockStorage", "backup", "cdn",
+  "messageQueue", "eventBus", "streamProcessing", "webhook", "serviceMesh",
+  "apiGateway", "loadBalancer", "dns", "vpc", "subnet", "vpn",
+  "identity", "firewall", "waf", "secretManager", "certificate", "systemBoundary",
+  "monitoring", "logging", "metrics", "tracing", "alerting",
+  "saas", "externalApi", "thirdPartyService",
+] as const;
+
+export type ArchitectureResourceIcon = typeof ARCHITECTURE_RESOURCE_ICONS[number];
+
+export type DiagramNode = {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  shape: DiagramNodeShape;
+  parentId?: string;
+  resourceIcon?: ArchitectureResourceIcon;
+};
+
+export type DiagramEdge = {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+  kind?: DiagramEdgeKind;
+  bidirectional?: boolean;
+};
+
+export type DiagramDocument = {
+  schemaVersion: typeof DIAGRAM_SCHEMA_VERSION | typeof ARCHITECTURE_DIAGRAM_SCHEMA_VERSION;
+  kind: DiagramKind;
+  theme?: DiagramTheme;
+  structure?: DiagramStructure;
+  nodes: DiagramNode[];
+  edges: DiagramEdge[];
+};
+
+const DIAGRAM_MARKER = "edgeever-diagram-v1";
+const DIAGRAM_COMMENT = new RegExp(`<!--\\s*${DIAGRAM_MARKER}:([\\s\\S]*?)\\s*-->`);
+
+// Keep the persisted envelope portable across browsers, Node/Bun, and React
+// Native's Hermes runtime. Hermes does not guarantee the browser globals used
+// by atob/btoa/TextEncoder/TextDecoder.
+const encodeBase64Url = (value: string) => Base64.encodeURI(value);
+
+const decodeBase64Url = (value: string) => Base64.decode(value);
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+const DIAGRAM_KINDS = ["mind-map", "flowchart", "architecture"] as const;
+const DIAGRAM_NODE_SHAPES: DiagramNodeShape[] = [
+  "topic",
+  "process",
+  "decision",
+  "terminator",
+  "client",
+  "frontend",
+  "service",
+  "database",
+  "storage",
+  "queue",
+  "security",
+  "external",
+  "boundary",
+];
+const DIAGRAM_EDGE_KINDS: DiagramEdgeKind[] = ["dependency", "request", "async", "data"];
+
+const isArchitectureResourceIcon = (value: unknown): value is ArchitectureResourceIcon =>
+  typeof value === "string" && ARCHITECTURE_RESOURCE_ICONS.includes(value as ArchitectureResourceIcon);
+
+const parseNode = (value: unknown): DiagramNode | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const node = value as Record<string, unknown>;
+  if (
+    typeof node.id !== "string" || !node.id || typeof node.label !== "string"
+    || !isFiniteNumber(node.x) || !isFiniteNumber(node.y)
+    || !isFiniteNumber(node.width) || !isFiniteNumber(node.height)
+    || !DIAGRAM_NODE_SHAPES.includes(node.shape as DiagramNodeShape)
+  ) return null;
+  return {
+    id: node.id,
+    label: node.label,
+    x: node.x,
+    y: node.y,
+    width: node.width,
+    height: node.height,
+    shape: node.shape as DiagramNodeShape,
+    ...(typeof node.parentId === "string" && node.parentId ? { parentId: node.parentId } : {}),
+    ...(isArchitectureResourceIcon(node.resourceIcon) ? { resourceIcon: node.resourceIcon } : {}),
+  };
+};
+
+const parseEdge = (value: unknown): DiagramEdge | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const edge = value as Record<string, unknown>;
+  if (
+    typeof edge.id !== "string" || !edge.id || typeof edge.source !== "string" || typeof edge.target !== "string"
+    || (edge.kind !== undefined && !DIAGRAM_EDGE_KINDS.includes(edge.kind as DiagramEdgeKind))
+    || (edge.bidirectional !== undefined && typeof edge.bidirectional !== "boolean")
+  ) return null;
+  return {
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    ...(typeof edge.label === "string" && edge.label ? { label: edge.label } : {}),
+    ...(DIAGRAM_EDGE_KINDS.includes(edge.kind as DiagramEdgeKind) ? { kind: edge.kind as DiagramEdgeKind } : {}),
+    ...(typeof edge.bidirectional === "boolean" ? { bidirectional: edge.bidirectional } : {}),
+  };
+};
+
+export const parseDiagramDocument = (markdown: string | null | undefined): DiagramDocument | null => {
+  const encoded = markdown?.match(DIAGRAM_COMMENT)?.[1]?.replace(/\s+/g, "");
+  if (!encoded || !/^[A-Za-z0-9_-]+$/.test(encoded)) return null;
+  try {
+    const value = JSON.parse(decodeBase64Url(encoded)) as Record<string, unknown>;
+    if (!DIAGRAM_KINDS.includes(value.kind as DiagramKind)) return null;
+    const isArchitecture = value.kind === "architecture";
+    if (isArchitecture
+      ? value.schemaVersion !== ARCHITECTURE_DIAGRAM_SCHEMA_VERSION
+      : value.schemaVersion !== DIAGRAM_SCHEMA_VERSION) return null;
+    if (!Array.isArray(value.nodes) || !Array.isArray(value.edges)) return null;
+    const theme = DIAGRAM_THEMES.includes(value.theme as DiagramTheme) ? value.theme as DiagramTheme : undefined;
+    const structure = DIAGRAM_STRUCTURES.includes(value.structure as DiagramStructure)
+      ? value.structure as DiagramStructure
+      : undefined;
+    const nodes = value.nodes.map(parseNode);
+    const edges = value.edges.map(parseEdge);
+    if (nodes.some((node) => !node) || edges.some((edge) => !edge)) return null;
+    const nodeIds = new Set((nodes as DiagramNode[]).map((node) => node.id));
+    const nodeById = new Map((nodes as DiagramNode[]).map((node) => [node.id, node]));
+    if (
+      nodeIds.size !== nodes.length
+      || (nodes as DiagramNode[]).some((node) => node.parentId && (node.parentId === node.id || !nodeIds.has(node.parentId)))
+      || (edges as DiagramEdge[]).some((edge) => !nodeIds.has(edge.source) || !nodeIds.has(edge.target))
+    ) return null;
+    if (isArchitecture) {
+      if ((nodes as DiagramNode[]).some((node) => node.shape === "topic" || node.shape === "process" || node.shape === "decision" || node.shape === "terminator")) return null;
+      if ((nodes as DiagramNode[]).some((node) => node.parentId && nodeById.get(node.parentId)?.shape !== "boundary")) return null;
+      if ((edges as DiagramEdge[]).some((edge) => nodeById.get(edge.source)?.shape === "boundary" || nodeById.get(edge.target)?.shape === "boundary")) return null;
+    } else if ((nodes as DiagramNode[]).some((node) => !["topic", "process", "decision", "terminator"].includes(node.shape))) {
+      return null;
+    }
+    return {
+      schemaVersion: value.schemaVersion as DiagramDocument["schemaVersion"],
+      kind: value.kind as DiagramKind,
+      ...(theme ? { theme } : {}),
+      ...(value.kind === "mind-map" && structure ? { structure } : {}),
+      nodes: nodes as DiagramNode[],
+      edges: edges as DiagramEdge[],
+    };
+  } catch {
+    return null;
+  }
+};
+
+export const hasDiagramDocumentMarker = (markdown: string | null | undefined) =>
+  Boolean(markdown?.match(DIAGRAM_COMMENT));
+
+export const stripDiagramDocumentMarker = (markdown: string | null | undefined) =>
+  (markdown ?? "").replace(DIAGRAM_COMMENT, "").trimEnd();
+
+export const diagramFallbackMarkdown = (document: DiagramDocument) => {
+  const title = document.kind === "mind-map" ? "思维导图" : document.kind === "architecture" ? "架构图" : "流程图";
+  return [`# ${title}`, "", "```mermaid", diagramDocumentToMermaid(document), "```"].join("\n");
+};
+
+const escapeMermaidLabel = (label: string) =>
+  (label.replace(/\s+/g, " ").trim() || "未命名节点")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+/**
+ * Markdown projection of diagram IR. First-party canvases render IR through
+ * X6; this fence is the portable envelope for share/export, non-X6 readers,
+ * and degraded viewing when the IR comment fails to parse.
+ */
+export const diagramDocumentToMermaid = (document: DiagramDocument) => {
+  const nodeIds = new Map(document.nodes.map((node, index) => [node.id, `n${index}`]));
+  const direction = document.kind === "mind-map" ? "LR" : "TD";
+  const lines = [`flowchart ${direction}`];
+
+  if (document.kind === "architecture") {
+    const nodeById = new Map(document.nodes.map((node) => [node.id, node]));
+    const childrenByParent = new Map<string, typeof document.nodes>();
+    for (const node of document.nodes) {
+      if (!node.parentId) continue;
+      const children = childrenByParent.get(node.parentId) ?? [];
+      children.push(node);
+      childrenByParent.set(node.parentId, children);
+    }
+    const shapeNames: Partial<Record<DiagramNodeShape, string>> = {
+      client: "display",
+      frontend: "win-pane",
+      service: "st-rect",
+      database: "cyl",
+      storage: "disk",
+      queue: "lin-rect",
+      security: "hex",
+      external: "cloud",
+    };
+    const rendered = new Set<string>();
+    const renderNode = (node: DiagramNode, indent: string) => {
+      if (rendered.has(node.id)) return;
+      rendered.add(node.id);
+      const id = nodeIds.get(node.id)!;
+      const label = escapeMermaidLabel(node.label);
+      if (node.shape === "boundary") {
+        lines.push(`${indent}subgraph ${id}["${label}"]`);
+        lines.push(`${indent}  direction TD`);
+        for (const child of childrenByParent.get(node.id) ?? []) renderNode(child, `${indent}  `);
+        lines.push(`${indent}end`);
+        return;
+      }
+      lines.push(`${indent}${id}@{ shape: ${shapeNames[node.shape] ?? "rect"}, label: "${label}" }`);
+      const className = architectureMermaidClassName(node.shape);
+      if (className) lines.push(`${indent}class ${id} ${className}`);
+    };
+
+    for (const node of document.nodes) {
+      if (!node.parentId || !nodeById.has(node.parentId)) renderNode(node, "  ");
+    }
+    for (const node of document.nodes) renderNode(node, "  ");
+
+    for (const edge of document.edges) {
+      const source = nodeIds.get(edge.source);
+      const target = nodeIds.get(edge.target);
+      if (!source || !target) continue;
+      const label = edge.label ? `|"${escapeMermaidLabel(edge.label)}"|` : "";
+      const connector = edge.bidirectional ? `<-->${label}` : edge.kind === "async" ? `-.->${label}` : `-->${label}`;
+      lines.push(`  ${source} ${connector} ${target}`);
+    }
+
+    lines.push(...architectureMermaidClassDefs("light"));
+    for (const boundary of document.nodes.filter((node) => node.shape === "boundary")) {
+      lines.push(`  style ${nodeIds.get(boundary.id)} ${architectureMermaidBoundaryStyle("light")}`);
+    }
+    return lines.join("\n");
+  }
+
+  for (const node of document.nodes) {
+    const id = nodeIds.get(node.id)!;
+    const label = escapeMermaidLabel(node.label);
+    const declaration = node.shape === "decision"
+      ? `${id}{"${label}"}`
+      : node.shape === "terminator"
+        ? `${id}(["${label}"])`
+        : node.shape === "topic"
+          ? `${id}("${label}")`
+          : `${id}["${label}"]`;
+    lines.push(`  ${declaration}`);
+    if (document.kind === "flowchart") {
+      lines.push(`  class ${id} ${flowchartMermaidClassName(node.shape)}`);
+    }
+  }
+
+  for (const edge of document.edges) {
+    const source = nodeIds.get(edge.source);
+    const target = nodeIds.get(edge.target);
+    if (!source || !target) continue;
+    const label = edge.label ? `|"${escapeMermaidLabel(edge.label)}"|` : "";
+    const connector = document.kind === "mind-map" ? "---" : "-->";
+    lines.push(`  ${source} ${connector}${label} ${target}`);
+  }
+
+  if (document.kind === "flowchart") {
+    lines.push(...flowchartMermaidClassDefs(document.theme));
+  }
+
+  if (document.kind === "mind-map") {
+    const root = document.nodes.find((node) => node.shape === "topic" && !node.parentId);
+    const rootId = root ? nodeIds.get(root.id) : undefined;
+    if (rootId) {
+      lines.push("  classDef mindRoot fill:#16A06E,stroke:#12845B,color:#fff,stroke-width:1.5px");
+      lines.push(`  class ${rootId} mindRoot`);
+    }
+  }
+
+  return lines.join("\n");
+};
+
+export const serializeDiagramDocument = (document: DiagramDocument) =>
+  `${diagramFallbackMarkdown(document)}\n\n<!-- ${DIAGRAM_MARKER}:${encodeBase64Url(JSON.stringify(document))} -->`;
+
+export const createDefaultDiagramDocument = (kind: DiagramKind): DiagramDocument => {
+  if (kind === "mind-map") {
+    return {
+      schemaVersion: DIAGRAM_SCHEMA_VERSION,
+      kind,
+      nodes: [
+        { id: "topic-root", label: "核心主题", x: 72, y: 168, width: 124, height: 46, shape: "topic" },
+        { id: "topic-1", label: "采集想法", x: 268, y: 117, width: 96, height: 36, shape: "topic", parentId: "topic-root" },
+        { id: "topic-2", label: "整理结构", x: 268, y: 201, width: 96, height: 36, shape: "topic", parentId: "topic-root" },
+        { id: "topic-3", label: "输出分享", x: 268, y: 257, width: 96, height: 36, shape: "topic", parentId: "topic-root" },
+        { id: "topic-1-a", label: "快速记录", x: 436, y: 89, width: 96, height: 36, shape: "topic", parentId: "topic-1" },
+        { id: "topic-1-b", label: "跨设备同步", x: 436, y: 145, width: 96, height: 36, shape: "topic", parentId: "topic-1" },
+        { id: "topic-2-a", label: "笔记本", x: 436, y: 201, width: 96, height: 36, shape: "topic", parentId: "topic-2" },
+        { id: "topic-3-a", label: "公开链接", x: 436, y: 257, width: 96, height: 36, shape: "topic", parentId: "topic-3" },
+      ],
+      edges: [
+        { id: "branch-1", source: "topic-root", target: "topic-1" },
+        { id: "branch-2", source: "topic-root", target: "topic-2" },
+        { id: "branch-3", source: "topic-root", target: "topic-3" },
+        { id: "branch-1-a", source: "topic-1", target: "topic-1-a" },
+        { id: "branch-1-b", source: "topic-1", target: "topic-1-b" },
+        { id: "branch-2-a", source: "topic-2", target: "topic-2-a" },
+        { id: "branch-3-a", source: "topic-3", target: "topic-3-a" },
+      ],
+    };
+  }
+  if (kind === "architecture") {
+    return {
+      schemaVersion: ARCHITECTURE_DIAGRAM_SCHEMA_VERSION,
+      kind,
+      nodes: [
+        { id: "system", label: "应用系统", x: 220, y: 64, width: 590, height: 330, shape: "boundary" },
+        { id: "client", label: "Web 客户端", x: 72, y: 190, width: 150, height: 64, shape: "client" },
+        { id: "api", label: "API 服务", x: 280, y: 190, width: 156, height: 68, shape: "service", parentId: "system" },
+        { id: "database", label: "数据库", x: 540, y: 118, width: 150, height: 64, shape: "database", parentId: "system" },
+        { id: "storage", label: "对象存储", x: 540, y: 268, width: 150, height: 64, shape: "storage", parentId: "system" },
+      ],
+      edges: [
+        { id: "request", source: "client", target: "api", label: "HTTPS", kind: "request" },
+        { id: "query", source: "api", target: "database", label: "查询 / 写入", kind: "data" },
+        { id: "objects", source: "api", target: "storage", label: "文件", kind: "data" },
+      ],
+    };
+  }
+  return {
+    schemaVersion: DIAGRAM_SCHEMA_VERSION,
+    kind,
+    nodes: [
+      { id: "flow-start", label: "开始", x: 98, y: 48, width: 140, height: 44, shape: "terminator" },
+      { id: "flow-process", label: "处理步骤", x: 80, y: 140, width: 176, height: 56, shape: "process" },
+      { id: "flow-end", label: "结束", x: 98, y: 244, width: 140, height: 44, shape: "terminator" },
+    ],
+    edges: [
+      { id: "flow-edge-1", source: "flow-start", target: "flow-process" },
+      { id: "flow-edge-2", source: "flow-process", target: "flow-end" },
+    ],
+  };
+};
+
+export type DiagramSummaryPreview = { nodeCount: number; edgeCount: number; labels: string[] };
+
+/** Read-only, bounded list metadata; never ships the diagram payload to list rows. */
+export const getDiagramSummary = (markdown: string | null | undefined): {
+  diagramKind: DiagramKind | null;
+  diagramPreview?: DiagramSummaryPreview;
+} => {
+  const document = parseDiagramDocument(markdown);
+  if (!document) return { diagramKind: null };
+  const roots = new Set(document.nodes.filter((node) => !node.parentId).map((node) => node.id));
+  const primary = document.kind === "mind-map"
+    ? document.nodes.filter((node) => node.parentId && roots.has(node.parentId))
+    : document.kind === "architecture" ? document.nodes.filter((node) => node.shape === "boundary") : [];
+  const candidates = primary.length ? primary : document.nodes;
+  const labels = [...new Set(candidates.map((node) => node.label.replace(/\s+/g, " ").trim()).filter(Boolean))]
+    .slice(0, 4).map((label) => Array.from(label).slice(0, 48).join(""));
+  return { diagramKind: document.kind, diagramPreview: { nodeCount: document.nodes.length, edgeCount: document.edges.length, labels } };
+};

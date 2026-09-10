@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@antv/x6": "3.1.8",
     "@edgeever/client": "workspace:*",
     "@edgeever/shared": "workspace:*",
     "@expo/vector-icons": "^15.1.1",

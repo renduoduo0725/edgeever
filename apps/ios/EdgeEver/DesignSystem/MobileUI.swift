@@ -69,6 +69,28 @@ enum MobileUI {
         }
         return next
     }
+
+    static func toggleTagSelection(current: [String], tag: String, maxSelections: Int) -> [String] {
+        guard maxSelections > 0 else { return [] }
+        if let index = current.firstIndex(of: tag) {
+            var next = current
+            next.remove(at: index)
+            return next
+        }
+        if maxSelections == 1 {
+            return [tag]
+        }
+        guard current.count < maxSelections else { return current }
+        return current + [tag]
+    }
+
+    static func memoHasExactTag(tags: [String], tag: String) -> Bool {
+        let normalized = tag.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalized.isEmpty else { return true }
+        return tags.contains {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalized
+        }
+    }
 }
 
 struct NotebookTreeItem: Identifiable, Equatable {

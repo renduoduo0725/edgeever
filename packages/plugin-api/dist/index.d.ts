@@ -1,4 +1,4 @@
-export declare const PLUGIN_API_VERSION: "1";
+export declare const PLUGIN_API_VERSION: "2";
 export declare const THEME_API_VERSION: "1";
 export declare const PLUGIN_PERMISSIONS: readonly ["notes:read", "notes:write", "notes:delete", "metadata:read", "metadata:write", "resources:read", "resources:write", "templates:read", "templates:write", "network", "network:public", "ai:generate", "storage", "secrets", "schedules", "editor:read", "editor:write", "ui:commands", "ui:navigation", "ui:notices", "ui:panels", "ui:embeds"];
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
@@ -9,6 +9,8 @@ export interface PluginManifest {
     name: string;
     version: string;
     apiVersion: typeof PLUGIN_API_VERSION;
+    /** Plugins must delegate ordinary persistent configuration to EdgeEver. */
+    settingsUi: "host";
     description?: string;
     author?: string;
     entry: string;
@@ -16,6 +18,15 @@ export interface PluginManifest {
     permissions: PluginPermission[];
     networkHosts?: string[];
     settings?: PluginSettingsSchema;
+}
+export interface PluginSettingListItem {
+    title: string;
+    description?: string;
+}
+export interface PluginSettingList {
+    title?: string;
+    actionLabel?: string;
+    items: PluginSettingListItem[];
 }
 /**
  * Declarative setting metadata. EdgeEver owns the layout, controls, validation,
@@ -26,6 +37,8 @@ interface PluginSettingBase {
     label: string;
     description?: string;
     required?: boolean;
+    /** Host-rendered read-only items, opened from a small entry next to the field. */
+    list?: PluginSettingList;
 }
 export type PluginSettingField = (PluginSettingBase & {
     type: "text";
@@ -83,6 +96,7 @@ export interface MarketplaceEntry {
     name: string;
     description: string;
     author: string;
+    publisher?: "edgeever";
     category: string;
     repositoryUrl: string;
     distribution: {
@@ -210,6 +224,9 @@ export interface PluginTemplate {
     updatedAt: string;
 }
 export type PluginEventMap = {
+    "settings.changed": {
+        key: string;
+    };
     "note.created": {
         note: PluginNote;
     };
@@ -251,6 +268,17 @@ export type PluginEventMap = {
 export interface PluginCommand {
     id: string;
     title: string;
+    /**
+     * When false, the command stays in the plugin toolbar menu but is omitted from
+     * marketplace and plugin-manager cards. Defaults to true.
+     */
+    listed?: boolean;
+    /**
+     * When false, the command is omitted from the plugin toolbar menu.
+     * Use this for a card-only launcher that already has a dashboard panel in the menu.
+     * Defaults to true.
+     */
+    menu?: boolean;
     run: () => void | Promise<void>;
 }
 export type PluginScheduleMissedRunPolicy = "run-once" | "skip";
@@ -298,12 +326,73 @@ export type PluginJsonValue = null | boolean | number | string | PluginJsonValue
     [key: string]: PluginJsonValue;
 };
 export type PluginPanelPresentation = "dialog" | "fullscreen";
+export type PluginPanelPurpose = "workflow" | "dashboard" | "preview" | "onboarding";
 export interface PluginPanelOpenOptions {
     state?: PluginJsonValue;
+}
+export type PluginPanelActionVariant = "default" | "primary" | "ghost";
+export interface PluginPanelAction {
+    id: string;
+    label: string;
+    variant?: PluginPanelActionVariant;
+    disabled?: boolean;
+}
+export interface PluginPanelSelectOption {
+    value: string;
+    label: string;
+}
+export type PluginPanelToolbarItem = {
+    type: "search";
+    key: string;
+    placeholder?: string;
+    value?: string;
+} | {
+    type: "tabs";
+    key: string;
+    value?: string;
+    options: PluginPanelSelectOption[];
+} | {
+    type: "select";
+    key: string;
+    label?: string;
+    value?: string;
+    options: PluginPanelSelectOption[];
+} | {
+    type: "button";
+    key: string;
+    label: string;
+    variant?: PluginPanelActionVariant;
+    disabled?: boolean;
+};
+export interface PluginPanelEmptyState {
+    title: string;
+    description?: string;
+    action?: PluginPanelAction;
+}
+/**
+ * Host-rendered panel chrome. Plugins describe intent; EdgeEver owns layout and controls.
+ * Callbacks stay in-memory and are not serialized with panel open state.
+ */
+export interface PluginPanelChrome {
+    header?: {
+        title?: string;
+        /** Pass `null` to hide the host's default panel description. */
+        description?: string | null;
+        actions?: PluginPanelAction[];
+    };
+    toolbar?: PluginPanelToolbarItem[];
+    empty?: PluginPanelEmptyState | null;
+    onAction?: (id: string) => void;
+    onChange?: (key: string, value: string) => void;
+}
+export interface PluginPanelShell {
+    set(chrome: PluginPanelChrome): void;
 }
 export interface PluginPanelMountContext {
     state: PluginJsonValue | null;
     requestClose(): Promise<void>;
+    /** Host-rendered header, toolbar, and empty state. `set` is a no-op when the host has no chrome adapter. */
+    shell: PluginPanelShell;
 }
 export type PluginPanelCloseDecision = boolean | {
     title: string;
@@ -331,6 +420,8 @@ export interface PluginEmbedRenderer {
 export interface PluginPanel {
     id: string;
     title: string;
+    /** Business purpose of this panel. Custom settings pages are intentionally unsupported. */
+    purpose: PluginPanelPurpose;
     presentation?: PluginPanelPresentation;
     mount(container: HTMLElement, context: PluginPanelMountContext): void | (() => void) | Promise<void | (() => void)>;
     beforeClose?(): PluginPanelCloseDecision | Promise<PluginPanelCloseDecision>;
@@ -477,6 +568,8 @@ export interface EdgeEverPlugin {
 }
 export declare const definePlugin: <T extends EdgeEverPlugin>(plugin: T) => T;
 export declare const defineTheme: <T extends ThemeManifest>(theme: T) => T;
+/** Strips unknown fields and clamps sizes so host chrome rendering stays bounded. */
+export declare const normalizePluginPanelChrome: (value: PluginPanelChrome | null | undefined) => PluginPanelChrome;
 export declare const parseExtensionManifest: (value: unknown) => ExtensionManifest;
 export declare const parseMarketplaceRegistry: (value: unknown) => MarketplaceRegistry;
 export {};

@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect, type DragEvent, type MouseEvent, type PointerEvent as ReactPointerEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import * as m from "motion/react-m";
-import { Star, Check, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
+import { GitBranch, Network, Workflow, Star, Check, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
 import { getMemoListTimestamp, type MemoSummary } from "@edgeever/shared";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { selectionSettleMotion } from "@/lib/motion";
 import type { MemoListDensity, MemoSortMode } from "@/lib/app-helpers";
@@ -83,6 +84,10 @@ export const MemoCard = ({
   const [modifierHoverActive, setModifierHoverActive] = useState(false);
   const memoTitle = memo.title?.trim() && !isDefaultMemoTitle(memo.title) ? memo.title.trim() : t("common.untitledMemo");
   const memoExcerpt = memo.excerpt.trim() || t("memoCard.emptyMemo");
+  const diagramLabel = memo.diagramKind
+    ? t(`diagram.${memo.diagramKind === "mind-map" ? "mindMap" : memo.diagramKind}`)
+    : null;
+  const DiagramIcon = memo.diagramKind === "mind-map" ? GitBranch : memo.diagramKind === "architecture" ? Network : Workflow;
   const listTimestamp = getMemoListTimestamp(memo, sortMode);
   const listTimestampLabel = formatMemoPreviewDate(
     listTimestamp.value,
@@ -320,7 +325,7 @@ export const MemoCard = ({
       draggable={!isTrashView}
       onDragStart={handleDragStart}
       className={cn(
-        "edgeever-memo-divider group relative overflow-hidden border border-slate-100 bg-white transition lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-slate-200 lg:shadow-none lg:last:border-b-0 transition-all duration-200 select-none",
+        "edgeever-memo-divider group relative overflow-hidden border border-slate-100 bg-card transition lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-slate-200 lg:shadow-none lg:last:border-b-0 transition-all duration-200 select-none",
         listDensity === "compact" ? "rounded-md shadow-none" : "rounded-lg shadow-[0_4px_16px_rgba(15,23,42,0.045)]",
         !selectionMode && selected
           ? "edgeever-workspace-selection-desktop"
@@ -338,10 +343,9 @@ export const MemoCard = ({
       ) : null}
       <div className={cn("flex min-h-[132px] items-center", listDensity === "compact" && "min-h-[84px] lg:min-h-[76px]")}>
         {showSelectionControl && (
-          <button
+          <Tooltip><TooltipTrigger asChild><button
             className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70 focus-visible:ring-offset-2 lg:ml-3 lg:h-6 lg:w-6"
             type="button"
-            title={selectionControlLabel}
             aria-label={selectionControlLabel}
             aria-pressed={checked}
             onClick={(event) => {
@@ -354,13 +358,13 @@ export const MemoCard = ({
                 "flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-150 lg:h-4 lg:w-4",
                 checked
                   ? "border-slate-700 bg-slate-700 text-white shadow-[0_4px_10px_rgba(15,23,42,0.16)]"
-                  : "border-slate-300 bg-white text-transparent"
+                  : "border-slate-300 bg-card text-transparent"
               )}
               aria-hidden="true"
             >
               <Check className="h-3.5 w-3.5 stroke-[3] lg:h-2.5 lg:w-2.5" />
             </span>
-          </button>
+          </button></TooltipTrigger><TooltipContent>{selectionControlLabel}</TooltipContent></Tooltip>
         )}
         <button
           className={cn(
@@ -382,28 +386,43 @@ export const MemoCard = ({
           onClick={handleClick}
           onContextMenu={handleContextMenu}
           onKeyDown={handleKeyDown}
-          title={t("memoCard.interactionHint")}
         >
           <div className={cn("mb-1.5 flex min-w-0 items-center gap-1.5 text-[15px] font-semibold tracking-[-0.012em] leading-snug text-slate-950", listDensity === "compact" && "mb-0.5 text-[14px]")}>
             {memo.isPinned && <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500" />}
             <span className="min-w-0 truncate">{memoTitle}</span>
           </div>
-          <div
-            className={cn(
-              "line-clamp-2 min-h-10 text-[13px] leading-relaxed text-slate-600 dark:text-slate-400",
-              listDensity === "compact" && "line-clamp-1 min-h-0 text-[12.5px]"
-            )}
-          >
-            {memoExcerpt}
-          </div>
+          {diagramLabel ? (
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 ">
+                <span className="inline-flex items-center gap-1 rounded border border-slate-200 px-1.5 py-0.5">
+                  <DiagramIcon className="h-3 w-3" aria-hidden="true" />{diagramLabel}
+                </span>
+                {memo.diagramPreview ? <span>{t("diagram.listCounts", { nodes: memo.diagramPreview.nodeCount, edges: memo.diagramPreview.edgeCount })}</span> : null}
+              </div>
+              {listDensity !== "compact" && memo.diagramPreview?.labels.length ? (
+                <div className="line-clamp-2 text-[13px] leading-relaxed text-slate-600 ">{memo.diagramPreview.labels.join(" · ")}</div>
+              ) : null}
+            </div>
+          ) : (
+            <div
+              className={cn(
+                "line-clamp-2 min-h-10 text-[13px] leading-relaxed text-slate-600 ",
+                listDensity === "compact" && "line-clamp-1 min-h-0 text-[12.5px]"
+              )}
+            >
+              {memoExcerpt}
+            </div>
+          )}
           <div className={cn("mt-3.5 flex flex-wrap items-center gap-2", listDensity === "compact" && "mt-1.5")}>
-            <time className="text-xs font-normal text-slate-500 dark:text-slate-400" dateTime={listTimestamp.value}>
-              {t(listTimestamp.field === "createdAt" ? "memoCard.createdAt" : "memoCard.updatedAt", { time: listTimestampLabel })}
+            <time className="text-xs font-normal text-slate-500 " dateTime={listTimestamp.value}>
+              {listTimestamp.field === "createdAt"
+                ? t("memoCard.createdAt", { time: listTimestampLabel })
+                : listTimestampLabel}
             </time>
             {memo.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-[3px] border border-emerald-200/60 bg-emerald-50/60 px-1.5 py-0.5 text-[11px] font-medium tracking-tight text-emerald-800 transition-colors dark:border-emerald-800/40 dark:bg-emerald-950/30 dark:text-emerald-300"
+                className="rounded-[3px] border border-emerald-200/60 bg-emerald-50/60 px-1.5 py-0.5 text-[11px] font-medium tracking-tight text-emerald-800 transition-colors   "
               >
                 #{tag}
               </span>
@@ -418,10 +437,9 @@ export const MemoCard = ({
               listDensity === "compact" && "lg:mt-3"
             )}
           >
-            <button
+            <Tooltip><TooltipTrigger asChild><button
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70 focus-visible:ring-offset-2"
               type="button"
-              title={t("memoCard.moreActions")}
               aria-label={t("memoCard.moreActions")}
               aria-haspopup="menu"
               data-memo-actions-trigger
@@ -431,12 +449,11 @@ export const MemoCard = ({
               }}
             >
               <MoreHorizontal className="h-4 w-4" />
-            </button>
+            </button></TooltipTrigger><TooltipContent>{t("memoCard.moreActions")}</TooltipContent></Tooltip>
             {isTrashView && (
-              <button
+              <Tooltip><TooltipTrigger asChild><button
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70 focus-visible:ring-offset-2"
                 type="button"
-                title={t("memoCard.restoreMemo")}
                 aria-label={t("memoCard.restoreMemo")}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -444,12 +461,11 @@ export const MemoCard = ({
                 }}
               >
                 <RotateCcw className="h-4 w-4" />
-              </button>
+              </button></TooltipTrigger><TooltipContent>{t("memoCard.restoreMemo")}</TooltipContent></Tooltip>
             )}
-            <button
+            <Tooltip><TooltipTrigger asChild><button
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70 focus-visible:ring-offset-2"
               type="button"
-              title={isTrashView ? t("memoCard.permanentDelete") : t("memoCard.deleteMemo")}
               aria-label={isTrashView ? t("memoCard.permanentDelete") : t("memoCard.deleteMemo")}
               onClick={(event) => {
                 event.stopPropagation();
@@ -457,7 +473,7 @@ export const MemoCard = ({
               }}
             >
               <Trash2 className="h-4 w-4" />
-            </button>
+            </button></TooltipTrigger><TooltipContent>{isTrashView ? t("memoCard.permanentDelete") : t("memoCard.deleteMemo")}</TooltipContent></Tooltip>
           </div>
         )}
       </div>

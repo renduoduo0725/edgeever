@@ -48,13 +48,16 @@ export default {
     const disposePanel = context.ui.panels.register({
       id: "capability-panel",
       title: "Capability panel",
+      purpose: "workflow",
       presentation: "fullscreen",
       mount(container, panelContext) {
         container.panelState = panelContext.state;
         container.requestPanelClose = panelContext.requestClose;
+        container.hasPanelShell = typeof panelContext.shell?.set === "function";
         return () => {
           delete container.panelState;
           delete container.requestPanelClose;
+          delete container.hasPanelShell;
         };
       },
       beforeClose() {

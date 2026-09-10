@@ -1,14 +1,70 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ChevronRight } from "lucide-react";
 import type { PluginManifest, PluginSettingField, PluginSettingValue } from "@edgeever/plugin-api";
 import type { EdgeEverPluginHost } from "@/lib/plugins/plugin-host";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { groupPluginSettingFields } from "./plugin-settings-layout";
+
+const PluginSettingListDialog = ({ field }: { field: PluginSettingField }) => {
+  const { t } = useTranslation();
+  const list = field.list;
+  if (!list) return null;
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="-ml-2 mt-0.5 h-7 gap-0.5 px-2 text-xs text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+          aria-haspopup="dialog"
+        >
+          {list.actionLabel ?? t("plugins.settings.viewList")}
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="grid max-h-[min(720px,calc(100dvh-2rem))] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden p-0 sm:max-w-md">
+        <DialogHeader className="space-y-1.5 border-b border-slate-200 p-6 pb-4 pr-12 text-left">
+          <DialogTitle>{list.title ?? field.label}</DialogTitle>
+          <DialogDescription>{t("plugins.settings.listCount", { count: list.items.length })}</DialogDescription>
+        </DialogHeader>
+        <ul className="min-h-0 divide-y divide-slate-100 overflow-y-auto pb-1">
+          {list.items.map((item, index) => (
+            <li key={`${item.title}:${item.description ?? ""}:${index}`} className="px-6 py-3">
+              <div className="text-sm font-medium text-slate-800">{item.title}</div>
+              {item.description ? <div className="mt-0.5 text-xs leading-5 text-slate-500">{item.description}</div> : null}
+            </li>
+          ))}
+        </ul>
+        <DialogFooter className="border-t border-slate-200 p-4 sm:justify-end">
+          <DialogClose asChild>
+            <Button type="button" variant="outline" size="sm">{t("common.close")}</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const PluginSettingFieldRow = ({
   configuredSecret,
+  compact = false,
   disabled,
   field,
   inputId,
@@ -16,6 +72,7 @@ const PluginSettingFieldRow = ({
   value,
 }: {
   configuredSecret: boolean;
+  compact?: boolean;
   disabled: boolean;
   field: PluginSettingField;
   inputId: string;
@@ -25,19 +82,20 @@ const PluginSettingFieldRow = ({
   const { t } = useTranslation();
   const descriptionId = field.description ? `${inputId}-description` : undefined;
   const label = (
-    <label htmlFor={inputId} className="text-sm font-medium leading-5 text-slate-800">
+    <label htmlFor={inputId} className="block text-sm font-medium leading-5 text-slate-800">
       {field.label}
       {field.required ? <span className="ml-1 text-rose-600" aria-hidden="true">*</span> : null}
     </label>
   );
 
-  return (
-    <div className="grid min-w-0 gap-3 py-5 first:pt-0 last:pb-0 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-8">
+  const content = (
+    <>
       <div className="min-w-0">
         {label}
         {field.description ? <p id={descriptionId} className="mt-1 text-xs leading-5 text-slate-500">{field.description}</p> : null}
+        <PluginSettingListDialog field={field} />
       </div>
-      <div className="min-w-0 md:max-w-xl">
+      <div className={field.type === "boolean" ? "shrink-0 pt-0.5" : "min-w-0 md:max-w-xl"}>
         {field.type === "boolean" ? (
           <Switch
             id={inputId}
@@ -84,6 +142,18 @@ const PluginSettingFieldRow = ({
           />
         )}
       </div>
+    </>
+  );
+
+  if (compact) {
+    return <Card className="flex min-w-0 items-start justify-between gap-4 p-4 shadow-none">{content}</Card>;
+  }
+
+  return (
+    <div className={field.type === "boolean"
+      ? "flex min-w-0 items-start justify-between gap-4 px-4 py-4 sm:px-5"
+      : "grid min-w-0 gap-3 px-4 py-4 sm:px-5 md:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] md:gap-8"}>
+      {content}
     </div>
   );
 };
@@ -92,6 +162,7 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
   const { t } = useTranslation();
   const formId = useId();
   const fields = manifest.settings?.fields ?? [];
+  const fieldGroups = groupPluginSettingFields(fields);
   const [values, setValues] = useState<Record<string, PluginSettingValue | "">>({});
   const [configuredSecrets, setConfiguredSecrets] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(fields.length > 0);
@@ -170,7 +241,6 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
     <section className="min-w-0" aria-labelledby={`${formId}-title`}>
       <header className="border-b border-slate-200 pb-5">
         <h3 id={`${formId}-title`} className="text-base font-semibold text-slate-900">{t("plugins.settings.title")}</h3>
-        <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-500">{t("plugins.settings.description")}</p>
       </header>
       {loading ? <p className="py-8 text-sm text-slate-500" role="status">{t("common.loading")}</p> : loadError ? (
         <div className="mt-5 grid justify-items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4">
@@ -180,25 +250,43 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
       ) : (
         <form onChange={clearFeedback} onSubmit={(event) => { event.preventDefault(); void save(); }}>
           <fieldset disabled={saving} className="min-w-0">
-            <div className="divide-y divide-slate-100 py-5">
-            {fields.map((field) => {
-              const value = values[field.key] ?? "";
-              const inputId = `${formId}-${field.key}`;
-              return (
-                <PluginSettingFieldRow
-                  key={field.key}
-                  configuredSecret={Boolean(configuredSecrets[field.key])}
-                  disabled={saving}
-                  field={field}
-                  inputId={inputId}
-                  value={value}
-                  onChange={(nextValue) => {
-                    clearFeedback();
-                    setValues((current) => ({ ...current, [field.key]: nextValue }));
-                  }}
-                />
-              );
-            })}
+            <div className="py-5">
+              {fieldGroups.map((group, groupIndex) => {
+                const rows = group.fields.map((field) => {
+                  const value = values[field.key] ?? "";
+                  const inputId = `${formId}-${field.key}`;
+                  return (
+                    <PluginSettingFieldRow
+                      key={field.key}
+                      compact={group.compact}
+                      configuredSecret={Boolean(configuredSecrets[field.key])}
+                      disabled={saving}
+                      field={field}
+                      inputId={inputId}
+                      value={value}
+                      onChange={(nextValue) => {
+                        clearFeedback();
+                        setValues((current) => ({ ...current, [field.key]: nextValue }));
+                      }}
+                    />
+                  );
+                });
+                return group.compact ? (
+                  <div
+                    key={group.id}
+                    className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4${groupIndex > 0 ? " mt-5" : ""}`}
+                  >
+                    {rows}
+                  </div>
+                ) : (
+                  <Card
+                    key={group.id}
+                    className={`${groupIndex > 0 ? "mt-5 " : ""}divide-y divide-slate-100 overflow-hidden shadow-none`}
+                  >
+                    {rows}
+                  </Card>
+                );
+              })}
             </div>
             <div className="flex min-h-14 flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
               {message ? <span className="mr-auto text-sm text-emerald-700" role="status">{message}</span> : null}

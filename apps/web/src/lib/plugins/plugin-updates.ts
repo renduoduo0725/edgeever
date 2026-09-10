@@ -1,6 +1,6 @@
 import { parseExtensionManifest, type ExtensionManifest, type MarketplaceEntry, type PluginPermission } from "@edgeever/plugin-api";
 import type { InstalledExtension } from "@/lib/plugins/plugin-host";
-import { loadGithubRepositoryManifest } from "@/lib/plugins/github-plugin-distribution";
+import { loadGithubInstallableManifest } from "@/lib/plugins/github-plugin-distribution";
 import { isVersionOutdated } from "@/lib/version-check";
 
 export interface PluginUpdateInfo {
@@ -18,6 +18,11 @@ export interface PluginUpdateCheckResult {
   errors: Record<string, string>;
 }
 
+type PluginUpdateHost = Pick<
+  import("@/lib/plugins/plugin-host").EdgeEverPluginHost,
+  "getSnapshot" | "installMarketplaceEntry" | "installFromGithubRepository" | "installFromManifestUrl"
+>;
+
 const fetchManifest = async (url: string, request: typeof fetch) => {
   const response = await request(url, { cache: "no-store", credentials: "omit" });
   if (!response.ok) throw new Error(`Manifest request failed with HTTP ${response.status}.`);
@@ -26,7 +31,7 @@ const fetchManifest = async (url: string, request: typeof fetch) => {
 
 const loadMarketplaceManifest = async (entry: MarketplaceEntry, request: typeof fetch) => {
   if (entry.distribution.type === "github") {
-    return (await loadGithubRepositoryManifest(entry.distribution.repositoryUrl, request)).manifest;
+    return (await loadGithubInstallableManifest(entry.distribution.repositoryUrl, request)).manifest;
   }
   return fetchManifest(entry.distribution.manifestUrl, request);
 };
@@ -59,7 +64,7 @@ export const checkInstalledExtensionUpdate = async (
     }
   } else if (extension.source.kind === "github") {
     if (!extension.source.repositoryUrl) throw new Error("Installed GitHub extension is missing its repository URL.");
-    latestManifest = (await loadGithubRepositoryManifest(extension.source.repositoryUrl, request)).manifest;
+    latestManifest = (await loadGithubInstallableManifest(extension.source.repositoryUrl, request)).manifest;
   } else {
     latestManifest = await fetchManifest(extension.manifestUrl, request);
   }
@@ -100,4 +105,47 @@ export const checkPluginUpdates = async (
     errors[pluginId] = result.reason instanceof Error ? result.reason.message : String(result.reason);
   });
   return { updates, errors };
+};
+
+export const applyPluginUpdate = async (host: PluginUpdateHost, update: PluginUpdateInfo) => {
+  const extension = host.getSnapshot().extensions.find((candidate) => candidate.manifest.id === update.pluginId);
+  if (!extension) throw new Error("Extension is no longer installed.");
+  if (extension.source.kind === "marketplace") {
+    if (!update.marketplaceEntry) throw new Error("The verified marketplace entry is no longer available.");
+    await host.installMarketplaceEntry(update.marketplaceEntry, update.latestManifest);
+  } else if (extension.source.kind === "github") {
+    if (!extension.source.repositoryUrl) throw new Error("Installed GitHub extension is missing its repository URL.");
+    await host.installFromGithubRepository(extension.source.repositoryUrl, undefined, update.latestManifest);
+  } else {
+    await host.installFromManifestUrl(extension.manifestUrl, undefined, update.latestManifest);
+  }
+};
+
+export interface OfficialPluginUpdateResult {
+  updated: PluginUpdateInfo[];
+  errors: Record<string, string>;
+}
+
+export const updateOfficialMarketplacePlugins = async (
+  host: PluginUpdateHost,
+  marketplaceEntries: MarketplaceEntry[],
+  request: typeof fetch = window.fetch.bind(window),
+): Promise<OfficialPluginUpdateResult> => {
+  const checked = await checkPluginUpdates(host.getSnapshot().extensions, marketplaceEntries, request);
+  const officialUpdates = checked.updates.filter((update) => {
+    if (update.marketplaceEntry?.publisher !== "edgeever") return false;
+    if (!update.marketplaceEntry.verification.checksums?.manifestJson) return false;
+    return update.latestManifest.type !== "plugin" || Boolean(update.marketplaceEntry.verification.checksums.mainJs);
+  });
+  const updated: PluginUpdateInfo[] = [];
+  const errors = { ...checked.errors };
+  for (const update of officialUpdates) {
+    try {
+      await applyPluginUpdate(host, update);
+      updated.push(update);
+    } catch (error) {
+      errors[update.pluginId] = error instanceof Error ? error.message : String(error);
+    }
+  }
+  return { updated, errors };
 };

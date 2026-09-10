@@ -4,6 +4,7 @@ import { CheckCircle2, Cloud, Database, Loader2, TriangleAlert } from "lucide-re
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   SETTINGS_CARD_DESCRIPTION_CLASSNAME,
   SETTINGS_CARD_HEADER_CLASSNAME,
@@ -132,7 +133,7 @@ export const ObjectStorageCard = ({ demoMode }: { demoMode: boolean }) => {
                   <Field label={t("objectStorage.accessKeyId")}><Input value={accessKeyId} onChange={(event) => setAccessKeyId(event.target.value)} required autoComplete="off" /></Field>
                   <Field label={t("objectStorage.secretAccessKey")} hint={hasSavedSecret ? t("objectStorage.secretSavedHint") : undefined}><Input type="password" value={secretAccessKey} onChange={(event) => setSecretAccessKey(event.target.value)} required={!hasSavedSecret} autoComplete="new-password" placeholder={hasSavedSecret ? "••••••••••••" : ""} /></Field>
                   <Field label={t("objectStorage.objectPrefix")} hint={t("objectStorage.objectPrefixHint")}><Input value={objectPrefix} onChange={(event) => setObjectPrefix(event.target.value)} placeholder="edgeever" /></Field>
-                  <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700">
+                  <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-card px-3 py-2.5 text-sm font-medium text-slate-700">
                     <span><span className="block">{t("objectStorage.pathStyle")}</span><span className="mt-0.5 block text-xs font-normal text-slate-500">{t("objectStorage.pathStyleHint")}</span></span>
                     <Switch checked={forcePathStyle} onCheckedChange={setForcePathStyle} />
                   </label>
@@ -146,7 +147,20 @@ export const ObjectStorageCard = ({ demoMode }: { demoMode: boolean }) => {
 
             <div className="flex flex-wrap justify-end gap-2">
               {provider === "s3" ? <Button type="button" variant="outline" disabled={testMutation.isPending || saveMutation.isPending} onClick={() => testMutation.mutate()}>{testMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{t("objectStorage.test")}</Button> : null}
-              <Button type="submit" disabled={demoMode || saveMutation.isPending || (provider === "s3" && !encryptionConfigured)}>{saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{t("common.save")}</Button>
+              {provider === "s3" && !encryptionConfigured ? (
+                <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex" tabIndex={0}>
+                        <Button type="submit" disabled>{saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{t("common.save")}</Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">{t("objectStorage.authenticationRequired")}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Button type="submit" disabled={demoMode || saveMutation.isPending}>{saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{t("common.save")}</Button>
+              )}
             </div>
             <p className="text-xs leading-5 text-slate-500">{demoMode ? t("objectStorage.demoDisabled") : t("objectStorage.switchHint")}</p>
           </form>

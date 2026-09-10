@@ -329,15 +329,6 @@ const runtimeVars = {
   EDGE_EVER_AUTH_LOGIN_USERNAME_COOLDOWN_SECONDS: envValue("AUTH_LOGIN_USERNAME_COOLDOWN_SECONDS"),
   EDGE_EVER_AUTH_LOGIN_IP_MAX_ATTEMPTS: envValue("AUTH_LOGIN_IP_MAX_ATTEMPTS"),
   EDGE_EVER_AUTH_LOGIN_IP_COOLDOWN_SECONDS: envValue("AUTH_LOGIN_IP_COOLDOWN_SECONDS"),
-  EDGE_EVER_OIDC_ISSUER: envValue("OIDC_ISSUER"),
-  EDGE_EVER_OIDC_CLIENT_ID: envValue("OIDC_CLIENT_ID"),
-  EDGE_EVER_OIDC_REDIRECT_URI: envValue("OIDC_REDIRECT_URI"),
-  EDGE_EVER_OIDC_SCOPES: envValue("OIDC_SCOPES"),
-  EDGE_EVER_OIDC_USERNAME_CLAIM: envValue("OIDC_USERNAME_CLAIM"),
-  EDGE_EVER_OIDC_AUTO_PROVISION: envValue("OIDC_AUTO_PROVISION"),
-  EDGE_EVER_OIDC_ALLOWED_EMAILS: envValue("OIDC_ALLOWED_EMAILS"),
-  EDGE_EVER_OIDC_ALLOWED_DOMAINS: envValue("OIDC_ALLOWED_DOMAINS"),
-  EDGE_EVER_PASSWORD_LOGIN_ENABLED: envValue("PASSWORD_LOGIN_ENABLED"),
   EDGE_EVER_R2_BUCKET_NAME: resolvedR2BucketName,
   EDGE_EVER_DEMO_MODE: envValue("DEMO_MODE"),
   EDGE_EVER_LOCAL_DEMO_SEED: envValue("LOCAL_DEMO_SEED"),
@@ -433,11 +424,9 @@ const hasSecretsFileArg = wranglerArgs.some((arg) => arg === "--secrets-file" ||
 const hasEnvFileArg = wranglerArgs.some((arg) => arg === "--env-file" || arg.startsWith("--env-file="));
 const authPassword = envValue("AUTH_PASSWORD");
 const authPasswordHash = envValue("AUTH_PASSWORD_HASH");
-const oidcClientSecret = envValue("OIDC_CLIENT_SECRET");
 const authSecrets = {
   ...(authPassword ? { EDGE_EVER_AUTH_PASSWORD: authPassword } : {}),
   ...(authPasswordHash ? { EDGE_EVER_AUTH_PASSWORD_HASH: authPasswordHash } : {}),
-  ...(oidcClientSecret ? { EDGE_EVER_OIDC_CLIENT_SECRET: oidcClientSecret } : {}),
 };
 const finalWranglerArgs = [...wranglerArgs];
 const useExistingAuthSecret = process.env.EDGE_EVER_USE_EXISTING_AUTH_SECRET?.trim().toLowerCase() === "true";

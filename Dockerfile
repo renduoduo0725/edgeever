@@ -23,19 +23,15 @@ RUN bun install --frozen-lockfile \
   --filter @edgeever/public-network \
   --filter @edgeever/web
 
-FROM manifests AS production-dependencies
-RUN bun install --frozen-lockfile --production \
-  --filter edgeever \
-  --filter @edgeever/public-network
-
 FROM dependencies AS build
 COPY apps/api apps/api
 COPY apps/web apps/web
 COPY packages packages
 COPY docs docs
 COPY release-summary.json release-summary.json
+COPY scripts/self-hosted-config.mjs scripts/self-hosted-secrets.mjs scripts/self-hosted-server.mjs scripts/
 COPY tsconfig.json tailwind.config.ts ./
-RUN bun run build:web
+RUN bun run build:web && bun run build:self-hosted
 
 FROM oven/bun:1.3.14-alpine AS runtime
 WORKDIR /app
@@ -46,21 +42,23 @@ ENV NODE_ENV=production \
     EDGE_EVER_WEB_DIR=/app/apps/web/dist \
     PORT=8787
 
-COPY --from=production-dependencies /app/node_modules ./node_modules
-COPY --from=build /app/apps/api ./apps/api
-COPY --from=build /app/apps/web/dist ./apps/web/dist
-COPY --from=build /app/packages ./packages
-COPY --from=build /app/docs/openapi.json ./docs/openapi.json
-COPY --from=build /app/release-summary.json ./release-summary.json
-COPY migrations ./migrations
-COPY scripts/self-hosted-config.mjs scripts/self-hosted-secrets.mjs scripts/self-hosted-server.mjs ./scripts/
-COPY package.json ./package.json
+LABEL org.opencontainers.image.title="EdgeEver" \
+      org.opencontainers.image.description="Self-hosted notes and knowledge management" \
+      org.opencontainers.image.licenses="AGPL-3.0-only"
 
-RUN mkdir -p /data && chown -R bun:bun /data
+COPY --from=build /app/dist/self-hosted/self-hosted-server.js ./scripts/self-hosted-server.js
+COPY --from=build /app/apps/web/dist ./apps/web/dist
+COPY migrations ./migrations
+COPY LICENSE ./LICENSE
+
+# NAS/GUI upgrades often keep the v1.62 command bun scripts/self-hosted-server.mjs.
+RUN mkdir -p /data \
+  && ln -s self-hosted-server.js /app/scripts/self-hosted-server.mjs \
+  && chown -R bun:bun /data
 USER bun
 VOLUME ["/data"]
 EXPOSE 8787
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD bun -e "const r=await fetch('http://127.0.0.1:8787/api/health');if(!r.ok)process.exit(1)"
-CMD ["bun", "scripts/self-hosted-server.mjs"]
+CMD ["bun", "scripts/self-hosted-server.js"]

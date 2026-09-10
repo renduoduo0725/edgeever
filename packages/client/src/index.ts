@@ -768,6 +768,7 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     listCompanionDiscoveries: () => request<{ items: CompanionDiscoveryItem[] }>("/api/v1/companion/discovery"),
     checkCompanionDiscoveries: (locale: string, signal?: AbortSignal) => request<{ items: CompanionDiscoveryItem[] }>(`/api/v1/companion/discovery/check?locale=${encodeURIComponent(locale)}`, { method: "POST", body: "{}", signal }),
     acknowledgeCompanionDiscovery: (id: string, dismiss = false) => request<{ ok: true }>(`/api/v1/companion/discovery/${encodeURIComponent(id)}/${dismiss ? "dismiss" : "seen"}`, { method: "POST", body: "{}" }),
+    rememberCompanionDiscoveryFeedback: (id: string) => request<{ ok: true }>(`/api/v1/companion/discovery/${encodeURIComponent(id)}/feedback`, { method: "POST", body: "{}" }),
     listCompanionActions: () => request<{ actions: CompanionAction[] }>("/api/v1/companion/actions"),
     applyCompanionAction: (id: string) => request<{ action: CompanionAction }>(`/api/v1/companion/actions/${encodeURIComponent(id)}/apply`, { method: "POST", body: "{}" }),
     dismissCompanionAction: (id: string) => request<{ action: CompanionAction }>(`/api/v1/companion/actions/${encodeURIComponent(id)}/dismiss`, { method: "POST", body: "{}" }),
@@ -782,9 +783,9 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     getCompanionTurn: (id: string) => request<{ turn: CompanionTurn }>(`/api/v1/companion/turns/${encodeURIComponent(id)}`),
     cancelCompanionTurn: (id: string) => request<{ ok: true }>(`/api/v1/companion/turns/${encodeURIComponent(id)}/cancel`, { method: "POST", body: "{}" }),
     clearCompanionHistory: () => request<{ ok: true }>("/api/v1/companion/history", { method: "DELETE" }),
-    exportCompanion: () => request<{ version: 1; exportedAt: string; memories: CompanionMemory[]; turns: CompanionTurn[]; actions: CompanionAction[] }>("/api/v1/companion/export"),
-    importCompanionMemories: (memories: { content: string }[]) => request<{ memories: CompanionMemory[] }>("/api/v1/companion/import-memories", {
-      method: "POST", body: JSON.stringify({ version: 1, memories }),
+    exportCompanion: () => request<{ version: 2; controls: { useMemory: boolean; learningEnabled: boolean }; exportedAt: string; memories: CompanionMemory[]; turns: CompanionTurn[]; actions: CompanionAction[] }>("/api/v1/companion/export"),
+    importCompanionMemories: (memories: { content: string; kind?: "explicit" | "inferred" }[], controls?: { useMemory: boolean; learningEnabled: boolean }) => request<{ memories: CompanionMemory[] }>("/api/v1/companion/import-memories", {
+      method: "POST", body: JSON.stringify({ version: 2, memories, controls }),
     }),
     streamCompanion: async (payload: CompanionTurnInput, options: { signal?: AbortSignal; onEvent: (event: CompanionEvent) => void }) => {
       const { context, response } = await send("/api/v1/companion/turns", {
@@ -962,6 +963,7 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     createMemo: (payload: {
       notebookId: string;
       title?: string;
+      contentJson?: TiptapDoc;
       contentMarkdown?: string;
       tags?: string[];
       createdAt?: string;
@@ -1177,8 +1179,16 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
         method: "DELETE",
       }),
 
-    getMarkdownExportPage: (offset = 0, limit = 50) =>
-      request<MarkdownExportPage>(`/api/v1/exports/markdown?offset=${offset}&limit=${limit}`),
+    getMarkdownExportPage: (offset = 0, limit = 50, memoIds?: string[]) => {
+      const search = new URLSearchParams({
+        offset: String(offset),
+        limit: String(limit),
+      });
+      if (memoIds && memoIds.length > 0) {
+        search.set("ids", memoIds.join(","));
+      }
+      return request<MarkdownExportPage>(`/api/v1/exports/markdown?${search.toString()}`);
+    },
 
     getJsonBackupPage: (offset = 0, limit = 25) =>
       request<JsonBackupPage>(`/api/v1/backups/json?offset=${offset}&limit=${limit}`),
@@ -1230,11 +1240,53 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     downloadGithubPluginAsset: (
       owner: string,
       repository: string,
-      assetId: number,
+      releaseTag: string,
       assetName: "manifest.json" | "main.js" | "styles.css",
     ) => requestArrayBuffer(
-      `/api/v1/plugins/github/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/assets/${assetId}/${encodeURIComponent(assetName)}`,
+      `/api/v1/plugins/github/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/releases/${encodeURIComponent(releaseTag)}/assets/${encodeURIComponent(assetName)}`,
     ),
+
+    downloadGithubPluginAssetById: (
+      owner: string,
+      repository: string,
+      assetId: string,
+      assetName: "manifest.json" | "main.js" | "styles.css",
+    ) => requestArrayBuffer(
+      `/api/v1/plugins/github/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/assets/${encodeURIComponent(assetId)}/${encodeURIComponent(assetName)}`,
+    ),
+
+    getGithubPluginRepositoryManifest: async (owner: string, repository: string) => {
+      const path = `/api/v1/plugins/github/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/manifest`;
+      const { context, response } = await send(path, undefined, { setJsonContentType: false });
+      if (!response.ok) await throwRequestError(context, response, "GitHub plugin manifest request failed");
+      return response.text();
+    },
+
+    getGithubPluginLatestManifest: async (owner: string, repository: string) => {
+      const path = `/api/v1/plugins/github/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/latest-manifest`;
+      const { context, response } = await send(path, undefined, { setJsonContentType: false });
+      if (!response.ok) await throwRequestError(context, response, "GitHub plugin latest-release manifest request failed");
+      return response.text();
+    },
+
+    getGithubPluginRelease: async (owner: string, repository: string, releaseTag: string) => {
+      const path = `/api/v1/plugins/github/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/releases/tags/${encodeURIComponent(releaseTag)}`;
+      const { context, response } = await send(path, undefined, { setJsonContentType: false });
+      if (response.status === 404) return null;
+      if (!response.ok) await throwRequestError(context, response, "GitHub plugin release request failed");
+      return response.json() as Promise<{
+        tag_name: string;
+        draft: boolean;
+        assets: Array<{
+          id: number;
+          name: string;
+          size: number;
+          url: string;
+          browser_download_url: string;
+          digest?: string;
+        }>;
+      }>;
+    },
 
     uploadMemoResource: (memoId: string, file: Blob | FormData) => {
       // Small files do not benefit from an upload session's three round trips.

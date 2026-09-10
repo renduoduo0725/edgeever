@@ -22,7 +22,7 @@ export const PluginUpdateDialog = ({
 
   return (
     <Dialog open={true} onOpenChange={(open) => { if (!open && !isUpdating) onCancel(); }}>
-      <DialogContent className="max-w-md overflow-hidden rounded-lg border border-slate-200 bg-white p-0 shadow-lg">
+      <DialogContent className="max-w-md overflow-hidden rounded-lg border border-slate-200 bg-card p-0 shadow-lg">
         <DialogHeader className="flex flex-row items-start gap-4 border-b border-slate-200 px-5 py-5 text-left">
           <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${hasAddedAccess ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
             {hasAddedAccess ? <AlertTriangle className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
@@ -49,7 +49,7 @@ export const PluginUpdateDialog = ({
               <div className="flex flex-wrap gap-1.5">
                 {update.addedPermissions.map((permission) => (
                   <span key={permission} className="rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-800">
-                    {permissionLabel(permission)}
+                    {permission === "network:public" ? t("plugins.permissions.publicNetwork") : permissionLabel(permission)}
                   </span>
                 ))}
               </div>

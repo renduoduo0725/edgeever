@@ -1,15 +1,19 @@
 {
-  "version": "1.57.0",
+  "version": "1.65.1",
   "changes": {
     "en-US": [
-      "Add direct note editing gestures on mobile.",
-      "Keep system information accessible in compact desktop layouts.",
-      "Restore one-click Windows installation and silent upgrades; existing installation directories remain unchanged, while fresh installs no longer offer a custom path."
+      "Keep plugin panel close buttons in the header action row so they no longer overlap Refresh, Cancel, or Save.",
+      "Install and update GitHub plugins from public Release assets when api.github.com returns 401, 403, or 429.",
+      "Show only launcher commands on plugin marketplace cards, and keep the plugin toolbar menu to unique editor commands and dashboard panels.",
+      "Stop the memo-card hover tip from covering the New Note button.",
+      "Make diagram zoom percent editable, drop the Fit button, and keep large notes readable."
     ],
     "zh-CN": [
-      "移动端支持通过手势直接进入笔记编辑。",
-      "紧凑桌面布局中保持系统信息入口可用。",
-      "Windows 恢复一键安装和静默升级；现有安装目录保持不变，新安装不再提供自定义目录。"
+      "把插件面板关闭按钮放进标题操作行，避免压住刷新、取消或保存。",
+      "当 GitHub REST API 返回 401、403 或 429 时，改为下载公开 Release 资源来安装和更新插件。",
+      "插件市场卡片只保留启动命令，工具栏菜单只保留不重复的编辑器命令和仪表盘面板。",
+      "避免笔记卡片悬停提示挡住「新建笔记」按钮。",
+      "图文档缩放改为可输入百分比，去掉适应画布按钮，并让大笔记保持可读。"
     ]
   }
 }

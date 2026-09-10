@@ -30,6 +30,19 @@ describe("store delivery command", () => {
     ).toBe(true);
   });
 
+  test("supports submitting an existing iOS build without rebuilding", () => {
+    expect(
+      parseStoreDeliveryArgs([
+        "--release",
+        "v1.7.0",
+        "--platform",
+        "ios",
+        "--ios-build-number",
+        "30",
+      ]).iosBuildNumber,
+    ).toBe("30");
+  });
+
   test("rejects malformed release tags", () => {
     expect(() => parseStoreDeliveryArgs(["--release", "latest"])).toThrow(
       "stable vX.Y.Z",
@@ -55,6 +68,32 @@ describe("store delivery command", () => {
         /edgeever-bun-cache-\$\{GITHUB_RUN_ID\}-\$\{GITHUB_RUN_ATTEMPT\}/g,
       ),
     ).toHaveLength(3);
+    expect(workflow).toContain("inputs.ios_build_number == ''");
+    expect(workflow).toContain(
+      "APP_STORE_BUILD_NUMBER: ${{ inputs.ios_build_number || steps.build.outputs.build_number }}",
+    );
+    expect(workflow).toContain(
+      "APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.EDGEEVER_APPLE_API_ISSUER }}",
+    );
+    expect(workflow).toContain(
+      "APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.EDGEEVER_APPLE_API_KEY_ID }}",
+    );
+    expect(workflow).toContain(
+      "APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.EDGEEVER_APPLE_API_KEY_BASE64 }}",
+    );
+    expect(workflow).toContain(
+      'PRECHECK_INCLUDE_IN_APP_PURCHASES: "false"',
+    );
+    expect(workflow).toContain("for attempt in {1..20}");
+    expect(workflow).toContain(
+      'Build number: ${APP_STORE_BUILD_NUMBER} does not exist',
+    );
+    expect(workflow).toContain("retrying in 60 seconds (${attempt}/20)");
+    const fastfile = readFileSync(
+      new URL("../apps/mobile/fastlane/Fastfile", import.meta.url),
+      "utf8",
+    );
+    expect(fastfile).toContain("precheck_include_in_app_purchases: false");
   });
 
   test("replaces the GitHub APK with the Play-signed universal APK", () => {

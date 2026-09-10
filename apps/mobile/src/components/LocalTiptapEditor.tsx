@@ -1,6 +1,7 @@
 'use dom';
 
 import "katex/dist/katex.min.css";
+import { Graph } from "@antv/x6";
 import Image from "@tiptap/extension-image";
 import CodeBlock from "@tiptap/extension-code-block";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -8,6 +9,7 @@ import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { TableKit } from "@tiptap/extension-table";
 import { EditorContent, Extension, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { EdgeEverLink } from "@edgeever/shared/editor-link";
 import * as Clipboard from "expo-clipboard";
 import {
   AI_SELECTED_TEXT_ACTIONS,
@@ -32,6 +34,10 @@ import {
   getImageReferrerPolicy,
   ImageGallery,
   getResourceIdFromUrl,
+  diagramDocumentToX6Cells,
+  attachDiagramReader,
+  MIND_MAP_CONNECTOR_NAME,
+  mindMapConnector,
   type AiAction,
   type AiPromptParameterKind,
   type AiPromptResultMode,
@@ -40,6 +46,7 @@ import {
   type AiTargetLanguage,
   type AiTone,
   type TiptapDoc,
+  type DiagramDocument,
 } from "@edgeever/shared";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import {
@@ -150,6 +157,10 @@ type LocalTiptapEditorModeProps = LocalTiptapEditorSharedProps & {
  */
 type LocalTiptapViewerModeProps = LocalTiptapEditorSharedProps & {
   mode: "viewer";
+  /** Parsed visual diagram IR for the native X6 read-only viewer. */
+  visualDiagramJson?: string;
+  /** Hides code affordances when a damaged diagram falls back to Mermaid. */
+  visualDiagramNote?: boolean;
   /** JSON: `{ alt: string; source: string }` for fullscreen image preview. */
   onImagePreview?: (payloadJson: string) => Promise<void>;
   /** Enter note editing after a deliberate double tap on ordinary body content. */
@@ -443,6 +454,72 @@ const MermaidRenderRuntime = (props: MermaidRendererProps) => {
   return null;
 };
 
+Graph.registerConnector(MIND_MAP_CONNECTOR_NAME, mindMapConnector, true);
+
+const ReadOnlyX6Diagram = ({
+  diagram,
+  locale,
+  theme,
+}: {
+  diagram: DiagramDocument;
+  locale: "zh-CN" | "en-US";
+  theme: "light" | "dark";
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const parent = container.parentElement;
+    const measureWidth = () => {
+      if (!parent) return Math.max(1, container.clientWidth);
+      const style = getComputedStyle(parent);
+      const containerStyle = getComputedStyle(container);
+      const horizontalPadding = Number.parseFloat(style.paddingLeft || "0")
+        + Number.parseFloat(style.paddingRight || "0");
+      const horizontalMargin = Number.parseFloat(containerStyle.marginLeft || "0")
+        + Number.parseFloat(containerStyle.marginRight || "0");
+      return Math.max(1, parent.clientWidth - horizontalPadding - horizontalMargin);
+    };
+    const cells = diagramDocumentToX6Cells(diagram, theme);
+    const graph = new Graph({
+      container,
+      // The empty mount node can report 0 before X6 assigns its own inline size.
+      // Measure the stable parent instead so the graph never locks itself to 1px.
+      width: measureWidth(),
+      height: Math.max(1, container.clientHeight),
+      background: { color: cells.canvas },
+      grid: false,
+      interacting: false,
+      panning: { enabled: true },
+      mousewheel: { enabled: true, minScale: 0.1, maxScale: 2.5 },
+    });
+    graph.addNodes(cells.nodes);
+    graph.addEdges(cells.edges);
+
+    const reader = attachDiagramReader(graph, container, { ...diagram, nodes: diagram.nodes.map((node, index) => ({ ...node, width: cells.nodes[index].width, height: cells.nodes[index].height })) }, locale, theme === "dark");
+    const fit = () => reader.resize(measureWidth(), Math.max(1, container.clientHeight));
+    const frame = window.requestAnimationFrame(fit);
+    const observer = new ResizeObserver(fit);
+    observer.observe(parent ?? container);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      reader.dispose();
+      graph.dispose();
+    };
+  }, [diagram, theme, locale]);
+
+  const title = locale === "en-US"
+    ? diagram.kind === "mind-map" ? "Mind map" : diagram.kind === "architecture" ? "Architecture diagram" : "Flowchart"
+    : diagram.kind === "mind-map" ? "思维导图" : diagram.kind === "architecture" ? "架构图" : "流程图";
+  return (
+    <section className="edgeever-x6-document">
+      <div aria-label={title} className="edgeever-x6-diagram" key={diagram.kind} ref={containerRef} role="img" />
+    </section>
+  );
+};
+
 const inlineMermaidSvgStyles = (svg: string) => {
   const container = document.createElement("div");
   container.style.cssText = "position:fixed;left:-10000px;top:-10000px;visibility:hidden;";
@@ -567,6 +644,14 @@ const scrollEditorPositionIntoView = (
 
 function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
   const isViewer = props.mode === "viewer";
+  const visualDiagram = useMemo(() => {
+    if (props.mode !== "viewer" || !props.visualDiagramJson) return null;
+    try {
+      return JSON.parse(props.visualDiagramJson) as DiagramDocument;
+    } catch {
+      return null;
+    }
+  }, [props.mode, props.mode === "viewer" ? props.visualDiagramJson : undefined]);
   const autoFocus = props.mode === "viewer" ? false : Boolean(props.autoFocus);
   const aiPromptsJson = props.mode === "viewer" ? "[]" : (props.aiPromptsJson ?? "[]");
   const aiPrompts = useMemo(() => {
@@ -671,8 +756,12 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
     [isViewer, props.baseUrl, props.locale]
   );
   const mermaidCodeBlockExtension = useMemo(
-    () => createMobileCodeBlockExtension(props.locale, props.theme),
-    [props.locale, props.theme]
+    () => createMobileCodeBlockExtension(
+      props.locale,
+      props.theme,
+      props.mode === "viewer" && Boolean(props.visualDiagramNote),
+    ),
+    [props.locale, props.mode, props.theme, props.mode === "viewer" ? props.visualDiagramNote : undefined]
   );
   const searchHighlightExtension = useMemo(
     () => Extension.create({
@@ -693,7 +782,8 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
     // the Android bridge retry raced each other and could leave the WebView stuck.
     autofocus: false,
     extensions: [
-      StarterKit.configure({ codeBlock: false, link: { openOnClick: false } }),
+      StarterKit.configure({ codeBlock: false, link: false }),
+      EdgeEverLink.configure({ openOnClick: false }),
       NativeAttachmentMetadata,
       TaskList,
       TaskItem.configure({ nested: true }),
@@ -1565,7 +1655,13 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
           ) : null}
         </div>
       ) : null}
-      <EditorContent className="edgeever-editor-scroll" editor={editor} />
+      {isViewer && visualDiagram ? (
+        <div className="edgeever-editor-scroll">
+          <ReadOnlyX6Diagram diagram={visualDiagram} locale={props.locale} theme={props.theme} />
+        </div>
+      ) : (
+        <EditorContent className="edgeever-editor-scroll" editor={editor} />
+      )}
       {aiSelectionTrigger && !aiPanel ? (
         <button
           aria-label={props.locale === "en-US" ? "Use AI on selected text" : "用 AI 处理选中内容"}
@@ -2104,7 +2200,8 @@ const loadMermaid = () => {
 
 const createMobileCodeBlockExtension = (
   locale: "zh-CN" | "en-US",
-  theme: "light" | "dark"
+  theme: "light" | "dark",
+  hideCopyForVisualDiagram = false,
 ) => CodeBlock.extend({
   addNodeView() {
     return ({ node }) => {
@@ -2164,7 +2261,7 @@ const createMobileCodeBlockExtension = (
         });
       });
       pre.append(code);
-      wrapper.append(copyButton, preview, pre);
+      wrapper.append(...(hideCopyForVisualDiagram ? [preview, pre] : [copyButton, preview, pre]));
 
       let currentNode = node;
       let renderTimer: number | null = null;
@@ -3085,6 +3182,12 @@ const getEditorStyles = (theme: "light" | "dark", options?: { viewer?: boolean }
   .edgeever-code-block, .edgeever-mermaid-code-block { position: relative; margin: 18px 0; overflow: visible; background: transparent; }
   .edgeever-code-copy-button { position: absolute; top: 8px; right: 8px; z-index: 1; border: 1px solid ${theme === "dark" ? "#475569" : "#cbded1"}; border-radius: 6px; padding: 5px 8px; background: ${theme === "dark" ? "rgba(30, 41, 59, 0.94)" : "rgba(247, 251, 248, 0.94)"}; color: ${theme === "dark" ? "#cbd5e1" : "#475569"}; font: inherit; font-size: 12px; line-height: 1.35; }
   .edgeever-code-copy-button:active { border-color: #0f766e; color: ${theme === "dark" ? "#86efac" : "#0f766e"}; }
+  .edgeever-editor-scroll:has(.edgeever-x6-document) { display: flex; flex-direction: column; overflow: hidden; }
+  .edgeever-x6-document, .edgeever-diagram-reader-host { display: flex; flex-direction: column; height: 100%; min-height: 100%; padding: 8px 12px 12px; background: ${theme === "dark" ? "#0f172a" : "#fff"}; }
+  .edgeever-diagram-reader-controls { flex: 0 0 auto; }
+  .edgeever-x6-diagram { flex: 1 1 auto; width: 100%; height: auto; min-height: 240px; overflow: hidden; border: 1px solid ${theme === "dark" ? "#26382f" : "#e3ece7"}; border-radius: 14px; background: ${theme === "dark" ? "#101311" : "#f8faf9"}; touch-action: none; }
+  .edgeever-x6-diagram .x6-graph-svg { overflow: hidden; }
+  .edgeever-x6-diagram .x6-node { cursor: pointer; }
   .edgeever-mermaid-code-block > pre { display: none; margin: 8px 0 0; }
   .edgeever-mermaid-code-block.is-source-visible > pre { display: block; }
   .edgeever-mermaid-preview { display: flex; min-height: 104px; align-items: center; justify-content: center; overflow-x: auto; padding: 16px 4px; background: transparent; }

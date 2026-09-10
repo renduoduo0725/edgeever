@@ -32,6 +32,44 @@ describe("MCP tool catalog", () => {
       destructiveHint: false,
       idempotentHint: true,
     });
+    expect(byName.get("create_diagram_memo")?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+    });
+    expect(byName.get("create_diagram_memo")?.inputSchema).toMatchObject({
+      required: ["notebookId", "kind", "nodes"],
+      properties: {
+        kind: { enum: ["mind-map", "flowchart", "architecture"] },
+        nodes: {
+          minItems: 1,
+          maxItems: 200,
+          items: { required: ["id", "label"] },
+        },
+        edges: { maxItems: 400 },
+        layout: { properties: { direction: { enum: ["left-to-right", "top-to-bottom"] } } },
+      },
+    });
+    expect(byName.get("create_diagram_memo")?.inputSchema.properties.nodes.items.properties.x).toBeUndefined();
+    expect(byName.get("create_diagram_memo")?.inputSchema.properties.nodes.items.properties.width).toBeUndefined();
+    expect(byName.get("get_diagram")?.annotations).toMatchObject({
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+    });
+    expect(byName.get("get_diagram")?.inputSchema).toMatchObject({
+      required: ["memoId"],
+      properties: { includeLayout: { type: "boolean" } },
+    });
+    expect(byName.get("update_diagram")?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+    });
+    expect(byName.get("update_diagram")?.inputSchema).toMatchObject({
+      required: ["memoId", "expectedRevision", "operations"],
+      properties: { operations: { minItems: 1, maxItems: 100 } },
+    });
     expect(byName.get("rename_notebook")?.annotations).toMatchObject({
       readOnlyHint: false,
       destructiveHint: false,

@@ -1,5 +1,6 @@
 import type { TiptapDoc } from "./content";
 import type { AiAction, AiPromptParameterKind, AiPromptResultMode } from "./ai-assistant";
+import type { DiagramKind, DiagramSummaryPreview } from "./diagram";
 
 export type Notebook = {
   id: string;
@@ -20,6 +21,8 @@ export type MemoSummary = {
   notebookId: string;
   title: string | null;
   excerpt: string;
+  diagramKind?: DiagramKind | null;
+  diagramPreview?: DiagramSummaryPreview;
   tags: string[];
   isPinned: boolean;
   isArchived: boolean;
@@ -169,6 +172,7 @@ export type AiProviderConfig = {
   isEnabled: boolean;
   hasApiKey: boolean;
   models: AiModelConfig[];
+  credentialsUnavailable?: boolean;
 };
 
 export type AiSettings = {
@@ -256,8 +260,6 @@ export type AuthSession = {
   authRequired: boolean;
   authenticated: boolean;
   demoMode: boolean;
-  oidcEnabled?: boolean;
-  passwordLoginEnabled?: boolean;
   user: AuthUser | null;
   sessionToken?: string;
 };

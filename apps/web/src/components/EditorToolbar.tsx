@@ -22,6 +22,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MemoEditorToolbarDivider, MemoEditorToolbarRow } from "@/components/MemoEditorToolbarChrome";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -70,8 +71,6 @@ const EditorToolbarButton = ({
     <TooltipContent>{title}</TooltipContent>
   </Tooltip>
 );
-
-const ToolbarDivider = () => <div className="hidden h-6 w-px shrink-0 bg-slate-200 sm:block" />;
 
 const isToolbarEditorReady = (editor: Editor | null): editor is Editor =>
   Boolean(editor && !editor.isDestroyed && (editor as { extensionManager?: unknown }).extensionManager);
@@ -280,15 +279,14 @@ export const EditorToolbar = ({
   return (
     <TooltipProvider delayDuration={0} skipDelayDuration={0}>
       <div
-        className="relative min-w-0 max-w-full border-t border-slate-100 bg-white"
+        className="relative min-w-0 max-w-full border-t border-slate-100 bg-card"
         role="toolbar"
         aria-label={t("editorToolbar.toolbar")}
       >
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-gradient-to-r from-white to-transparent sm:hidden" />
-        <div
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-4 bg-gradient-to-r from-card to-transparent sm:hidden" />
+        <MemoEditorToolbarRow
           ref={controlsRef}
           className={cn(
-            "flex min-w-0 max-w-full flex-wrap items-center gap-1 px-3 py-2 sm:px-5",
             hasOverflow && "pr-14 sm:pr-16",
             !expanded && "max-h-12 overflow-hidden"
           )}
@@ -302,7 +300,7 @@ export const EditorToolbar = ({
                       "flex h-8 shrink-0 items-center rounded-md border px-2.5 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
                       markdownMode
                         ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                        : "border-slate-200/80 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                        : "border-slate-200/80 bg-card text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                     )}
                     type="button"
                     aria-label={markdownMode ? t("editorToolbar.richText") : t("editorToolbar.markdown")}
@@ -317,13 +315,13 @@ export const EditorToolbar = ({
                 <TooltipContent side="bottom" className="flex items-center gap-2">
                   <span>{markdownMode ? t("editorToolbar.richText") : t("editorToolbar.markdown")}</span>
                   {markdownModeShortcutLabel && (
-                    <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 font-mono text-[10px] leading-none">
+                    <kbd className="rounded border border-border/20 bg-card/10 px-1.5 py-0.5 font-mono text-[10px] leading-none">
                       {markdownModeShortcutLabel}
                     </kbd>
                   )}
                 </TooltipContent>
               </Tooltip>
-              <ToolbarDivider />
+              <MemoEditorToolbarDivider className="hidden sm:block" />
             </>
           )}
           {onPickAttachment && (
@@ -335,7 +333,7 @@ export const EditorToolbar = ({
               >
                 <Paperclip className="h-4 w-4" />
               </EditorToolbarButton>
-              <ToolbarDivider />
+              <MemoEditorToolbarDivider className="hidden sm:block" />
             </>
           )}
           {onPickExternalLink && (
@@ -352,7 +350,7 @@ export const EditorToolbar = ({
               >
                 <Link className="h-4 w-4" />
               </EditorToolbarButton>
-              <ToolbarDivider />
+              <MemoEditorToolbarDivider className="hidden sm:block" />
             </>
           )}
           {onPickNoteLink && (
@@ -364,7 +362,7 @@ export const EditorToolbar = ({
               >
                 <Link2 className="h-4 w-4" />
               </EditorToolbarButton>
-              <ToolbarDivider />
+              <MemoEditorToolbarDivider className="hidden sm:block" />
             </>
           )}
           {markdownMode ? (
@@ -376,10 +374,10 @@ export const EditorToolbar = ({
             disabled={disabled}
             onValueChange={(value) => setBlock(value)}
           >
-            <SelectTrigger className="h-8 w-20 shrink-0 whitespace-nowrap border-slate-200 bg-white text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap">
+            <SelectTrigger className="h-8 w-20 shrink-0 whitespace-nowrap border-slate-200 bg-card text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap">
               <SelectValue placeholder={t("editorToolbar.paragraph")} />
             </SelectTrigger>
-            <SelectContent className="bg-white border border-slate-200 rounded-md py-1 shadow-md">
+            <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
               <SelectItem value="paragraph">{t("editorToolbar.paragraph")}</SelectItem>
               <SelectItem value="heading-1">{t("editorToolbar.heading1")}</SelectItem>
               <SelectItem value="heading-2">{t("editorToolbar.heading2")}</SelectItem>
@@ -387,7 +385,7 @@ export const EditorToolbar = ({
             </SelectContent>
           </Select>
 
-          <ToolbarDivider />
+              <MemoEditorToolbarDivider className="hidden sm:block" />
           <EditorToolbarButton
             title={t("editorToolbar.undo")}
             disabled={!canRun((current) => current.can().chain().focus().undo().run())}
@@ -403,7 +401,7 @@ export const EditorToolbar = ({
             <Redo2 className="h-4 w-4" />
           </EditorToolbarButton>
 
-          <ToolbarDivider />
+          <MemoEditorToolbarDivider className="hidden sm:block" />
           <EditorToolbarButton
             title={t("editorToolbar.bold")}
             active={isActive("bold")}
@@ -437,7 +435,7 @@ export const EditorToolbar = ({
             <Code2 className="h-4 w-4" />
           </EditorToolbarButton>
 
-          <ToolbarDivider />
+          <MemoEditorToolbarDivider className="hidden sm:block" />
           <EditorToolbarButton
             title={`${t("editorToolbar.bulletList")} · ${t("editorToolbar.listIndentHint")}`}
             active={isActive("bulletList")}
@@ -487,12 +485,12 @@ export const EditorToolbar = ({
               }
             >
               <SelectTrigger
-                className="h-8 w-32 shrink-0 whitespace-nowrap border-slate-200 bg-white text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap"
+                className="h-8 w-32 shrink-0 whitespace-nowrap border-slate-200 bg-card text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap"
                 aria-label={t("editorToolbar.codeLanguage")}
               >
                 <SelectValue placeholder={t("editorToolbar.plainText")} />
               </SelectTrigger>
-              <SelectContent className="bg-white border border-slate-200 rounded-md py-1 shadow-md">
+              <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
                 {CODE_BLOCK_LANGUAGES.map((language) => (
                   <SelectItem key={language.value} value={language.value}>
                     {language.value === "plaintext" ? t("editorToolbar.plainText") : language.label}
@@ -519,13 +517,13 @@ export const EditorToolbar = ({
           <EditorTableMenu editor={editor} readOnly={readOnly} />
             </>
           )}
-        </div>
+        </MemoEditorToolbarRow>
         {hasOverflow && (
-          <div className="absolute right-3 top-2 z-20 flex h-8 items-center bg-gradient-to-l from-white via-white to-transparent pl-5 sm:right-5">
+          <div className="absolute right-3 top-2 z-20 flex h-8 items-center bg-gradient-to-l from-card via-card to-transparent pl-5 sm:right-4 sm:top-0.5">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                  className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-card text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
                   type="button"
                   aria-expanded={expanded}
                   aria-label={t(expanded ? "editorToolbar.showLess" : "editorToolbar.showMore")}

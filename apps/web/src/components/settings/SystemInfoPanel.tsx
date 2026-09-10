@@ -31,6 +31,12 @@ type InstanceSystemDiagnostics = Pick<InstanceHealth, "build" | "containerImageS
   runtime?: string | null;
 };
 
+export type SystemInfoDiagnostics = {
+  clientRuntime?: ClientRuntimeDiagnostics | null;
+  instance?: Partial<InstanceSystemDiagnostics> | null;
+  instanceVersion?: string | null;
+};
+
 type SystemInfoGroup = {
   id: "cloud" | "client" | "connection";
   title: string;
@@ -82,11 +88,7 @@ const getColSpanClass = (colSpan?: SystemInfoItem["colSpan"]) => {
 const getWebSystemInfoGroups = (
   t: (key: string) => string,
   language: string,
-  diagnostics: {
-    clientRuntime?: ClientRuntimeDiagnostics | null;
-    instance?: Partial<InstanceSystemDiagnostics> | null;
-    instanceVersion?: string | null;
-  } = {},
+  diagnostics: SystemInfoDiagnostics = {},
 ): SystemInfoGroup[] => {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || t("systemInfo.unknown");
   const userAgent = navigator.userAgent;
@@ -200,12 +202,8 @@ const getWebSystemInfoGroups = (
 export const getWebSystemInfoItems = (
   t: (key: string) => string,
   language: string,
-  instanceRuntime?: string | null,
-  instanceVersion?: string | null,
-): SystemInfoItem[] => getWebSystemInfoGroups(t, language, {
-  instance: { runtime: instanceRuntime },
-  instanceVersion,
-})
+  diagnostics: SystemInfoDiagnostics = {},
+): SystemInfoItem[] => getWebSystemInfoGroups(t, language, diagnostics)
   .flatMap((group) => group.items);
 
 export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
@@ -340,6 +338,7 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
   };
 
   const desktopUpdateState = desktopUpdateStatusQuery.data?.state ?? "idle";
+  const desktopAutoUpdateSupported = clientRuntimeQuery.data?.autoUpdateSupported !== false;
   const desktopUpdateBusy = desktopUpdateCheckMutation.isPending || desktopUpdateInstallMutation.isPending;
   const desktopUpdateStatus = desktopUpdateInstallMutation.isError || desktopUpdateCheckMutation.isError || desktopUpdateStatusQuery.isError
     ? t("systemInfo.desktopUpdateFailed")
@@ -366,7 +365,7 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
         <Button
           size="sm"
           variant="outline"
-          className="h-7 gap-1.5 bg-white px-2.5 text-xs text-slate-700 shadow-xs hover:bg-slate-50"
+          className="h-7 gap-1.5 bg-card px-2.5 text-xs text-slate-700 shadow-xs hover:bg-slate-50"
           type="button"
           onClick={() => void handleCopy()}
         >
@@ -395,11 +394,11 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
                   <h3 id={headingId} className="text-xs font-semibold text-slate-800">{group.title}</h3>
                 </div>
               </div>
-              {isClient && desktopAvailable ? (
+              {isClient && desktopAvailable && desktopAutoUpdateSupported ? (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 bg-white px-2.5 text-xs shadow-xs hover:bg-slate-50"
+                  className="h-7 bg-card px-2.5 text-xs shadow-xs hover:bg-slate-50"
                   type="button"
                   disabled={desktopUpdateBusy || desktopUpdateState === "available"}
                   onClick={handleDesktopUpdate}
@@ -417,6 +416,18 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
                         ? t("systemInfo.desktopUpdateChecking")
                         : t("systemInfo.desktopCheckForUpdates")}
                 </Button>
+              ) : isClient && desktopAvailable ? (
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="h-7 bg-card px-2.5 text-xs shadow-xs hover:bg-slate-50"
+                >
+                  <a href="https://github.com/tianma-if/edgeever/releases/latest" target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {t("systemInfo.desktopDownloadLatest")}
+                  </a>
+                </Button>
               ) : null}
             </div>
             {isCloud && active && release ? (
@@ -430,7 +441,7 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
                 </a>
               </div>
             ) : null}
-            {isClient && desktopAvailable && desktopUpdateStatus ? (
+            {isClient && desktopAvailable && desktopAutoUpdateSupported && desktopUpdateStatus ? (
               <p
                 className={cn(
                   "text-right text-xs",
@@ -444,7 +455,7 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
                 {desktopUpdateStatus}
               </p>
             ) : null}
-            <div className="rounded-lg border border-slate-200/80 bg-white p-3 sm:p-3.5">
+            <div className="rounded-lg border border-slate-200/80 bg-card p-3 sm:p-3.5">
               <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3 sm:gap-x-5">
                 {group.items.map((item) => (
                   <div

@@ -33,6 +33,7 @@ import { DesktopLocalDataCard } from "./settings/DesktopLocalDataCard";
 import { LoginDevicesCard } from "./settings/LoginDevicesCard";
 import { EvernoteImportGuideCard } from "./settings/EvernoteImportGuideCard";
 import { FeedbackLink } from "./settings/FeedbackLink";
+import { ProductHuntLink } from "./settings/ProductHuntLink";
 import { McpConfigCard } from "./settings/McpConfigCard";
 import { PreferenceCard } from "./settings/PreferenceCard";
 import { PasswordCard } from "./settings/PasswordCard";
@@ -70,9 +71,8 @@ interface SettingsPaneProps {
 }
 
 // Slate and brand color variables already switch values with the root theme.
-// Keep this pane on the base utilities so dark variants do not invert them twice.
 const SettingsGroup = ({ children }: { children: ReactNode }) => (
-  <div className="min-w-0 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-white [&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent">
+  <div className="min-w-0 divide-y divide-slate-200 overflow-hidden rounded-xl border border-slate-200 bg-card [&>*]:rounded-none [&>*]:border-0 [&>*]:bg-transparent">
     {children}
   </div>
 );
@@ -235,6 +235,7 @@ export const SettingsPane = ({
               onEditorContentAlignmentChange={onEditorContentAlignmentChange}
             />
             <FeedbackLink className="hidden lg:flex" />
+            <ProductHuntLink className="hidden lg:flex" />
           </SettingsGroup>
         );
       case "paw":
@@ -307,7 +308,7 @@ export const SettingsPane = ({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden bg-slate-50">
-      <header className="flex h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-end justify-between border-b border-slate-200 bg-white px-4 pb-3 pt-[env(safe-area-inset-top)] lg:h-16 lg:items-center lg:px-6 lg:pb-0 lg:pt-0">
+      <header className="flex h-[calc(3.5rem+env(safe-area-inset-top))] shrink-0 items-end justify-between border-b border-slate-200 bg-card px-4 pb-3 pt-[env(safe-area-inset-top)] lg:h-16 lg:items-center lg:px-6 lg:pb-0 lg:pt-0">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             size="icon"
@@ -369,25 +370,6 @@ export const SettingsPane = ({
                 </button>
               );
             })}
-            <div className="mt-auto overflow-hidden rounded-xl border border-slate-200 bg-white">
-              <button
-                type="button"
-                onClick={() => setSystemInfoOpen(true)}
-                className="flex min-h-16 w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-slate-600 transition-colors hover:bg-slate-200/50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
-                    <Info className="h-4 w-4 text-emerald-600" />
-                    {deployedUpdateUnseen ? <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-1 ring-white" /> : null}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">{t("systemInfo.title")}</span>
-                    <span className="mt-0.5 block truncate text-xs font-normal text-slate-500">{t("systemInfo.description")}</span>
-                  </span>
-                </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-              </button>
-            </div>
           </aside>
 
           {/* 右侧设置内容区 */}
@@ -403,7 +385,7 @@ export const SettingsPane = ({
           {activeMobileTab === null ? (
             /* 分类主菜单 */
             <div className="grid gap-2">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-card">
                 <button
                   type="button"
                   onClick={onOpenTemplates}
@@ -431,7 +413,7 @@ export const SettingsPane = ({
                   <ChevronRight className="h-4 w-4 text-slate-400" />
                 </button>
               </div>
-              <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-card">
                 {tabItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -457,7 +439,7 @@ export const SettingsPane = ({
                   );
                 })}
               </div>
-              <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-card">
                 <button
                   type="button"
                   onClick={() => setSystemInfoOpen(true)}
@@ -476,6 +458,7 @@ export const SettingsPane = ({
                   <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
                 </button>
                 <FeedbackLink />
+                <ProductHuntLink />
               </div>
             </div>
           ) : (
