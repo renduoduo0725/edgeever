@@ -5,7 +5,10 @@ import * as m from "motion/react-m";
 import {
   ChevronLeft,
   ChevronDown,
+  ChevronsLeft,
+  ChevronsRight,
   Plus,
+  LayoutGrid,
   LayoutList,
   LayoutTemplate,
   BookPlus,
@@ -64,6 +67,7 @@ import { PluginToolbarMenu } from "./plugins/PluginToolbarMenu";
 
 const DesktopSyncIssuesDialog = lazy(() => import("./DesktopSyncIssuesDialog").then((module) => ({ default: module.DesktopSyncIssuesDialog })));
 
+const NOTEBOOK_SIDEBAR_ID = "edgeever-notebook-sidebar";
 const NOTEBOOK_DRAG_SCROLL_EDGE_PX = 56;
 const NOTEBOOK_DRAG_SCROLL_MAX_STEP_PX = 18;
 const DESKTOP_DOWNLOAD_URL = "https://github.com/tianma-if/edgeever/releases/latest";
@@ -233,6 +237,105 @@ const SidebarSectionLabel = ({ icon, label }: { icon: ReactNode; label: string }
   </div>
 );
 
+const SidebarCollapseButton = ({
+  collapsed,
+  onToggle,
+  className,
+  tooltipSide = "bottom",
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  className?: string;
+  tooltipSide?: "top" | "right" | "bottom" | "left";
+}) => {
+  const { t } = useTranslation();
+  const label = t(collapsed ? "notebookPane.expandSidebar" : "notebookPane.collapseSidebar");
+
+  return (
+    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70",
+              className
+            )}
+            aria-label={label}
+            aria-expanded={!collapsed}
+            aria-controls={NOTEBOOK_SIDEBAR_ID}
+            onClick={onToggle}
+          >
+            {collapsed ? <ChevronsRight className="h-4 w-4" aria-hidden="true" /> : <ChevronsLeft className="h-4 w-4" aria-hidden="true" />}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side={tooltipSide}>{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const SidebarRailButton = ({
+  active = false,
+  icon,
+  label,
+  onClick,
+  disabled = false,
+}: {
+  active?: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <button
+        type="button"
+        disabled={disabled}
+        aria-current={active ? "page" : undefined}
+        aria-label={label}
+        onClick={onClick}
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 disabled:cursor-not-allowed disabled:opacity-50",
+          active && "bg-emerald-50 text-emerald-600"
+        )}
+      >
+        {icon}
+      </button>
+    </TooltipTrigger>
+    <TooltipContent side="right">{label}</TooltipContent>
+  </Tooltip>
+);
+
+const CreateMemoTypeItems = ({ onCreateMemo }: { onCreateMemo: (kind?: DiagramKind) => void }) => {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <DropdownMenuItem onSelect={() => onCreateMemo()}>
+        <FileText className="h-4 w-4" />
+        {t("diagram.normalNote")}
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => onCreateMemo("mind-map")}>
+        <Network className="h-4 w-4" />
+        {t("diagram.mindMap")}
+        <DiagramBetaBadge />
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => onCreateMemo("flowchart")}>
+        <Workflow className="h-4 w-4" />
+        {t("diagram.flowchart")}
+        <DiagramBetaBadge />
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => onCreateMemo("architecture")}>
+        <Boxes className="h-4 w-4" />
+        {t("diagram.architecture")}
+        <DiagramBetaBadge />
+      </DropdownMenuItem>
+    </>
+  );
+};
+
 const getSyncStatusLabel = (summary: SyncQueueSummary, isOnline: boolean, isSyncing: boolean, t: ReturnType<typeof useTranslation>["t"]) => {
   if (!isOnline) {
     return summary.total > 0 ? t("notebookPane.sync.offlineWithPending", { count: summary.total }) : t("notebookPane.sync.offline");
@@ -392,6 +495,8 @@ export const NotebookPane = ({
   demoMode = false,
   onResetDemo,
   isResettingDemo = false,
+  collapsed = false,
+  onToggleCollapsed,
 }: {
   repository: EdgeEverRepository;
   user: AuthUser | null;
@@ -429,6 +534,8 @@ export const NotebookPane = ({
   demoMode?: boolean;
   onResetDemo?: () => void;
   isResettingDemo?: boolean;
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
 }) => {
   const { t } = useTranslation();
   // Temporarily keep template actions out of the primary workspace navigation.
@@ -528,7 +635,8 @@ export const NotebookPane = ({
   }, [selectedNotebookId, tree]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden" data-notebook-sidebar-collapsed={collapsed ? "true" : "false"}>
+      <div className={cn("flex min-h-0 flex-1 flex-col", collapsed && "hidden")}>
       <header className="flex h-[calc(4rem+env(safe-area-inset-top))] shrink-0 items-end justify-between border-b border-slate-200 px-4 pb-3 pt-[env(safe-area-inset-top)] lg:hidden">
         <div>
           <div className="text-base font-semibold tracking-normal">{t("notebookPane.notebooks")}</div>
@@ -599,25 +707,7 @@ export const NotebookPane = ({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" sideOffset={8} className="w-52">
-              <DropdownMenuItem onSelect={() => onCreateMemo()}>
-                <FileText className="h-4 w-4" />
-                {t("diagram.normalNote")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onCreateMemo("mind-map")}>
-                <Network className="h-4 w-4" />
-                {t("diagram.mindMap")}
-                <DiagramBetaBadge />
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onCreateMemo("flowchart")}>
-                <Workflow className="h-4 w-4" />
-                {t("diagram.flowchart")}
-                <DiagramBetaBadge />
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onCreateMemo("architecture")}>
-                <Boxes className="h-4 w-4" />
-                {t("diagram.architecture")}
-                <DiagramBetaBadge />
-              </DropdownMenuItem>
+              <CreateMemoTypeItems onCreateMemo={onCreateMemo} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -736,7 +826,92 @@ export const NotebookPane = ({
         )}
 
       </div>
+      </div>
 
+      {collapsed && onToggleCollapsed ? (
+        <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+          <div className="flex min-h-0 flex-1 flex-col items-center px-1.5 pt-4" data-notebook-sidebar-rail>
+            <div className="flex shrink-0 flex-col items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_3px_8px_rgb(var(--brand-green-rgb)/0.24)] transition-transform duration-150 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={t("notebookPane.newMemo")}
+                    onClick={() => onCreateMemo()}
+                    disabled={!canCreateMemo || isCreatingMemo}
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{t("notebookPane.newMemo")}</TooltipContent>
+              </Tooltip>
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 disabled:cursor-not-allowed disabled:opacity-50"
+                        aria-label={t("diagram.createType")}
+                        disabled={!canCreateMemo || isCreatingMemo}
+                      >
+                        <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{t("diagram.moreTypes")}</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="start" side="right" sideOffset={8} className="w-52">
+                  <CreateMemoTypeItems onCreateMemo={onCreateMemo} />
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <nav className="mt-3 flex min-h-0 flex-1 flex-col items-center gap-1" aria-label={t("companion.primaryNavigation")}>
+              <SidebarRailButton
+                active={!companionActive && view === "notebook" && selectedNotebookId === null}
+                icon={<LayoutList className="h-4 w-4" />}
+                label={t("notebookPane.allMemos")}
+                onClick={onBackToList}
+              />
+              <SidebarRailButton
+                active={!companionActive && view === "notebook" && selectedNotebookId !== null}
+                icon={<NotebookIcon className="h-4 w-4" />}
+                label={t("notebookPane.notebooks")}
+                onClick={onToggleCollapsed}
+              />
+              <SidebarRailButton icon={<Tags className="h-4 w-4" />} label={t("mobileSheets.tags")} onClick={onOpenTags} />
+              <SidebarRailButton icon={<Archive className="h-4 w-4" />} label={t("mobileSheets.assets")} onClick={onOpenAssets} />
+              {showTemplateEntry ? (
+                <SidebarRailButton icon={<LayoutTemplate className="h-4 w-4" />} label={t("nav.templates")} onClick={onOpenTemplates} />
+              ) : null}
+              <PluginToolbarMenu
+                host={pluginHost}
+                onManage={onOpenPluginManager}
+                align="start"
+                side="right"
+                tooltipSide="right"
+                className="h-9 w-9 text-slate-600"
+              />
+              <div className="mt-auto flex flex-col items-center gap-1 border-t border-slate-200/80 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+                <SidebarRailButton
+                  active={view === "trash"}
+                  icon={<Trash2 className="h-4 w-4" />}
+                  label={t("notebookPane.trash")}
+                  onClick={onOpenTrash}
+                />
+                <SidebarRailButton
+                  icon={<CircleUserRound className="h-4 w-4" />}
+                  label={t("notebookPane.profile")}
+                  onClick={onOpenSettings}
+                />
+                <SidebarCollapseButton collapsed onToggle={onToggleCollapsed} className="h-9 w-9" tooltipSide="right" />
+              </div>
+            </nav>
+          </div>
+        </TooltipProvider>
+      ) : (
       <footer className="edgeever-workspace-sidebar-footer border-t border-slate-200 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-sm">
         <div className="space-y-1">
           <DropdownMenu>
@@ -950,9 +1125,13 @@ export const NotebookPane = ({
               <span className="min-w-0 flex-1 truncate">{t("notebookPane.profile")}</span>
             </button>
             <DesktopUpdateNotice />
+            {onToggleCollapsed ? (
+              <SidebarCollapseButton collapsed={collapsed} onToggle={onToggleCollapsed} className="hidden lg:inline-flex" />
+            ) : null}
           </div>
         </div>
       </footer>
+      )}
     </div>
   );
 };

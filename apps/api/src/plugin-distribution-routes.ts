@@ -257,6 +257,18 @@ const githubUpstreamError = (context: Parameters<typeof apiError>[0], error: unk
   );
 };
 
+const alternateGithubReleaseTag = (releaseTag: string) => {
+  if (releaseTag.startsWith("v") && RELEASE_TAG_PATTERN.test(releaseTag.slice(1))) return releaseTag.slice(1);
+  const prefixed = `v${releaseTag}`;
+  if (!releaseTag.startsWith("v") && RELEASE_TAG_PATTERN.test(prefixed)) return prefixed;
+  return null;
+};
+
+const githubReleaseTagCandidates = (releaseTag: string) => {
+  const alternate = alternateGithubReleaseTag(releaseTag);
+  return alternate && alternate !== releaseTag ? [releaseTag, alternate] : [releaseTag];
+};
+
 export const downloadGithubReleaseAssetByTag = async ({
   owner,
   repository,
@@ -273,29 +285,46 @@ export const downloadGithubReleaseAssetByTag = async ({
   if (!hasValidRepositoryCoordinates(owner, repository) || !RELEASE_TAG_PATTERN.test(releaseTag)) {
     throw new Error("Invalid GitHub release coordinates.");
   }
-  const url = `https://github.com/${owner}/${repository}/releases/download/${releaseTag}/${assetName}`;
-  try {
-    const response = await request(url, {
-      redirect: "follow",
-      headers: { "User-Agent": "EdgeEver" },
-    });
-    return await readBoundedAsset(response, assetName);
-  } catch (error) {
-    const release = await readGithubReleaseByTag({ owner, repository, releaseTag, request });
-    const asset = release.assets.find((candidate) => candidate.name === assetName);
-    if (!asset) {
-      const missing = new GithubUpstreamError(`GitHub Release ${releaseTag} is missing ${assetName}.`, 404);
-      missing.cause = error;
-      throw missing;
+  const tags = githubReleaseTagCandidates(releaseTag);
+  let lastError: unknown;
+  for (const tag of tags) {
+    const url = `https://github.com/${owner}/${repository}/releases/download/${tag}/${assetName}`;
+    try {
+      const response = await request(url, {
+        redirect: "follow",
+        headers: { "User-Agent": "EdgeEver" },
+      });
+      return await readBoundedAsset(response, assetName);
+    } catch (error) {
+      lastError = error;
+      if (error instanceof Error && error.message.includes("exceeds the allowed package size")) throw error;
     }
-    return downloadGithubReleaseAsset({
-      owner,
-      repository,
-      assetId: String(asset.id),
-      assetName,
-      request,
-    });
   }
+
+  for (const tag of tags) {
+    try {
+      const release = await readGithubReleaseByTag({ owner, repository, releaseTag: tag, request });
+      const asset = release.assets.find((candidate) => candidate.name === assetName);
+      if (!asset) {
+        lastError = new GithubUpstreamError(`GitHub Release ${tag} is missing ${assetName}.`, 404);
+        continue;
+      }
+      return downloadGithubReleaseAsset({
+        owner,
+        repository,
+        assetId: String(asset.id),
+        assetName,
+        request,
+      });
+    } catch (error) {
+      lastError = error;
+      if (!(error instanceof GithubUpstreamError && error.status === 404)) throw error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new GithubUpstreamError(`GitHub Release ${releaseTag} is missing ${assetName}.`, 404);
 };
 
 const PLUGIN_MANIFEST_CACHE_TTL_MS = 300_000;
@@ -403,6 +432,9 @@ export const registerPluginDistributionRoutes = (app: Hono<AppEnv>) => {
         "Content-Type": "application/octet-stream",
       });
     } catch (error) {
+      if (error instanceof GithubUpstreamError && error.status === 404) {
+        return githubUpstreamError(context, error);
+      }
       return apiError(
         context,
         "github_asset_download_failed",

@@ -1,5 +1,6 @@
 @import "highlight.js/styles/github.css";
 @import "./editor-themes/index.css";
+@import "./publish-layout.css";
 @import "./code-highlight-dark.css";
 
 @tailwind base;
@@ -420,6 +421,14 @@ html[data-edgeever-extension-theme] kbd {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.edgeever-workspace-grid {
+  --notebook-sidebar-width: clamp(180px, 17vw, 260px);
+}
+
+.edgeever-workspace-grid--sidebar-collapsed {
+  --notebook-sidebar-width: 3.5rem;
+}
+
 .edgeever-workspace-shell {
   background: var(--workspace-canvas);
 }
@@ -483,13 +492,13 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 @media (min-width: 1024px) {
   .edgeever-workspace-grid--editor {
     grid-template-columns:
-      clamp(180px, 17vw, 260px)
+      var(--notebook-sidebar-width)
       clamp(240px, 23vw, var(--memo-list-width))
       minmax(0, 1fr);
   }
 
   .edgeever-workspace-grid--single-right {
-    grid-template-columns: clamp(180px, 17vw, 260px) minmax(0, 1fr);
+    grid-template-columns: var(--notebook-sidebar-width) minmax(0, 1fr);
   }
 
   .edgeever-workspace-selection-desktop {
@@ -672,6 +681,177 @@ textarea {
   min-height: 0;
   padding: 8px 20px 40px;
   color: #0f172a;
+}
+
+.edgeever-phone-stage {
+  width: 380px;
+  min-height: 740px;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 12px 12px 12px 0;
+  padding-top: 16px;
+  padding-bottom: 24px;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--workspace-surface, #eef3f0) 76%, white);
+}
+
+.edgeever-phone-device {
+  position: relative;
+  width: 331px;
+  height: 686px;
+  border-radius: 48px;
+  background: #1c1c1e;
+  box-shadow:
+    inset 0 0 0 1px #3a3a3c,
+    0 0 0 1.5px #111,
+    0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+.edgeever-phone-device__silent,
+.edgeever-phone-device__vol-up,
+.edgeever-phone-device__vol-down,
+.edgeever-phone-device__power {
+  position: absolute;
+  background: linear-gradient(180deg, #d4d4d8, #71717a);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 0 0.5px rgba(0, 0, 0, 0.35);
+}
+
+.edgeever-phone-device__silent {
+  left: -3px;
+  top: 88px;
+  width: 3px;
+  height: 18px;
+  border-radius: 1px 0 0 1px;
+}
+
+.edgeever-phone-device__vol-up,
+.edgeever-phone-device__vol-down {
+  left: -3px;
+  width: 3px;
+  height: 28px;
+  border-radius: 1px 0 0 1px;
+}
+
+.edgeever-phone-device__vol-up { top: 120px; }
+.edgeever-phone-device__vol-down { top: 156px; }
+
+.edgeever-phone-device__power {
+  right: -3px;
+  top: 140px;
+  width: 3px;
+  height: 56px;
+  border-radius: 0 1px 1px 0;
+}
+
+.edgeever-phone-device__screen {
+  position: absolute;
+  inset: 10px 8px 10px;
+  overflow: hidden;
+  border-radius: 40px;
+  background: #fff;
+  container-type: size;
+}
+
+:root.dark .edgeever-phone-device__screen {
+  background: #111;
+}
+
+.edgeever-phone-device__top {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  height: 44px;
+  pointer-events: none;
+  background: #fff;
+  border-radius: 40px 40px 0 0;
+}
+
+:root.dark .edgeever-phone-device__top {
+  background: #111;
+}
+
+.edgeever-phone-device__island {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  width: 96px;
+  height: 28px;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  transform: translateX(-50%);
+  border-radius: 20px;
+  background: #0a0a0a;
+}
+
+.edgeever-phone-device__lens {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #4a6080, #152033 55%, #050505 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.edgeever-phone-device__home {
+  position: absolute;
+  bottom: 7px;
+  left: 50%;
+  z-index: 4;
+  width: 108px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 99px;
+  background: rgba(15, 15, 16, 0.88);
+}
+
+.edgeever-phone-preview {
+  box-sizing: border-box;
+  width: 390px;
+  height: calc(100cqh * 390px / 100cqw);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 48px 16px 26px;
+  background: var(--publish-bg, #fff);
+  zoom: calc(100cqw / 390px);
+  -webkit-overflow-scrolling: touch;
+}
+
+.edgeever-phone-article {
+  min-height: 0;
+  padding: 0 0 20px;
+}
+
+.edgeever-phone-shell-title {
+  margin: 0 0 12px;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--publish-text-strong, #111);
+}
+
+.edgeever-phone-preview .edgeever-phone-mermaid {
+  margin: 12px 0;
+  overflow: hidden;
+}
+
+.edgeever-phone-preview .edgeever-phone-mermaid svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+}
+
+.edgeever-phone-preview .edgeever-theme-block__toolbar,
+.edgeever-phone-preview .edgeever-theme-block__delete {
+  display: none;
 }
 
 .edgeever-public-share .ProseMirror [data-edgeever-theme-block] {
@@ -949,7 +1129,8 @@ textarea {
 }
 
 .ProseMirror .edgeever-pdf-viewer a.pdf-viewer-action:hover,
-.ProseMirror .edgeever-file-viewer a.pdf-viewer-action:hover {
+.ProseMirror .edgeever-file-viewer a.pdf-viewer-action:hover,
+.ProseMirror .edgeever-file-viewer button.pdf-viewer-action:hover {
   background: var(--brand-green-soft);
   color: var(--brand-green-text);
 }
@@ -1850,6 +2031,7 @@ textarea {
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+  letter-spacing: normal;
   line-height: 1.45;
   transition: background-color 120ms ease;
 }
@@ -1911,8 +2093,12 @@ textarea {
 .ProseMirror th p,
 .ProseMirror td p,
 .markdown-content th p,
-.markdown-content td p {
+.markdown-content td p,
+.edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror :is(th, td) p,
+.edgeever-editor[data-paper-theme]:not([data-editor-theme="default"]) .ProseMirror :is(th, td) p {
   margin: 0;
+  letter-spacing: inherit;
+  line-height: inherit;
 }
 
 .ProseMirror .selectedCell::after {

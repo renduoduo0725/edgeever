@@ -41,10 +41,10 @@ describe("native mobile AI note assistant", () => {
   });
 
   test("streams AI output from the shared workspace configuration on both clients", () => {
-    expect(androidAssistantSource).toContain("resolveAiAssistantLastAction");
+    expect(androidAssistantSource).toContain("resolveAiAssistantOpenAction");
     expect(androidAssistantSource).toContain("readMobileAiAssistantLastAction");
     expect(androidEditorSource).toContain("readStoredAiAssistantLastActionPreference");
-    expect(androidEditorSource).toContain("resolveAiAssistantLastAction");
+    expect(androidEditorSource).toContain("resolveAiAssistantOpenAction");
     expect(iosAssistantSource).toContain("lastAiAssistantAction");
     expect(iosAssistantSource).toContain("applyStoredOrDefaultAction");
     expect(readSource("../apps/ios/EdgeEver/Data/Preferences/PreferencesStore.swift")).toContain("edgeever.aiAssistant.lastAction");

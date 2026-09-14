@@ -1,4 +1,5 @@
 import { useState, type SyntheticEvent } from "react";
+import { pauseOtherMediaPlayers } from "./pause-other-media";
 
 export const AudioAttachmentPlayer = ({
   src,
@@ -12,12 +13,7 @@ export const AudioAttachmentPlayer = ({
   const [failed, setFailed] = useState(false);
 
   const handlePlay = (event: SyntheticEvent<HTMLAudioElement>) => {
-    const activePlayer = event.currentTarget;
-    activePlayer.ownerDocument
-      .querySelectorAll<HTMLAudioElement>("audio[data-edgeever-audio-player]")
-      .forEach((player) => {
-        if (player !== activePlayer) player.pause();
-      });
+    pauseOtherMediaPlayers(event.currentTarget);
   };
 
   if (failed) {

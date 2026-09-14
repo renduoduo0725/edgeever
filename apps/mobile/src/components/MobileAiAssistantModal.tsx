@@ -6,13 +6,12 @@ import {
   AI_TONES,
   AI_WHOLE_NOTE_ACTIONS,
   buildAiAssistantLastActionPreference,
-  getDefaultAiAction,
   getDefaultAiTargetLanguage,
   promptAllowsAppend,
   promptAllowsReplace,
   promptNeedsTargetLanguage,
   promptNeedsTone,
-  resolveAiAssistantLastAction,
+  resolveAiAssistantOpenAction,
   type AiAction,
   type AiAssistantLastActionPreference,
   type AiTargetLanguage,
@@ -83,17 +82,17 @@ export const MobileAiAssistantModal = ({
     ?? (["summarize", "extract-key-points", "extract-todos", "continue-writing"].includes(action) ? "append" : "both");
 
   const labels: Record<AssistantAction, string> = {
-    summarize: tr("总结", "Summarize"),
+    summarize: tr("精简总结", "Summarize"),
     "extract-key-points": tr("提炼要点", "Key points"),
     "extract-todos": tr("提取待办", "Extract tasks"),
-    "rewrite-proofread": tr("转为小红书风格", "Convert to Xiaohongshu style"),
-    "improve-writing": tr("改进写作", "Improve writing"),
+    "rewrite-proofread": tr("改写与校对", "Rewrite & proofread"),
+    "improve-writing": tr("润色表达", "Polish"),
     "fix-spelling-grammar": tr("修正拼写与语法", "Fix spelling & grammar"),
     "make-shorter": tr("精炼表达", "Make concise"),
     "make-longer": tr("扩写内容", "Make longer"),
-    "simplify-language": tr("转为推特风格", "Convert to X (Twitter) style"),
+    "simplify-language": tr("简化表达", "Simplify language"),
     "change-tone": tr("调整语气", "Change tone"),
-    translate: tr("翻译", "Translate"),
+    translate: tr("全文翻译", "Translate"),
     "continue-writing": tr("继续写作", "Continue writing"),
     custom: tr("自定义指令", "Custom prompt"),
   };
@@ -149,8 +148,8 @@ export const MobileAiAssistantModal = ({
 
   useEffect(() => {
     if (!visible || !sessionReady || initializedForOpen || promptsQuery.isLoading) return;
-    const resolved = resolveAiAssistantLastAction({
-      fallbackAction: getDefaultAiAction(false),
+    const resolved = resolveAiAssistantOpenAction({
+      hasSelection: false,
       preference: storedPreferenceRef.current,
       prompts,
     });

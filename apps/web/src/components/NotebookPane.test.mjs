@@ -23,13 +23,56 @@ test("keeps the desktop create-note control compact with one neutral outline", (
 });
 
 test("marks diagram note types as beta without labeling regular notes", () => {
-  const createTypeMenu = source.split('<DropdownMenuContent align="start" sideOffset={8} className="w-52">')[1]?.split("</DropdownMenuContent>")[0];
+  const createTypeMenu = source.split("const CreateMemoTypeItems")[1]?.split("const getSyncStatusLabel")[0];
   const regularNoteItem = createTypeMenu?.split('onSelect={() => onCreateMemo()}>')[1]?.split("</DropdownMenuItem>")[0];
   const betaBadgeCount = createTypeMenu?.match(/<DiagramBetaBadge \/>/g)?.length;
 
   expect(regularNoteItem).not.toContain("DiagramBetaBadge");
   expect(createTypeMenu).toContain('onCreateMemo("architecture")');
   expect(betaBadgeCount).toBe(3);
+});
+
+describe("NotebookPane sidebar collapse", () => {
+  test("places a desktop-only collapse control in the footer and keeps an expand control when collapsed", () => {
+    const expandedFooter = source.split('pwa.sidebarDownloadsTitle')[1]?.split(") : (")[0] ?? source;
+    const profileRow = expandedFooter.split('aria-label={t("notebookPane.profile")}')[1]?.split("</div>")[0];
+
+    expect(source).toContain("SidebarCollapseButton");
+    expect(source).toContain('t(collapsed ? "notebookPane.expandSidebar" : "notebookPane.collapseSidebar")');
+    expect(source).toContain("aria-controls={NOTEBOOK_SIDEBAR_ID}");
+    expect(source).toContain('className="hidden lg:inline-flex"');
+    expect(source).toContain('collapsed && "hidden"');
+    expect(source).toContain("<ChevronsLeft");
+    expect(source).toContain("<ChevronsRight");
+    expect(profileRow).toContain("<SidebarCollapseButton");
+    expect(profileRow.indexOf('t("notebookPane.profile")')).toBeLessThan(profileRow.indexOf("<SidebarCollapseButton"));
+  });
+
+  test("renders an icon rail of primary destinations while the notebook tree is collapsed", () => {
+    const rail = source.split('data-notebook-sidebar-rail')[1]?.split(") : (")[0];
+
+    expect(rail).toContain('aria-label={t("notebookPane.newMemo")}');
+    expect(rail).toContain("<LayoutGrid");
+    expect(rail).toContain('label={t("notebookPane.allMemos")}');
+    expect(rail).toContain('label={t("notebookPane.notebooks")}');
+    expect(rail).toContain('label={t("mobileSheets.tags")}');
+    expect(rail).toContain('label={t("notebookPane.trash")}');
+    expect(rail).toContain("<SidebarCollapseButton collapsed");
+    expect(rail).toContain('tooltipSide="right"');
+  });
+
+  test("wires the desktop workspace grid to a collapsed notebook column", () => {
+    const workspace = readFileSync(new URL("./WorkspaceApp.tsx", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
+
+    expect(workspace).toContain("desktopNotebookSidebarCollapsed");
+    expect(workspace).toContain("edgeever-workspace-grid--sidebar-collapsed");
+    expect(workspace).toContain('id="edgeever-notebook-sidebar"');
+    expect(workspace).toContain("collapsed={desktopNotebookSidebarCollapsed}");
+    expect(css).toContain(".edgeever-workspace-grid--sidebar-collapsed");
+    expect(css).toContain("var(--notebook-sidebar-width)");
+    expect(css).toContain("--notebook-sidebar-width: 3.5rem;");
+  });
 });
 
 describe("NotebookPane client downloads", () => {

@@ -16,6 +16,14 @@ tags: [evernote, migration, self-hosted, mcp]
 
 我们推荐使用 AI 编程助手（如 Antigravity、Claude Code、Cursor 等）自动执行迁移。核心仓库迁移指南说明：该方案已完成内存流式优化与空文本预处理，能应对数 GB 级别超大笔记库，并保留创建/修改时间与嵌套笔记本目录层级。
 
+如果还在比较「自托管印象笔记替代方案」，可先看 [EdgeEver 品类说明](/self-hosted-evernote-alternative)，再按下面步骤搬家。
+
+### 常见问题
+
+- **会保留笔记本、附件和时间吗？** 文档化流程会保留创建/修改时间与嵌套笔记本层级。导入后请抽查带图片的笔记。
+- **必须用 AI 助手吗？** 推荐，但不是唯一路径。也可以下载 `scripts/import-evernote-enex-via-mcp.mjs`，按脚本注释手动执行。
+- **和印象笔记官方有关系吗？** 没有。本指南只处理你自己拥有的数据。
+
 ---
 
 ### 步骤 1：配置并安装 EdgeEver MCP 服务

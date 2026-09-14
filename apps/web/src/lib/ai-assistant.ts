@@ -13,6 +13,7 @@ import {
   buildAiAssistantLastActionPreference,
   readStoredAiAssistantLastActionPreference,
   resolveAiAssistantLastAction,
+  resolveAiAssistantOpenAction,
   writeStoredAiAssistantLastActionPreference,
   promptAllowsAppend,
   promptAllowsReplace,
@@ -50,6 +51,7 @@ export {
   promptNeedsTone,
   readStoredAiAssistantLastActionPreference,
   resolveAiAssistantLastAction,
+  resolveAiAssistantOpenAction,
   writeStoredAiAssistantLastActionPreference,
 };
 

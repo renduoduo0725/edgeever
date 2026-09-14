@@ -16,6 +16,14 @@ tags: [evernote, migration, self-hosted, mcp]
 
 We recommend using an AI coding assistant, such as Antigravity, Claude Code, Cursor, or a similar tool, to automate the migration. The migration guide in the core repository notes that the approach includes streaming memory optimization and empty-text preprocessing, supports very large note libraries, and preserves created/updated timestamps plus nested notebook hierarchy.
 
+If you are still comparing self-hosted Evernote alternatives, start with the [EdgeEver category page](/en/self-hosted-evernote-alternative), then follow the steps below.
+
+### FAQ
+
+- **Does this keep notebooks, attachments, and timestamps?** The documented flow preserves created/updated timestamps and nested notebook hierarchy. Spot-check notes with images after import.
+- **Do I have to use an AI assistant?** It is recommended, not required. You can download `scripts/import-evernote-enex-via-mcp.mjs` and follow the comments at the top of the script.
+- **Is EdgeEver affiliated with Evernote?** No. This guide only covers data you already own.
+
 ---
 
 ### Step 1: Configure and install the EdgeEver MCP service

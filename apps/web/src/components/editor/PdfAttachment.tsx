@@ -1,14 +1,27 @@
-import { PdfAttachment as BasePdfAttachment, resolvePdfDisplayMode } from "@edgeever/shared";
+import {
+  getAttachmentFilenameFromLabel,
+  PdfAttachment as BasePdfAttachment,
+  resolvePdfDisplayMode,
+} from "@edgeever/shared";
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from "@tiptap/react";
 import { PdfViewer } from "@/components/pdf/PdfViewer";
 
 const PdfAttachmentNodeView = ({ node, updateAttributes }: NodeViewProps) => {
   const url = typeof node.attrs.url === "string" ? node.attrs.url : "";
   const label = typeof node.attrs.label === "string" ? node.attrs.label : "PDF";
+  const filename = typeof node.attrs.filename === "string" && node.attrs.filename
+    ? node.attrs.filename
+    : getAttachmentFilenameFromLabel(label);
   const displayMode = resolvePdfDisplayMode(node.attrs.displayMode);
 
   return (
-    <NodeViewWrapper as="span" className="edgeever-pdf-attachment-node" contentEditable={false}>
+    <NodeViewWrapper
+      as="span"
+      className="edgeever-pdf-attachment-node"
+      data-file-name={filename || label}
+      data-file-url={url}
+      contentEditable={false}
+    >
       <PdfViewer
         url={url}
         label={label}

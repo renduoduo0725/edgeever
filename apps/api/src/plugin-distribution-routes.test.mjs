@@ -54,6 +54,71 @@ describe("GitHub plugin release asset proxy", () => {
     ]);
   });
 
+  test("downloads a v-prefixed public release when the unprefixed tag is missing", async () => {
+    const calls = [];
+    const buffer = await downloadGithubReleaseAssetByTag({
+      owner: "example",
+      repository: "edgeever-plugin",
+      releaseTag: "0.5.6",
+      assetName: "manifest.json",
+      request: async (input) => {
+        const url = String(input);
+        calls.push(url);
+        if (url === "https://github.com/example/edgeever-plugin/releases/download/0.5.6/manifest.json") {
+          return new Response("missing", { status: 404 });
+        }
+        if (url === "https://github.com/example/edgeever-plugin/releases/download/v0.5.6/manifest.json") {
+          return new Response("{\"version\":\"0.5.6\"}", { headers: { "content-length": "19" } });
+        }
+        throw new Error(url);
+      },
+    });
+
+    expect(new TextDecoder().decode(buffer)).toBe("{\"version\":\"0.5.6\"}");
+    expect(calls).toEqual([
+      "https://github.com/example/edgeever-plugin/releases/download/0.5.6/manifest.json",
+      "https://github.com/example/edgeever-plugin/releases/download/v0.5.6/manifest.json",
+    ]);
+  });
+
+  test("falls back to the v-prefixed GitHub API release when the unprefixed tag is missing", async () => {
+    const calls = [];
+    const buffer = await downloadGithubReleaseAssetByTag({
+      owner: "example",
+      repository: "edgeever-plugin",
+      releaseTag: "0.5.6",
+      assetName: "main.js",
+      request: async (input) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.includes("/releases/download/")) return new Response("missing", { status: 404 });
+        if (url.endsWith("/releases/tags/0.5.6")) return new Response("missing", { status: 404 });
+        if (url.endsWith("/releases/tags/v0.5.6")) {
+          return Response.json({
+            tag_name: "v0.5.6",
+            draft: false,
+            assets: [{
+              id: 42,
+              name: "main.js",
+              size: 18,
+              url: "https://api.github.com/repos/example/edgeever-plugin/releases/assets/42",
+              browser_download_url: "https://github.com/example/edgeever-plugin/releases/download/v0.5.6/main.js",
+            }],
+          });
+        }
+        if (url.endsWith("/releases/assets/42")) {
+          return new Response("export default {};", { headers: { "content-length": "18" } });
+        }
+        throw new Error(url);
+      },
+    });
+
+    expect(new TextDecoder().decode(buffer)).toBe("export default {};");
+    expect(calls).toContain("https://api.github.com/repos/example/edgeever-plugin/releases/tags/0.5.6");
+    expect(calls).toContain("https://api.github.com/repos/example/edgeever-plugin/releases/tags/v0.5.6");
+    expect(calls).toContain("https://api.github.com/repos/example/edgeever-plugin/releases/assets/42");
+  });
+
   test("falls back to the GitHub API asset endpoint when the public download URL fails", async () => {
     const calls = [];
     const buffer = await downloadGithubReleaseAssetByTag({

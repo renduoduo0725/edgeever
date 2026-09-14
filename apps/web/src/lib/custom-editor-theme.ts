@@ -41,12 +41,26 @@ export const DEFAULT_CUSTOM_DARK_COLORS: ThemeColors = {
   border: "#44403c",
 };
 
+export const DEFAULT_CUSTOM_EDITOR_THEME_NAME = "My custom theme";
+
 export const DEFAULT_CUSTOM_EDITOR_THEME: CustomEditorTheme = {
   id: "custom-default",
-  name: "My custom theme",
+  name: DEFAULT_CUSTOM_EDITOR_THEME_NAME,
   light: DEFAULT_CUSTOM_LIGHT_COLORS,
   dark: DEFAULT_CUSTOM_DARK_COLORS,
   customCss: "",
+};
+
+const NEW_THEME_NAME_PATTERN = /^New theme (\d+)$/;
+
+export const localizeStoredCustomThemeName = (
+  name: string,
+  copy: { defaultName: string; newName: (index: number) => string },
+) => {
+  if (name === DEFAULT_CUSTOM_EDITOR_THEME_NAME) return copy.defaultName;
+  const match = NEW_THEME_NAME_PATTERN.exec(name);
+  if (match) return copy.newName(Number(match[1]));
+  return name;
 };
 
 export const CUSTOM_EDITOR_THEME_FILE_SCHEMA = "edgeever.editor-theme";

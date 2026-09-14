@@ -85,6 +85,7 @@
   color: var(--editor-theme-code-text);
 }
 
+/* Table geometry (padding, line-height, column widths) lives in globals.css. */
 .edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror th {
 
   background: var(--editor-theme-soft);

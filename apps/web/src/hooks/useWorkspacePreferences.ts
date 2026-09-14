@@ -6,11 +6,13 @@ import {
   readEditorContentAlignmentPreference,
   readImageCompressionPreference,
   readMemoListWidthPreference,
+  readNotebookSidebarCollapsedPreference,
   readShortcutSettingsPreference,
   writeDesktopFocusModePreference,
   writeEditorContentAlignmentPreference,
   writeImageCompressionPreference,
   writeMemoListWidthPreference,
+  writeNotebookSidebarCollapsedPreference,
   writeShortcutSettingsPreference,
   type ShortcutSettings,
   type EditorContentAlignment,
@@ -19,6 +21,7 @@ import {
 export const useWorkspacePreferences = () => {
   const [imageCompressionEnabled, setImageCompressionEnabled] = useState(readImageCompressionPreference);
   const [desktopFocusMode, setDesktopFocusModeState] = useState(readDesktopFocusModePreference);
+  const [notebookSidebarCollapsed, setNotebookSidebarCollapsedState] = useState(readNotebookSidebarCollapsedPreference);
   const [editorContentAlignment, setEditorContentAlignmentState] = useState(readEditorContentAlignmentPreference);
   const [shortcutSettings, setShortcutSettings] = useState<ShortcutSettings>(readShortcutSettingsPreference);
   const [memoListWidth, setMemoListWidthState] = useState(readMemoListWidthPreference);
@@ -29,6 +32,11 @@ export const useWorkspacePreferences = () => {
   const setDesktopFocusMode = useCallback((enabled: boolean) => {
     setDesktopFocusModeState(enabled);
     writeDesktopFocusModePreference(enabled);
+  }, []);
+
+  const setNotebookSidebarCollapsed = useCallback((collapsed: boolean) => {
+    setNotebookSidebarCollapsedState(collapsed);
+    writeNotebookSidebarCollapsedPreference(collapsed);
   }, []);
 
   const setEditorContentAlignment = useCallback((alignment: EditorContentAlignment) => {
@@ -51,9 +59,11 @@ export const useWorkspacePreferences = () => {
     editorContentAlignment,
     imageCompressionEnabled,
     memoListWidth,
+    notebookSidebarCollapsed,
     resetMemoListWidth,
     setDesktopFocusMode,
     setEditorContentAlignment,
+    setNotebookSidebarCollapsed,
     setImageCompressionEnabled,
     setMemoListWidth,
     setShortcutSettings,

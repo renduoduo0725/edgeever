@@ -1,7 +1,7 @@
 ---
 draft: false
-title: "从 Notion 迁移到 EdgeEver 指南"
-snippet: "利用双 MCP 服务器联动，让 AI 助手自动将 Notion 页面批量导入到 EdgeEver。"
+title: "从 Notion 迁移到自托管笔记应用：EdgeEver 指南"
+snippet: "利用 Notion MCP 与 EdgeEver MCP，把 Notion 页面迁到自托管笔记实例。"
 image: {
     src: "/images/notion-migration.jpg",
     alt: "从 Notion 迁移到 EdgeEver"
@@ -13,6 +13,14 @@ tags: [notion, migration, self-hosted, mcp]
 ---
 
 得益于 EdgeEver 对 AI Agent 和 Model Context Protocol (MCP) 的原生支持，如果你想将 Notion 笔记库搬迁到 EdgeEver，最优雅的方式是利用 AI 助手作为数据桥梁，同时挂载 **Notion MCP** 和 **EdgeEver MCP** 服务，实现全自动的云对云笔记导入。
+
+如果目标是自托管笔记而不是继续留在 Notion，也可以先看 [EdgeEver 作为印象笔记替代方案](/self-hosted-evernote-alternative) 的说明。
+
+### 常见问题
+
+- **这是官方一键导出吗？** 不是。流程依赖 Notion MCP 与 EdgeEver MCP，由 AI 助手逐页复制。
+- **数据库和块属性会原样保留吗？** 请在导入后核对页面内容。EdgeEver 是笔记工作区，不是 Notion 数据库。
+- **可以从印象笔记迁吗？** 可以，见 [印象笔记迁移指南](/blog/evernote-migration-guide)。
 
 ---
 

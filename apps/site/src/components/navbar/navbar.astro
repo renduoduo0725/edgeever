@@ -14,11 +14,24 @@ const menuitems = [
   },
   {
     title: copy.deploy,
-    path: getLocalizedPath(locale, "/blog/ai-agent-deploy-cloudflare"),
+    children: [
+      {
+        title: copy.cloudflareDeploy,
+        path: getLocalizedPath(locale, "/blog/ai-agent-deploy-cloudflare"),
+      },
+      {
+        title: copy.dockerDeploy,
+        path: getLocalizedPath(locale, "/docker-deploy"),
+      },
+    ],
   },
   {
     title: copy.guides,
     children: [
+      {
+        title: copy.selfHostedAlternative,
+        path: getLocalizedPath(locale, "/self-hosted-evernote-alternative"),
+      },
       {
         title: copy.evernoteMigration,
         path: getLocalizedPath(locale, "/blog/evernote-migration-guide"),

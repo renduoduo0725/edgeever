@@ -8,6 +8,7 @@ import {
   MERGE_DIVIDER_NODE_TYPE,
   FILE_ATTACHMENT_NODE_TYPE,
   PDF_ATTACHMENT_NODE_TYPE,
+  resolveFileDisplayMode,
   PLUGIN_EMBED_NODE_TYPE,
   pluginEmbedToMarkdown,
   mergeMemoDocs,
@@ -153,6 +154,13 @@ describe("file attachment Markdown compatibility", () => {
   test("keeps an ordinary standalone web link as text", () => {
     const doc = markdownToDoc("[EdgeEver](https://edgeever.org)");
     expect(doc.content[0]?.content?.[0]?.type).toBe("text");
+  });
+
+  test("keeps video preview expanded unless compact display mode is stored", () => {
+    expect(resolveFileDisplayMode(undefined)).toBe("inline");
+    expect(resolveFileDisplayMode("inline")).toBe("inline");
+    expect(resolveFileDisplayMode("compact")).toBe("compact");
+    expect(resolveFileDisplayMode("hidden")).toBe("inline");
   });
 
   test("upgrades a legacy standalone attachment link from rich content", () => {

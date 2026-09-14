@@ -910,6 +910,8 @@ html.dark .edgeever-mobile-tiptap-content a:hover {
 .edgeever-mobile-tiptap-content th p,
 .edgeever-mobile-tiptap-content td p {
   margin: 0;
+  letter-spacing: inherit;
+  line-height: inherit;
 }
 
 .edgeever-mobile-tiptap-content .selectedCell::after {

@@ -1,5 +1,12 @@
 import type { createEdgeEverClient } from "@edgeever/client";
-import { docToMarkdown, getResourceIdFromUrl, type TiptapDoc } from "@edgeever/shared";
+import {
+  docToMarkdown,
+  FILE_ATTACHMENT_NODE_TYPE,
+  getResourceIdFromUrl,
+  PDF_ATTACHMENT_NODE_TYPE,
+  resourceUrlsReferToSameAttachment,
+  type TiptapDoc,
+} from "@edgeever/shared";
 
 export type MobileResourceTarget = {
   filename: string;
@@ -160,6 +167,17 @@ const updateResourceDoc = (
     if (target.kind === "attachment" && node.type === "text" && hasResourceLinkMark(node.marks, target.resourceId)) {
       if (action.type === "delete") return null;
       return { ...node, text: `${action.labelPrefix}${action.filename}` };
+    }
+    if (
+      target.kind === "attachment"
+      && (node.type === FILE_ATTACHMENT_NODE_TYPE || node.type === PDF_ATTACHMENT_NODE_TYPE)
+    ) {
+      const attrs = node.attrs && typeof node.attrs === "object" ? node.attrs as Record<string, unknown> : {};
+      const url = typeof attrs.url === "string" ? attrs.url : "";
+      if (getResourceIdFromUrl(url) === target.resourceId || resourceUrlsReferToSameAttachment(url, target.href)) {
+        if (action.type === "delete") return null;
+        return { ...node, attrs: { ...attrs, filename: action.filename, label: `${action.labelPrefix}${action.filename}` } };
+      }
     }
 
     const next = Object.fromEntries(Object.entries(node).map(([key, child]) => [key, key === "content" ? visit(child) : child]));

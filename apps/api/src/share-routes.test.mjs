@@ -171,4 +171,35 @@ describe("public memo shares", () => {
     expect(response.headers.get("Accept-Ranges")).toBe("bytes");
     sqlite.close();
   });
+
+  test("serves filename-detected shared video inline", async () => {
+    const { sqlite, environment } = createDatabaseEnvironment();
+    sqlite.query(
+      `INSERT INTO resources (id, memo_id, object_key, kind, mime_type, filename, byte_size)
+       VALUES (?, ?, ?, 'attachment', 'application/octet-stream', 'walkthrough.webm', 10)`,
+    ).run("res_video", "memo_source", "video-key");
+    environment.storage.resources = {
+      get: async () => ({
+        body: new Blob([new Uint8Array(10)]).stream(),
+        size: 10,
+        writeHttpMetadata: () => {},
+      }),
+    };
+    const app = new Hono();
+    registerPublicShareRoutes(app);
+
+    const response = await app.request(
+      `/api/public/shares/${sourceToken}/resources/res_video/blob`,
+      {},
+      environment,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("video/webm");
+    expect(response.headers.get("Content-Disposition")).toBe(
+      "inline; filename=\"walkthrough.webm\"; filename*=UTF-8''walkthrough.webm",
+    );
+    expect(response.headers.get("Accept-Ranges")).toBe("bytes");
+    sqlite.close();
+  });
 });

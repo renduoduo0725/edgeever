@@ -401,17 +401,17 @@ struct AiAssistantSheet: View {
 
     private func actionTitle(_ action: AiAction) -> String {
         switch action {
-        case .improveWriting: env.preferences.t("改进写作", en: "Improve writing")
+        case .improveWriting: env.preferences.t("润色表达", en: "Polish")
         case .fixSpellingGrammar: env.preferences.t("修正拼写与语法", en: "Fix spelling & grammar")
-        case .summarize: env.preferences.t("总结", en: "Summarize")
+        case .summarize: env.preferences.t("精简总结", en: "Summarize")
         case .extractKeyPoints: env.preferences.t("提炼要点", en: "Key points")
         case .extractTodos: env.preferences.t("提取待办", en: "Extract tasks")
-        case .rewriteProofread: env.preferences.t("转为小红书风格", en: "Convert to Xiaohongshu style")
+        case .rewriteProofread: env.preferences.t("改写与校对", en: "Rewrite & proofread")
         case .makeShorter: env.preferences.t("精炼表达", en: "Make concise")
         case .makeLonger: env.preferences.t("扩写内容", en: "Make longer")
-        case .simplifyLanguage: env.preferences.t("转为推特风格", en: "Convert to X (Twitter) style")
+        case .simplifyLanguage: env.preferences.t("简化表达", en: "Simplify language")
         case .changeTone: env.preferences.t("调整语气", en: "Change tone")
-        case .translate: env.preferences.t("翻译", en: "Translate")
+        case .translate: env.preferences.t("全文翻译", en: "Translate")
         case .continueWriting: env.preferences.t("继续写作", en: "Continue writing")
         case .custom: env.preferences.t("自定义指令", en: "Custom prompt")
         }
@@ -542,7 +542,7 @@ struct AiAssistantSheet: View {
     }
 
     private func applyStoredOrDefaultAction(from loaded: [AiPromptTemplate], allowPromptMatch: Bool) {
-        let stored = env.preferences.lastAiAssistantAction(isSelection: isSelection)
+        let stored = isSelection ? env.preferences.lastAiAssistantAction(isSelection: true) : nil
         let fallback: AiAction = isSelection ? .improveWriting : .custom
         if let stored {
             if allowPromptMatch, let promptId = stored.promptId, let match = loaded.first(where: { $0.id == promptId }) {

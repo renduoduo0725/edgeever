@@ -60,7 +60,7 @@ export const DEFAULT_AI_PROMPT_SEEDS: readonly AiPromptSeed[] = [
   seed(
     { key: "summarize", action: "summarize", parameterKind: "none", resultMode: "append" },
     {
-      name: "总结",
+      name: "精简总结",
       description: "压缩全文，提炼主题、结论与可执行结果",
       instruction: [
         "对笔记做真正的精简总结，不要逐句改写、同义复述或回声式重写。",
@@ -87,7 +87,7 @@ export const DEFAULT_AI_PROMPT_SEEDS: readonly AiPromptSeed[] = [
   seed(
     { key: "translate", action: "translate", parameterKind: "target-language", resultMode: "both" },
     {
-      name: "翻译",
+      name: "全文翻译",
       description: "翻译为指定目标语言，保留结构与格式",
       instruction: "将完整笔记翻译成用户指定的目标语言。保留原意、Markdown 结构、链接与代码块。只返回译文，不要评论。",
     },
@@ -100,7 +100,7 @@ export const DEFAULT_AI_PROMPT_SEEDS: readonly AiPromptSeed[] = [
   seed(
     { key: "improve-writing", action: "improve-writing", parameterKind: "none", resultMode: "both" },
     {
-      name: "润色",
+      name: "润色表达",
       description: "校正语言并提升文字的清晰度与流畅度",
       instruction: "润色内容，修正错别字、语法与标点，改善用词、句式、清晰度和流畅度，但不要改变原意或刻意缩短内容。保持原语言与有用的 Markdown 格式。只返回润色后的内容。",
     },
@@ -124,29 +124,29 @@ export const DEFAULT_AI_PROMPT_SEEDS: readonly AiPromptSeed[] = [
     },
   ),
   seed(
-    { key: "rewrite-proofread", action: "rewrite-proofread", parameterKind: "none", resultMode: "both" },
+    { key: "extract-todos", action: "extract-todos", parameterKind: "none", resultMode: "append" },
     {
-      name: "转为小红书风格",
-      description: "改写成自然、有吸引力的小红书笔记",
-      instruction: "将内容改写成适合小红书发布的笔记：生成吸引人的标题，使用自然、有亲和力的口吻、短段落和清晰层次，可适量加入贴合语义的 Emoji，并在结尾给出 3–8 个相关话题标签。保留原文的关键事实与观点，不夸大效果，不编造经历、数据或结论。只返回可直接发布的内容。",
+      name: "提取待办",
+      description: "识别可执行任务，生成任务清单",
+      instruction: "从笔记中提取明确或隐含的可执行任务，用 Markdown 任务列表（- [ ]）输出。保持原语言，不要编造任务。若没有可执行事项，用原文语言简短说明。",
     },
     {
-      name: "Convert to Xiaohongshu style",
-      description: "Rewrite as a natural and engaging Xiaohongshu post",
-      instruction: "Rewrite the content as a Xiaohongshu-ready post. Add an engaging title, use a natural and approachable voice, short paragraphs, and clear structure, include a few contextually appropriate emoji, and end with 3–8 relevant hashtags. Preserve the source's key facts and claims without exaggerating results or inventing experiences, data, or conclusions. Return only the publishable post.",
+      name: "Extract tasks",
+      description: "Identify actionable work and produce a task list",
+      instruction: "Extract explicit or implied actionable tasks from the note as a Markdown task list using '- [ ]'. Preserve its language and do not invent tasks. If there are no actionable tasks, say so briefly in the note's language.",
     },
   ),
   seed(
-    { key: "simplify-language", action: "simplify-language", parameterKind: "none", resultMode: "both" },
+    { key: "continue-writing", action: "continue-writing", parameterKind: "none", resultMode: "append" },
     {
-      name: "转为推特风格",
-      description: "改写成简洁、有观点的推文或推文串",
-      instruction: "将内容改写成适合推特发布的文本：开头直接抓住重点，表达简洁、有观点、易读。内容较短时输出一条推文；无法在一条内保留关键信息时，输出带序号的精简推文串。只在确有帮助时使用少量标签。保留原文事实与立场，不制造噱头或编造信息。只返回可直接发布的内容。",
+      name: "继续写作",
+      description: "从笔记末尾自然续写",
+      instruction: "从笔记结束处自然续写。只返回新增续写内容，不要重复原文。保持原语言与 Markdown 风格。",
     },
     {
-      name: "Convert to X (Twitter) style",
-      description: "Rewrite as a concise, opinionated post or thread",
-      instruction: "Rewrite the content for X (Twitter): lead with the main point and make it concise, opinionated, and easy to scan. Return one post when the key information fits; otherwise return a compact numbered thread. Use hashtags sparingly and only when useful. Preserve the source's facts and position without manufacturing hype or information. Return only the publishable post or thread.",
+      name: "Continue writing",
+      description: "Continue naturally from the end of the note",
+      instruction: "Continue writing naturally from where the note ends. Return only the new continuation, not the original content. Preserve its language and Markdown style.",
     },
   ),
 ];

@@ -90,9 +90,26 @@ describe("mobile app scope", () => {
   });
 
   test("renders note detail body with the shared read-only TipTap viewer", () => {
-    expect(memoDetailSource).toContain('mode="viewer"');
+    expect(memoDetailSource).toContain('mode={isEditing ? "editor" : "viewer"}');
     expect(memoDetailSource).toContain("LocalTiptapEditor");
     expect(memoDetailSource).not.toContain("react-native-markdown-display");
+  });
+
+  test("opens existing-note editing in place without a blocking getMemo", () => {
+    const openRichEditorSource = workspaceSource.slice(
+      workspaceSource.indexOf("const openRichEditor ="),
+      workspaceSource.indexOf("const memos = useMemo"),
+    );
+    expect(openRichEditorSource).not.toContain("client.getMemo");
+    expect(openRichEditorSource).not.toContain("listMobileSyncQueueItems");
+    expect(openRichEditorSource).not.toContain("setSelectedMemoId(null)");
+    expect(openRichEditorSource).toContain("setRichEditingSession");
+    expect(workspaceSource).not.toContain("return <RichEditorModal");
+    expect(memoDetailSource).toContain("useMobileRichEditor");
+    expect(localTiptapEditorSource).toContain("editor.setEditable(!isViewer)");
+    expect(memoDetailSource).toContain("{visible ? (");
+    expect(memoDetailSource).toContain(") : null}");
+    expect(memoDetailSource).toContain('accessibilityLabel="返回" accessibilityRole="button" disabled={editor.uploading}');
   });
 
   test("carries workspace search into note detail and scrolls active matches", () => {

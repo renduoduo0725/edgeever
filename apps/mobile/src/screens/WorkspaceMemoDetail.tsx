@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { DEFAULT_MEMO_TITLE, parseDiagramDocument, type MemoDetail, type TiptapDoc } from "@edgeever/shared";
+import { DEFAULT_MEMO_TITLE, parseDiagramDocument, type MemoDetail, type Notebook, type TiptapDoc } from "@edgeever/shared";
 import {
   type NoteImageTheme,
   type NoteImageFontStyle,
@@ -7,7 +7,7 @@ import {
   type NoteImageCardWidth,
 } from "@edgeever/shared/note-image-card";
 import * as Clipboard from "expo-clipboard";
-import { Image as RNImage, Platform, ScrollView, StyleSheet, Text as RNText, View, type ImageStyle, type StyleProp, type TextStyle } from "react-native";
+import { Image as RNImage, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text as RNText, View, type ImageStyle, type StyleProp, type TextStyle } from "react-native";
 import { Modal } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgXml } from "react-native-svg";
@@ -34,12 +34,16 @@ import {
   loadProtectedResourceDataUrl,
   type ProtectedResourceLoadFailure,
 } from "../lib/mobile-protected-resources";
+import { useMobileRichEditor, type MobileMemoUpdateMutation } from "../hooks/useMobileRichEditor";
+import type { MobileMemoDraft } from "../lib/mobile-drafts";
+import { createMobileDataScope } from "../lib/local-mirror";
 import { useMobileTheme } from "../lib/mobile-theme";
 import { useSession } from "../lib/session";
 import { beginEditorStartup } from "../lib/startup-performance";
 import type { MobileSyncQueueItem } from "../lib/sync-queue";
-import { formatMemoDetailDate, getTextSearchMatches } from "./workspace-utils";
+import { formatMemoDetailDate, getTextSearchMatches, parseTags } from "./workspace-utils";
 import { styles } from "./workspace-styles";
+import { NotebookPickerModal, SmartTagButton, TagPickerModal } from "./WorkspacePickers";
 
 const ANDROID_SYSTEM_NAVIGATION_FALLBACK = 48;
 const RESOURCE_DATA_URL_CACHE_LIMIT = 32;
@@ -406,6 +410,8 @@ const HighlightedMetadataText = ({
 };
 
 export const MemoDetailModal = ({
+  editingSession,
+  imageCompressionEnabled,
   initialSearchQuery,
   isDeleting,
   isLoading,
@@ -414,9 +420,11 @@ export const MemoDetailModal = ({
   isSharing,
   memo,
   notebookName,
+  notebooks,
   onAdoptCloudVersion,
   onApplyAiDraft,
   onClose,
+  onCloseEditor,
   onCopyLocalDraft,
   onDelete,
   onDeleteResource,
@@ -429,8 +437,15 @@ export const MemoDetailModal = ({
   onShare,
   syncError,
   syncStatus,
+  updateMutation,
   visible,
 }: {
+  editingSession: {
+    draft: MobileMemoDraft | null;
+    initialFocus: "body" | "title";
+    memo: MemoDetail;
+  } | null;
+  imageCompressionEnabled: boolean;
   initialSearchQuery: string;
   isDeleting: boolean;
   isLoading: boolean;
@@ -439,9 +454,11 @@ export const MemoDetailModal = ({
   isSharing: boolean;
   memo: MemoDetail | null;
   notebookName: string;
+  notebooks: Notebook[];
   onAdoptCloudVersion: (memo: MemoDetail) => void;
   onApplyAiDraft: (memo: MemoDetail, draft: string, mode: "append" | "replace") => Promise<void>;
   onClose: () => void;
+  onCloseEditor: () => void;
   onCopyLocalDraft: (memo: MemoDetail) => void;
   onDelete: (memo: MemoDetail) => void;
   onDeleteResource: (memo: MemoDetail, target: MobileResourceTarget) => Promise<void>;
@@ -454,6 +471,7 @@ export const MemoDetailModal = ({
   onShare: (memo: MemoDetail) => void;
   syncError: string | null;
   syncStatus: MobileSyncQueueItem["status"] | null;
+  updateMutation: MobileMemoUpdateMutation;
   visible: boolean;
 }) => {
   const { client, session } = useSession();
@@ -509,6 +527,32 @@ export const MemoDetailModal = ({
     const diagram = memo ? parseDiagramDocument(memo.contentMarkdown) : null;
     return diagram ? JSON.stringify(diagram) : undefined;
   }, [memo]);
+  const isEditing = Boolean(editingSession);
+  const noteBodyDom = useMemo(() => ({
+    ...SAFE_DOM_WEBVIEW_PROPS,
+    bounces: true,
+    contentInsetAdjustmentBehavior: "never" as const,
+    overScrollMode: "never" as const,
+    scrollEnabled: false,
+    style: [
+      detailLayoutStyles.viewer,
+      resolvedTheme === "dark" ? detailLayoutStyles.viewerDark : null,
+    ],
+  }), [resolvedTheme]);
+  const editor = useMobileRichEditor({
+    active: isEditing,
+    alreadyReady: viewerReady,
+    baseUrl,
+    editorRef: viewerRef,
+    handleHardwareBack: false,
+    imageCompressionEnabled,
+    initialDraft: editingSession?.draft ?? null,
+    initialFocus: editingSession?.initialFocus ?? "body",
+    memo: editingSession?.memo ?? memo,
+    notebooks,
+    onClose: onCloseEditor,
+    updateMutation,
+  });
 
   const downloadResource = useCallback(async (target: MobileResourceTarget) => {
     if (!client) throw new Error(resolvedLocale === "en-US" ? "The resource client is unavailable." : "当前无法读取资源。");
@@ -612,6 +656,20 @@ export const MemoDetailModal = ({
     safeAreaInsets.bottom,
     Platform.OS === "android" ? ANDROID_SYSTEM_NAVIGATION_FALLBACK : 0
   ) + 16;
+
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+    setActionsOpen(false);
+    setSearchOpen(false);
+    setSearchQuery("");
+    setBodySearchMatchCount(0);
+    setActiveMatchIndex(0);
+    setImagePreview(null);
+    setAiAssistantOpen(false);
+    safeDomCall(() => viewerRef.current?.search("", -1));
+  }, [isEditing]);
 
   useEffect(() => {
     const normalizedInitialSearchQuery = initialSearchQuery.trim();
@@ -826,8 +884,35 @@ export const MemoDetailModal = ({
   }, [resolvedLocale]);
 
   return (
-    <Modal animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen" visible={visible}>
-      <SafeAreaView style={styles.modalSafeArea}>
+    <Modal animationType="slide" onRequestClose={isEditing ? () => void editor.requestClose() : onClose} presentationStyle="fullScreen" visible={visible}>
+      {/* Unmount the DomWebView with the modal. Updating its props after RN hides
+          the native view rejects injectJavaScript as an uncaught promise. */}
+      {visible ? (
+      <SafeAreaView style={isEditing ? styles.richEditorSafeArea : styles.modalSafeArea}>
+        <KeyboardAvoidingView
+          behavior="height"
+          enabled={Platform.OS === "android" && isEditing}
+          style={styles.richEditorKeyboardAvoiding}
+        >
+        {isEditing ? (
+          <View style={styles.createMemoHeader}>
+            <Pressable accessibilityLabel="返回" accessibilityRole="button" disabled={editor.uploading} onPress={() => void editor.requestClose()} style={styles.createMemoBackButton}>
+              <ChevronLeft color={editor.uploading ? "#cbd5e1" : "#0f172a"} size={30} />
+            </Pressable>
+            <View style={styles.createMemoHeaderActions}>
+              <Text numberOfLines={1} style={[styles.createMemoStatus, styles.richEditorHeaderStatus, (editor.saving || editor.uploading || editor.dirty) && styles.createMemoStatusActive, editor.error && styles.richEditorStatusError]}>{editor.saveLabel}</Text>
+              <Pressable
+                accessibilityLabel="完成编辑"
+                accessibilityRole="button"
+                disabled={editor.uploading || !editor.ready}
+                onPress={() => void editor.requestClose()}
+                style={[styles.createMemoDoneButton, (editor.uploading || !editor.ready) && styles.createMemoDoneButtonDisabled]}
+              >
+                {editor.saving ? <ActivityIndicator color="#64748b" size="small" /> : <Text style={[styles.createMemoDoneText, (editor.uploading || !editor.ready) && styles.createMemoDoneTextDisabled]}>完成</Text>}
+              </Pressable>
+            </View>
+          </View>
+        ) : (
         <View style={styles.detailHeader}>
           <Pressable accessibilityLabel="返回列表" accessibilityRole="button" onPress={onClose} style={styles.detailHeaderButton}>
             <ChevronLeft color="#475569" size={21} />
@@ -896,8 +981,9 @@ export const MemoDetailModal = ({
             ) : null}
           </View>
         </View>
+        )}
 
-        {syncStatus === "conflict" && memo ? (
+        {!isEditing && syncStatus === "conflict" && memo ? (
           <View style={styles.conflictBanner}>
             <Text style={styles.conflictBannerText}>
               云端笔记已在其他标签页、设备，或离线期间被更新。可先复制本地草稿，再采用云端版本后继续编辑。
@@ -932,7 +1018,7 @@ export const MemoDetailModal = ({
           </View>
         ) : null}
 
-        {(syncStatus === "error" || syncStatus === "pending") && memo ? (
+        {!isEditing && (syncStatus === "error" || syncStatus === "pending") && memo ? (
           <View style={syncStatus === "error" ? styles.syncErrorBanner : styles.syncPendingBanner}>
             <Text style={syncStatus === "error" ? styles.syncErrorBannerText : styles.syncPendingBannerText}>
               {syncStatus === "error"
@@ -968,6 +1054,47 @@ export const MemoDetailModal = ({
           </View>
         ) : memo ? (
           <View style={detailLayoutStyles.body}>
+            {isEditing ? (
+              <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+                <TextInput
+                  autoFocus={editingSession?.initialFocus === "title"}
+                  onChangeText={(value) => {
+                    editor.setTitle(value);
+                    editor.markDirty();
+                  }}
+                  placeholder={DEFAULT_MEMO_TITLE}
+                  placeholderTextColor="#94a3b8"
+                  selectTextOnFocus={editingSession?.initialFocus === "title"}
+                  style={styles.createMemoTitleInput}
+                  value={editor.title}
+                />
+                <View style={[styles.createMemoMetaRow, styles.richStandaloneMetaRow]}>
+                  <Pressable accessibilityLabel="所在笔记本" accessibilityRole="button" onPress={() => editor.setNotebookPickerOpen(true)} style={styles.createMemoNotebookButton}>
+                    <Text numberOfLines={1} style={styles.createMemoNotebookText}>{editor.notebookLabel}</Text>
+                    <ChevronDown color="#64748b" size={14} />
+                  </Pressable>
+                  <Pressable accessibilityLabel="选择笔记标签" accessibilityRole="button" onPress={() => editor.setTagPickerOpen(true)} style={[styles.createMemoTagsButton, styles.richStandaloneTagsInput]}>
+                    <Text numberOfLines={1} style={[styles.createMemoTagsInput, !editor.tagsText && styles.createMemoTagsPlaceholder]}>
+                      {editor.tagsText || "添加标签"}
+                    </Text>
+                    <ChevronDown color="#94a3b8" size={14} />
+                  </Pressable>
+                  <SmartTagButton
+                    client={client}
+                    contentMarkdown={editor.contentMarkdown}
+                    disabled={editor.saving || editor.uploading}
+                    onChange={(nextTags) => {
+                      editor.setTagsText(nextTags.join(", "));
+                      editor.markDirty();
+                    }}
+                    selectedTags={parseTags(editor.tagsText)}
+                    title={editor.title}
+                  />
+                </View>
+                {editor.draftRestored ? <Text style={styles.richEditorDraftNotice}>已恢复上次未完成的本地草稿</Text> : null}
+                {editor.error ? <Text style={styles.richEditorInlineError}>{editor.error}</Text> : null}
+              </View>
+            ) : (
             <View style={detailLayoutStyles.meta}>
               {!memo.isDeleted && !isVisualDiagram ? (
                 <Pressable
@@ -1059,35 +1186,32 @@ export const MemoDetailModal = ({
               ) : null}
               <View style={styles.detailDivider} />
             </View>
+            )}
             {baseUrl ? (
               <LocalTiptapEditor
                 key={memo.id}
+                aiPromptsJson={isEditing ? editor.aiPromptsJson : undefined}
+                autoFocus={isEditing && editingSession?.initialFocus === "body"}
                 baseUrl={baseUrl}
                 content={viewerContent}
-                dom={{
-                  ...SAFE_DOM_WEBVIEW_PROPS,
-                  bounces: true,
-                  contentInsetAdjustmentBehavior: "never",
-                  overScrollMode: "never",
-                  scrollEnabled: false,
-                  style: [
-                    detailLayoutStyles.viewer,
-                    resolvedTheme === "dark" ? detailLayoutStyles.viewerDark : null,
-                  ],
-                }}
+                dom={noteBodyDom}
                 locale={resolvedLocale}
-                mode="viewer"
-                onImagePreview={onImagePreview}
-                onDoublePress={isVisualDiagram ? undefined : async () => {
+                mode={isEditing ? "editor" : "viewer"}
+                onAiCancel={isEditing ? editor.cancelSelectionAi : undefined}
+                onAiRequest={isEditing ? editor.requestSelectionAi : undefined}
+                onChange={isEditing ? editor.persistDraft : undefined}
+                onImagePreview={isEditing ? undefined : onImagePreview}
+                onDoublePress={isEditing || isVisualDiagram ? undefined : async () => {
                   beginEditorStartup();
                   onRichEdit(memo, "body");
                 }}
                 onImageExportEvent={handleImageExportEvent}
-                onLoadResource={loadViewerResource}
+                onLoadResource={isEditing ? editor.loadEditorResource : loadViewerResource}
+                onPickImage={isEditing ? editor.pickAndUploadImage : undefined}
                 onReady={async () => {
                   setViewerReady(true);
                 }}
-                onResourcePress={onResourcePress}
+                onResourcePress={isEditing ? editor.selectResource : onResourcePress}
                 onSearchResult={async (count, _index, resultQuery) => {
                   if (resultQuery === searchQuery) {
                     setBodySearchMatchCount(count);
@@ -1095,8 +1219,8 @@ export const MemoDetailModal = ({
                 }}
                 ref={viewerRef}
                 theme={resolvedTheme}
-                visualDiagramJson={visualDiagramJson}
-                visualDiagramNote={isVisualDiagram}
+                visualDiagramJson={isEditing ? undefined : visualDiagramJson}
+                visualDiagramNote={!isEditing && isVisualDiagram}
               />
             ) : (
               <View style={styles.centerState}>
@@ -1114,7 +1238,7 @@ export const MemoDetailModal = ({
             <Text style={styles.errorText}>笔记加载失败</Text>
           </View>
         )}
-        {memo && !memo.isDeleted && !isVisualDiagram ? (
+        {memo && !memo.isDeleted && !isVisualDiagram && !isEditing ? (
           <Pressable
             accessibilityLabel="编辑笔记"
             accessibilityRole="button"
@@ -1127,6 +1251,7 @@ export const MemoDetailModal = ({
             <Pencil color="#ffffff" size={20} />
           </Pressable>
         ) : null}
+        </KeyboardAvoidingView>
         {memo ? (
           <Modal animationType="fade" onRequestClose={() => setActionsOpen(false)} transparent visible={actionsOpen}>
             <Pressable onPress={() => setActionsOpen(false)} style={styles.actionSheetBackdrop}>
@@ -1420,20 +1545,55 @@ export const MemoDetailModal = ({
         </Modal>
         <MobileResourceActions
           canMutate={Boolean(memo && !memo.isDeleted && !memo.id.startsWith("local:"))}
-          onClose={() => setResourceTarget(null)}
+          onClose={() => isEditing ? editor.setResourceTarget(null) : setResourceTarget(null)}
           onDelete={async (target) => {
+            if (isEditing) {
+              await editor.deleteResource(target);
+              return;
+            }
             if (!memo) return;
             await onDeleteResource(memo, target);
           }}
-          onDownload={downloadResource}
+          onDownload={isEditing ? editor.downloadResource : downloadResource}
           onRename={async (target, filename) => {
+            if (isEditing) {
+              await editor.renameResource(target, filename);
+              return;
+            }
             if (!memo) return;
             await onRenameResource(memo, target, filename);
           }}
-          onSaveAs={saveResourceAs}
-          target={resourceTarget}
+          onSaveAs={isEditing ? editor.saveResourceAs : saveResourceAs}
+          target={isEditing ? editor.resourceTarget : resourceTarget}
         />
+        {isEditing ? (
+          <>
+            <NotebookPickerModal
+              activeNotebookId={editor.notebookId}
+              notebooks={notebooks}
+              onClose={() => editor.setNotebookPickerOpen(false)}
+              onSelect={(nextNotebookId) => {
+                editor.setNotebookId(nextNotebookId);
+                editor.setNotebookPickerOpen(false);
+                editor.markDirty();
+              }}
+              visible={editor.notebookPickerOpen}
+            />
+            <TagPickerModal
+              dataScope={createMobileDataScope(session?.baseUrl ?? baseUrl, session?.user?.id)}
+              onChange={(nextTags) => {
+                editor.setTagsText(nextTags.join(", "));
+                editor.markDirty();
+              }}
+              onClose={() => editor.setTagPickerOpen(false)}
+              selectedTags={parseTags(editor.tagsText)}
+              visible={editor.tagPickerOpen}
+            />
+            {editor.uploadSourcePicker}
+          </>
+        ) : null}
       </SafeAreaView>
+      ) : null}
     </Modal>
   );
 };

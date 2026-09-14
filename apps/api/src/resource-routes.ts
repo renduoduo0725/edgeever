@@ -1,4 +1,4 @@
-import { isPdfAttachment, resolveAudioMimeType, ResourceUpdateSchema, type MemoDetail, type Resource } from "@edgeever/shared";
+import { isPdfAttachment, resolvePlayableMediaMimeType, ResourceUpdateSchema, type MemoDetail, type Resource } from "@edgeever/shared";
 import { zValidator } from "@hono/zod-validator";
 import type { Hono } from "hono";
 import { auditStatement } from "./audit";
@@ -294,12 +294,12 @@ export const registerResourceRoutes = (
 
     const headers = new Headers();
     object.writeHttpMetadata(headers);
-    const audioMimeType = resolveAudioMimeType(resource.mime_type, resource.filename);
+    const playableMimeType = resolvePlayableMediaMimeType(resource.mime_type, resource.filename);
     headers.set(
       "Content-Type",
       isPdfAttachment(resource.mime_type, resource.filename)
         ? "application/pdf"
-        : audioMimeType ?? resource.mime_type ?? headers.get("Content-Type") ?? "application/octet-stream",
+        : playableMimeType ?? resource.mime_type ?? headers.get("Content-Type") ?? "application/octet-stream",
     );
     headers.set("Cache-Control", headers.get("Cache-Control") ?? "private, max-age=3600");
     headers.set("Accept-Ranges", "bytes");
@@ -315,7 +315,7 @@ export const registerResourceRoutes = (
     }
     headers.set(
       "Content-Disposition",
-      resource.kind === "image" || isPdfAttachment(resource.mime_type, resource.filename) || audioMimeType
+      resource.kind === "image" || isPdfAttachment(resource.mime_type, resource.filename) || playableMimeType
         ? contentDispositionInline(resource.filename)
         : contentDispositionAttachment(resource.filename),
     );

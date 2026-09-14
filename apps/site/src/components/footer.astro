@@ -22,6 +22,18 @@ const copy = siteCopy[locale].nav;
         {locale === "en-US" ? "Thanks" : "特别致谢"}
       </a>
       <span class="text-slate-300">•</span>
+      <a href={getLocalizedPath(locale, "/self-hosted-evernote-alternative")} class="inline-flex min-h-11 sm:min-h-0 items-center hover:text-emerald-700 transition-colors">
+        {copy.selfHostedAlternative}
+      </a>
+      <span class="text-slate-300">•</span>
+      <a href={getLocalizedPath(locale, "/docker-deploy")} class="inline-flex min-h-11 sm:min-h-0 items-center hover:text-emerald-700 transition-colors">
+        {copy.dockerDeploy}
+      </a>
+      <span class="text-slate-300">•</span>
+      <a href={getLocalizedPath(locale, "/blog/evernote-migration-guide")} class="inline-flex min-h-11 sm:min-h-0 items-center hover:text-emerald-700 transition-colors">
+        {copy.evernoteMigration}
+      </a>
+      <span class="text-slate-300">•</span>
       <a href={getLocalizedPath(locale, "/contact")} class="inline-flex min-h-11 sm:min-h-0 items-center hover:text-emerald-700 transition-colors">
         {copy.contact}
       </a>

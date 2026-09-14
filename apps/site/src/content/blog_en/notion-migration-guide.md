@@ -1,7 +1,7 @@
 ---
 draft: false
-title: "Notion to EdgeEver Migration Guide"
-snippet: "Migrate your Notion pages and databases to EdgeEver automatically using the double MCP servers bridge."
+title: "Migrate from Notion to a self-hosted notes app"
+snippet: "Use Notion MCP and EdgeEver MCP to copy Notion pages into a self-hosted notes instance."
 image: {
     src: "/images/notion-migration.jpg",
     alt: "Migrate Notion to EdgeEver"
@@ -13,6 +13,14 @@ tags: [notion, migration, self-hosted, mcp]
 ---
 
 Thanks to EdgeEver's native support for AI Agent and Model Context Protocol (MCP), if you want to migrate your Notion workspace to EdgeEver, the most elegant way is to use your AI assistant as a bridge. By mounting both the **Notion MCP** and **EdgeEver MCP** servers, you can achieve fully automatic cloud-to-cloud page migration.
+
+If the goal is a self-hosted notes app rather than staying on Notion, see the [self-hosted Evernote alternative](/en/self-hosted-evernote-alternative) page first.
+
+### FAQ
+
+- **Is this an official one-click export?** No. The flow uses Notion MCP and EdgeEver MCP, with an AI assistant copying pages.
+- **Are databases and block properties preserved as-is?** Review pages after import. EdgeEver is a notes workspace, not a Notion database.
+- **Can I migrate from Evernote instead?** Yes. See the [Evernote migration guide](/en/blog/evernote-migration-guide).
 
 ---
 

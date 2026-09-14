@@ -66,6 +66,66 @@ describe("mobile attachments", () => {
     });
   });
 
+  test("removes and renames file and PDF attachment nodes", () => {
+    const videoTarget = {
+      filename: "clip.mp4",
+      href: "/api/v1/resources/res_video/blob",
+      kind: "attachment",
+      resourceId: "res_video",
+    };
+    const nodeDoc = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{
+            type: "edgeeverFileAttachment",
+            attrs: {
+              url: "edgeever-resource://resource/res_video",
+              label: "附件：clip.mp4",
+              filename: "clip.mp4",
+              mimeType: "video/mp4",
+            },
+          }],
+        },
+        {
+          type: "paragraph",
+          content: [{
+            type: "edgeeverPdfAttachment",
+            attrs: {
+              url: href,
+              label: "附件：report.pdf",
+              filename: "report.pdf",
+            },
+          }],
+        },
+      ],
+    };
+
+    const renamed = renameMobileAttachmentInDoc(nodeDoc, videoTarget, "final.mp4", "附件：");
+    expect(renamed.content[0].content[0]).toEqual({
+      type: "edgeeverFileAttachment",
+      attrs: {
+        url: "edgeever-resource://resource/res_video",
+        label: "附件：final.mp4",
+        filename: "final.mp4",
+        mimeType: "video/mp4",
+      },
+    });
+    expect(renamed.content[1].content[0].type).toBe("edgeeverPdfAttachment");
+    expect(deleteMobileAttachmentFromDoc(nodeDoc, videoTarget).content).toEqual([{
+      type: "paragraph",
+      content: [{
+        type: "edgeeverPdfAttachment",
+        attrs: {
+          url: href,
+          label: "附件：report.pdf",
+          filename: "report.pdf",
+        },
+      }],
+    }]);
+  });
+
   test("recognizes and validates image resources", () => {
     const target = { filename: "photo.jpg", href, kind: "image", resourceId: "res_123" };
     expect(getMobileImageTarget(href, "photo.jpg")).toEqual(target);

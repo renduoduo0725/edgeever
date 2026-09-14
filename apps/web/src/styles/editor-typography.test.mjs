@@ -7,7 +7,6 @@ const PRESET_THEME_FILES = [
   "outline-emerald.css",
   "wechat-green.css",
   "modern-mint.css",
-  "marxico.css",
 ];
 
 const readStyle = (relativePath) => readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -22,6 +21,17 @@ describe("editor typography contract", () => {
   test("keeps the shared body rhythm compact", () => {
     expect(MEMO_CONTENT_STYLE.body.lineHeight / MEMO_CONTENT_STYLE.body.fontSize).toBe(1.6);
     expect(MEMO_CONTENT_STYLE.body.paragraphSpacing).toBe(6);
+  });
+
+  test("keeps compact rhythm unless a paper editor theme is selected", () => {
+    const editorPane = readStyle("../components/EditorPane.tsx");
+    const publishLayout = readStyle("./publish-layout.css");
+
+    expect(editorPane).toContain("isPaperEditorTheme(editorTheme)");
+    expect(editorPane).toContain("MEMO_CONTENT_STYLE.body.lineHeight");
+    expect(publishLayout).toContain('[data-editor-theme="letter"]');
+    expect(publishLayout).toContain("[data-paper-theme]");
+    expect(publishLayout).not.toContain("[data-publish-layout]");
   });
 
   test("styles default-theme external hyperlinks so they are distinct from body text", () => {
@@ -80,7 +90,7 @@ describe("editor typography contract", () => {
   });
 
   test("does not let preset themes override body rhythm", () => {
-    for (const filename of PRESET_THEME_FILES.filter((filename) => filename !== "marxico.css")) {
+    for (const filename of PRESET_THEME_FILES) {
       const source = readStyle(`./editor-themes/${filename}`);
       const editorRules = declarationsForSelector(source, ".ProseMirror");
       const paragraphRules = declarationsForSelector(source, ".ProseMirror p");
@@ -96,26 +106,27 @@ describe("editor typography contract", () => {
     }
   });
 
-  test("keeps the Marxico preset aligned with the source theme", () => {
-    const source = readStyle("./editor-themes/marxico.css");
-    const themeRules = declarationsForSelector(source, '[data-editor-theme="marxico"]:not([data-editor-theme="default"])');
-    const headingRules = declarationsForSelector(source, ".ProseMirror h1");
-    const quoteRules = declarationsForSelector(source, ".ProseMirror blockquote");
-    const inlineCodeRules = declarationsForSelector(source, ".ProseMirror code");
-    const paragraphRules = declarationsForSelector(source, ".ProseMirror p");
-    const preCodeRules = declarationsForSelector(source, ".ProseMirror pre code");
-    const tableRules = declarationsForSelector(source, ".ProseMirror table");
+  test("does not let preset themes override table geometry", () => {
+    const geometryPattern =
+      /(?<![\w-])(?:padding|min-width|max-width|min-height|max-height|line-height|table-layout|width|height)(?:-[a-z]+)?\s*:/;
 
-    expect(themeRules).toMatch(/--editor-theme-text\s*:\s*#2c3f51/);
-    expect(themeRules).toMatch(/--editor-theme-accent\s*:\s*#1980e6/);
-    expect(headingRules).toMatch(/font-size\s*:\s*41\.6px/);
-    expect(quoteRules).toMatch(/border-left\s*:\s*10px solid/);
-    expect(inlineCodeRules).toMatch(/color\s*:\s*#c7254e/);
-    expect(paragraphRules).toMatch(/font-size\s*:\s*16px/);
-    expect(paragraphRules).toMatch(/margin\s*:\s*0 0 1\.1em/);
-    expect(preCodeRules).toMatch(/background\s*:\s*#23241f/);
-    expect(preCodeRules).toMatch(/padding\s*:\s*1\.3em 2em/);
-    expect(tableRules).toMatch(/width\s*:\s*auto/);
-    expect(tableRules).toMatch(/min-width\s*:\s*0 !important/);
+    for (const filename of ["base.css", ...PRESET_THEME_FILES]) {
+      const source = readStyle(`./editor-themes/${filename}`);
+      const tableRules = [
+        declarationsForSelector(source, ".ProseMirror table"),
+        declarationsForSelector(source, ".ProseMirror .tableWrapper"),
+        declarationsForSelector(source, ".ProseMirror th"),
+        declarationsForSelector(source, ".ProseMirror td"),
+        declarationsForSelector(source, ".ProseMirror th p"),
+        declarationsForSelector(source, ".ProseMirror td p"),
+        declarationsForSelector(source, ".ProseMirror col"),
+        declarationsForSelector(source, ".ProseMirror tr"),
+      ].join("\n");
+
+      expect(tableRules).not.toMatch(geometryPattern);
+      expect(tableRules).not.toMatch(/--mobile-table-column-width\s*:/);
+      expect(tableRules).not.toMatch(/\bborder\s*:/);
+    }
   });
+
 });

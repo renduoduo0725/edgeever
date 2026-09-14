@@ -120,12 +120,12 @@ const createApp = ({ currentAuth = auth, demoMode = false } = {}) => {
 describe("AI prompt template routes", () => {
   test("keeps the starter catalog focused on six common workflows", () => {
     expect(DEFAULT_AI_PROMPT_SEEDS.map((prompt) => [prompt.key, prompt.name])).toEqual([
-      ["summarize", "总结"],
-      ["translate", "翻译"],
-      ["improve-writing", "润色"],
+      ["summarize", "精简总结"],
+      ["translate", "全文翻译"],
+      ["improve-writing", "润色表达"],
       ["make-shorter", "精炼表达"],
-      ["rewrite-proofread", "转为小红书风格"],
-      ["simplify-language", "转为推特风格"],
+      ["extract-todos", "提取待办"],
+      ["continue-writing", "继续写作"],
     ]);
   });
 
@@ -158,10 +158,79 @@ describe("AI prompt template routes", () => {
        ORDER BY name`,
     ).all("ws_migration");
     expect(rows).toHaveLength(6);
+    expect(rows.filter((row) => row.seed_key !== null).map((row) => row.seed_key).sort()).toEqual([
+      "improve-writing",
+      "make-shorter",
+      "rewrite-proofread",
+      "simplify-language",
+      "summarize",
+      "translate",
+    ]);
+    expect(rows.find((row) => row.instruction === "Keep my specialized proofreading prompt.")).toBeUndefined();
+  });
+
+  test("replaces social-style starters with extract-todos and continue-writing", () => {
+    const sqlite = new Database(":memory:");
+    const migrations = globSync("migrations/*.sql").sort();
+    for (const migration of migrations.filter((path) => path < "migrations/0027")) {
+      sqlite.exec(readFileSync(migration, "utf8"));
+    }
+    sqlite.query("INSERT INTO workspaces (id, name, is_personal) VALUES (?, ?, 1)")
+      .run("ws_migration", "Migration workspace");
+    for (const migration of migrations.filter(
+      (path) => path >= "migrations/0027" && path < "migrations/0047",
+    )) {
+      sqlite.exec(readFileSync(migration, "utf8"));
+    }
+
+    sqlite.query(
+      `UPDATE ai_prompt_templates
+       SET instruction = ?, instruction_customized = 1
+       WHERE workspace_id = ? AND seed_key = ?`,
+    ).run("Keep my Xiaohongshu voice.", "ws_migration", "rewrite-proofread");
+    sqlite.query(
+      `INSERT INTO ai_prompt_templates (
+         id, workspace_id, seed_key, action, parameter_kind, result_mode,
+         name, description, instruction,
+         name_customized, description_customized, instruction_customized,
+         created_at, updated_at
+       ) VALUES (?, ?, NULL, 'custom', 'none', 'both', ?, NULL, ?, 1, 1, 1, ?, ?)`,
+    ).run(
+      "aiprompt_user_custom",
+      "ws_migration",
+      "周报提炼",
+      "提炼本周进展与风险。",
+      "2026-08-12T01:00:00.000Z",
+      "2026-08-12T01:00:00.000Z",
+    );
+
+    sqlite.exec(readFileSync("migrations/0047_replace_social_ai_prompts.sql", "utf8"));
+
+    const rows = sqlite.query(
+      `SELECT seed_key, action, name, instruction
+       FROM ai_prompt_templates
+       WHERE workspace_id = ?
+       ORDER BY name`,
+    ).all("ws_migration");
     expect(rows.filter((row) => row.seed_key !== null).map((row) => row.seed_key).sort()).toEqual(
       DEFAULT_AI_PROMPT_SEEDS.map((prompt) => prompt.key).sort(),
     );
-    expect(rows.find((row) => row.instruction === "Keep my specialized proofreading prompt.")).toBeUndefined();
+    expect(rows.find((row) => row.instruction === "Keep my Xiaohongshu voice.")).toBeUndefined();
+    expect(rows.find((row) => row.seed_key === "rewrite-proofread")).toBeUndefined();
+    expect(rows.find((row) => row.seed_key === "simplify-language")).toBeUndefined();
+    expect(rows.find((row) => row.seed_key === "extract-todos")).toMatchObject({
+      action: "extract-todos",
+      name: "提取待办",
+    });
+    expect(rows.find((row) => row.seed_key === "continue-writing")).toMatchObject({
+      action: "continue-writing",
+      name: "继续写作",
+    });
+    expect(rows.find((row) => row.name === "周报提炼")).toMatchObject({
+      seed_key: null,
+      action: "custom",
+      instruction: "提炼本周进展与风险。",
+    });
   });
 
   test("validates create and update payloads", () => {
@@ -387,7 +456,7 @@ describe("AI prompt template routes", () => {
       (prompt) => prompt.seedKey === "summarize",
     );
     expect(chineseSummary).toMatchObject({
-      name: "总结",
+      name: "精简总结",
       description: "压缩全文，提炼主题、结论与可执行结果",
       instruction: "Only this instruction was customized before the metadata migration.",
     });
@@ -474,7 +543,7 @@ describe("AI prompt template routes", () => {
       (prompt) => prompt.seedKey === "summarize",
     );
     expect(chineseSummary).toMatchObject({
-      name: "总结",
+      name: "精简总结",
       description: "压缩全文，提炼主题、结论与可执行结果",
       nameCustomized: false,
       descriptionCustomized: false,

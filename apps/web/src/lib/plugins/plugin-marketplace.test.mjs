@@ -38,6 +38,25 @@ describe("bundled plugin marketplace", () => {
     }
   });
 
+  test("pins the official Tasks release and all distributed assets", async () => {
+    const registry = parseMarketplaceRegistry(await Bun.file(new URL("../../../public/extensions/registry.json", import.meta.url)).json());
+    const entry = registry.entries.find((candidate) => candidate.id === "org.edgeever.tasks");
+
+    expect(entry).toMatchObject({
+      publisher: "edgeever",
+      repositoryUrl: "https://github.com/tianma-if/edgeever-tasks",
+      distribution: { type: "github", repositoryUrl: "https://github.com/tianma-if/edgeever-tasks" },
+      verification: {
+        version: "0.6.3",
+        checksums: {
+          manifestJson: "a6fa5c2a58d673f74319794e44d632804a6e7abf301269d900effe6f58567a5f",
+          mainJs: "c668ebd87e807e864d01dc879f3486b8c2d90b0fa4a004e7e9935d41360a74c3",
+          stylesCss: "1c307ac17bd4680c534007adaee1d2f3a4b1d6f36ee8585c291d65ebf94b9b03",
+        },
+      },
+    });
+  });
+
   test("pins the official AI RSS release and all distributed assets", async () => {
     const registry = parseMarketplaceRegistry(await Bun.file(new URL("../../../public/extensions/registry.json", import.meta.url)).json());
     const entry = registry.entries.find((candidate) => candidate.id === "org.edgeever.plugins.ai-rss");

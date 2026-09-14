@@ -6,6 +6,7 @@ import {
   parseAiAssistantLastActionPreference,
   readStoredAiAssistantLastActionPreference,
   resolveAiAssistantLastAction,
+  resolveAiAssistantOpenAction,
   serializeAiAssistantLastActionPreference,
   writeStoredAiAssistantLastActionPreference,
 } from "./ai-assistant.ts";
@@ -32,6 +33,34 @@ describe("AI assistant last processing action", () => {
   test("defaults to a custom instruction without a selection, and polish with one", () => {
     expect(getDefaultAiAction(false)).toBe("custom");
     expect(getDefaultAiAction(true)).toBe("improve-writing");
+  });
+
+  test("ignores a remembered prompt when opening without a selection", () => {
+    const rememberedPolish = {
+      action: "improve-writing",
+      promptId: "ws_aiprompt_improve",
+      seedKey: "improve-writing",
+    };
+    const polishPrompts = [
+      { id: "ws_aiprompt_improve", action: "improve-writing", seedKey: "improve-writing" },
+      ...prompts,
+    ];
+    expect(resolveAiAssistantOpenAction({
+      hasSelection: false,
+      preference: rememberedPolish,
+      prompts: polishPrompts,
+    })).toEqual({
+      action: "custom",
+      selectedPromptId: null,
+    });
+    expect(resolveAiAssistantOpenAction({
+      hasSelection: true,
+      preference: rememberedPolish,
+      prompts: polishPrompts,
+    })).toEqual({
+      action: "improve-writing",
+      selectedPromptId: "ws_aiprompt_improve",
+    });
   });
 
   test("restores a remembered prompt by id, then seed, then custom", () => {

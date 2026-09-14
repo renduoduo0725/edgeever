@@ -3,8 +3,10 @@ import {
   CUSTOM_EDITOR_THEME_FILE_SCHEMA,
   CUSTOM_EDITOR_THEME_FILE_VERSION,
   CustomEditorThemeFileError,
+  DEFAULT_CUSTOM_EDITOR_THEME_NAME,
   DEFAULT_CUSTOM_LIGHT_COLORS,
   DEFAULT_CUSTOM_DARK_COLORS,
+  localizeStoredCustomThemeName,
   normalizeThemeColors,
   customEditorThemeFileName,
   getEditorThemeContrastIssues,
@@ -105,5 +107,12 @@ describe("custom editor theme files", () => {
 
   test("creates a filesystem-safe descriptive filename", () => {
     expect(customEditorThemeFileName(theme.name)).toBe("EdgeEver-Calm - Green.json");
+  });
+
+  test("localizes factory custom theme names without rewriting user names", () => {
+    const copy = { defaultName: "自定主题", newName: (index) => `新主题 ${index}` };
+    expect(localizeStoredCustomThemeName(DEFAULT_CUSTOM_EDITOR_THEME_NAME, copy)).toBe("自定主题");
+    expect(localizeStoredCustomThemeName("New theme 2", copy)).toBe("新主题 2");
+    expect(localizeStoredCustomThemeName("Calm / Green", copy)).toBe("Calm / Green");
   });
 });

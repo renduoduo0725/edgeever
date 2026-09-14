@@ -132,13 +132,6 @@
   background: var(--editor-theme-soft);
   color: var(--editor-theme-heading);
   font-weight: 600;
-  border: 1px solid var(--editor-theme-border);
-  padding: 12px 16px;
-}
-
-.edgeever-editor[data-editor-theme="wechat-green"]:not([data-editor-theme="default"]) .ProseMirror td {
-  border: 1px solid var(--editor-theme-border);
-  padding: 12px 16px;
 }
 
 .edgeever-editor[data-editor-theme="wechat-green"]:not([data-editor-theme="default"]) .ProseMirror .edgeever-theme-block {

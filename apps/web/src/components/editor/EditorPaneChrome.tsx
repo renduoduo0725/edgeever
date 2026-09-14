@@ -18,6 +18,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import type { getNotebookMoveOptions } from "@/lib/app-helpers";
 import type { ResourceMenuTarget } from "./useEditorResourceActions";
+import { attachmentResourceMenuPosition } from "./attachment-resource-menu";
 import { imageResourceMenuPosition } from "./image-resource-menu-position";
 
 export const IconTooltip = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -93,10 +94,10 @@ export const ResourceActionMenu = ({
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) => {
-  const imageElement = target.kind === "image" ? target.element : undefined;
+  const referenceElement = target.element ?? null;
   const { refs, floatingStyles, isPositioned } = useFloating({
-    ...imageResourceMenuPosition,
-    elements: { reference: imageElement ?? null },
+    ...(target.kind === "image" ? imageResourceMenuPosition : attachmentResourceMenuPosition),
+    elements: { reference: referenceElement },
     whileElementsMounted: autoUpdate,
   });
 
@@ -107,8 +108,8 @@ export const ResourceActionMenu = ({
       data-edgeever-resource-menu
       role="toolbar"
       aria-label={labels.download}
-      className="fixed z-[110] flex items-center gap-1 rounded-lg border border-slate-200 bg-card p-1 shadow-lg"
-      style={imageElement ? {
+      className="fixed z-[110] flex items-center gap-1 overflow-hidden rounded-lg border border-slate-200 bg-card p-1 shadow-lg"
+      style={referenceElement ? {
         ...floatingStyles,
         visibility: isPositioned ? "visible" : "hidden",
       } : {

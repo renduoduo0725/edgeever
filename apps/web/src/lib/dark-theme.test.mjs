@@ -12,7 +12,6 @@ const BUILT_IN_EDITOR_THEMES = [
   "outline-emerald",
   "wechat-green",
   "modern-mint",
-  "marxico",
 ];
 
 const readDarkThemeTokens = (theme) => {
@@ -105,15 +104,6 @@ describe("dark theme contracts", () => {
       expect(contrastRatio(tokens.muted, tokens.soft)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(tokens["code-text"], tokens["code-bg"])).toBeGreaterThanOrEqual(4.5);
     }
-  });
-
-  test("Marxico keeps note content legible in dark mode", () => {
-    const { css, tokens } = readDarkThemeTokens("marxico");
-
-    expect(css).toContain(':root.dark .edgeever-editor[data-editor-theme="marxico"]');
-    expect(css).toContain("color: var(--editor-theme-text);");
-    expect(contrastRatio(tokens.text, "#191e1b")).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(tokens.heading, "#191e1b")).toBeGreaterThanOrEqual(4.5);
   });
 
   test("automatic Mermaid themes follow the resolved appearance", () => {

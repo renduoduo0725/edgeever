@@ -223,6 +223,29 @@ describe("GitHub plugin distribution", () => {
     expect(calls).toContainEqual(["1.2.3", "styles.css"]);
   });
 
+  test("falls back to a v-prefixed marketplace release tag when the instance reports the GitHub release was not found", async () => {
+    const calls = [];
+    const assets = {
+      "manifest.json": new TextEncoder().encode(JSON.stringify(manifest)).buffer,
+      "main.js": new TextEncoder().encode("export default { activate() {} };").buffer,
+    };
+    const downloadAsset = async (_coordinates, releaseTag, asset) => {
+      calls.push([releaseTag, asset.name]);
+      if (releaseTag === "1.2.3") throw new Error("GitHub release was not found.");
+      const buffer = assets[asset.name];
+      if (!buffer) throw new Error(`GitHub asset ${asset.name} failed with HTTP 404.`);
+      return buffer;
+    };
+
+    const downloaded = await downloadPinnedGithubExtension("https://github.com/example/edgeever-plugin", "1.2.3", {
+      downloadAssetBytes: downloadAsset,
+    });
+
+    expect(downloaded.releaseTag).toBe("v1.2.3");
+    expect(calls[0]).toEqual(["1.2.3", "manifest.json"]);
+    expect(calls).toContainEqual(["v1.2.3", "main.js"]);
+  });
+
   test("falls back to a v-prefixed marketplace release tag when the unprefixed tag is missing", async () => {
     const calls = [];
     const assets = {

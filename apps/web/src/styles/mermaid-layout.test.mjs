@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
 const globals = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
-const marxico = readFileSync(new URL("./editor-themes/marxico.css", import.meta.url), "utf8");
 
 describe("Mermaid editor layout", () => {
   test("caps wide-screen diagram blocks without narrowing compact viewports", () => {
@@ -17,9 +16,4 @@ describe("Mermaid editor layout", () => {
     );
   });
 
-  test("keeps Mermaid source collapsed in the classic blue and white theme", () => {
-    expect(marxico).toMatch(
-      /\.edgeever-mermaid-code-block:not\(\.is-source-visible\) \.edgeever-mermaid-source\s*{[^}]*display:\s*none;/s,
-    );
-  });
 });

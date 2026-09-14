@@ -42,6 +42,30 @@ export const resolveAudioMimeType = (
   return AUDIO_MIME_TYPES_BY_EXTENSION[extensionOf(filename)] ?? null;
 };
 
+const VIDEO_MIME_TYPES_BY_EXTENSION: Readonly<Record<string, string>> = {
+  m4v: "video/mp4",
+  mov: "video/quicktime",
+  mp4: "video/mp4",
+  ogv: "video/ogg",
+  webm: "video/webm",
+};
+
+/** Resolve a video MIME type without overriding a specific type supplied by storage. */
+export const resolveVideoMimeType = (
+  mimeType: string | null | undefined,
+  filename: string | null | undefined,
+) => {
+  const mime = mimeType?.trim().toLowerCase() ?? "";
+  if (mime.startsWith("video/")) return mime;
+  return VIDEO_MIME_TYPES_BY_EXTENSION[extensionOf(filename)] ?? null;
+};
+
+/** Audio or browser-native video MIME used for inline playback and Content-Type. */
+export const resolvePlayableMediaMimeType = (
+  mimeType: string | null | undefined,
+  filename: string | null | undefined,
+) => resolveAudioMimeType(mimeType, filename) ?? resolveVideoMimeType(mimeType, filename);
+
 export const resolveAttachmentKind = (
   mimeType: string | null | undefined,
   filename: string | null | undefined,
@@ -51,7 +75,7 @@ export const resolveAttachmentKind = (
 
   if (mime.startsWith("image/")) return "image";
   if (resolveAudioMimeType(mime, filename)) return "audio";
-  if (mime.startsWith("video/")) return "video";
+  if (resolveVideoMimeType(mime, filename)) return "video";
   if (mime === "application/pdf" || extension === "pdf") return "pdf";
 
   if (

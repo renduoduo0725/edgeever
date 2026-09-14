@@ -12,6 +12,7 @@ export {
   DEFAULT_CUSTOM_DARK_COLORS,
   DEFAULT_CUSTOM_EDITOR_THEME,
   DEFAULT_CUSTOM_LIGHT_COLORS,
+  localizeStoredCustomThemeName,
 } from "@/lib/custom-editor-theme";
 export type { CustomEditorTheme, ThemeColors } from "@/lib/custom-editor-theme";
 
@@ -100,12 +101,24 @@ export const EDITOR_THEME_NAMES = [
   "default",
   "minimal-emerald",
   "outline-emerald",
+  "letter",
+  "guide",
+  "blueprint",
+  "journal",
+  "stance",
+  "stub",
+  "brief",
+  "outline",
+  "zen",
+  "grove",
   "wechat-green",
   "modern-mint",
-  "marxico",
   "custom",
 ] as const;
 export type EditorThemeName = string;
+
+export const isNamedEditorTheme = (theme: string) =>
+  (EDITOR_THEME_NAMES as readonly string[]).includes(theme) && theme !== "custom";
 
 interface AppearanceThemeContextValue {
   preference: ThemePreference;
@@ -203,7 +216,16 @@ export const resolveMarkdownTheme = (
     : preference;
 
 export const getStoredEditorTheme = (): string => {
-  return readLocalStorageItem(EDITOR_THEME_STORAGE_KEY) || "default";
+  const stored = readLocalStorageItem(EDITOR_THEME_STORAGE_KEY) || "default";
+  if (stored !== "marxico") return stored;
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(EDITOR_THEME_STORAGE_KEY, "default");
+    } catch {
+      // Private mode / blocked storage — preference stays session-only.
+    }
+  }
+  return "default";
 };
 
 const normalizeCustomEditorTheme = (theme: CustomEditorTheme): CustomEditorTheme => ({
@@ -235,7 +257,7 @@ export const getStoredCustomEditorThemes = (): CustomEditorTheme[] => {
       if (oldTheme && typeof oldTheme.name === "string") {
         const migratedTheme: CustomEditorTheme = {
           id: "custom-migrated",
-          name: oldTheme.name || "My custom theme",
+          name: oldTheme.name || DEFAULT_CUSTOM_EDITOR_THEME.name,
           light: normalizeThemeColors({
             background: oldTheme.background || DEFAULT_CUSTOM_LIGHT_COLORS.background,
             text: oldTheme.text || DEFAULT_CUSTOM_LIGHT_COLORS.text,

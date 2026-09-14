@@ -3,9 +3,12 @@ import {
   DEFAULT_SHORTCUT_SETTINGS,
   DESKTOP_FOCUS_MODE_STORAGE_KEY,
   DESKTOP_READING_PROTECTION_STORAGE_KEY,
+  NOTEBOOK_SIDEBAR_COLLAPSED_STORAGE_KEY,
   EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY,
   EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY,
   EDITOR_TOOLBAR_EXPANDED_STORAGE_KEY,
+  EDITOR_PHONE_PREVIEW_STORAGE_KEY,
+  EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY,
   NOTEBOOK_SORT_STORAGE_KEY,
   SHORTCUT_SETTINGS_STORAGE_KEY,
   getSearchShortcutScope,
@@ -15,15 +18,21 @@ import {
   readNotebookSortPreference,
   readDesktopFocusModePreference,
   readDesktopReadingProtectionPreference,
+  readNotebookSidebarCollapsedPreference,
   readEditorOutlineCollapsedPreference,
   readEditorToolbarExpandedPreference,
+  readEditorPhonePreviewPreference,
+  readEditorPhonePreviewFollowPreference,
   readShortcutSettingsPreference,
   writeEditorContentAlignmentPreference,
   writeNotebookSortPreference,
   writeDesktopFocusModePreference,
   writeDesktopReadingProtectionPreference,
+  writeNotebookSidebarCollapsedPreference,
   writeEditorOutlineCollapsedPreference,
   writeEditorToolbarExpandedPreference,
+  writeEditorPhonePreviewPreference,
+  writeEditorPhonePreviewFollowPreference,
   resolveSelectionMoveTargetNotebookId,
   getMemoIdsNeedingMove,
 } from "./app-helpers.ts";
@@ -99,6 +108,46 @@ describe("desktop focus mode preference", () => {
   });
 });
 
+describe("notebook sidebar collapsed preference", () => {
+  test("defaults to expanded and only accepts an explicit true value", () => {
+    installLocalStorage();
+    expect(readNotebookSidebarCollapsedPreference()).toBe(false);
+
+    const values = installLocalStorage();
+    values.set(NOTEBOOK_SIDEBAR_COLLAPSED_STORAGE_KEY, "false");
+    expect(readNotebookSidebarCollapsedPreference()).toBe(false);
+
+    values.set(NOTEBOOK_SIDEBAR_COLLAPSED_STORAGE_KEY, "true");
+    expect(readNotebookSidebarCollapsedPreference()).toBe(true);
+  });
+
+  test("persists collapsed and expanded values", () => {
+    const values = installLocalStorage();
+
+    writeNotebookSidebarCollapsedPreference(true);
+    expect(values.get(NOTEBOOK_SIDEBAR_COLLAPSED_STORAGE_KEY)).toBe("true");
+
+    writeNotebookSidebarCollapsedPreference(false);
+    expect(values.get(NOTEBOOK_SIDEBAR_COLLAPSED_STORAGE_KEY)).toBe("false");
+  });
+
+  test("fails closed when local storage is unavailable", () => {
+    globalThis.window = {
+      localStorage: {
+        getItem: () => {
+          throw new Error("blocked");
+        },
+        setItem: () => {
+          throw new Error("blocked");
+        },
+      },
+    };
+
+    expect(readNotebookSidebarCollapsedPreference()).toBe(false);
+    expect(() => writeNotebookSidebarCollapsedPreference(true)).not.toThrow();
+  });
+});
+
 describe("editor toolbar expanded preference", () => {
   test("defaults to collapsed and only accepts an explicit true value", () => {
     const values = installLocalStorage();
@@ -119,6 +168,50 @@ describe("editor toolbar expanded preference", () => {
 
     writeEditorToolbarExpandedPreference(false);
     expect(values.get(EDITOR_TOOLBAR_EXPANDED_STORAGE_KEY)).toBe("false");
+  });
+});
+
+describe("editor phone preview preference", () => {
+  test("defaults to hidden and only accepts an explicit true value", () => {
+    const values = installLocalStorage();
+    expect(readEditorPhonePreviewPreference()).toBe(false);
+
+    values.set(EDITOR_PHONE_PREVIEW_STORAGE_KEY, "false");
+    expect(readEditorPhonePreviewPreference()).toBe(false);
+
+    values.set(EDITOR_PHONE_PREVIEW_STORAGE_KEY, "true");
+    expect(readEditorPhonePreviewPreference()).toBe(true);
+  });
+
+  test("persists phone preview visibility", () => {
+    const values = installLocalStorage();
+
+    writeEditorPhonePreviewPreference(true);
+    expect(values.get(EDITOR_PHONE_PREVIEW_STORAGE_KEY)).toBe("true");
+
+    writeEditorPhonePreviewPreference(false);
+    expect(values.get(EDITOR_PHONE_PREVIEW_STORAGE_KEY)).toBe("false");
+  });
+
+  test("defaults phone preview scroll following to on", () => {
+    const values = installLocalStorage();
+    expect(readEditorPhonePreviewFollowPreference()).toBe(true);
+
+    values.set(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY, "false");
+    expect(readEditorPhonePreviewFollowPreference()).toBe(false);
+
+    values.set(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY, "true");
+    expect(readEditorPhonePreviewFollowPreference()).toBe(true);
+  });
+
+  test("persists phone preview scroll following", () => {
+    const values = installLocalStorage();
+
+    writeEditorPhonePreviewFollowPreference(false);
+    expect(values.get(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY)).toBe("false");
+
+    writeEditorPhonePreviewFollowPreference(true);
+    expect(values.get(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY)).toBe("true");
   });
 });
 

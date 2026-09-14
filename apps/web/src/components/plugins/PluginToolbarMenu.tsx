@@ -22,10 +22,19 @@ import type {
 
 const actionKey = (action: RegisteredPluginAction) => `${action.type}:${action.pluginId}:${action.id}`;
 
-export const PluginToolbarMenu = ({ host, onManage, align = "end", className }: {
+export const PluginToolbarMenu = ({
+  host,
+  onManage,
+  align = "end",
+  side = "bottom",
+  tooltipSide,
+  className,
+}: {
   host: EdgeEverPluginHost;
   onManage: () => void;
   align?: "start" | "center" | "end";
+  side?: "top" | "right" | "bottom" | "left";
+  tooltipSide?: "top" | "right" | "bottom" | "left";
   className?: string;
 }) => {
   const { t } = useTranslation();
@@ -114,10 +123,10 @@ export const PluginToolbarMenu = ({ host, onManage, align = "end", className }: 
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
-            <TooltipContent side="bottom">{t("plugins.toolbar.open")}</TooltipContent>
+            <TooltipContent side={tooltipSide ?? side}>{t("plugins.toolbar.open")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <DropdownMenuContent align={align} className="w-72">
+        <DropdownMenuContent align={align} side={side} className="w-72">
           {groups.length > 0 ? groups.map((group, index) => (
             <div key={group.pluginId}>
               {index > 0 ? <DropdownMenuSeparator /> : null}

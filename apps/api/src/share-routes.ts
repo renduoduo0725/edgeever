@@ -1,4 +1,4 @@
-import { collectMemoLinkIds, isPdfAttachment, resolveAudioMimeType, resolveMemoContentDoc, type MemoShare, type PublicMemoShare, type TiptapDoc } from "@edgeever/shared";
+import { collectMemoLinkIds, isPdfAttachment, resolveMemoContentDoc, resolvePlayableMediaMimeType, type MemoShare, type PublicMemoShare, type TiptapDoc } from "@edgeever/shared";
 import type { Hono } from "hono";
 import type { AppEnv } from "./api-context";
 import { audit } from "./audit";
@@ -40,7 +40,7 @@ const mapMemoShare = (row: MemoShareRow): MemoShare => ({
 });
 
 const contentDisposition = (kind: SharedResourceRow["kind"], mimeType: string | null, filename: string | null) => {
-  const inline = kind === "image" || isPdfAttachment(mimeType, filename) || Boolean(resolveAudioMimeType(mimeType, filename));
+  const inline = kind === "image" || isPdfAttachment(mimeType, filename) || Boolean(resolvePlayableMediaMimeType(mimeType, filename));
   return inline ? contentDispositionInline(filename) : contentDispositionAttachment(filename);
 };
 
@@ -125,12 +125,12 @@ export const registerPublicShareRoutes = (app: Hono<AppEnv>) => {
 
     const headers = new Headers();
     object.writeHttpMetadata(headers);
-    const audioMimeType = resolveAudioMimeType(resource.mime_type, resource.filename);
+    const playableMimeType = resolvePlayableMediaMimeType(resource.mime_type, resource.filename);
     headers.set(
       "Content-Type",
       isPdfAttachment(resource.mime_type, resource.filename)
         ? "application/pdf"
-        : audioMimeType ?? resource.mime_type ?? headers.get("Content-Type") ?? "application/octet-stream",
+        : playableMimeType ?? resource.mime_type ?? headers.get("Content-Type") ?? "application/octet-stream",
     );
     headers.set("Accept-Ranges", "bytes");
     if (byteRange.kind === "range") {

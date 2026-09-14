@@ -22,3 +22,12 @@ export const getResourceIdFromUrl = (href: string): string | null => {
 
 export const getAttachmentFilenameFromLabel = (label: string) =>
   label.replace(/^\s*(?:附件[：:]|Attachment:)\s*/i, "").trim();
+
+/** Match API, desktop protocol, and identical staged URLs for the same stored file. */
+export const resourceUrlsReferToSameAttachment = (left: string, right: string) => {
+  if (!left || !right) return false;
+  if (left === right) return true;
+  const leftId = getResourceIdFromUrl(left);
+  const rightId = getResourceIdFromUrl(right);
+  return Boolean(leftId && rightId && leftId === rightId);
+};

@@ -24,6 +24,20 @@ describe("appearance preference", () => {
   });
 });
 
+describe("paper editor themes", () => {
+  test("keeps theme switching in the editor toolbar instead of settings", () => {
+    const preferenceCard = readFileSync(new URL("./PreferenceCard.tsx", import.meta.url), "utf8");
+    const editorToolbar = readFileSync(new URL("../EditorToolbar.tsx", import.meta.url), "utf8");
+
+    expect(preferenceCard).not.toContain('t("settings.publishLayoutTitle")');
+    expect(preferenceCard).not.toContain('t("settings.editorThemeTitle")');
+    expect(preferenceCard).not.toContain('t("settings.markdownThemeTitle")');
+    expect(preferenceCard).toContain('t("settings.customEditorTheme.settingsTitle")');
+    expect(editorToolbar).toContain('t(`settings.editorThemes.${theme}`)');
+    expect(editorToolbar).toContain("markdownThemePreference");
+  });
+});
+
 describe("custom editor theme portability", () => {
   test("offers import and export while keeping contrast as a warning", () => {
     const dialog = readFileSync(new URL("./CustomEditorThemeDialog.tsx", import.meta.url), "utf8");

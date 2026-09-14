@@ -53,7 +53,7 @@ import {
   promptNeedsTone,
   readStoredAiAssistantLastActionPreference,
   resolveAiAssistantComposerInput,
-  resolveAiAssistantLastAction,
+  resolveAiAssistantOpenAction,
   targetLanguages,
   writeStoredAiAssistantLastActionPreference,
   type AiAssistantAction,
@@ -246,8 +246,8 @@ export const AiAssistantDialog = ({
       setInitializedForOpen(true);
       return;
     }
-    const resolved = resolveAiAssistantLastAction({
-      fallbackAction: defaultAction,
+    const resolved = resolveAiAssistantOpenAction({
+      hasSelection,
       preference: readStoredAiAssistantLastActionPreference(lastActionScope),
       prompts,
     });

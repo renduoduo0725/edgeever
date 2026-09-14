@@ -67,7 +67,7 @@ EdgeEver is engineered to provide a distraction-free, elegant writing experience
 - **Reading Protection Mode**: When reading or reviewing notes, press `Cmd/Ctrl + E` to toggle read-only protection, locking the editor to prevent accidental edits while browsing; press it again to seamlessly resume editing.
 
 ### 🎭 Curated Typography Themes & Publishing Export
-- **Preset Editor Themes**: Switch effortlessly between `WeChat Classic Green`, `Modern Mint`, `Minimal Emerald`, `Outline Emerald`, and more.
+- **Preset Editor Themes**: Switch effortlessly between `WeChat Green`, `Fresh Mint`, `Minimal Jade`, `Lined Jade`, and styles such as Warm Page, Lesson Page, and Navy Draft.
 - **One-Click Publishing Export**: Built for publishers and bloggers. Click the **WeChat Icon** in the top bar to format your note with inline CSS. Paste directly into WeChat Official Account editor, Substack, Medium, or WordPress while preserving layout and syntax highlighting.
 
 ### 🖼️ 8 Exquisite Social Poster Themes
@@ -132,7 +132,7 @@ sequenceDiagram
 Press the **`Space` bar** in an empty block, type **`/ai`**, use the **`/`** slash command menu, or select text and click the **AI button** on the floating toolbar to instantly summon the AI writing assistant:
 - **Summarization & Action Items**: Condense documents into key takeaways, conclusions, and actionable todos;
 - **Format-Preserving Translation**: Translate accurately into multiple languages while strictly preserving Markdown, math equations, links, and code blocks;
-- **Rewriting & Style Transformation**: Improve phrasing, fix spelling/grammar, adapt to social media styles (e.g. Xiaohongshu / Twitter), or continue writing seamlessly;
+- **Rewriting & Continuation**: Polish phrasing, make writing concise, or continue writing seamlessly;
 - **BYOK Direct Key (Bring Your Own Key)**: Direct client-side connection with OpenAI, Anthropic Claude, Google Gemini, DeepSeek, and OpenAI-compatible relays with zero third-party data transit.
 
 ### 2️⃣ Model Context Protocol (MCP) Integration

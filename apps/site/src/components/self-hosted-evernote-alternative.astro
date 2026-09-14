@@ -1,0 +1,140 @@
+---
+import Container from "@/components/container.astro";
+import Layout from "@/layouts/Layout.astro";
+import { alternativePageCopy } from "@/data/self-hosted-evernote-alternative";
+import { getLocalizedPath, getSiteLocale } from "@/i18n";
+
+const locale = getSiteLocale(Astro.url.pathname);
+const copy = alternativePageCopy[locale];
+const pageUrl = new URL(Astro.url.pathname, Astro.site).toString();
+
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: copy.title,
+    description: copy.description,
+    url: pageUrl,
+    inLanguage: locale,
+    isPartOf: {
+      "@type": "WebSite",
+      name: "EdgeEver",
+      url: new URL(getLocalizedPath(locale, "/"), Astro.site).toString(),
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: copy.faqs.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "EdgeEver",
+    alternateName: "EdgeEver Evernote Alternative",
+    url: pageUrl,
+    applicationCategory: "ProductivityApplication",
+    operatingSystem: "macOS, Windows, Linux, iOS, Android, Web, Chrome, Edge, Firefox",
+    isAccessibleForFree: true,
+    description: copy.description,
+  },
+];
+---
+
+<Layout title={copy.title} description={copy.description} jsonLd={jsonLd}>
+  <Container>
+    <main class="mx-auto max-w-4xl py-16 md:py-24">
+      <p class="text-sm font-semibold text-brand-text">{copy.eyebrow}</p>
+      <h1 class="mt-3 text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{copy.title}</h1>
+      {
+        copy.lead.map((paragraph) => (
+          <p class="mt-5 text-lg leading-8 text-slate-600">{paragraph}</p>
+        ))
+      }
+
+      <div class="mt-10 space-y-5">
+        <article class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-2xl font-bold text-slate-900">{copy.fitTitle}</h2>
+          <ul class="mt-3 list-disc space-y-2 pl-5 text-base leading-7 text-slate-600">
+            {copy.fit.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+
+        <article class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-2xl font-bold text-slate-900">{copy.notFitTitle}</h2>
+          <ul class="mt-3 list-disc space-y-2 pl-5 text-base leading-7 text-slate-600">
+            {copy.notFit.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+
+        <article class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-2xl font-bold text-slate-900">{copy.compareTitle}</h2>
+          <p class="mt-3 text-base leading-7 text-slate-600">{copy.compareIntro}</p>
+          <div class="mt-5 overflow-x-auto">
+            <table class="w-full min-w-[40rem] text-left text-sm leading-6 text-slate-700">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-900">
+                  {copy.compareHeaders.map((header) => (
+                    <th class="py-2 pr-4 font-semibold">{header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {copy.compareRows.map((row) => (
+                  <tr class="border-b border-slate-100 align-top">
+                    {row.map((cell, index) => (
+                      <td class:list={["py-2 pr-4", index === 0 && "font-semibold text-slate-900"]}>
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-2xl font-bold text-slate-900">{copy.pathsTitle}</h2>
+          <div class="mt-4 space-y-4">
+            {
+              copy.paths.map((item) => (
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">{item.title}</h3>
+                  <p class="mt-1 text-base leading-7 text-slate-600">{item.summary}</p>
+                  <a
+                    href={getLocalizedPath(locale, item.href)}
+                    class="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+                  >
+                    {item.cta}
+                  </a>
+                </div>
+              ))
+            }
+          </div>
+        </article>
+
+        <article class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="text-2xl font-bold text-slate-900">{copy.faqTitle}</h2>
+          <div class="mt-4 space-y-5">
+            {
+              copy.faqs.map((item) => (
+                <div>
+                  <h3 class="text-lg font-bold text-slate-900">{item.question}</h3>
+                  <p class="mt-2 text-base leading-7 text-slate-600">{item.answer}</p>
+                </div>
+              ))
+            }
+          </div>
+        </article>
+      </div>
+    </main>
+  </Container>
+</Layout>

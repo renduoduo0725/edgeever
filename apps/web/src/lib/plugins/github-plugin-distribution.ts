@@ -76,8 +76,11 @@ const isGithubUnreachableError = (error: unknown) => {
 const isGithubRateLimitedStatus = (status: number) => status === 403 || status === 429;
 
 const isMissingGithubAssetError = (error: unknown) => {
+  if (error instanceof ApiRequestError && error.status === 404) return true;
   const message = error instanceof Error ? error.message : String(error);
-  return /HTTP 404/i.test(message);
+  return /HTTP 404/i.test(message)
+    || /GitHub release was not found/i.test(message)
+    || /GitHub Release .+ (was not found|is missing )/i.test(message);
 };
 
 const fetchGithubMetadataThroughInstance = async (url: string): Promise<Response> => {

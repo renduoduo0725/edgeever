@@ -298,6 +298,34 @@ describe("resource route contracts", () => {
     expect(response.headers.get("Accept-Ranges")).toBe("bytes");
   });
 
+  test("serves filename-detected video inline with a playable MIME type", async () => {
+    const environment = createEnvironment();
+    environment.storage.resources = {
+      get: async () => ({
+        body: new Blob([new Uint8Array(256)]).stream(),
+        size: 256,
+        writeHttpMetadata: () => {},
+      }),
+    };
+    const response = await createApp(agentAuth, async () => ({
+      ...resourceRow,
+      filename: "录屏.mp4",
+      mime_type: "application/octet-stream",
+      storage_config_id: null,
+    })).request(
+      "/api/v1/resources/res_1/blob",
+      {},
+      environment,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("video/mp4");
+    expect(response.headers.get("Content-Disposition")).toBe(
+      "inline; filename=\"download.mp4\"; filename*=UTF-8''%E5%BD%95%E5%B1%8F.mp4",
+    );
+    expect(response.headers.get("Accept-Ranges")).toBe("bytes");
+  });
+
   test("rejects unsatisfiable ranges before object storage is read", async () => {
     const environment = createEnvironment();
     let reads = 0;

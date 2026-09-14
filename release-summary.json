@@ -1,15 +1,13 @@
 {
-  "version": "1.68.0",
+  "version": "1.70.0",
   "changes": {
     "en-US": [
-      "Render Dataview inline fields such as [due:: YYYY-MM-DD] as compact editor chips, and keep the raw field editable on click.",
-      "Highlight Markdown source and switch editor themes from the toolbar.",
-      "Remember the last AI assistant action and open the assistant from the current selection or the whole note."
+      "Replace the Xiaohongshu and X/Twitter factory AI prompts with Extract tasks and Continue writing. Opening the assistant on a whole note now starts on a custom instruction. After upgrade, those two factory presets—including edited copies—are removed; prompts you created yourself are kept.",
+      "Keep table layout stable when switching editor themes, give themes original four-character Chinese names, and balance desktop editor gutters so the reading column fills leftover width."
     ],
     "zh-CN": [
-      "把 [due:: YYYY-MM-DD] 这类 Dataview 字段在编辑器里收成安静的小标签，点击后仍可编辑原文。",
-      "Markdown 源码高亮，并支持从工具栏切换编辑器主题。",
-      "记住上次的 AI 助手操作，并支持从当前选区或整篇笔记打开助手。"
+      "内置 AI 提示改为笔记工作流：用「提取待办」和「继续写作」替换小红书、推特风格模板；对整篇笔记打开助手时默认进入自定义指令。升级后这两个出厂模板（含已编辑版本）会被移除，自建提示词不受影响。",
+      "切换编辑器主题时表格不再变形；主题使用独立四字中文名；桌面编辑区左右留白更均衡，阅读栏会填满中间剩余宽度。"
     ]
   }
 }

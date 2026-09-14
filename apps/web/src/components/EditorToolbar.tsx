@@ -35,7 +35,13 @@ import {
 import { CODE_BLOCK_LANGUAGES, getCodeBlockLanguageValue } from "@/lib/code-block";
 import { EditorTableMenu } from "@/components/EditorTableMenu";
 import { wrapIndentedParagraphInList } from "@/lib/editor-shortcuts";
-import { MARKDOWN_THEME_PREFERENCES, useMarkdownTheme } from "@/components/ThemeProvider";
+import {
+  EDITOR_THEME_NAMES,
+  MARKDOWN_THEME_PREFERENCES,
+  localizeStoredCustomThemeName,
+  useEditorTheme,
+  useMarkdownTheme,
+} from "@/components/ThemeProvider";
 
 const EditorToolbarButton = ({
   active = false,
@@ -161,6 +167,8 @@ export const EditorToolbar = ({
 }) => {
   const { t } = useTranslation();
   const { markdownThemePreference, setMarkdownTheme } = useMarkdownTheme();
+  const { editorTheme, setEditorTheme, customEditorThemes } = useEditorTheme();
+  const namedEditorThemes = EDITOR_THEME_NAMES.filter((theme) => theme !== "custom");
   const controlsRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(readEditorToolbarExpandedPreference);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -388,6 +396,33 @@ export const EditorToolbar = ({
             </Select>
           ) : (
             <>
+          <Select
+            value={editorTheme}
+            onValueChange={(value) => setEditorTheme(value)}
+          >
+            <SelectTrigger
+              aria-label={t("editorToolbar.editorTheme")}
+              className="h-8 w-[6.5rem] shrink-0 whitespace-nowrap border-slate-200 bg-card text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[10rem] bg-card border border-slate-200 rounded-md py-1 shadow-md">
+              {namedEditorThemes.map((theme) => (
+                <SelectItem key={theme} value={theme}>
+                  {t(`settings.editorThemes.${theme}`)}
+                </SelectItem>
+              ))}
+              {customEditorThemes.map((theme) => (
+                <SelectItem key={theme.id} value={theme.id}>
+                  {localizeStoredCustomThemeName(theme.name, {
+                    defaultName: t("settings.customEditorTheme.defaultName"),
+                    newName: (index) => t("settings.customEditorTheme.newName", { n: index }),
+                  })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <MemoEditorToolbarDivider className="hidden sm:block" />
           <Select
             value={blockValue}
             disabled={disabled}

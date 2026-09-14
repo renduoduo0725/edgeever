@@ -260,7 +260,7 @@ export const PdfViewer = ({
       aria-label={isFullscreen ? t("pdfViewer.fullscreenLabel", { filename: label }) : undefined}
     >
       <span className={cn("flex min-w-0 flex-col", isFullscreen && "mx-auto h-full w-full max-w-6xl overflow-hidden rounded-xl bg-card shadow-2xl")}>
-        <span className="flex min-h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-200 bg-card px-3">
+        <span data-edgeever-resource-toolbar className="flex min-h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-200 bg-card px-3">
           {isFullscreen && onPrevious ? (
             <ButtonTooltip title={t("pdfViewer.previous")}>
               <button type="button" className="pdf-viewer-action" aria-label={t("pdfViewer.previous")} onClick={onPrevious}>

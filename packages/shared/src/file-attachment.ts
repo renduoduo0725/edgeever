@@ -5,6 +5,12 @@ import { getAttachmentFilenameFromLabel } from "./resource-links";
 import { normalizeAttachmentByteSize } from "./attachment-metadata";
 
 export const FILE_ATTACHMENT_NODE_TYPE = "edgeeverFileAttachment" as const;
+export const FILE_DISPLAY_MODES = ["compact", "inline"] as const;
+export type FileDisplayMode = (typeof FILE_DISPLAY_MODES)[number];
+
+/** Video preview defaults to expanded so notes open ready to play. */
+export const resolveFileDisplayMode = (value: unknown): FileDisplayMode =>
+  value === "compact" ? "compact" : "inline";
 
 const MARKDOWN_LINK_PATTERN = /^\[([^\]]+)\]\(([^\s)]+)(?:\s+"[^"]*")?\)/;
 const ATTACHMENT_LABEL_PATTERN = /^\s*(?:附件[：:]|Attachment:)\s*/i;
@@ -59,6 +65,14 @@ export const FileAttachment = Node.create({
           return byteSize === null ? {} : { "data-file-byte-size": String(byteSize) };
         },
       },
+      displayMode: {
+        default: "inline",
+        parseHTML: (element) => resolveFileDisplayMode(element.getAttribute("data-file-display-mode")),
+        renderHTML: (attributes) => {
+          const displayMode = resolveFileDisplayMode(attributes.displayMode);
+          return displayMode === "compact" ? { "data-file-display-mode": displayMode } : {};
+        },
+      },
     };
   },
 
@@ -86,6 +100,7 @@ export const FileAttachment = Node.create({
         filename: getAttachmentFilenameFromLabel(label),
         mimeType: "",
         byteSize: null,
+        displayMode: "inline",
       },
     };
   },
