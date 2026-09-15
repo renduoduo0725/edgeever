@@ -1,6 +1,6 @@
 import { ApiRequestError } from "@edgeever/client";
 
-export type MobileLoginLocale = "zh-CN" | "en-US";
+export type MobileLoginLocale = "zh-CN" | "en-US" | "ja";
 
 const appendDiagnostics = (
   message: string,
@@ -9,7 +9,7 @@ const appendDiagnostics = (
 ) => `${message}\n${diagnosticCode}${rayId ? ` · Ray ID: ${rayId}` : ""}`;
 
 export const formatMobileLoginError = (error: unknown, locale: MobileLoginLocale) => {
-  const english = locale === "en-US";
+  const english = locale !== "zh-CN";
 
   if (error instanceof ApiRequestError) {
     const rayId = error.responseDiagnostics?.rayId;

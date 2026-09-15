@@ -139,7 +139,7 @@ type LocalTiptapEditorSharedProps = {
   onSearchResult?: (count: number, index: number, query: string) => Promise<void>;
   onImageExportEvent?: (payloadJson: string) => Promise<void>;
   ref: Ref<LocalTiptapEditorRef>;
-  locale: "zh-CN" | "en-US";
+  locale: "zh-CN" | "en-US" | "ja";
   theme: "light" | "dark";
   /** Live-switchable. The same DomWebView stays mounted across viewer → editor. */
   mode?: "editor" | "viewer";
@@ -450,7 +450,7 @@ const ReadOnlyX6Diagram = ({
   theme,
 }: {
   diagram: DiagramDocument;
-  locale: "zh-CN" | "en-US";
+  locale: "zh-CN" | "en-US" | "ja";
   theme: "light" | "dark";
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -498,7 +498,7 @@ const ReadOnlyX6Diagram = ({
     };
   }, [diagram, theme, locale]);
 
-  const title = locale === "en-US"
+  const title = locale !== "zh-CN"
     ? diagram.kind === "mind-map" ? "Mind map" : diagram.kind === "architecture" ? "Architecture diagram" : "Flowchart"
     : diagram.kind === "mind-map" ? "思维导图" : diagram.kind === "architecture" ? "架构图" : "流程图";
   return (
@@ -931,7 +931,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
     insertImageUploadPlaceholder(
       editor,
       createMobileImageUploadPlaceholderSource(uploadIdValue),
-      props.locale === "en-US" ? "Uploading image…" : "图片上传中…",
+      props.locale !== "zh-CN" ? "Uploading image…" : "图片上传中…",
       previewDataUrlValue,
       pendingImageSelectionRef.current
     );
@@ -981,7 +981,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
       type: "paragraph",
       content: [{
         type: "text",
-        text: `${props.locale === "en-US" ? "Attachment: " : "附件："}${filenameValue}`,
+        text: `${props.locale !== "zh-CN" ? "Attachment: " : "附件："}${filenameValue}`,
         marks: [{
           type: "link",
           attrs: {
@@ -1023,7 +1023,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
     editor.view.dispatch(editor.state.tr.replaceWith(
       range.from,
       range.to,
-      editor.schema.text(`${props.locale === "en-US" ? "Attachment: " : "附件："}${filenameValue}`, [linkMark])
+      editor.schema.text(`${props.locale !== "zh-CN" ? "Attachment: " : "附件："}${filenameValue}`, [linkMark])
     ));
   }, [editor, props.locale]);
 
@@ -1149,7 +1149,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
         ...current,
         generating: false,
         requestId: null,
-        error: requestError instanceof Error ? requestError.message : (props.locale === "en-US" ? "AI generation failed." : "AI 生成失败。"),
+        error: requestError instanceof Error ? requestError.message : (props.locale !== "zh-CN" ? "AI generation failed." : "AI 生成失败。"),
       } : current);
     });
   }, [aiPanel, props.locale]);
@@ -1638,7 +1638,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
             ))}
           {onAiRequestRef.current ? (
             <button
-              aria-label={props.locale === "en-US" ? "Use AI on the note or selected text" : "用 AI 处理正文或选中内容"}
+              aria-label={props.locale !== "zh-CN" ? "Use AI on the note or selected text" : "用 AI 处理正文或选中内容"}
               className="edgeever-ai-toolbar-button"
               onClick={requestOpenAiForSelection}
               onMouseDown={(event) => event.preventDefault()}
@@ -1659,7 +1659,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
       )}
       {aiSelectionTrigger && !aiPanel ? (
         <button
-          aria-label={props.locale === "en-US" ? "Use AI on selected text" : "用 AI 处理选中内容"}
+          aria-label={props.locale !== "zh-CN" ? "Use AI on selected text" : "用 AI 处理选中内容"}
           className="edgeever-ai-selection-trigger"
           onClick={requestOpenAiForSelection}
           onMouseDown={(event) => event.preventDefault()}
@@ -1673,14 +1673,14 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
       ) : null}
       {aiSelectionHint ? (
         <div aria-live="polite" className="edgeever-ai-selection-hint" role="status">
-          {props.locale === "en-US" ? "Add some note content first." : "请先输入正文内容。"}
+          {props.locale !== "zh-CN" ? "Add some note content first." : "请先输入正文内容。"}
         </div>
       ) : null}
       {aiUndoFingerprint && !aiPanel ? (
         <div aria-live="polite" className="edgeever-ai-undo" role="status">
-          <span>{props.locale === "en-US" ? "AI updated the selection." : "AI 已更新选中内容。"}</span>
+          <span>{props.locale !== "zh-CN" ? "AI updated the selection." : "AI 已更新选中内容。"}</span>
           <button onClick={undoAiSelectionDraft} onMouseDown={(event) => event.preventDefault()} type="button">
-            {props.locale === "en-US" ? "Undo" : "撤销"}
+            {props.locale !== "zh-CN" ? "Undo" : "撤销"}
           </button>
         </div>
       ) : null}
@@ -1726,7 +1726,7 @@ const MobileSelectionAiPanel = ({
   panel,
   prompts,
 }: {
-  locale: "zh-CN" | "en-US";
+  locale: "zh-CN" | "en-US" | "ja";
   onApply: (mode: "append" | "replace") => void;
   onChange: Dispatch<SetStateAction<MobileAiPanelState | null>>;
   onClose: () => void;
@@ -1736,7 +1736,7 @@ const MobileSelectionAiPanel = ({
   panel: MobileAiPanelState;
   prompts: AiPromptTemplate[];
 }) => {
-  const english = locale === "en-US";
+  const english = locale !== "zh-CN";
   const [picker, setPicker] = useState<MobileAiPickerKind | null>(null);
   const actionLabels: Record<AiAction, string> = {
     summarize: english ? "Summarize" : "精简总结",
@@ -2223,7 +2223,7 @@ const loadMermaid = () => {
 };
 
 const createMobileCodeBlockExtension = (
-  locale: "zh-CN" | "en-US",
+  locale: "zh-CN" | "en-US" | "ja",
   theme: "light" | "dark",
   hideCopyForVisualDiagram = false,
 ) => CodeBlock.extend({
@@ -2251,12 +2251,12 @@ const createMobileCodeBlockExtension = (
       message.className = "edgeever-mermaid-message";
       svgContainer.className = "edgeever-mermaid-svg";
       svgContainer.setAttribute("role", "img");
-      svgContainer.setAttribute("aria-label", locale === "en-US" ? "Mermaid diagram preview" : "Mermaid 图表预览");
+      svgContainer.setAttribute("aria-label", locale !== "zh-CN" ? "Mermaid diagram preview" : "Mermaid 图表预览");
       copyButton.type = "button";
       copyButton.className = "edgeever-code-copy-button";
       copyButton.contentEditable = "false";
-      copyButton.setAttribute("aria-label", locale === "en-US" ? "Copy code" : "复制代码");
-      copyButton.textContent = locale === "en-US" ? "Copy code" : "复制代码";
+      copyButton.setAttribute("aria-label", locale !== "zh-CN" ? "Copy code" : "复制代码");
+      copyButton.textContent = locale !== "zh-CN" ? "Copy code" : "复制代码";
       copyButton.addEventListener("pointerdown", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -2265,21 +2265,21 @@ const createMobileCodeBlockExtension = (
         event.preventDefault();
         event.stopPropagation();
         void Clipboard.setStringAsync(currentNode.textContent).then(() => {
-          copyButton.textContent = locale === "en-US" ? "Copied" : "已复制";
-          copyButton.setAttribute("aria-label", locale === "en-US" ? "Copied" : "已复制");
+          copyButton.textContent = locale !== "zh-CN" ? "Copied" : "已复制";
+          copyButton.setAttribute("aria-label", locale !== "zh-CN" ? "Copied" : "已复制");
           if (copyResetTimer !== null) window.clearTimeout(copyResetTimer);
           copyResetTimer = window.setTimeout(() => {
-            copyButton.textContent = locale === "en-US" ? "Copy code" : "复制代码";
-            copyButton.setAttribute("aria-label", locale === "en-US" ? "Copy code" : "复制代码");
+            copyButton.textContent = locale !== "zh-CN" ? "Copy code" : "复制代码";
+            copyButton.setAttribute("aria-label", locale !== "zh-CN" ? "Copy code" : "复制代码");
             copyResetTimer = null;
           }, 1800);
         }).catch(() => {
-          copyButton.textContent = locale === "en-US" ? "Copy failed" : "复制失败";
-          copyButton.setAttribute("aria-label", locale === "en-US" ? "Copy failed" : "复制失败");
+          copyButton.textContent = locale !== "zh-CN" ? "Copy failed" : "复制失败";
+          copyButton.setAttribute("aria-label", locale !== "zh-CN" ? "Copy failed" : "复制失败");
           if (copyResetTimer !== null) window.clearTimeout(copyResetTimer);
           copyResetTimer = window.setTimeout(() => {
-            copyButton.textContent = locale === "en-US" ? "Copy code" : "复制代码";
-            copyButton.setAttribute("aria-label", locale === "en-US" ? "Copy code" : "复制代码");
+            copyButton.textContent = locale !== "zh-CN" ? "Copy code" : "复制代码";
+            copyButton.setAttribute("aria-label", locale !== "zh-CN" ? "Copy code" : "复制代码");
             copyResetTimer = null;
           }, 1800);
         });
@@ -2309,8 +2309,8 @@ const createMobileCodeBlockExtension = (
         wrapper.dataset.language = language;
         preview.hidden = !isMermaid;
         code.setAttribute("aria-label", isMermaid
-          ? (locale === "en-US" ? "Mermaid source" : "Mermaid 源码")
-          : (locale === "en-US" ? "Code source" : "代码源码"));
+          ? (locale !== "zh-CN" ? "Mermaid source" : "Mermaid 源码")
+          : (locale !== "zh-CN" ? "Code source" : "代码源码"));
         if (!isMermaid) {
           preview.replaceChildren();
           return;
@@ -2319,7 +2319,7 @@ const createMobileCodeBlockExtension = (
         const source = currentNode.textContent.trim();
         if (!source) {
           message.className = "edgeever-mermaid-message";
-          message.textContent = locale === "en-US" ? "Enter Mermaid source below." : "请在下方输入 Mermaid 源码。";
+          message.textContent = locale !== "zh-CN" ? "Enter Mermaid source below." : "请在下方输入 Mermaid 源码。";
           preview.replaceChildren(message);
           return;
         }
@@ -2327,7 +2327,7 @@ const createMobileCodeBlockExtension = (
         const activeRequest = renderRequest;
         renderTimer = window.setTimeout(() => {
           message.className = "edgeever-mermaid-message";
-          message.textContent = locale === "en-US" ? "Rendering diagram…" : "正在渲染图表…";
+          message.textContent = locale !== "zh-CN" ? "Rendering diagram…" : "正在渲染图表…";
           preview.replaceChildren(message);
           void loadMermaid()
             .then(async (mermaid) => {
@@ -2361,7 +2361,7 @@ const createMobileCodeBlockExtension = (
                 return;
               }
               message.className = "edgeever-mermaid-error";
-              message.textContent = locale === "en-US"
+              message.textContent = locale !== "zh-CN"
                 ? "Unable to render this diagram. Check its syntax."
                 : "无法渲染此图表，请检查语法。";
               preview.replaceChildren(message);
@@ -2391,7 +2391,7 @@ const createMobileCodeBlockExtension = (
 });
 
 const createMobileImageSizeControls = (
-  locale: "zh-CN" | "en-US",
+  locale: "zh-CN" | "en-US" | "ja",
   updateWidth: (width: number) => void
 ) => {
   const controls = document.createElement("div");
@@ -2443,7 +2443,7 @@ const createMobileImageSizeControls = (
 
 const createProtectedImageExtension = (
   baseUrl: string,
-  locale: "zh-CN" | "en-US",
+  locale: "zh-CN" | "en-US" | "ja",
   loadResource: (source: string) => Promise<string | null>,
   options?: {
     readOnly?: boolean | (() => boolean);
@@ -2548,7 +2548,7 @@ const createProtectedImageExtension = (
         const spinner = document.createElement("span");
         spinner.className = "edgeever-image-upload-spinner";
         spinner.setAttribute("aria-hidden", "true");
-        overlay.append(spinner, locale === "en-US" ? "Uploading image…" : "图片上传中…");
+        overlay.append(spinner, locale !== "zh-CN" ? "Uploading image…" : "图片上传中…");
         if (previewSource) {
           placeholder.append(preview);
         }
@@ -2603,7 +2603,7 @@ const createProtectedImageExtension = (
             if (activeRequestId !== requestId) {
               return;
             }
-            overlay.textContent = locale === "en-US" ? "Image failed to load" : "图片加载失败";
+            overlay.textContent = locale !== "zh-CN" ? "Image failed to load" : "图片加载失败";
           };
           preload.src = displaySource;
         };
@@ -2628,11 +2628,11 @@ const createProtectedImageExtension = (
                 revealLoadedImage(dataUrl, attributes, activeRequestId);
                 return;
               }
-              overlay.textContent = locale === "en-US" ? "Image failed to load" : "图片加载失败";
+              overlay.textContent = locale !== "zh-CN" ? "Image failed to load" : "图片加载失败";
             })
             .catch(() => {
               if (activeRequestId === requestId) {
-                overlay.textContent = locale === "en-US" ? "Image failed to load" : "图片加载失败";
+                overlay.textContent = locale !== "zh-CN" ? "Image failed to load" : "图片加载失败";
               }
             });
         };
@@ -2696,7 +2696,7 @@ const createProtectedImageExtension = (
       actionButton.className = "edgeever-image-actions";
       actionButton.contentEditable = "false";
       actionButton.hidden = true;
-      actionButton.setAttribute("aria-label", locale === "en-US" ? "Image actions" : "图片操作");
+      actionButton.setAttribute("aria-label", locale !== "zh-CN" ? "Image actions" : "图片操作");
       actionButton.textContent = "⋯";
       bindImageActionButton(wrapper, actionButton);
       image.addEventListener("click", (event) => {
@@ -2732,7 +2732,7 @@ const createProtectedImageExtension = (
           loading.replaceChildren();
           const label = document.createElement("span");
           label.className = "edgeever-image-loading-label";
-          label.textContent = locale === "en-US" ? "Image failed to load" : "图片加载失败";
+          label.textContent = locale !== "zh-CN" ? "Image failed to load" : "图片加载失败";
           loading.append(label);
           loading.hidden = false;
         } else if (phase === "loading") {

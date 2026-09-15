@@ -1,0 +1,32 @@
+---
+import Container from "@/components/container.astro";
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout title="EdgeEver データの削除" description="ノート、添付、端末内データ、自前アカウントを EdgeEver で削除する方法。">
+  <Container>
+    <main class="mx-auto max-w-3xl py-12 text-slate-700 md:py-20">
+      <article class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm md:p-10">
+        <h1 class="text-3xl font-bold text-slate-950">EdgeEver データの削除</h1>
+        <div class="mt-8 space-y-8 leading-7">
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">ノートと添付の削除</h2>
+            <p class="mt-3">アプリでノートをゴミ箱へ移し、ゴミ箱を開いて完全削除するか、ゴミ箱を空にしてください。ノートを完全削除すると、接続先の自前インスタンス上の関連添付も削除されます。</p>
+          </section>
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">端末内アプリデータの削除</h2>
+            <p class="mt-3">アプリでログアウトし、iOS または Android の設定から EdgeEver とそのデータを削除してください。端末上のセッション、SQLite ミラー、下書き、同期キュー、設定が消えます。自前インスタンス上のデータは消えません。</p>
+          </section>
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">アカウントの削除</h2>
+            <p class="mt-3">EdgeEver のアカウントは、モバイルアプリ開発者ではなく、自前インスタンスの管理者が作成し管理します。アカウントと、あわせて消すべきサーバー側データは、その管理者に依頼してください。自分でインスタンスを運用している場合は、ユーザー管理、または関連する Cloudflare D1 と R2 のデータを削除してください。</p>
+          </section>
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">サポート</h2>
+            <p class="mt-3">削除手順の質問は <a class="text-teal-700 underline" href="https://github.com/tianma-if/edgeever/issues" target="_blank" rel="noopener noreferrer">EdgeEver の GitHub リポジトリ</a> に Issue を開いてください。パスワード、API トークン、非公開のノート本文は書かないでください。</p>
+          </section>
+        </div>
+      </article>
+    </main>
+  </Container>
+</Layout>

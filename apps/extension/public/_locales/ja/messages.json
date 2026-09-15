@@ -1,0 +1,199 @@
+{
+  "extensionName": {
+    "message": "EdgeEver Web Clipper"
+  },
+  "extensionDescription": {
+    "message": "表示中のページまたは選択した内容を、自分で運用する EdgeEver へ保存します。"
+  },
+  "actionTitle": {
+    "message": "EdgeEver に保存"
+  },
+  "webClipper": {
+    "message": "Web Clipper"
+  },
+  "popupDescription": {
+    "message": "表示中のページまたは選択した内容を EdgeEver に取り込みます。"
+  },
+  "saveCurrentPage": {
+    "message": "このページを取り込む"
+  },
+  "pluginSettings": {
+    "message": "拡張機能の設定"
+  },
+  "readingAndSaving": {
+    "message": "ページを読み取り、保存しています…"
+  },
+  "completePluginConfiguration": {
+    "message": "先に拡張機能の設定を完了してください"
+  },
+  "savedToEdgeEver": {
+    "message": "EdgeEver に保存しました。"
+  },
+  "saveFailed": {
+    "message": "保存に失敗しました。"
+  },
+  "optionsTitle": {
+    "message": "EdgeEver Web Clipper の設定"
+  },
+  "diagnosticsTitle": {
+    "message": "情報と診断"
+  },
+  "diagnosticsDescription": {
+    "message": "拡張機能、ブラウザ、システム、接続の基本情報を表示します。API トークンは含まれません。"
+  },
+  "extensionVersion": {
+    "message": "拡張機能のバージョン"
+  },
+  "manifestVersion": {
+    "message": "Manifest のバージョン"
+  },
+  "browserVersion": {
+    "message": "ブラウザ"
+  },
+  "systemVersion": {
+    "message": "システム"
+  },
+  "extensionId": {
+    "message": "拡張機能 ID"
+  },
+  "instanceOrigin": {
+    "message": "インスタンスのオリジン"
+  },
+  "instancePermission": {
+    "message": "インスタンスの権限"
+  },
+  "copyDiagnostics": {
+    "message": "診断情報をコピー"
+  },
+  "diagnosticsCopied": {
+    "message": "診断情報をコピーしました。"
+  },
+  "diagnosticsCopyFailed": {
+    "message": "コピーに失敗しました。ブラウザのクリップボード権限を確認してください。"
+  },
+  "permissionGranted": {
+    "message": "許可済み"
+  },
+  "permissionNotGranted": {
+    "message": "未許可"
+  },
+  "permissionNotConfigured": {
+    "message": "インスタンス未設定"
+  },
+  "notConfigured": {
+    "message": "未設定"
+  },
+  "invalidInstanceAddress": {
+    "message": "アドレスが正しくありません"
+  },
+  "unknownValue": {
+    "message": "不明"
+  },
+  "instanceAddress": {
+    "message": "EdgeEver インスタンス URL"
+  },
+  "tokenPlaceholder": {
+    "message": "EdgeEver の設定で作成します"
+  },
+  "defaultNotebook": {
+    "message": "既定のノートブック"
+  },
+  "autoFirstNotebook": {
+    "message": "接続後、先頭のノートブックを自動で使う"
+  },
+  "testConnection": {
+    "message": "接続をテスト"
+  },
+  "saveSettings": {
+    "message": "設定を保存"
+  },
+  "projectAndSource": {
+    "message": "GitHub のプロジェクトとソース"
+  },
+  "reportIssue": {
+    "message": "問題を報告"
+  },
+  "privacyPolicy": {
+    "message": "プライバシーポリシー"
+  },
+  "connecting": {
+    "message": "接続中…"
+  },
+  "connectionSuccessOne": {
+    "message": "接続しました。ノートブックが 1 件あります。"
+  },
+  "connectionSuccessMany": {
+    "message": "接続しました。ノートブックが $COUNT$ 件あります。",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "connectionFailed": {
+    "message": "接続に失敗しました。"
+  },
+  "settingsSaved": {
+    "message": "設定を保存しました。"
+  },
+  "settingsSaveFailed": {
+    "message": "設定の保存に失敗しました。"
+  },
+  "missingSettingsDetails": {
+    "message": "先に拡張機能の設定で EdgeEver のインスタンス URL と API トークンを入力してください。"
+  },
+  "instancePermissionRequired": {
+    "message": "拡張機能が EdgeEver インスタンスへアクセスすることを許可してください。"
+  },
+  "requestFailed": {
+    "message": "EdgeEver へのリクエストが失敗しました（$STATUS$）。",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "sourceLabel": {
+    "message": "出典"
+  },
+  "capturedAtLabel": {
+    "message": "取り込み日時"
+  },
+  "noAvailableNotebooks": {
+    "message": "EdgeEver に使えるノートブックがありません。"
+  },
+  "currentPageNotFound": {
+    "message": "現在のページが見つかりませんでした。"
+  },
+  "captureTimeout": {
+    "message": "ページ抽出が 15 秒以内に終わりませんでした。ページが大きい、または読み込み中の可能性があります。再読み込みしてからやり直してください。"
+  },
+  "pageAccessDenied": {
+    "message": "このページは拡張機能から読めません。ブラウザ内部ページ、拡張機能ストア、制限ページは取り込めません。"
+  },
+  "captureScriptFailed": {
+    "message": "ページ抽出スクリプトが失敗しました: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "captureUnknownError": {
+    "message": "詳細は提供されていません"
+  },
+  "instanceNetworkFailed": {
+    "message": "EdgeEver インスタンスに接続できませんでした。URL、ネットワーク、CORS を確認してください。"
+  },
+  "saveFailedWithReason": {
+    "message": "EdgeEver に保存できませんでした: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "emptyPageContent": {
+    "message": "（このページから読み取れる本文はありませんでした）"
+  }
+}

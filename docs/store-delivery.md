@@ -133,3 +133,9 @@ Fastlane (`apps/ios` `submit_review`) then selects the exact app version and
 build number, submits App Review, and configures automatic release after
 approval. Missing metadata, agreements, review information, or credentials
 cause the workflow to fail without submitting a different build.
+
+Store listing localizations (including Japanese) live in
+`apps/mobile/store-assets/` and are pasted in App Store Connect and Play
+Console. Do not add a new locale to Fastlane `submit_review` until that
+locale is complete in the console. An incomplete localization can fail
+App Review without changing the binary.

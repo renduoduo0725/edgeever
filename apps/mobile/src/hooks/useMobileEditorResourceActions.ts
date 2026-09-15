@@ -39,7 +39,7 @@ export const useMobileEditorResourceActions = ({
   token,
 }: Options) => {
   const unavailable = useCallback((english: string, chinese: string) =>
-    new Error(resolvedLocale === "en-US" ? english : chinese), [resolvedLocale]);
+    new Error(resolvedLocale !== "zh-CN" ? english : chinese), [resolvedLocale]);
 
   const loadEditorResource = useCallback((source: string) => {
     if (!client) return Promise.resolve(null);
@@ -62,8 +62,8 @@ export const useMobileEditorResourceActions = ({
     const result = await saveMobileResourceAs(client, target, { baseUrl: sessionBaseUrl ?? baseUrl, token });
     if (result.kind === "saf") {
       Alert.alert(
-        resolvedLocale === "en-US" ? "Downloaded" : "下载成功",
-        resolvedLocale === "en-US" ? `Saved ${result.filename}` : `已保存：${result.filename}`,
+        resolvedLocale !== "zh-CN" ? "Downloaded" : "下载成功",
+        resolvedLocale !== "zh-CN" ? `Saved ${result.filename}` : `已保存：${result.filename}`,
       );
     }
   }, [baseUrl, client, resolvedLocale, sessionBaseUrl, token, unavailable]);

@@ -18,6 +18,7 @@ import { assertMacIcnsComplete } from "./desktop-icns.mjs";
 
 const projectRoot = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 const sourcePng = join(projectRoot, "apps/web/public/pwa-512x512.png");
+const brandMarkPath = join(projectRoot, "assets/brand/edgeever-mark.svg");
 const assetsDir = join(projectRoot, "apps/desktop/assets");
 
 /** iconutil expects these exact basenames inside a .iconset directory. */
@@ -59,12 +60,51 @@ const writeResizedPng = async (sourceBuffer, size, destination) => {
     .toFile(destination);
 };
 
+export const prepareTrayIcons = async ({
+  markPath = brandMarkPath,
+  assetsDirectory = assetsDir,
+} = {}) => {
+  await mkdir(assetsDirectory, { recursive: true });
+  const markSvg = await readFile(markPath, "utf8");
+  const templateSvg = markSvg.replaceAll("#07130b", "#000000");
+  await writeFile(join(assetsDirectory, "trayTemplate.svg"), templateSvg);
+
+  const sourceBuffer = Buffer.from(templateSvg);
+  const render = async (size, density, fileName) => {
+    const { data, info } = await sharp(sourceBuffer, { density: 384 })
+      .resize(size, size, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+        kernel: sharp.kernel.lanczos3,
+      })
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    for (let offset = 0; offset < data.length; offset += 4) {
+      data[offset] = 0;
+      data[offset + 1] = 0;
+      data[offset + 2] = 0;
+    }
+    await sharp(data, {
+      raw: { width: info.width, height: info.height, channels: 4 },
+    })
+      .withMetadata({ density })
+      .png({ compressionLevel: 9 })
+      .toFile(join(assetsDirectory, fileName));
+  };
+
+  await render(16, 72, "trayTemplate.png");
+  await render(32, 144, "trayTemplate@2x.png");
+  console.log("[prepare-desktop-icons] wrote macOS tray template icons from the brand mark");
+};
+
 export const prepareDesktopIcons = async ({
   sourcePath = sourcePng,
   assetsDirectory = assetsDir,
   requireIconutil = process.platform === "darwin",
 } = {}) => {
   await mkdir(assetsDirectory, { recursive: true });
+  await prepareTrayIcons({ assetsDirectory });
   const sourceBuffer = await readFile(sourcePath);
 
   // Master PNG used by electron-builder on Windows/Linux and as a Dock fallback.

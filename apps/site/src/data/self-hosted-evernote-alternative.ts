@@ -187,4 +187,98 @@ export const alternativePageCopy = {
       },
     ],
   },
+  ja: {
+    eyebrow: "セルフホストのノート",
+    title: "Docker と Cloudflare で動く、セルフホストの Evernote 代替",
+    description:
+      "EdgeEver はオープンソースで AI ネイティブなノート作業領域です。Evernote の三ペインを残し、Cloudflare 無料枠か、VPS / NAS / 自宅サーバーの Docker で同じアプリを動かせます。",
+    lead: [
+      "長く Evernote を使い、信頼できて開かれていて、自分で置ける個人知識ベースが欲しい人向けです。スタックはオープンソース。ノートは自分で制御する SQLite にあり、REST API、MCP、文書化された ENEX 移行があります。",
+      "タイムライン型の断片ノートでも、ローカル Markdown フォルダでもありません。ノートブックツリー、ノート一覧、編集エリアという古典的な三ペインです。",
+    ],
+    fitTitle: "向いている人",
+    fit: [
+      "タイムラインやファイル倉庫ではなく、Evernote 型のノートブックが欲しい。",
+      "ノート SaaS や端末数の課金をやめ、自分でホストしたい。",
+      "Cloudflare 無料枠か、VPS / NAS への Docker 一行インストールが欲しい。",
+      "Claude Code や Codex などの Agent に、ネイティブ MCP でノートを読ませたい。",
+    ],
+    notFitTitle: "向いていない人",
+    notFit: [
+      "Joplin のような既定のエンドツーエンド暗号が必要なら、EdgeEver は E2EE を売りにしていません。境界は「インスタンスを自分でホストする」ことです。",
+      "Notion 型のデータベースとブロック作業領域が必要なら、Notion か同類を続けてください。EdgeEver はノート作業領域です。",
+      "サーバーなしのローカルフォルダだけでよければ、Obsidian や Markdown ディレクトリの方が合うことがあります。",
+    ],
+    compareTitle: "よくある選択肢との違い",
+    compareIntro:
+      "英語圏の検索では Joplin が定番の自前 Evernote 代替です。EdgeEver は古典的な三ペインに近く、Cloudflare 無料枠と Docker の両方を出しています。表はリポジトリと公開ドキュメントで確認できる事実だけです。総合ランキングではありません。",
+    compareHeaders: ["", "ホスト", "レイアウト", "クライアント", "Evernote 取り込み"],
+    compareRows: [
+      ["EdgeEver", "Cloudflare 無料枠または Docker", "三ペインのノートブック", "macOS / Windows / Linux / iOS / Android / Clipper", "文書化された ENEX + MCP"],
+      ["Evernote", "ベンダークラウド、自前不可", "三ペインのノートブック", "主要プラットフォーム", "—"],
+      ["Joplin", "Joplin Server または任意の同期", "ノートブック", "公式マルチ端", "ENEX 対応"],
+      ["Obsidian", "ローカルファイル。公式同期は有料", "ファイル倉庫", "主要プラットフォーム", "コミュニティ手段"],
+      ["Memos", "自前運用可", "タイムラインのカード", "Web 中心", "同じ移行経路ではない"],
+    ],
+    pathsTitle: "次にすること",
+    paths: [
+      {
+        title: "Cloudflare で自前運用",
+        summary: "サーバーを持ちたくない個人向け。個人規模なら短いノート約 15 万、画像約 5 万が目安。",
+        href: "/blog/ai-agent-deploy-cloudflare",
+        cta: "Cloudflare 導入を見る",
+      },
+      {
+        title: "Docker で自前運用",
+        summary: "同じアプリを、VPS、NAS、自宅サーバーへ一行で入れられます。保存先はディスクや S3 互換バケットで伸ばせます。",
+        href: "/docker-deploy",
+        cta: "Docker 導入を見る",
+      },
+      {
+        title: "Evernote から移行",
+        summary: "ENEX、evernote-backup、EdgeEver MCP で階層、添付、タイムスタンプを残します。",
+        href: "/blog/evernote-migration-guide",
+        cta: "Evernote ガイドを見る",
+      },
+      {
+        title: "Notion から移行",
+        summary: "Notion MCP と EdgeEver MCP を使い、AI アシスタントにページを渡します。",
+        href: "/blog/notion-migration-guide",
+        cta: "Notion ガイドを見る",
+      },
+    ],
+    faqTitle: "よくある質問",
+    faqs: [
+      {
+        question: "セルフホストの Evernote 代替とは何ですか？",
+        answer:
+          "自分で導入し、データは自分のアカウントか機材に置き、Evernote のノートブックと三ペインに近い作業領域を持つノートアプリです。EdgeEver はそのために作り、オープンソース、MCP、Cloudflare / Docker を足しています。",
+      },
+      {
+        question: "Docker で動かせますか？",
+        answer:
+          "できます。一行インストーラと、amd64 / arm64、ローカル保存または S3 互換オブジェクトストレージの Docker ガイドがあります。Cloudflare と Docker は同じアプリです。",
+      },
+      {
+        question: "Evernote を取り込めますか？",
+        answer:
+          "できます。文書化された流れは ENEX、evernote-backup、MCP 取り込みスクリプトです。作成・更新時刻と入れ子ノートブックを残します。画像付きノートは取り込み後に抜き取り確認してください。",
+      },
+      {
+        question: "Cloudflare の個人利用は本当に無料ですか？",
+        answer:
+          "Cloudflare の無料枠内で動かせ、サーバーを別途借りる必要はありません。枠は Cloudflare の方針に従います。足りなくなったら有料プランか Docker へ移せます。",
+      },
+      {
+        question: "iOS と Android アプリはありますか？",
+        answer:
+          "あります。Android は Google Play、iOS は App Store です。iOS は現時点で中国本土以外の Apple ID が必要です。Chrome / Edge / Firefox の Clipper もあります。",
+      },
+      {
+        question: "EdgeEver と Evernote の関係は？",
+        answer:
+          "提携も後援もありません。EdgeEver は独立したオープンソースの代替です。移行ガイドは、すでに自分で持っているデータだけを扱います。Evernote は権利者の商標です。",
+      },
+    ],
+  },
 } as const;

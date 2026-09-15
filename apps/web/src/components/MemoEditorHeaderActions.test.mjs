@@ -65,8 +65,15 @@ describe("shared memo editor header actions", () => {
     expect(toolbarChromeSource).toContain("MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME");
     expect(densitySource).toContain("sm:min-h-9 sm:px-4 sm:py-0.5");
     expect(densitySource).toContain("sm:px-4 sm:py-0.5");
-    expect(densitySource).not.toContain("sm:px-7");
-    expect(densitySource).toContain("lg:space-y-0 lg:py-0");
+    expect(densitySource.match(/MEMO_EDITOR_TOP_ROW_CLASS_NAME =\s*"([^"]+)"/)?.[1]).not.toContain("sm:px-7");
+    expect(densitySource.match(/MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME =\s*"([^"]+)"/)?.[1]).not.toContain("sm:px-7");
+    expect(densitySource).toContain("lg:space-y-0 lg:px-10 lg:py-0");
     expect(densitySource).not.toContain("min-[1600px]:flex");
+  });
+
+  test("keeps Evernote-like desktop reading gutters aligned with the title", () => {
+    expect(editorSource).toContain("min-h-full items-start px-4 py-2 sm:px-7 lg:px-10");
+    expect(densitySource).toContain("sm:px-7 sm:pb-4 sm:pt-4 lg:space-y-0 lg:px-10 lg:py-0");
+    expect(editorSource).toContain("overflow-y-auto lg:[scrollbar-gutter:stable_both-edges]");
   });
 });

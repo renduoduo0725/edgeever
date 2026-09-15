@@ -54,6 +54,8 @@ mac:
   category: public.app-category.productivity
   icon: assets/icon.icns
   minimumSystemVersion: "13.0"
+  extendInfo:
+    NSScreenCaptureUsageDescription: "EdgeEver captures a screenshot and saves it as a note."
   target:
     - target: dmg
     - target: zip

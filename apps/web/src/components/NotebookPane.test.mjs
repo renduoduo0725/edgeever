@@ -11,15 +11,38 @@ test("keeps proactive AI out of primary navigation", () => {
 });
 
 test("keeps the desktop create-note control compact with one neutral outline", () => {
+  const css = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
+
   expect(source).toContain('rounded-2xl border border-slate-200/90');
-  expect(source).toContain('className="group flex h-12');
-  expect(source).toContain('className="group relative flex h-12 w-[6.25rem]');
+  expect(source).toContain('className="group flex h-12 max-w-[calc(100%-2.25rem)]');
+  expect(source).toContain('className="group relative flex h-12 min-w-9 flex-1');
   expect(source).toContain('before:inset-y-2.5');
   expect(source).toContain('data-[state=open]:bg-emerald-50');
   expect(source).toContain('t("diagram.moreTypes")');
   expect(source).toContain('group-data-[state=open]:rotate-180');
+  expect(source).toContain("edgeever-create-memo-split__more-label");
+  expect(css).toContain(".edgeever-create-memo-split__more-label");
+  expect(css).toContain("@container (max-width: 11.749rem)");
   expect(source).not.toContain('focus-visible:ring-inset focus-visible:ring-emerald-500');
   expect(source).not.toContain('title={t("notebookPane.newMemo")}');
+});
+
+test("keeps the desktop sync status bar and sidebar chrome compact without shrinking primary controls", () => {
+  const syncBar = source.split("const SyncStatusBar")[1]?.split("export const NotebookPane")[0];
+
+  expect(syncBar).toContain("flex h-8 items-center gap-2 rounded-md border px-3");
+  expect(syncBar).not.toContain("min-h-10");
+  expect(syncBar).not.toContain("py-2");
+  expect(syncBar).not.toContain("mb-3");
+  expect(source).toContain('className="px-3 pt-1.5"');
+  expect(source).toContain('className="hidden shrink-0 px-3 pb-2 pt-2 lg:block"');
+  expect(source).toContain('className="group flex h-12 max-w-[calc(100%-2.25rem)]');
+  expect(source).toContain("mb-1 hidden h-8 w-full items-center justify-start gap-2");
+  expect(source).toContain('className="mb-1 space-y-1"');
+  expect(source).not.toContain("mb-3 hidden h-8 w-full");
+  expect(source).not.toContain('className="mb-3 space-y-1"');
+  expect(source).not.toContain("mb-2 hidden h-8 w-full");
+  expect(source).not.toContain('className="mb-2 space-y-1"');
 });
 
 test("marks diagram note types as beta without labeling regular notes", () => {

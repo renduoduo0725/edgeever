@@ -2,11 +2,15 @@
 // @ts-ignore
 import { Icon } from "astro-icon/components";
 import { Marquee } from "@/components/magicui/marquee";
+import { getSiteLocale } from "@/i18n";
 
-const isEnglish = Astro.url.pathname === "/en" || Astro.url.pathname.startsWith("/en/");
-const heading = isEnglish
-  ? "Built with a modern, efficient technology stack"
-  : "基于现代且高效的技术栈构建";
+const locale = getSiteLocale(Astro.url.pathname);
+const heading =
+  locale === "zh-CN"
+    ? "基于现代且高效的技术栈构建"
+    : locale === "ja"
+      ? "モダンで効率的な技術スタックで構築"
+      : "Built with a modern, efficient technology stack";
 
 const technologies = [
   { name: "React", icon: "simple-icons:react", hoverClass: "group-hover:text-indigo-600" },

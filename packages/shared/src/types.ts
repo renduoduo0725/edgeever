@@ -55,6 +55,24 @@ export type MemoTemplate = {
   updatedAt: string;
 };
 
+export type WorkspaceExtensionSourceKind = "marketplace" | "github" | "manifest";
+
+export type WorkspaceExtension = {
+  extensionId: string;
+  type: "plugin" | "theme";
+  version: string;
+  enabled: boolean;
+  installedAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+  manifestUrl: string;
+  sourceKind: WorkspaceExtensionSourceKind;
+  verified: boolean;
+  repositoryUrl: string | null;
+  releaseTag: string | null;
+  publisher: "edgeever" | null;
+};
+
 export type ScheduledTaskMissedRunPolicy = "run-once" | "skip";
 
 export type ScheduledPluginCommandPayload = {

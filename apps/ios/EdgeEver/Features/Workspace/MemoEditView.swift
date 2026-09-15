@@ -542,7 +542,7 @@ struct MemoEditView: View {
                         markdown: contentMarkdown,
                         baseURL: env.session.session.map { URL(string: $0.baseUrl) } ?? nil,
                         token: env.session.session?.token,
-                        locale: env.preferences.isEnglish ? "en-US" : "zh-CN",
+                        locale: env.preferences.apiLocale,
                         theme: colorScheme == .dark ? "dark" : "light",
                         placeholder: env.preferences.t("开始输入…", en: "Start writing…"),
                         onChange: { md, json in
@@ -771,7 +771,7 @@ struct MemoEditView: View {
                 title: title,
                 contentMarkdown: contentMarkdown,
                 currentTags: currentTags,
-                locale: env.preferences.isEnglish ? "en-US" : "zh-CN"
+                locale: env.preferences.apiLocale
             )
             do {
                 let response = try await env.session.client.suggestAiTags(input)

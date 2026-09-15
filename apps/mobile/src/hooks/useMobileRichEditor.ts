@@ -58,7 +58,7 @@ const createLocalImagePreviewDataUrl = async (asset: { mimeType?: string | null;
 };
 
 const alertProtectedImageLoadFailure = (
-  locale: "zh-CN" | "en-US",
+  locale: "zh-CN" | "en-US" | "ja",
   failure: ProtectedResourceLoadFailure
 ) => {
   const statusLabel = failure.status != null
@@ -67,7 +67,7 @@ const alertProtectedImageLoadFailure = (
       ? "network error"
       : "网络错误";
   Alert.alert(
-    locale === "en-US" ? "Image failed to load" : "图片加载失败",
+    locale !== "zh-CN" ? "Image failed to load" : "图片加载失败",
     locale === "en-US"
       ? `Could not load a note image (${statusLabel}). Check the network and try again.`
       : `笔记中的图片未能加载（${statusLabel}）。请检查网络后重试。`

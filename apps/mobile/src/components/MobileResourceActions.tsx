@@ -65,6 +65,26 @@ const copy = {
     save: "Save",
     syncedOnly: "Rename and delete are available after the resource has synced.",
   },
+  ja: {
+    attachmentActions: "添付の操作",
+    imageActions: "画像の操作",
+    cancel: "キャンセル",
+    delete: "削除",
+    attachmentDeleteConfirm: "添付は保存領域とこのノートから完全に削除され、元に戻せません。",
+    attachmentDeleteTitle: "添付を削除",
+    share: "共有",
+    download: "ダウンロード",
+    downloadFailed: "ダウンロードできません",
+    failed: "リソース操作に失敗しました。再試行してください。",
+    filename: "ファイル名",
+    rename: "名前を変更",
+    attachmentRenameTitle: "添付の名前を変更",
+    imageDeleteConfirm: "画像は保存領域とこのノートから完全に削除され、元に戻せません。",
+    imageDeleteTitle: "画像を削除",
+    imageRenameTitle: "画像の名前を変更",
+    save: "保存",
+    syncedOnly: "リソースの同期が終わってから、名前の変更と削除ができます。",
+  },
 } as const;
 
 export const MobileAttachmentCard = ({
@@ -87,7 +107,7 @@ export const MobileAttachmentCard = ({
   return (
     <View style={[styles.card, dark && styles.cardDark]}>
       <Pressable
-        accessibilityHint={resolvedLocale === "en-US" ? "Opens the system share sheet for this attachment" : "打开系统分享面板分享此附件"}
+        accessibilityHint={resolvedLocale !== "zh-CN" ? "Opens the system share sheet for this attachment" : "打开系统分享面板分享此附件"}
         accessibilityLabel={target.filename}
         accessibilityRole="button"
         disabled={busy}
@@ -110,7 +130,7 @@ export const MobileAttachmentCard = ({
         </View>
       </Pressable>
       <Pressable
-        accessibilityLabel={resolvedLocale === "en-US" ? "Attachment actions" : "附件操作"}
+        accessibilityLabel={resolvedLocale !== "zh-CN" ? "Attachment actions" : "附件操作"}
         accessibilityRole="button"
         disabled={busy}
         onPress={onActions}

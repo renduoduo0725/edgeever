@@ -1,6 +1,6 @@
 import type { ImageWidthPresetId } from "./image-display";
 
-export type MobileEditorLocale = "zh-CN" | "en-US";
+export type MobileEditorLocale = "zh-CN" | "en-US" | "ja";
 
 export type MobileEditorToolbarActionId =
   | "image"
@@ -74,6 +74,27 @@ const MOBILE_EDITOR_COPY = {
       medium: "Medium",
       large: "Large",
       full: "Full",
+    },
+  },
+  ja: {
+    placeholder: "書き始める...",
+    toolbar: "エディタのツールバー",
+    actions: {
+      image: "画像をアップロード",
+      bold: "太字",
+      bulletList: "箇条書き",
+      taskList: "タスクリスト",
+      increaseListIndent: "リストの階層を上げる（Tab）",
+      decreaseListIndent: "リストの階層を下げる（Shift + Tab）",
+      blockquote: "引用",
+      horizontalRule: "区切り線",
+    },
+    imageScale: "画像の表示サイズ",
+    imageSizes: {
+      small: "小",
+      medium: "中",
+      large: "大",
+      full: "幅いっぱい",
     },
   },
 } as const;

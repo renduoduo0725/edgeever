@@ -123,6 +123,32 @@ export const ScheduledTaskFinishSchema = z.object({
   errorMessage: z.string().trim().max(2_000).nullable().optional(),
 });
 
+const httpUrl = z.string().trim().max(2000).refine((value) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}, { message: "URL must use http or https." });
+
+export const WorkspaceExtensionUpsertSchema = z.object({
+  type: z.enum(["plugin", "theme"]),
+  version: z.string().trim().regex(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/).max(80),
+  enabled: z.boolean(),
+  installedAt: z.string().datetime(),
+  manifestUrl: httpUrl,
+  sourceKind: z.enum(["marketplace", "github", "manifest"]),
+  verified: z.boolean(),
+  repositoryUrl: httpUrl.max(500).nullable().optional(),
+  releaseTag: z.string().trim().min(1).max(80).nullable().optional(),
+  publisher: z.literal("edgeever").nullable().optional(),
+}).refine((input) => {
+  if (input.sourceKind === "github") return Boolean(input.repositoryUrl);
+  if (input.sourceKind === "marketplace") return Boolean(input.repositoryUrl || input.manifestUrl);
+  return true;
+}, { message: "GitHub and marketplace extensions require a source URL." });
+
 export const MoveMemosSchema = z.object({
   memoIds: z.array(z.string().trim().min(1)).min(1).max(100),
   notebookId: z.string().trim().min(1),
@@ -367,6 +393,7 @@ export type ScheduledTaskUpdateInput = z.infer<typeof ScheduledTaskUpdateSchema>
 export type PluginScheduleUpsertInput = z.input<typeof PluginScheduleUpsertSchema>;
 export type ScheduledTaskClaimInput = z.infer<typeof ScheduledTaskClaimSchema>;
 export type ScheduledTaskFinishInput = z.infer<typeof ScheduledTaskFinishSchema>;
+export type WorkspaceExtensionUpsertInput = z.infer<typeof WorkspaceExtensionUpsertSchema>;
 export type MoveMemosInput = z.infer<typeof MoveMemosSchema>;
 export type DeleteMemosInput = z.infer<typeof DeleteMemosSchema>;
 export type MergeMemosInput = z.infer<typeof MergeMemosSchema>;

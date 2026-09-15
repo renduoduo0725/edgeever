@@ -911,6 +911,42 @@
         "responses": { "200": { "description": "Finished task run" }, "409": { "$ref": "#/components/responses/Error" } }
       }
     },
+    "/api/v1/workspace-extensions": {
+      "get": {
+        "summary": "List the workspace plugin and theme install catalog",
+        "responses": {
+          "200": {
+            "description": "Workspace extension catalog, including tombstones",
+            "content": { "application/json": { "schema": {
+              "type": "object",
+              "properties": { "extensions": { "type": "array", "items": { "$ref": "#/components/schemas/WorkspaceExtension" } } },
+              "required": ["extensions"]
+            } } }
+          },
+          "403": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/api/v1/workspace-extensions/{extensionId}": {
+      "parameters": [{ "name": "extensionId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "put": {
+        "summary": "Create or update one workspace extension catalog entry",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkspaceExtensionUpsertInput" } } } },
+        "responses": {
+          "200": { "description": "Upserted workspace extension", "content": { "application/json": { "schema": { "type": "object", "properties": { "extension": { "$ref": "#/components/schemas/WorkspaceExtension" } }, "required": ["extension"] } } } },
+          "400": { "$ref": "#/components/responses/Error" },
+          "403": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "summary": "Tombstone a workspace extension catalog entry",
+        "responses": {
+          "200": { "description": "Tombstoned workspace extension", "content": { "application/json": { "schema": { "type": "object", "properties": { "extension": { "$ref": "#/components/schemas/WorkspaceExtension" } }, "required": ["extension"] } } } },
+          "403": { "$ref": "#/components/responses/Error" },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
     "/api/v1/tags": {
       "get": {
         "summary": "List tag summaries",
@@ -2290,6 +2326,41 @@
           "errorMessage": { "type": ["string", "null"], "maxLength": 2000 }
         },
         "required": ["executorDeviceId", "status"]
+      },
+      "WorkspaceExtension": {
+        "type": "object",
+        "properties": {
+          "extensionId": { "type": "string" },
+          "type": { "type": "string", "enum": ["plugin", "theme"] },
+          "version": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "installedAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "deletedAt": { "type": ["string", "null"], "format": "date-time" },
+          "manifestUrl": { "type": "string", "format": "uri" },
+          "sourceKind": { "type": "string", "enum": ["marketplace", "github", "manifest"] },
+          "verified": { "type": "boolean" },
+          "repositoryUrl": { "type": ["string", "null"], "format": "uri" },
+          "releaseTag": { "type": ["string", "null"] },
+          "publisher": { "type": ["string", "null"], "enum": ["edgeever", null] }
+        },
+        "required": ["extensionId", "type", "version", "enabled", "installedAt", "updatedAt", "deletedAt", "manifestUrl", "sourceKind", "verified", "repositoryUrl", "releaseTag", "publisher"]
+      },
+      "WorkspaceExtensionUpsertInput": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string", "enum": ["plugin", "theme"] },
+          "version": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "installedAt": { "type": "string", "format": "date-time" },
+          "manifestUrl": { "type": "string", "format": "uri" },
+          "sourceKind": { "type": "string", "enum": ["marketplace", "github", "manifest"] },
+          "verified": { "type": "boolean" },
+          "repositoryUrl": { "type": ["string", "null"], "format": "uri" },
+          "releaseTag": { "type": ["string", "null"] },
+          "publisher": { "type": ["string", "null"], "enum": ["edgeever", null] }
+        },
+        "required": ["type", "version", "enabled", "installedAt", "manifestUrl", "sourceKind", "verified"]
       },
       "ApiError": {
         "type": "object",

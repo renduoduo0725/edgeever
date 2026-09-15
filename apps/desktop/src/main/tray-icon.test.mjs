@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { trayIconPath } from "./tray-icon.mjs";
@@ -29,6 +30,13 @@ describe("trayIconPath", () => {
       projectRoot: "/project",
       resourcesPath: "/resources",
     })).toBe("/resources/web/pwa-192x192.png");
+  });
+
+  test("uses the cat brand mark instead of the old E tile", () => {
+    const svg = readFileSync(new URL("../../assets/trayTemplate.svg", import.meta.url), "utf8");
+    expect(svg).not.toContain("M9 2h14a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6H9");
+    expect(svg).toContain("viewBox=\"0 0 1024 1024\"");
+    expect(svg).toContain("fill=\"#000000\"");
   });
 
   test.each([

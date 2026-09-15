@@ -3,7 +3,7 @@ import { getSiteLocale } from "@/i18n";
 import { Icon } from "astro-icon/components";
 
 const locale = getSiteLocale(Astro.url.pathname);
-const isEnglish = locale === "en-US";
+const isEnglish = locale !== "zh-CN";
 ---
 
 <aside

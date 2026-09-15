@@ -417,6 +417,8 @@ type EditorPaneProps = {
   onToggleDesktopFocusMode: () => void;
   editorContentAlignment: EditorContentAlignment;
   mobileDefaultEditMemoId: string | null;
+  pendingInsertFiles?: { memoId: string; files: File[] } | null;
+  onPendingInsertFilesConsumed?: () => void;
   preserveUnsavedContentFromMemoId?: string | null;
   saveBlocked?: boolean;
   isTrashView: boolean;
@@ -489,6 +491,8 @@ const RichEditorPane = ({
   onToggleDesktopFocusMode,
   editorContentAlignment,
   mobileDefaultEditMemoId,
+  pendingInsertFiles = null,
+  onPendingInsertFilesConsumed,
   preserveUnsavedContentFromMemoId: _preserveUnsavedContentFromMemoId,
   saveBlocked: _saveBlocked = false,
   isTrashView,
@@ -1751,6 +1755,14 @@ const RichEditorPane = ({
       }
     };
   }, [editor]);
+
+  useEffect(() => {
+    if (!pendingInsertFiles || pendingInsertFiles.memoId !== memo?.id) return;
+    if (hydratedEditorMemoId !== memo.id) return;
+    if (!isEditorReady(editor) || !editor.isEditable || pendingInsertFiles.files.length === 0) return;
+    insertResourceFiles(pendingInsertFiles.files);
+    onPendingInsertFilesConsumed?.();
+  }, [editor, hydratedEditorMemoId, insertResourceFiles, memo?.id, onPendingInsertFilesConsumed, pendingInsertFiles]);
 
   useEffect(() => {
     if (!isEditorReady(editor)) {
@@ -4229,7 +4241,7 @@ const RichEditorPane = ({
             : useMarkdownSourceEditor
               // Source mode: fill the pane and scroll inside the textarea (not a 300px card).
               ? "flex flex-col overflow-hidden"
-              : "overflow-y-auto"
+              : "overflow-y-auto lg:[scrollbar-gutter:stable_both-edges]"
         )}
       >
         {!isNamedEditorTheme(editorTheme) && customEditorTheme.customCss && (
@@ -4249,7 +4261,7 @@ const RichEditorPane = ({
             "flex gap-8 transition-all duration-200",
             useMarkdownSourceEditor
               ? "h-full min-h-0 flex-1 items-stretch px-0 py-0"
-              : "min-h-full items-start px-4 py-2",
+              : "min-h-full items-start px-4 py-2 sm:px-7 lg:px-10",
             desktopFocusMode
               ? "mx-auto w-full max-w-[1400px] justify-center"
               : editorContentAlignment === "center"

@@ -432,8 +432,8 @@ const MemoCard = memo(function MemoCard({
   const listTimestamp = getMemoListTimestamp(memo, sortMode);
   const listTimestampLabel = formatMemoPreviewDate(listTimestamp.value, localePreference);
   const listTimestampKind = listTimestamp.field === "createdAt"
-    ? (resolvedLocale === "en-US" ? "Created" : "创建")
-    : (resolvedLocale === "en-US" ? "Updated" : "更新");
+    ? (resolvedLocale !== "zh-CN" ? "Created" : "创建")
+    : (resolvedLocale !== "zh-CN" ? "Updated" : "更新");
   const handledLongPressRef = useRef(false);
   const pressScale = useSharedValue(1);
   const pressAnimatedStyle = useAnimatedStyle(() => ({

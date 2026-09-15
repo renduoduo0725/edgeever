@@ -4,6 +4,16 @@ import XCTest
 
 /// Exercises shipped parity helpers (same semantics as Android `@edgeever/shared/mobile-ui` + notebooks).
 final class MobileUIParityTests: XCTestCase {
+    func testUnmatchedSystemLanguageUsesEnglishUI() {
+        XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "ja"))
+        XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "fr"))
+        XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "en"))
+        XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: nil))
+        XCTAssertFalse(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "zh"))
+        XCTAssertFalse(AppUILocale.usesEnglish(preferenceCode: "zh-CN", systemLanguageCode: "ja"))
+        XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "en-US", systemLanguageCode: "zh"))
+    }
+
     func testToggleFilterReturnsToAllWhenPressedAgain() {
         XCTAssertEqual(
             MobileUI.toggleMemoFilterMode(current: .all, requested: .pinned),

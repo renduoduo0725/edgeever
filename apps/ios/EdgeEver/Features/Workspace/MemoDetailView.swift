@@ -766,7 +766,7 @@ struct MemoDetailView: View {
                     markdown: memo.contentMarkdown,
                     baseURL: env.session.session.flatMap { URL(string: $0.baseUrl) },
                     token: env.session.session?.token,
-                    locale: env.preferences.isEnglish ? "en-US" : "zh-CN",
+                    locale: env.preferences.apiLocale,
                     theme: colorScheme == .dark ? "dark" : "light",
                     placeholder: env.preferences.t("开始输入…", en: "Start writing…"),
                     onChange: nil,

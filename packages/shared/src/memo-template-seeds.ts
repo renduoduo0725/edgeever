@@ -1,4 +1,6 @@
-export type MemoTemplateSeedLocale = "zh-CN" | "en-US";
+import { resolveSupportedLocale } from "./i18n/locales";
+
+export type MemoTemplateSeedLocale = "zh-CN" | "en-US" | "ja";
 
 export type MemoTemplateSeedTranslation = {
   title: string;
@@ -17,9 +19,10 @@ const seed = (
   metadata: Omit<MemoTemplateSeed, "translations">,
   zhCN: MemoTemplateSeedTranslation,
   enUS: MemoTemplateSeedTranslation,
+  ja: MemoTemplateSeedTranslation,
 ): MemoTemplateSeed => ({
   ...metadata,
-  translations: { "zh-CN": zhCN, "en-US": enUS },
+  translations: { "zh-CN": zhCN, "en-US": enUS, ja },
 });
 
 export const DEFAULT_MEMO_TEMPLATE_SEEDS: readonly MemoTemplateSeed[] = [
@@ -35,6 +38,11 @@ export const DEFAULT_MEMO_TEMPLATE_SEEDS: readonly MemoTemplateSeed[] = [
       description: "Capture fleeting thoughts, ideas, links, and immediate action items.",
       contentMarkdown: "## 💡 Fleeting Thoughts\n\n- \n\n## 📌 Context & Notes\n\n\n\n## 🚀 Next Actions\n\n- [ ] ",
     },
+    {
+      title: "ひらめきメモ",
+      description: "ふとした思いつき、アイデア、リンク、すぐやることをすばやく書き留めます。",
+      contentMarkdown: "## 💡 ひらめき\n\n- \n\n## 📌 背景と補足\n\n\n\n## 🚀 次のアクション\n\n- [ ] ",
+    },
   ),
   seed(
     { key: "meeting", translationKey: "meeting", tag: "meeting" },
@@ -47,6 +55,11 @@ export const DEFAULT_MEMO_TEMPLATE_SEEDS: readonly MemoTemplateSeed[] = [
       title: "Meeting Minutes",
       description: "Structured log for agenda, key decisions, and action items with owners.",
       contentMarkdown: "# 📝 Meeting Minutes\n\n- **Time**:\n- **Host/Recorder**:\n- **Attendees**:\n\n---\n\n## 🎯 Goal\n\n- \n\n## 💬 Discussion & Decisions\n\n1. **[Topic 1]**\n   - Points:\n   - ✅ **Decision**:\n\n2. **[Topic 2]**\n   - Points:\n   - ✅ **Decision**:\n\n## 📋 Action Items\n\n- [ ] **[Owner]** Task description (Due: MM-DD)\n- [ ] **[Owner]** Task description (Due: MM-DD)\n",
+    },
+    {
+      title: "会議メモ",
+      description: "議題の背景、主な決定、担当者つきのToDoを構造化して記録します。",
+      contentMarkdown: "# 📝 会議メモ\n\n- **日時**：\n- **司会/記録**：\n- **参加者**：\n\n---\n\n## 🎯 会議の目的\n\n- \n\n## 💬 議論と決定\n\n1. **[議題 1]**\n   - ポイント：\n   - ✅ **決定**：\n\n2. **[議題 2]**\n   - ポイント：\n   - ✅ **決定**：\n\n## 📋 アクションアイテム\n\n- [ ] **[担当者]** タスク内容（期限：MM-DD）\n- [ ] **[担当者]** タスク内容（期限：MM-DD）\n",
     },
   ),
   seed(
@@ -61,6 +74,11 @@ export const DEFAULT_MEMO_TEMPLATE_SEEDS: readonly MemoTemplateSeed[] = [
       description: "Summarize weekly highlights, blockers, and next week's key priorities.",
       contentMarkdown: "# 🗓️ Weekly Status Report\n\n## 🌟 Highlights\n\n- [x] **[Project/Feature]** Accomplishment details\n- [x] **[Project/Feature]** Accomplishment details\n\n## 🚧 Blockers & Risks\n\n- ⚠️ **Blocker**: Reason and required support\n\n## 🎯 Next Week Priorities\n\n- [ ] \n- [ ] \n- [ ] \n\n## 💡 Reflection & Insights\n\n- \n",
     },
+    {
+      title: "週次レビュー",
+      description: "今週の成果、ブロッカー、来週の優先事項を整理します。",
+      contentMarkdown: "# 🗓️ 週次レポート\n\n## 🌟 今週のハイライト\n\n- [x] **[プロジェクト/機能]** 成果の説明\n- [x] **[プロジェクト/機能]** 成果の説明\n\n## 🚧 ブロッカーとリスク\n\n- ⚠️ **ブロッカー**：原因と必要なサポート\n\n## 🎯 来週の優先事項\n\n- [ ] \n- [ ] \n- [ ] \n\n## 💡 振り返り\n\n- \n",
+    },
   ),
   seed(
     { key: "reading", translationKey: "reading", tag: "reading" },
@@ -73,6 +91,11 @@ export const DEFAULT_MEMO_TEMPLATE_SEEDS: readonly MemoTemplateSeed[] = [
       title: "Reading Note Card",
       description: "Extract key takeaways, quotes, reflections, and connected concepts.",
       contentMarkdown: "# 📖 Reading Note Card\n\n- **Book/Article**:\n- **Author/Source**:\n- **Rating**: ⭐⭐⭐⭐⭐\n\n---\n\n## 💡 Key Takeaway\n\n> \n\n## ✍️ Highlights & Quotes\n\n> [Quote content]\n> —— *Original Source*\n\n## 🧠 Personal Reflections\n\n- \n\n## 🔗 Action & Practice\n\n- [ ] **Action Plan**:\n",
+    },
+    {
+      title: "読書カード",
+      description: "要点、引用、自分の理解、関連する知識をまとめます。",
+      contentMarkdown: "# 📖 読書カード\n\n- **書籍/記事**：\n- **著者/出典**：\n- **評価**：⭐⭐⭐⭐⭐\n\n---\n\n## 💡 一言まとめ\n\n> \n\n## ✍️ 要点と引用\n\n> [引用]\n> —— *出典*\n\n## 🧠 自分の理解と考察\n\n- \n\n## 🔗 関連知識とアクション\n\n- [ ] **実践**：\n",
     },
   ),
   seed(
@@ -87,12 +110,17 @@ export const DEFAULT_MEMO_TEMPLATE_SEEDS: readonly MemoTemplateSeed[] = [
       description: "Define OKRs, Key Results, milestones, and task checklists.",
       contentMarkdown: "# 🎯 Goal Breakdown\n\n- **Period**:\n- **Owner**:\n\n---\n\n## 📌 Objective\n\n> \n\n## 📈 Key Results\n\n- **KR 1**: Target metric -> Current progress\n- **KR 2**: Target metric -> Current progress\n\n## 🗓️ Milestones\n\n- [ ] **Phase 1 (Date)**: Target\n- [ ] **Phase 2 (Date)**: Target\n\n## 📋 Execution Checklist\n\n- [ ] \n- [ ] \n",
     },
+    {
+      title: "目標とタスク分解",
+      description: "OKR の目標、主要な結果、マイルストーン、実行チェックリストを定義します。",
+      contentMarkdown: "# 🎯 目標の分解\n\n- **期間**：\n- **担当者**：\n\n---\n\n## 📌 目標 (Objective)\n\n> \n\n## 📈 主要な結果 (Key Results)\n\n- **KR 1**：目標指標 -> 現在の進捗\n- **KR 2**：目標指標 -> 現在の進捗\n\n## 🗓️ マイルストーン\n\n- [ ] **フェーズ 1（日付）**：達成目標\n- [ ] **フェーズ 2（日付）**：達成目標\n\n## 📋 実行チェックリスト\n\n- [ ] \n- [ ] \n",
+    },
   ),
 ];
 
 export const normalizeMemoTemplateSeedLocale = (
   locale: string | null | undefined,
-): MemoTemplateSeedLocale => locale?.toLowerCase().startsWith("en") ? "en-US" : "zh-CN";
+): MemoTemplateSeedLocale => resolveSupportedLocale(locale);
 
 export const localizeMemoTemplateSeed = (
   templateSeed: MemoTemplateSeed,

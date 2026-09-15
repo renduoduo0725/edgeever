@@ -14,13 +14,15 @@ must not be part of the critical path for opening or editing a note.
 | Create/edit local memo acknowledgement | `< 50 ms` |
 | Cloud sync | Background only |
 
-The Web/PWA build keeps Mermaid, diagram renderer, code-highlighting, and
-editor-only Tiptap/ProseMirror chunks out of both the service-worker precache
-and the initial HTML `modulepreload` list. They load and cache on first use
-instead, so ordinary note-list startup does not pay for optional editor/diagram
-support. The initial modulepreload list is also capped at 700 KiB uncompressed;
-the build verifier reports the measured bytes and fails if this critical-path
-budget regresses.
+The Web/PWA build keeps the install-time service-worker precache limited to the
+web manifest. Mermaid,
+diagram renderer, code-highlighting, and editor-only Tiptap/ProseMirror chunks
+stay out of the initial HTML `modulepreload` list and fill runtime caches on
+first use, so ordinary note-list startup does not pay for optional
+editor/diagram support. The initial modulepreload list is also capped at 750 KiB
+uncompressed; the build verifier reports the measured bytes and fails if this
+critical-path budget regresses. The web app remains installable through the
+manifest.
 
 Remote resource blobs use a separate 90-day, 500-entry cache-first runtime
 cache. When the browser is offline, newly attached files are written to the
@@ -53,8 +55,9 @@ renderer: notebook discovery, memo creation, memo list, and memo detail. Its
 `thresholds` object is suitable for CI gating; remote sync is deliberately not
 included in the interactive critical path.
 
-Verify that optional editor and diagram chunks stay out of the initial PWA
-precache and HTML modulepreload list:
+Verify that the install-time PWA precache contains only the web manifest and
+that optional editor and diagram chunks stay out of the initial HTML
+modulepreload list:
 
 ```sh
 bun run build:web

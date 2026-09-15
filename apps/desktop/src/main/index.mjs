@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, session, net, protocol, shell, dialog, safeStorage, clipboard, powerMonitor } from "electron";
+import { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, session, net, protocol, shell, dialog, safeStorage, clipboard, powerMonitor, desktopCapturer, screen } from "electron";
 import { createReadStream, existsSync } from "node:fs";
 import { appendFile, mkdir, open, readdir, readFile, rename, rm, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
@@ -29,6 +29,7 @@ import { isAllowedPrintPreviewUrl } from "./window-open-policy.mjs";
 import { showWindow } from "./window-visibility.mjs";
 import { trayIconPath } from "./tray-icon.mjs";
 import { writeRichClipboard } from "./clipboard-write.mjs";
+import { captureInteractiveScreenshot, writeScreenshotTempPath } from "./screenshot-capture.mjs";
 import { LocalDataResetError, scheduleMacLocalDataReset } from "./local-data-reset.mjs";
 import { buildDesktopDiagnosticIssueUrl, normalizeDesktopDiagnostic } from "./desktop-diagnostics.mjs";
 import { createRendererStartupGuard } from "./renderer-startup-guard.mjs";
@@ -506,6 +507,8 @@ const importMarkdownFile = async (filePath) => {
 };
 
 let pendingMarkdownImport = null;
+let pendingScreenshotImport = null;
+let screenshotCaptureInFlight = false;
 let rendererReady = false;
 
 const flushPendingMarkdownImport = () => {
@@ -513,6 +516,65 @@ const flushPendingMarkdownImport = () => {
   const payload = pendingMarkdownImport;
   pendingMarkdownImport = null;
   mainWindow.webContents.send("desktop:import-markdown", payload);
+};
+
+const sendScreenshotImport = (payload) => {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoading() || !rendererReady) {
+    pendingScreenshotImport = payload;
+    return;
+  }
+  mainWindow.webContents.send("desktop:import-screenshot", payload);
+};
+
+const flushPendingScreenshotImport = () => {
+  if (!pendingScreenshotImport || !rendererReady || !mainWindow || mainWindow.isDestroyed()) return;
+  const payload = pendingScreenshotImport;
+  pendingScreenshotImport = null;
+  mainWindow.webContents.send("desktop:import-screenshot", payload);
+};
+
+const captureScreenshotToNote = async () => {
+  if (screenshotCaptureInFlight) return;
+  screenshotCaptureInFlight = true;
+  const copy = desktopMenuCopy(app.getLocale());
+  const wasVisible = Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
+  const revealWindow = () => {
+    if (process.platform === "darwin") app.show();
+    showWindow(mainWindow);
+  };
+  try {
+    if (process.platform === "darwin") app.hide();
+    else if (wasVisible) mainWindow.hide();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const captured = await captureInteractiveScreenshot({
+      platform: process.platform,
+      locale: app.getLocale(),
+      outputPath: process.platform === "darwin" ? writeScreenshotTempPath(app.getPath("temp")) : undefined,
+      BrowserWindow,
+      desktopCapturer,
+      screen,
+      ipcMain,
+      overlayHtmlPath: join(currentDirectory, "../screenshot/overlay.html"),
+      overlayPreloadPath: join(currentDirectory, "../screenshot/overlay-preload.cjs"),
+    });
+    if (!captured) {
+      if (wasVisible) revealWindow();
+      return;
+    }
+    revealWindow();
+    sendScreenshotImport(captured);
+  } catch (error) {
+    if (wasVisible) revealWindow();
+    void writeDiagnostic("screenshot.failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+    await dialog.showMessageBox({
+      type: "warning",
+      message: copy.screenshotFailed,
+    });
+  } finally {
+    screenshotCaptureInFlight = false;
+  }
 };
 
 const flushPendingDesktopCommands = () => {
@@ -595,8 +657,7 @@ const createTray = () => {
   tray.setToolTip("EdgeEver");
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: copy.show, click: () => showWindow(mainWindow) },
-    { label: copy.syncNow, click: () => sendDesktopCommand("sync-now") },
-    { label: copy.backupNow, click: () => sendDesktopCommand("backup-now") },
+    { label: copy.screenshotToNote, click: () => void captureScreenshotToNote() },
     ...(updateState === "downloaded" ? [{ label: copy.restartToUpdate, click: () => installDownloadedUpdate() }] : []),
     { type: "separator" },
     { label: copy.quit, click: () => { isQuitting = true; app.quit(); } },
@@ -1328,6 +1389,7 @@ const startApplication = async () => {
     rendererReady = true;
     flushPendingDesktopCommands();
     flushPendingMarkdownImport();
+    flushPendingScreenshotImport();
     flushPendingScheduledTaskRuns();
   });
   ipcMain.on("desktop:renderer-bootstrap-ready", (event) => {

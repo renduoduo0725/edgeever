@@ -14,6 +14,10 @@
 > **A serverless, 100% free, open-source, and AI-native self-hosted Evernote alternative on Cloudflare.**
 * *位置*：官网英文版首屏、英文 README 顶部
 
+### 🇯🇵 日文
+> **EdgeEver：オープンソース、AI ネイティブ、Cloudflare 無料枠 / Docker で自前運用できる Evernote 代替ノート。**
+* *位置*：官网日文版首屏、日文 README 顶部
+
 ---
 
 ## 🐙 GitHub "About" 短描述 (Description)

@@ -11,7 +11,7 @@ export const MobileUpdateCard = () => {
   const { resolvedLocale } = useMobileLocale();
   const { resolvedTheme } = useMobileTheme();
   const { checkForUpdate, hasUpdate, isSupported, openUpdate, status, updateKind } = useMobileUpdate();
-  const english = resolvedLocale === "en-US";
+  const english = resolvedLocale !== "zh-CN";
   const busy = status === "checking" || status === "downloading";
   const styles = resolveMobileThemeStyles(baseStyles, resolvedTheme);
   const checkLabel = status === "checking"

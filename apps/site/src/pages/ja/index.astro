@@ -1,0 +1,49 @@
+---
+import Container from "@/components/container.astro";
+import Features from "@/components/features.astro";
+import Guides from "@/components/guides.astro";
+import Hero from "@/components/hero.astro";
+import Logos from "@/components/logos.astro";
+import MarqueeShowcase from "@/components/marquee-showcase.astro";
+import Layout from "@/layouts/Layout.astro";
+
+const siteUrl = new URL(Astro.url.pathname, Astro.site).toString();
+
+const homeJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "EdgeEver",
+    alternateName: "EdgeEver Evernote Alternative",
+    url: siteUrl,
+    inLanguage: "ja",
+    description:
+      "EdgeEver はオープンソース、AI ネイティブ、Cloudflare と Docker で自前運用できる Evernote 代替です。macOS、Windows、Linux、iOS、Android、Web Clipper に対応しています。",
+    keywords: ["Evernote 代替", "オープンソース ノート", "セルフホスト ノート", "AI ノート"],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "EdgeEver",
+    alternateName: "EdgeEver Evernote Alternative",
+    url: siteUrl,
+    codeRepository: "https://github.com/tianma-if/edgeever",
+    applicationCategory: "ProductivityApplication",
+    operatingSystem: "macOS, Windows, Linux, iOS, Android, Web, Chrome, Edge, Firefox",
+    isAccessibleForFree: true,
+    description:
+      "EdgeEver はオープンソース、AI ネイティブなセルフホスト型 Evernote 代替です。三ペインのノート作業領域、全プラットフォームのクライアント、REST API、OpenAPI、MCP を備えています。",
+    keywords: ["Evernote 代替", "オープンソース ノート", "セルフホスト ノート", "AI ノート"],
+  },
+];
+---
+
+<Layout title="" jsonLd={homeJsonLd}>
+  <Container>
+    <Hero />
+    <MarqueeShowcase />
+    <Features />
+    <Guides />
+    <Logos />
+  </Container>
+</Layout>

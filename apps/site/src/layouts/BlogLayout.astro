@@ -1,14 +1,15 @@
 ---
 import Container from "@/components/container.astro";
 import { getFormattedDate } from "@/utils/all";
+import { getLocalizedPath, getSiteLocale, siteCopy } from "@/i18n";
 import Layout from "./Layout.astro";
 
 const { frontmatter, backHref, backLabel, schemaType = "BlogPosting" } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site).toString();
 const imageUrl = new URL(frontmatter.image.src, Astro.site).toString();
-const isEnglish = Astro.url.pathname.startsWith("/en/");
-const fallbackBackHref = isEnglish ? "/en/blog" : "/blog";
-const fallbackBackLabel = isEnglish ? "Back to blog" : "返回博客";
+const locale = getSiteLocale(Astro.url.pathname);
+const fallbackBackHref = getLocalizedPath(locale, "/blog");
+const fallbackBackLabel = siteCopy[locale].nav.backToBlog;
 
 const articleJsonLd = {
   "@context": "https://schema.org",

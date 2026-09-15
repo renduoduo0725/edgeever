@@ -2,12 +2,39 @@ import Foundation
 import Observation
 import SwiftUI
 
+enum AppUILanguage: String {
+    case chinese
+    case english
+    case japanese
+}
+
+enum AppUILocale {
+    /// Unmatched system languages use English, not Simplified Chinese.
+    static func language(preferenceCode: String, systemLanguageCode: String?) -> AppUILanguage {
+        switch preferenceCode {
+        case "en-US": return .english
+        case "zh-CN": return .chinese
+        case "ja": return .japanese
+        default:
+            let code = (systemLanguageCode ?? "").lowercased()
+            if code.isEmpty { return .english }
+            if code.hasPrefix("zh") { return .chinese }
+            if code.hasPrefix("ja") { return .japanese }
+            return .english
+        }
+    }
+
+    static func usesEnglish(preferenceCode: String, systemLanguageCode: String?) -> Bool {
+        language(preferenceCode: preferenceCode, systemLanguageCode: systemLanguageCode) == .english
+    }
+}
+
 @Observable
 @MainActor
 final class PreferencesStore {
     private let defaults: UserDefaults
 
-    /// system | zh-CN | en-US — matches Android locale preference.
+    /// system | zh-CN | en-US | ja — matches Android locale preference.
     var localeCode: String {
         didSet { defaults.set(localeCode, forKey: Keys.locale) }
     }
@@ -48,14 +75,27 @@ final class PreferencesStore {
         switch localeCode {
         case "zh-CN": return Locale(identifier: "zh-Hans")
         case "en-US": return Locale(identifier: "en-US")
+        case "ja": return Locale(identifier: "ja-JP")
         default: return .autoupdatingCurrent
         }
     }
 
-    var isEnglish: Bool {
-        if localeCode == "en-US" { return true }
-        if localeCode == "zh-CN" { return false }
-        return Locale.autoupdatingCurrent.language.languageCode?.identifier == "en"
+    var uiLanguage: AppUILanguage {
+        AppUILocale.language(
+            preferenceCode: localeCode,
+            systemLanguageCode: Locale.autoupdatingCurrent.language.languageCode?.identifier
+        )
+    }
+
+    /// Leftover two-way UI branches: Japanese must not fall through to Chinese.
+    var isEnglish: Bool { uiLanguage != .chinese }
+
+    var apiLocale: String {
+        switch uiLanguage {
+        case .english: return "en-US"
+        case .japanese: return "ja"
+        case .chinese: return "zh-CN"
+        }
     }
 
     var colorScheme: ColorScheme? {
@@ -66,8 +106,12 @@ final class PreferencesStore {
         }
     }
 
-    func t(_ zh: String, en: String) -> String {
-        isEnglish ? en : zh
+    func t(_ zh: String, en: String, ja: String? = nil) -> String {
+        switch uiLanguage {
+        case .english: return en
+        case .japanese: return ja ?? en
+        case .chinese: return zh
+        }
     }
 
     func lastAiAssistantAction(isSelection: Bool) -> AiAssistantLastActionPreference? {

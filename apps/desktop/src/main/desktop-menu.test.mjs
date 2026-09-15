@@ -9,6 +9,7 @@ describe("desktop native menu localization", () => {
     expect(copy.view).toBe("视图");
     expect(copy.window).toBe("窗口");
     expect(copy.restartToUpdate).toBe("重启以更新");
+    expect(copy.screenshotToNote).toBe("截图并保存到笔记");
   });
 
   test("recognizes other Chinese locale variants", () => {

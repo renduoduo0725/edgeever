@@ -52,7 +52,7 @@ export const MobileAiAssistantModal = ({
   const { resolvedLocale } = useMobileLocale();
   const { resolvedTheme } = useMobileTheme();
   const dark = resolvedTheme === "dark";
-  const tr = (zh: string, en: string) => resolvedLocale === "en-US" ? en : zh;
+  const tr = (zh: string, en: string) => resolvedLocale !== "zh-CN" ? en : zh;
   const [action, setAction] = useState<AssistantAction>("summarize");
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [targetLanguage, setTargetLanguage] = useState<TargetLanguage>(() => getDefaultAiTargetLanguage(resolvedLocale));

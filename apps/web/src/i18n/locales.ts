@@ -1,9 +1,17 @@
-export const supportedLocales = ["zh-CN", "en-US"] as const;
+import {
+  defaultLocale as sharedDefaultLocale,
+  matchSupportedLocale,
+  resolveSupportedLocaleFromCandidates,
+  supportedLocales as sharedSupportedLocales,
+  type SupportedLocale as SharedSupportedLocale,
+} from "@edgeever/shared/i18n/locales";
 
-export type SupportedLocale = (typeof supportedLocales)[number];
+export const supportedLocales = sharedSupportedLocales;
+
+export type SupportedLocale = SharedSupportedLocale;
 export type AppLocalePreference = "system" | SupportedLocale;
 
-export const defaultLocale: SupportedLocale = "zh-CN";
+export const defaultLocale: SupportedLocale = sharedDefaultLocale;
 
 export const localeStorageKey = "edgeever.locale.preference";
 const legacyLocaleStorageKey = "edgeever.locale";
@@ -11,25 +19,11 @@ const legacyLocaleStorageKey = "edgeever.locale";
 export const localeLabels: Record<SupportedLocale, string> = {
   "zh-CN": "简体中文",
   "en-US": "English",
+  ja: "日本語",
 };
 
-export const normalizeLocale = (locale: string | null | undefined): SupportedLocale | null => {
-  if (!locale) {
-    return null;
-  }
-
-  const normalized = locale.toLowerCase();
-
-  if (normalized === "zh" || normalized.startsWith("zh-")) {
-    return "zh-CN";
-  }
-
-  if (normalized === "en" || normalized === "en-us" || normalized.startsWith("en-")) {
-    return "en-US";
-  }
-
-  return null;
-};
+export const normalizeLocale = (locale: string | null | undefined): SupportedLocale | null =>
+  matchSupportedLocale(locale);
 
 export const readStoredLocale = (): SupportedLocale | null => {
   try {
@@ -70,6 +64,7 @@ export const clearStoredLocale = () => {
 
 export const getAppLocalePreference = (): AppLocalePreference => readStoredLocale() ?? "system";
 
+/** Returns null only when the browser exposes no language list; unmatched languages become English. */
 export const getBrowserLocale = (): SupportedLocale | null => {
   if (typeof navigator === "undefined") {
     return null;
@@ -77,15 +72,11 @@ export const getBrowserLocale = (): SupportedLocale | null => {
 
   const browserLocales = navigator.languages?.length ? navigator.languages : [navigator.language];
 
-  for (const locale of browserLocales) {
-    const supported = normalizeLocale(locale);
-
-    if (supported) {
-      return supported;
-    }
+  if (!browserLocales.some((locale) => locale?.trim())) {
+    return null;
   }
 
-  return null;
+  return resolveSupportedLocaleFromCandidates(browserLocales);
 };
 
 export const getInitialLocale = () => readStoredLocale() ?? getBrowserLocale() ?? defaultLocale;

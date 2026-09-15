@@ -119,3 +119,8 @@ App Store Connect API Key 上传 App Store IPA。随后 Fastlane（`apps/ios` �
 `submit_review`）精确选择相同的 App Version 与 Build Number，提交 App Review，
 并设置为审核通过后自动发布。元数据、协议、审核信息或凭据不完整时工作流会失败，
 不会改为提交其他构建。
+
+商店列表本地化（含日文）存放在 `apps/mobile/store-assets/`，需在 App Store
+Connect 和 Play Console 中粘贴发布。在控制台补齐该语言的必填字段之前，不要把
+新语言加入 Fastlane `submit_review`。不完整的本地化会在不改二进制的情况下让
+App Review 失败。

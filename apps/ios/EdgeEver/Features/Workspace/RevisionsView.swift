@@ -228,7 +228,7 @@ struct RevisionsView: View {
                 Text(env.preferences.t("版本 \(rev.revision)", en: "Version \(rev.revision)"))
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(active ? .white : AppTheme.title)
-                Text("\(MemoPreviewDate.format(rev.createdAt, locale: env.preferences.resolvedLocale, isEnglish: env.preferences.isEnglish)) · \(Self.formatActor(rev.createdBy))")
+                Text("\(MemoPreviewDate.format(rev.createdAt, locale: env.preferences.resolvedLocale, isEnglish: env.preferences.isEnglish, language: env.preferences.uiLanguage)) · \(Self.formatActor(rev.createdBy))")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(active ? Color.white.opacity(0.9) : AppTheme.secondary)
                     .lineLimit(1)

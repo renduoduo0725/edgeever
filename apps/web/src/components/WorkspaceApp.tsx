@@ -35,6 +35,12 @@ import { api, getOrCreateClientDeviceId } from "@/lib/api";
 import { MarkdownExportMemoryLimitError, type MarkdownExportProgress } from "@/lib/markdown-export";
 import { exportSelectedMemosAsMarkdownZip } from "@/lib/selected-markdown-export";
 import { createPluginScheduleAdapter } from "@/lib/plugins/plugin-schedule-adapter";
+import { createPluginCatalogAdapter } from "@/lib/plugins/plugin-catalog-sync";
+import {
+  acknowledgePluginTrustWarning,
+  hasAcknowledgedPluginTrustWarning,
+  PLUGIN_TRUST_WARNING_COPY,
+} from "@/lib/plugins/plugin-trust";
 import {
   clearMobileEditorReturnPreview,
   consumeStandaloneMobileEditorReturn,
@@ -746,6 +752,7 @@ export const WorkspaceApp = ({
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const autoSelectedDemoNotebookRef = useRef(false);
   const [createdMemoEditId, setCreatedMemoEditId] = useState<string | null>(null);
+  const [pendingEditorInsert, setPendingEditorInsert] = useState<{ memoId: string; files: File[] } | null>(null);
   const pendingCreatedMemoIdRef = useRef<string | null>(null);
   const pendingQuickSwitcherMemoIdRef = useRef<string | null>(null);
   const creatingMemoSelectionRef = useRef(false);
@@ -756,6 +763,7 @@ export const WorkspaceApp = ({
   const [notebookNameDialog, setNotebookNameDialog] = useState<NotebookNameDialogState | null>(null);
   const [notebookDeleteConfirmation, setNotebookDeleteConfirmation] = useState<Notebook | null>(null);
   const [appNoticeDialog, setAppNoticeDialog] = useState<AppNoticeDialogState | null>(null);
+  const [pendingCatalogTrustPluginIds, setPendingCatalogTrustPluginIds] = useState<string[]>([]);
   const [isExportingSelectedMemos, setIsExportingSelectedMemos] = useState(false);
   const [selectedMarkdownExportProgress, setSelectedMarkdownExportProgress] = useState<MarkdownExportProgress>({
     completed: 0,
@@ -773,6 +781,7 @@ export const WorkspaceApp = ({
   const pluginPublicNetworkAdapter = useMemo(() => createPublicNetworkAdapter(api.pluginNetwork, {
     desktop: window.edgeeverDesktop?.isAvailable ? window.edgeeverDesktop : undefined,
   }), []);
+  const pluginCatalogAdapter = useMemo(() => demoMode ? undefined : createPluginCatalogAdapter(), [demoMode]);
   const pluginHost = useMemo(() => new EdgeEverPluginHost({
     repository,
     scope: localDataScope,
@@ -780,6 +789,7 @@ export const WorkspaceApp = ({
     publicNetworkAdapter: pluginPublicNetworkAdapter,
     onNotice: (message) => setAppNoticeDialog({ title: t("plugins.noticeTitle"), description: message }),
     scheduleAdapter: pluginScheduleAdapter,
+    catalogAdapter: pluginCatalogAdapter,
     onWorkspaceChanged: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["memos"] }),
@@ -790,14 +800,16 @@ export const WorkspaceApp = ({
         queryClient.invalidateQueries({ queryKey: ["resources"] }),
       ]);
     },
-  }), [localDataScope, pluginPublicNetworkAdapter, pluginScheduleAdapter, queryClient, repository, t]);
+  }), [localDataScope, pluginCatalogAdapter, pluginPublicNetworkAdapter, pluginScheduleAdapter, queryClient, repository, t]);
   const [pluginHostReady, setPluginHostReady] = useState(false);
   const pluginHostSnapshot = useSyncExternalStore(pluginHost.subscribe, pluginHost.getSnapshot, pluginHost.getSnapshot);
   useEffect(() => {
     let active = true;
     setPluginHostReady(false);
-    void pluginHost.activateEnabled().then(() => {
-      if (active) setPluginHostReady(true);
+    void pluginHost.activateEnabled().then((pendingTrustPluginIds) => {
+      if (!active) return;
+      setPluginHostReady(true);
+      if (pendingTrustPluginIds.length > 0) setPendingCatalogTrustPluginIds(pendingTrustPluginIds);
     }).catch(() => {
       if (active) setPluginHostReady(false);
     });
@@ -814,6 +826,10 @@ export const WorkspaceApp = ({
       if (!active || running) return;
       running = true;
       try {
+        const pendingTrustPluginIds = await pluginHost.syncFromCatalog();
+        if (active && pendingTrustPluginIds.length > 0 && !hasAcknowledgedPluginTrustWarning()) {
+          setPendingCatalogTrustPluginIds(pendingTrustPluginIds);
+        }
         const marketplace = await loadResolvedPluginMarketplace();
         await updateOfficialMarketplacePlugins(pluginHost, marketplace.entries);
         const firstResolutionError = Object.entries(marketplace.resolutionErrors)[0];
@@ -1178,6 +1194,7 @@ export const WorkspaceApp = ({
   const mobileSearchActive = mobileBottomNavActive === "search";
   const workspaceBackTargetActive = Boolean(
     appNoticeDialog ||
+      pendingCatalogTrustPluginIds.length > 0 ||
       notebookDeleteConfirmation ||
       notebookNameDialog ||
       memoDeleteConfirmation ||
@@ -1198,6 +1215,7 @@ export const WorkspaceApp = ({
     !isDesktop &&
       visibleActivePane === "memos" &&
       !appNoticeDialog &&
+      pendingCatalogTrustPluginIds.length === 0 &&
       !notebookDeleteConfirmation &&
       !notebookNameDialog &&
       !memoDeleteConfirmation &&
@@ -2164,6 +2182,32 @@ export const WorkspaceApp = ({
     setNotebookDeleteConfirmation(notebook);
   };
 
+  const handleImportScreenshot = useCallback(async (payload: { name: string; type: string; title?: string; bytes: Uint8Array }) => {
+    const notebookId = selectedNotebookId && notebooks.some((notebook) => notebook.id === selectedNotebookId) && memoView !== "trash"
+      ? selectedNotebookId
+      : defaultMemoNotebookId;
+    if (!notebookId) return;
+
+    const source = payload.bytes instanceof Uint8Array ? payload.bytes : new Uint8Array(payload.bytes);
+    const bytes = new Uint8Array(source.byteLength);
+    bytes.set(source);
+    const file = new File([bytes], payload.name || "screenshot.png", { type: payload.type || "image/png" });
+    setTemplatesOpen(false);
+    setMobileBottomNavActive("home");
+    creatingMemoSelectionRef.current = true;
+    try {
+      const data = await createMemoMutation.mutateAsync({
+        notebookId,
+        title: payload.title?.trim() || "",
+        contentMarkdown: "",
+        tags: [],
+      });
+      setPendingEditorInsert({ memoId: data.memo.id, files: [file] });
+    } catch {
+      creatingMemoSelectionRef.current = false;
+    }
+  }, [createMemoMutation, defaultMemoNotebookId, memoView, notebooks, selectedNotebookId]);
+
   const handleCreateMemo = (kind?: DiagramKind) => {
     const targetNotebookId = createMemoNotebookId;
 
@@ -2827,15 +2871,24 @@ export const WorkspaceApp = ({
       const title = payload.name.replace(/\.(?:md|markdown)$/i, "").trim();
       createMemoMutation.mutate({ notebookId, title, contentMarkdown: payload.content, tags: [] });
     });
+    const removeScreenshotListener = bridge.onImportScreenshot?.((payload) => {
+      void handleImportScreenshot(payload);
+    }) ?? (() => {});
     return () => {
       removeCommandListener();
       removeMarkdownListener();
+      removeScreenshotListener();
     };
-  }, [createMemoMutation, defaultMemoNotebookId, handleCreateMemo, handleCreateNotebook, handleGlobalSearch, notebooks, selectedNotebookId, toggleDesktopFocusMode]);
+  }, [createMemoMutation, defaultMemoNotebookId, handleCreateMemo, handleCreateNotebook, handleGlobalSearch, handleImportScreenshot, notebooks, selectedNotebookId, toggleDesktopFocusMode]);
 
   const handleWorkspaceBackRequest = useCallback(() => {
     if (appNoticeDialog) {
       setAppNoticeDialog(null);
+      return true;
+    }
+
+    if (pendingCatalogTrustPluginIds.length > 0) {
+      setPendingCatalogTrustPluginIds([]);
       return true;
     }
 
@@ -2948,6 +3001,7 @@ export const WorkspaceApp = ({
     visibleActivePane,
     desktopFocusModeActive,
     appNoticeDialog,
+    pendingCatalogTrustPluginIds,
     rightView,
     clearMemoSelection,
     createNotebookMutation.isPending,
@@ -3027,6 +3081,7 @@ export const WorkspaceApp = ({
 
       const transientLayerOpen = Boolean(
         appNoticeDialog ||
+          pendingCatalogTrustPluginIds.length > 0 ||
           rightView !== "editor" ||
           memoDeleteConfirmation ||
           emptyTrashConfirmationOpen ||
@@ -3130,6 +3185,7 @@ export const WorkspaceApp = ({
   }, [
     rightView,
     appNoticeDialog,
+    pendingCatalogTrustPluginIds,
     canCreateMemo,
     clearPendingCreatedMemo,
     clearMemoSelection,
@@ -3643,6 +3699,8 @@ export const WorkspaceApp = ({
                     onToggleDesktopFocusMode={toggleDesktopFocusMode}
                     editorContentAlignment={editorContentAlignment}
                     mobileDefaultEditMemoId={createdMemoEditId}
+                    pendingInsertFiles={pendingEditorInsert}
+                    onPendingInsertFilesConsumed={() => setPendingEditorInsert(null)}
                     isTrashView={memoView === "trash"}
                     notebooks={notebooks}
                     isLoading={memoQuery.isLoading}
@@ -3792,6 +3850,22 @@ export const WorkspaceApp = ({
           onConfirm={() => setAppNoticeDialog(null)}
         />
       )}
+      {pendingCatalogTrustPluginIds.length > 0 ? (
+        <AppConfirmDialog
+          title={t(PLUGIN_TRUST_WARNING_COPY.titleKey)}
+          description={t(PLUGIN_TRUST_WARNING_COPY.descriptionKey)}
+          confirmLabel={t(PLUGIN_TRUST_WARNING_COPY.confirmLabelKey)}
+          closeOnBrowserBack={false}
+          tone="neutral"
+          onCancel={() => setPendingCatalogTrustPluginIds([])}
+          onConfirm={() => {
+            const pluginIds = pendingCatalogTrustPluginIds;
+            acknowledgePluginTrustWarning();
+            setPendingCatalogTrustPluginIds([]);
+            void Promise.all(pluginIds.map((pluginId) => pluginHost.setEnabled(pluginId, true).catch(() => undefined)));
+          }}
+        />
+      ) : null}
       {demoResetConfirmationOpen && (
         <AppConfirmDialog
           title={t("demo.resetTitle")}

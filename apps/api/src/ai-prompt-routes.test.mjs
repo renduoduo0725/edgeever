@@ -460,6 +460,16 @@ describe("AI prompt template routes", () => {
       description: "压缩全文，提炼主题、结论与可执行结果",
       instruction: "Only this instruction was customized before the metadata migration.",
     });
+
+    const japanese = await app.request("/api/v1/ai/prompts?locale=ja", {}, environment);
+    const japaneseSummary = (await japanese.json()).prompts.find(
+      (prompt) => prompt.seedKey === "summarize",
+    );
+    expect(japaneseSummary).toMatchObject({
+      name: "要約する",
+      description: "テーマ、結論、実行できる結果に圧縮する",
+      instruction: "Only this instruction was customized before the metadata migration.",
+    });
   });
 
   test("restores prompt behavior from backup without overwriting factory identity", async () => {

@@ -6,11 +6,14 @@ import {
 } from "./memo-template-seeds.ts";
 
 describe("memo template seeds", () => {
-  test("provides five unique editable starter templates in both supported languages", () => {
+  test("provides five unique editable starter templates in Chinese, English, and Japanese", () => {
     expect(DEFAULT_MEMO_TEMPLATE_SEEDS).toHaveLength(5);
     expect(new Set(DEFAULT_MEMO_TEMPLATE_SEEDS.map((seed) => seed.key)).size).toBe(5);
     expect(localizeMemoTemplateSeed(DEFAULT_MEMO_TEMPLATE_SEEDS[0], "zh-CN").title).toBe("灵感速记");
     expect(localizeMemoTemplateSeed(DEFAULT_MEMO_TEMPLATE_SEEDS[0], "en-GB").title).toBe("Quick Spark");
+    expect(localizeMemoTemplateSeed(DEFAULT_MEMO_TEMPLATE_SEEDS[0], "ja-JP").title).toBe("ひらめきメモ");
+    expect(localizeMemoTemplateSeed(DEFAULT_MEMO_TEMPLATE_SEEDS[0], "ko-KR").title).toBe("Quick Spark");
+    expect(localizeMemoTemplateSeed(DEFAULT_MEMO_TEMPLATE_SEEDS[0], null).title).toBe("灵感速记");
   });
 
   test("uses workspace-scoped deterministic ids", () => {

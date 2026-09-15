@@ -1,0 +1,72 @@
+---
+import Container from "@/components/container.astro";
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout
+  title="プライバシーポリシー"
+  description="EdgeEver モバイルアプリと Web Clipper のプライバシーポリシー。"
+>
+  <Container>
+    <main class="mx-auto max-w-3xl py-12 text-slate-700 md:py-20">
+      <article class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm md:p-10">
+        <h1 class="text-3xl font-bold text-slate-950">EdgeEver プライバシーポリシー</h1>
+        <p class="mt-3 text-sm text-slate-500">施行日: 2026年7月18日</p>
+
+        <div class="mt-8 space-y-8 leading-7">
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">対象</h2>
+            <p class="mt-3">本ポリシーは EdgeEver の iOS / Android アプリと EdgeEver Web Clipper に適用されます。EdgeEver はオープンソースのセルフホスト型ノートアプリです。接続先のインスタンスはユーザーが選び、運用します。</p>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">取り扱うデータ</h2>
+            <ul class="mt-3 list-disc space-y-2 pl-6">
+              <li>モバイルアプリは、ユーザーがログイン時に入力したインスタンス URL、ユーザー名、パスワードを処理します。得られたセッション資格情報は端末の安全な領域に保存します。</li>
+              <li>ノートブック、ノート、タグ、添付は端末とユーザーの自前インスタンスの間で送受信されます。高速表示とオフライン編集のため、必要なローカル SQLite ミラー、下書き、同期キュー、設定を端末に置きます。</li>
+              <li>Web Clipper は、ユーザーが保存を選んだときだけ、ページタイトル、URL、選択範囲、または抽出した本文を処理します。インスタンス URL、API トークン、既定ノートブックはブラウザ拡張のローカルストレージに置きます。</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">利用と送信</h2>
+            <p class="mt-3">モバイルアプリと Web Clipper は、ユーザーが選んだ EdgeEver インスタンスへ直接接続します。プロジェクト運営者は、ノート、資格情報、クリップ内容を受け取る中継や集中サービスを運用していません。</p>
+            <p class="mt-3">広告、解析、追跡、テレメトリーはありません。広告プラットフォーム、データブローカー、その他第三者へ販売・共有しません。</p>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">権限とファイルアクセス</h2>
+            <ul class="mt-3 list-disc space-y-2 pl-6">
+              <li><strong>ネットワーク</strong>: ユーザーが選んだ EdgeEver インスタンスへのログインと同期。</li>
+              <li><strong>ファイル</strong>: ユーザーが取り込み、書き出し、添付のアップロードを選んだときだけ、システムのファイル選択を使います。</li>
+              <li><strong>activeTab</strong>: ユーザーが拡張機能で保存を実行したあとだけ、現在のタブにアクセスします。</li>
+              <li><strong>scripting</strong>: 現在のページで本文抽出スクリプトを実行します。</li>
+              <li><strong>storage</strong>: インスタンス URL、API トークン、既定ノートブックを端末内に保存します。</li>
+              <li><strong>任意のホスト権限</strong>: ユーザーが設定した EdgeEver インスタンスへのネットワークアクセスだけを許可します。</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">セキュリティと保持</h2>
+            <p class="mt-3">HTTPS の EdgeEver インスタンスを使い、アカウントと API トークンを保護してください。端末内のデータは、ログアウト、アプリデータの削除、アンインストールまで残ります。拡張の設定は、変更、拡張データの削除、アンインストールまで残ります。クラウド上のノートと添付はユーザー自身のインスタンスが保持し、そこで編集・削除できます。</p>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">Chrome Web Store Limited Use</h2>
+            <p class="mt-3">Chrome API から得た情報は、上記のユーザー向け Web クリップ機能にだけ使います。利用は Chrome Web Store User Data Policy（Limited Use を含む）に従います。</p>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">Firefox のデータ送信の開示</h2>
+            <p class="mt-3">Firefox パッケージは Mozilla の分類に従い、認証情報、閲覧アクティビティ、ウェブサイトの内容を申告しています。これは API トークン、現在のページ URL、ユーザーが選んだページ内容で、ユーザーが選んだ EdgeEver インスタンスへ送られます。プロジェクト運営者はこのデータを受け取りません。</p>
+          </section>
+
+          <section>
+            <h2 class="text-xl font-bold text-slate-900">連絡先</h2>
+            <p class="mt-3">本ポリシーや EdgeEver のデータ取り扱いについて質問がある場合は、<a class="text-teal-700 underline" href="https://github.com/tianma-if/edgeever/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a> からメンテナへ連絡してください。</p>
+          </section>
+        </div>
+      </article>
+    </main>
+  </Container>
+</Layout>

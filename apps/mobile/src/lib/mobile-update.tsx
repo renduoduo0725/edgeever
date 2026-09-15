@@ -47,7 +47,7 @@ export const MobileUpdateProvider = ({ children }: { children: ReactNode }) => {
   const activeCheckRef = useRef<Promise<void> | null>(null);
   const lastAutomaticCheckRef = useRef(0);
   const isSupported = !__DEV__ && Updates.isEnabled;
-  const english = resolvedLocale === "en-US";
+  const english = resolvedLocale !== "zh-CN";
   const installedVersion = Updates.runtimeVersion ?? Constants.expoConfig?.version ?? null;
 
   const showLinkError = useCallback(() => {

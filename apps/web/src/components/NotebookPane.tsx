@@ -389,7 +389,7 @@ const SyncStatusBar = ({
 
   return (
     <div
-      className={cn("mb-3 flex min-h-10 items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200", statusClassName)}
+      className={cn("flex h-8 items-center gap-2 rounded-md border px-3 transition-all duration-200", statusClassName)}
       role="status"
       aria-live="polite"
     >
@@ -418,7 +418,7 @@ const SyncStatusBar = ({
       </button>
       {summary.conflict > 0 && (
         <button
-          className="shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold text-amber-800 transition-colors hover:bg-card/70 disabled:opacity-50"
+          className="shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold leading-none text-amber-800 transition-colors hover:bg-card/70 disabled:opacity-50"
           type="button"
           disabled={!isOnline || isSyncing}
           onClick={onDiscardConflicts}
@@ -431,7 +431,7 @@ const SyncStatusBar = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-card/70 disabled:opacity-50 transition-colors"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-card/70 disabled:opacity-50 transition-colors"
                 type="button"
                 aria-label={t("notebookPane.syncNow")}
                 disabled={!isOnline || isSyncing}
@@ -668,7 +668,7 @@ export const NotebookPane = ({
       </TooltipProvider>
 
       {window.edgeeverDesktop?.isAvailable && (
-        <div className="px-3 pt-2">
+        <div className="px-3 pt-1.5">
           <SyncStatusBar
             summary={syncSummary}
             isOnline={isOnline}
@@ -680,10 +680,10 @@ export const NotebookPane = ({
         </div>
       )}
 
-      <div className="hidden shrink-0 px-3 pb-4 pt-4 lg:block">
-        <div className="flex overflow-hidden rounded-2xl border border-slate-200/90 bg-card shadow-[0_5px_16px_rgba(15,23,42,0.06)] transition-shadow duration-200 hover:shadow-[0_7px_20px_rgba(15,23,42,0.09)]">
+      <div className="hidden shrink-0 px-3 pb-2 pt-2 lg:block">
+        <div className="edgeever-create-memo-split flex overflow-hidden rounded-2xl border border-slate-200/90 bg-card shadow-[0_5px_16px_rgba(15,23,42,0.06)] transition-shadow duration-200 hover:shadow-[0_7px_20px_rgba(15,23,42,0.09)]">
           <button
-            className="group flex h-12 min-w-0 flex-1 items-center gap-3 px-3 text-left transition-colors duration-150 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex h-12 max-w-[calc(100%-2.25rem)] shrink-0 items-center gap-2 px-2.5 text-left transition-colors duration-150 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             type="button"
             aria-label={t("notebookPane.newMemo")}
             onClick={() => onCreateMemo()}
@@ -692,17 +692,17 @@ export const NotebookPane = ({
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_5px_12px_rgb(var(--brand-green-rgb)/0.22)] transition-transform duration-150 group-hover:scale-[1.03] group-focus-visible:ring-2 group-focus-visible:ring-emerald-500/70 group-focus-visible:ring-offset-2">
               <Plus className="h-5 w-5" />
             </span>
-            <span className="min-w-0 truncate text-sm font-semibold text-slate-950">{t("notebookPane.newMemo")}</span>
+            <span className="whitespace-nowrap text-sm font-semibold text-slate-950">{t("notebookPane.newMemo")}</span>
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="group relative flex h-12 w-[6.25rem] shrink-0 items-center justify-center gap-1 px-2 text-xs font-medium text-slate-600 transition-colors before:absolute before:inset-y-2.5 before:left-0 before:w-px before:bg-slate-200 hover:bg-emerald-50/70 hover:text-emerald-700 focus-visible:bg-emerald-50/70 focus-visible:text-emerald-700 focus-visible:outline-none data-[state=open]:bg-emerald-50 data-[state=open]:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="group relative flex h-12 min-w-9 flex-1 items-center justify-center gap-0.5 px-1.5 text-xs font-medium text-slate-600 transition-colors before:absolute before:inset-y-2.5 before:left-0 before:w-px before:bg-slate-200 hover:bg-emerald-50/70 hover:text-emerald-700 focus-visible:bg-emerald-50/70 focus-visible:text-emerald-700 focus-visible:outline-none data-[state=open]:bg-emerald-50 data-[state=open]:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
                 aria-label={t("diagram.createType")}
                 disabled={!canCreateMemo || isCreatingMemo}
               >
-                <span className="truncate">{t("diagram.moreTypes")}</span>
+                <span className="edgeever-create-memo-split__more-label min-w-0 truncate">{t("diagram.moreTypes")}</span>
                 <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-180" aria-hidden="true" />
               </button>
             </DropdownMenuTrigger>
@@ -727,7 +727,7 @@ export const NotebookPane = ({
       >
         {showTemplateEntry && (
           <button
-            className="mb-3 hidden h-8 w-full items-center justify-start gap-2 rounded-md px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
+            className="mb-1 hidden h-8 w-full items-center justify-start gap-2 rounded-md px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
             type="button"
             title={t("templates.useTemplate")}
             onClick={onOpenTemplates}
@@ -738,7 +738,7 @@ export const NotebookPane = ({
           </button>
         )}
 
-        <nav className="mb-3 space-y-1" aria-label={t("companion.primaryNavigation")}>
+        <nav className="mb-1 space-y-1" aria-label={t("companion.primaryNavigation")}>
           <SidebarNavButton
             active={!companionActive && view === "notebook" && selectedNotebookId === null}
             icon={<LayoutList className="h-4 w-4" />}
@@ -860,7 +860,7 @@ export const NotebookPane = ({
                       </button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
-                  <TooltipContent side="right">{t("diagram.moreTypes")}</TooltipContent>
+                  <TooltipContent side="right">{t("diagram.createType")}</TooltipContent>
                 </Tooltip>
                 <DropdownMenuContent align="start" side="right" sideOffset={8} className="w-52">
                   <CreateMemoTypeItems onCreateMemo={onCreateMemo} />

@@ -417,6 +417,19 @@ describe("release automation", () => {
     });
   });
 
+  test("persists localized in-app release changes when preparing versions", () => {
+    const releaseSource = readFileSync(new URL("./release.mjs", import.meta.url), "utf8");
+    const updateCall = releaseSource.indexOf("const versionPaths = updateReleaseVersions({");
+    const localizedChanges = releaseSource.indexOf(
+      "localizedChanges: options.localizedChanges",
+      updateCall,
+    );
+    const updateCallEnd = releaseSource.indexOf("});", updateCall);
+    expect(updateCall).toBeGreaterThanOrEqual(0);
+    expect(localizedChanges).toBeGreaterThan(updateCall);
+    expect(localizedChanges).toBeLessThan(updateCallEnd);
+  });
+
   test("builds a bilingual umbrella Issue", () => {
     const body = buildIssueBody({
       changesEn: ["Parallel checks."],

@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, HashRouter } from "react-router";
 import { registerSW } from "virtual:pwa-register";
 import { App } from "./app/App";
-import "./i18n";
+import { bootstrapI18n } from "./i18n";
 import { emitPwaUpdateNotice } from "./lib/pwa-update-notice";
 import { withEnvironmentTitlePrefix } from "./lib/environment-title";
 import { initializeTheme, ThemeProvider } from "./components/ThemeProvider";
@@ -136,6 +136,7 @@ const mountApp = () => {
 };
 
 const bootstrap = async () => {
+  await bootstrapI18n();
   if (import.meta.env.DEV) {
     const reloading = await clearDevelopmentPwaState();
     if (reloading) {

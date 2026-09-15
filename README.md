@@ -5,7 +5,7 @@
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt)](https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social)
 [![Sponsor on Afdian](https://img.shields.io/badge/Sponsor-Afdian-946ce6?style=social&logo=github-sponsors)](https://afdian.com/a/tianma-if)
 
-[简体中文](README.zh-CN.md) | English
+[简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | English | [日本語](README.ja.md)
 
 > **EdgeEver: An open-source, AI-native knowledge base & portable Evernote alternative.**
 
@@ -167,7 +167,7 @@ Welcome to the EdgeEver community. Join us to discuss the EdgeEver experience, r
 
 ## Plugins and Themes
 
-EdgeEver supports device-local plugins and code-free themes on Web and desktop, installable from the Plugin Marketplace, GitHub, or a Manifest URL. The official marketplace only lists free and open-source plugins; this requirement does not apply to direct installation from GitHub or a Manifest URL. Developers can use `@edgeever/plugin-api`; see the [plugin development guide](docs/plugin-development.md) and [marketplace submission policy](docs/plugin-marketplace-policy.md).
+EdgeEver supports plugins and code-free themes on Web and desktop, installable from the Plugin Marketplace, GitHub, or a Manifest URL. The install list follows the current workspace across browsers and desktop apps; each client downloads and verifies packages locally. Native Android and iOS apps do not run plugins. Settings and secrets stay on the current device. The official marketplace only lists free and open-source plugins; this requirement does not apply to direct installation from GitHub or a Manifest URL. Developers can use `@edgeever/plugin-api`; see the [plugin development guide](docs/plugin-development.md) and [marketplace submission policy](docs/plugin-marketplace-policy.md).
 
 ## Tech Stack
 

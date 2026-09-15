@@ -143,6 +143,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      includeAssets: [],
       includeManifestIcons: false,
       manifest: {
         name: "EdgeEver",
@@ -175,31 +176,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+        // Install-time precache excludes the app shell. The plugin still
+        // injects the web manifest so the app stays installable; other
+        // caches fill on first use.
+        globPatterns: [],
+        globIgnores: ["**/*"],
         cleanupOutdatedCaches: true,
-        additionalManifestEntries: [
-          {
-            revision: buildId,
-            url: `/index.html?edgeever-offline-shell=${encodeURIComponent(buildId)}`,
-          },
-        ],
-        globIgnores: [
-          "index.html",
-          // Noto Sans SC is used only by the on-demand print entry. Precaching every
-          // CJK unicode-range shard adds ~4.5 MiB to every PWA installation.
-          "**/noto-sans-sc-*.woff2",
-          "**/*beautiful-mermaid*.js",
-          "**/*mermaid.core-*.js",
-          "**/vendor-mermaid-*.js",
-          "**/*Diagram-*.js",
-          "**/*DiagramEditorPane-*.js",
-          "**/vendor-x6-*.js",
-          "**/vendor-codemirror-*.js",
-          // PDF.js is loaded only when a PDF preview or thumbnail is rendered.
-          // Keep its runtime out of the install-time app-shell precache and cache
-          // it after first use instead.
-          "**/vendor~pdf-*.js",
-        ],
         navigateFallback: null,
         navigationPreload: true,
         runtimeCaching: [
@@ -214,9 +196,6 @@ export default defineConfig({
               cacheableResponse: {
                 statuses: [0, 200],
               },
-              precacheFallback: {
-                fallbackURL: `/index.html?edgeever-offline-shell=${encodeURIComponent(buildId)}`,
-              },
             },
           },
           {
@@ -230,6 +209,17 @@ export default defineConfig({
               expiration: {
                 maxEntries: 500,
                 maxAgeSeconds: 60 * 60 * 24 * 90,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url }) => /\/assets\/i18n-ja-/.test(url.pathname),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "edgeever-optional-locales",
+              expiration: {
+                maxEntries: 8,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
               },
             },
           },
@@ -285,14 +275,14 @@ export default defineConfig({
     emptyOutDir: true,
     // ELK is distributed as one ~1.6 MiB module by beautiful-mermaid. It is
     // loaded only when a diagram is rendered and is excluded from HTML
-    // modulepreload and PWA precache; verify-web-performance.mjs enforces
-    // those constraints for every chunk above Vite's default 500 KiB limit.
+    // modulepreload; verify-web-performance.mjs enforces those constraints
+    // for every chunk above Vite's default 500 KiB limit.
     chunkSizeWarningLimit: OPTIONAL_CHUNK_WARNING_LIMIT_KB,
     modulePreload: isDesktopBuild
       ? false
       : {
           resolveDependencies: (_filename, dependencies) => dependencies.filter((dependency) =>
-            !/(?:vendor-code-highlight|vendor-(?:mermaid|D3|tiptap|prosemirror|floating|codemirror|x6|zod)|vendor-radix(?!-slot)|ui-primitives|ui-button-tooltip)/.test(dependency),
+            !/(?:vendor-code-highlight|vendor-(?:mermaid|D3|tiptap|prosemirror|floating|codemirror|x6|zod)|vendor-radix(?!-slot)|ui-primitives|ui-button-tooltip|i18n-ja-)/.test(dependency),
           ),
         },
     rolldownOptions: {
@@ -323,6 +313,11 @@ export default defineConfig({
               // that graph atomic, but leave TipTap's lightweight adapter in
               // the regular extension group so plain mobile code blocks do not
               // inherit the highlighter as a startup dependency.
+            },
+            {
+              name: "i18n-ja",
+              test: /[\\/]i18n[\\/](?:resources[\\/])?ja\.ts$/,
+              priority: 41,
             },
             {
               name: "vendor-react",

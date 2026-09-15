@@ -39,6 +39,7 @@ const MOBILE_LOCALE_OPTIONS: Array<{ label: string; value: MobileLocalePreferenc
   { label: "跟随系统", value: "system" },
   { label: "简体中文", value: "zh-CN" },
   { label: "English", value: "en-US" },
+  { label: "日本語", value: "ja" },
 ];
 type SettingsTab = "general" | "account" | "system";
 export type MobileLocaleMode = MobileLocalePreference;

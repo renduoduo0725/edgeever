@@ -1,13 +1,23 @@
 {
-  "version": "1.70.0",
+  "version": "1.73.0",
   "changes": {
     "en-US": [
-      "Replace the Xiaohongshu and X/Twitter factory AI prompts with Extract tasks and Continue writing. Opening the assistant on a whole note now starts on a custom instruction. After upgrade, those two factory presets—including edited copies—are removed; prompts you created yourself are kept.",
-      "Keep table layout stable when switching editor themes, give themes original four-character Chinese names, and balance desktop editor gutters so the reading column fills leftover width."
+      "Capture a screenshot from the desktop tray or menu bar and save it as a new note. The macOS menu-bar icon now uses the cat brand mark.",
+      "Give desktop notes even Evernote-like reading gutters, including when a scrollbar is visible.",
+      "Tighten the notebook sidebar so sync status, create, templates, all notes, and the notebook list sit closer together.",
+      "Keep the web app installable without downloading the full interface up front; pages cache as you use them."
     ],
     "zh-CN": [
-      "内置 AI 提示改为笔记工作流：用「提取待办」和「继续写作」替换小红书、推特风格模板；对整篇笔记打开助手时默认进入自定义指令。升级后这两个出厂模板（含已编辑版本）会被移除，自建提示词不受影响。",
-      "切换编辑器主题时表格不再变形；主题使用独立四字中文名；桌面编辑区左右留白更均衡，阅读栏会填满中间剩余宽度。"
+      "桌面端可从托盘或菜单栏截图并保存为新笔记。macOS 菜单栏图标改为猫咪品牌图形。",
+      "桌面笔记左右留白更接近印象笔记，出现滚动条时两侧仍保持对称。",
+      "收紧笔记本侧栏间距，同步状态、新建、模板、全部笔记和笔记本列表更紧凑。",
+      "网页版安装为应用时不再预下载整套界面，改为使用各页面时再缓存。"
+    ],
+    "ja": [
+      "デスクトップのトレイまたはメニューバーからスクリーンショットを撮り、新しいノートとして保存できます。macOS のメニューバーアイコンは猫のブランドマークになりました。",
+      "デスクトップのノートに Evernote に近い左右余白を付け、スクロールバーが出ても左右が揃うようにしました。",
+      "ノートブックサイドバーの余白を詰め、同期状態・作成・テンプレート・すべてのノート・ノートブック一覧を近づけました。",
+      "インストール可能な Web アプリは導入時に全画面を先読みしなくなり、使うページからキャッシュします。"
     ]
   }
 }

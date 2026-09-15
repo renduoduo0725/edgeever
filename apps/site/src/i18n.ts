@@ -1,28 +1,84 @@
-export type SiteLocale = "zh-CN" | "en-US";
+import { jaSiteCopy, jaSiteTagline } from "./i18n-ja";
+
+export const siteLocales = ["zh-CN", "en-US", "ja"] as const;
+export type SiteLocale = (typeof siteLocales)[number];
 
 export const defaultSiteLocale: SiteLocale = "zh-CN";
+export const unmatchedSiteLocale: SiteLocale = "en-US";
 export const siteLocaleStorageKey = "edgeever.site.locale";
 export const siteLocaleDataAttribute = "data-edgeever-site-locale";
+
+export const siteLocalePrefixes: Record<SiteLocale, string> = {
+  "zh-CN": "",
+  "en-US": "/en",
+  ja: "/ja",
+};
+
+export const siteLocaleLabels: Record<SiteLocale, string> = {
+  "zh-CN": "简体中文",
+  "en-US": "English",
+  ja: "日本語",
+};
+
 export const siteTaglines = {
   "zh-CN": "开源、原生支持 AI、自由部署（Cloudflare 免费额度 / Docker）的自托管「印象笔记」替代方案",
   "en-US": "Open-source, AI-native, self-hosted Evernote alternative with Cloudflare & Docker deployment.",
+  ja: jaSiteTagline,
 } as const satisfies Record<SiteLocale, string>;
 
-export const getSiteLocale = (pathname: string): SiteLocale => (pathname === "/en" || pathname.startsWith("/en/") ? "en-US" : "zh-CN");
+const localePrefixPattern = /^\/(en|ja)(?=\/|$)/;
+
+export const stripSiteLocalePrefix = (path: string) => {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return normalizedPath.replace(localePrefixPattern, "") || "/";
+};
+
+export const matchSiteLocale = (locale: string | null | undefined): SiteLocale | null => {
+  if (!locale) {
+    return null;
+  }
+
+  const normalized = locale.trim().replaceAll("_", "-").toLowerCase();
+
+  if (normalized === "zh" || normalized.startsWith("zh-")) {
+    return "zh-CN";
+  }
+
+  if (normalized === "en" || normalized.startsWith("en-")) {
+    return "en-US";
+  }
+
+  if (normalized === "ja" || normalized.startsWith("ja-")) {
+    return "ja";
+  }
+
+  return null;
+};
+
+export const getSiteLocale = (pathname: string): SiteLocale => {
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    return "en-US";
+  }
+
+  if (pathname === "/ja" || pathname.startsWith("/ja/")) {
+    return "ja";
+  }
+
+  return "zh-CN";
+};
 
 export const getLocalizedPath = (locale: SiteLocale, path: string) => {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const barePath = stripSiteLocalePrefix(path);
+  const prefix = siteLocalePrefixes[locale];
 
-  if (locale === "zh-CN") {
-    return normalizedPath === "/en" ? "/" : normalizedPath.replace(/^\/en(?=\/|$)/, "") || "/";
+  if (!prefix) {
+    return barePath;
   }
 
-  if (normalizedPath === "/") {
-    return "/en/";
-  }
-
-  return normalizedPath.startsWith("/en/") ? normalizedPath : `/en${normalizedPath}`;
+  return barePath === "/" ? `${prefix}/` : `${prefix}${barePath}`;
 };
+
+export const isExplicitSiteLocalePath = (pathname: string) => localePrefixPattern.test(pathname);
 
 export const siteCopy = {
   "zh-CN": {
@@ -48,6 +104,7 @@ export const siteCopy = {
       flomoMigration: "从 Flomo 迁移",
       advancedPlay: "搭配AI Agent的玩法",
       blog: "博客",
+      backToBlog: "返回博客",
       contact: "联系我们",
       privacy: "隐私政策",
       demo: "在线演示",
@@ -64,6 +121,8 @@ export const siteCopy = {
       popHighlight: "印象笔记开源经典平替 · 全平台客户端覆盖",
       demo: "在线演示",
       agentInstall: "一键 AI 部署",
+      getApps: "获取客户端：",
+      clipper: "剪藏插件",
       windows: "Windows",
       linux: "Linux",
       imageAlt: "EdgeEver product preview",
@@ -316,6 +375,7 @@ export const siteCopy = {
       flomoMigration: "Migrate from Flomo",
       advancedPlay: "AI Agent plays",
       blog: "Blog",
+      backToBlog: "Back to blog",
       contact: "Contact",
       privacy: "Privacy",
       demo: "Demo",
@@ -332,6 +392,8 @@ export const siteCopy = {
       popHighlight: "Open-Source Evernote Alternative · Apps Across Platforms",
       demo: "Live demo",
       agentInstall: "Deploy with AI",
+      getApps: "Get Apps:",
+      clipper: "Clipper",
       windows: "Windows",
       linux: "Linux",
       imageAlt: "EdgeEver product preview",
@@ -561,4 +623,5 @@ export const siteCopy = {
       ],
     },
   },
+  ja: jaSiteCopy,
 } as const;

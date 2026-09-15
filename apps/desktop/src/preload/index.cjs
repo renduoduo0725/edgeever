@@ -64,4 +64,14 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
     ipcRenderer.send("desktop:renderer-ready");
     return () => ipcRenderer.removeListener("desktop:import-markdown", listener);
   },
+  onImportScreenshot: (callback) => {
+    const listener = (_event, payload) => {
+      const bytes = payload?.bytes instanceof Uint8Array
+        ? payload.bytes
+        : new Uint8Array(payload?.bytes || []);
+      callback({ ...payload, bytes });
+    };
+    ipcRenderer.on("desktop:import-screenshot", listener);
+    return () => ipcRenderer.removeListener("desktop:import-screenshot", listener);
+  },
 }));

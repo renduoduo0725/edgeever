@@ -841,6 +841,8 @@ describe("Cloudflare deployment entrypoints", () => {
   test("public deployment documentation exposes only Fork and Agent paths", () => {
     const englishReadme = readRepositoryFile("README.md");
     const chineseReadme = readRepositoryFile("README.zh-CN.md");
+    const traditionalChineseReadme = readRepositoryFile("README.zh-TW.md");
+    const japaneseReadme = readRepositoryFile("README.ja.md");
 
     expect(englishReadme).not.toContain("deploy.workers.cloudflare.com");
     expect(englishReadme).not.toContain("Option C: Manual Deployment");
@@ -848,6 +850,12 @@ describe("Cloudflare deployment entrypoints", () => {
     expect(chineseReadme).not.toContain("deploy.workers.cloudflare.com");
     expect(chineseReadme).not.toContain("方案 C：手动部署");
     expect(chineseReadme).toContain("Fork https://github.com/tianma-if/edgeever");
+    expect(traditionalChineseReadme).not.toContain("deploy.workers.cloudflare.com");
+    expect(traditionalChineseReadme).not.toContain("方案 C：手動部署");
+    expect(traditionalChineseReadme).toContain("Fork https://github.com/tianma-if/edgeever");
+    expect(japaneseReadme).not.toContain("deploy.workers.cloudflare.com");
+    expect(japaneseReadme).not.toContain("方案 C：手動導入");
+    expect(japaneseReadme).toContain("Fork https://github.com/tianma-if/edgeever");
   });
 
   test("product site deployment prompts mirror the root READMEs", () => {

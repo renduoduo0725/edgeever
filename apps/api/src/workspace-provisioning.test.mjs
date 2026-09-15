@@ -72,4 +72,36 @@ describe("workspace provisioning", () => {
     expect(calls.filter((call) => call.sql.includes("INSERT OR IGNORE INTO memo_templates"))).toHaveLength(5);
     expect(calls.some((call) => call.sql.includes("INSERT OR IGNORE INTO ai_prompt_templates"))).toBe(true);
   });
+
+  test("seeds Japanese templates when Accept-Language prefers Japanese", () => {
+    const calls = [];
+    const db = {
+      prepare: (sql) => statement(sql, calls),
+    };
+
+    createWorkspaceDefaultSeedStatements(
+      db,
+      "ws_ja",
+      "2026-08-14T00:00:00.000Z",
+      "ja-JP,ja;q=0.9",
+    );
+
+    expect(calls[0].values).toContain("ひらめきメモ");
+  });
+
+  test("seeds English templates when Accept-Language is unmatched", () => {
+    const calls = [];
+    const db = {
+      prepare: (sql) => statement(sql, calls),
+    };
+
+    createWorkspaceDefaultSeedStatements(
+      db,
+      "ws_fr",
+      "2026-08-14T00:00:00.000Z",
+      "fr-FR,fr;q=0.9",
+    );
+
+    expect(calls[0].values).toContain("Quick Spark");
+  });
 });

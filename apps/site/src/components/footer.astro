@@ -16,10 +16,16 @@ const copy = siteCopy[locale].nav;
         href="https://www.dujin.org/"
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={locale === "en-US" ? "Thanks to independent blogger Dujin for product feedback and tutorials" : "感谢独立博主缙哥哥在项目成长中提出的宝贵建议与教程分享"}
+        aria-label={
+          locale === "zh-CN"
+            ? "感谢独立博主缙哥哥在项目成长中提出的宝贵建议与教程分享"
+            : locale === "ja"
+              ? "独立ブロガー Dujin さんへの謝辞。製品への助言とチュートリアルに感謝します"
+              : "Thanks to independent blogger Dujin for product feedback and tutorials"
+        }
         class="inline-flex min-h-11 sm:min-h-0 items-center hover:text-emerald-700 transition-colors"
       >
-        {locale === "en-US" ? "Thanks" : "特别致谢"}
+        {locale === "zh-CN" ? "特别致谢" : locale === "ja" ? "謝辞" : "Thanks"}
       </a>
       <span class="text-slate-300">•</span>
       <a href={getLocalizedPath(locale, "/self-hosted-evernote-alternative")} class="inline-flex min-h-11 sm:min-h-0 items-center hover:text-emerald-700 transition-colors">

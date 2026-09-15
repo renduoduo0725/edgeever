@@ -6,7 +6,9 @@ import {
   flattenNotebooks,
   getNotebookAncestorIds,
   getNotebookParentIdSet,
+  getResolvedMobileLocale,
   getTextSearchMatches,
+  isEnglishMobileLocale,
   markdownToLocalText,
   parseTags,
 } from "./workspace-utils";
@@ -56,5 +58,31 @@ describe("mobile workspace utilities", () => {
   test("formats historical memo details with a year and handles invalid timestamps", () => {
     expect(formatMemoDetailDate("2010-08-30T12:34:00.000Z", "en-US")).toContain("2010");
     expect(formatMemoDetailDate("not-a-date", "zh-CN")).toBe("");
+  });
+
+  test("treats explicit locale preferences as the resolved UI locale", () => {
+    expect(getResolvedMobileLocale("zh-CN")).toBe("zh-CN");
+    expect(getResolvedMobileLocale("en-US")).toBe("en-US");
+    expect(isEnglishMobileLocale("zh-CN")).toBe(false);
+    expect(isEnglishMobileLocale("en-US")).toBe(true);
+  });
+
+  test("resolves Japanese system languages to Japanese and unmatched languages to English", () => {
+    const original = Intl.DateTimeFormat.prototype.resolvedOptions;
+    const withLocale = (locale: string) => {
+      Intl.DateTimeFormat.prototype.resolvedOptions = function resolvedOptions() {
+        return { ...original.call(this), locale };
+      };
+    };
+    try {
+      withLocale("ja-JP");
+      expect(getResolvedMobileLocale("system")).toBe("ja");
+      expect(isEnglishMobileLocale("system")).toBe(true);
+      withLocale("fr-FR");
+      expect(getResolvedMobileLocale("system")).toBe("en-US");
+      expect(isEnglishMobileLocale("system")).toBe(true);
+    } finally {
+      Intl.DateTimeFormat.prototype.resolvedOptions = original;
+    }
   });
 });

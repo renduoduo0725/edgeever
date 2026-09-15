@@ -1449,6 +1449,7 @@ const releaseMain = async (options) => {
       mobileRebuild: mobilePlan.rebuild,
       changesEn: options.changesEn,
       changesZh: options.changesZh,
+      localizedChanges: options.localizedChanges,
     });
     run("git", ["add", ...versionPaths]);
     run("git", ["diff", "--cached", "--check"]);

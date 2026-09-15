@@ -1,9 +1,10 @@
 ---
 import { Icon } from "astro-icon/components";
 import { deploymentPrompts, manualDeploymentCopy } from "@/deployment-prompts";
+import { getLocalizedPath } from "@/i18n";
 
 const { locale = "zh-CN" } = Astro.props;
-const isEnglish = locale === "en-US";
+const isEnglish = locale !== "zh-CN";
 
 const copy = isEnglish
   ? {
@@ -24,7 +25,7 @@ const copy = isEnglish
       dockerTitle: "One-command Docker self-hosting",
       dockerPrerequisite: "Install Docker with Docker Compose v2 before running the command.",
       dockerGuide: "Open the complete Docker deployment guide",
-      dockerGuideHref: "/en/docker-deploy",
+      dockerGuideHref: getLocalizedPath(locale, "/docker-deploy"),
       dockerCommandLabel: "COMMAND",
       copyCommand: "Copy command",
       promptLabel: "PROMPT",

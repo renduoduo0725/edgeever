@@ -438,6 +438,20 @@ html[data-edgeever-extension-theme] kbd {
   background: var(--workspace-sidebar);
 }
 
+.edgeever-create-memo-split {
+  container-type: inline-size;
+}
+
+.edgeever-create-memo-split__more-label {
+  display: inline;
+}
+
+@container (max-width: 11.749rem) {
+  .edgeever-create-memo-split__more-label {
+    display: none;
+  }
+}
+
 .edgeever-workspace-memo-list {
   border-color: var(--workspace-divider);
   background: var(--workspace-memo-list);

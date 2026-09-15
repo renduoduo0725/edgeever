@@ -13,6 +13,7 @@ const loginSurfaces = [
 const reviewNotes = [
   "apps/mobile/store-assets/app-store/metadata.en-US.md",
   "apps/mobile/store-assets/app-store/metadata.zh-CN.md",
+  "apps/mobile/store-assets/app-store/metadata.ja.md",
 ];
 
 describe("App Review login", () => {
@@ -39,5 +40,6 @@ describe("App Review login", () => {
     }
     expect(read("apps/mobile/store-assets/app-store/metadata.en-US.md")).toContain("Username: ee-demo");
     expect(read("apps/mobile/store-assets/app-store/metadata.zh-CN.md")).toContain("用户名：ee-demo");
+    expect(read("apps/mobile/store-assets/app-store/metadata.ja.md")).toContain("Username: ee-demo");
   });
 });

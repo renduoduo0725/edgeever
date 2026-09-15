@@ -718,7 +718,8 @@ export const zhCN = {
     sourcePlaceholder: "https://github.com/owner/edgeever-plugin",
     install: "安装",
     installing: "安装中…",
-    empty: "当前设备尚未安装插件或主题。",
+    empty: "这个工作区还没有安装插件或主题。",
+    syncDescription: "安装清单会随这个工作区在 Web 和桌面端之间同步，每个浏览器或桌面应用会自行下载并校验插件包。Android 和 iOS 应用不运行插件。设置和密钥仍只保存在当前设备。",
     permissions: {
       publicNetwork: "读取任意公开网站内容",
     },

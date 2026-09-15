@@ -13,7 +13,21 @@ export default defineConfig({
     port: 4321,
     host: "127.0.0.1"
   },
-  integrations: [mdx(), sitemap(), icon(), react()],
+  integrations: [
+    mdx(),
+    sitemap({
+      i18n: {
+        defaultLocale: "zh-CN",
+        locales: {
+          "zh-CN": "zh-CN",
+          en: "en-US",
+          ja: "ja",
+        },
+      },
+    }),
+    icon(),
+    react(),
+  ],
   redirects: {
     "/guides/evernote-migration": "/blog/evernote-migration-guide",
     "/guides/memos-migration": "/blog/memos-migration-guide",
@@ -21,6 +35,9 @@ export default defineConfig({
     "/en/guides/evernote-migration": "/en/blog/evernote-migration-guide",
     "/en/guides/memos-migration": "/en/blog/memos-migration-guide",
     "/en/guides/notion-migration": "/en/blog/notion-migration-guide",
+    "/ja/guides/evernote-migration": "/en/blog/evernote-migration-guide",
+    "/ja/guides/memos-migration": "/en/blog/memos-migration-guide",
+    "/ja/guides/notion-migration": "/en/blog/notion-migration-guide",
   },
   vite: {
     plugins: [tailwindcss()],

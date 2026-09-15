@@ -13,6 +13,7 @@
     "./image-gallery-editing": "./src/image-gallery-editing.ts",
     "./native-image-gallery": "./src/native-image-gallery.ts",
     "./i18n": "./src/i18n/index.ts",
+    "./i18n/locales": "./src/i18n/locales.ts",
     "./memo-template-seeds": "./src/memo-template-seeds.ts",
     "./mathematics": "./src/mathematics.ts",
     "./mobile-editor": "./src/mobile-editor.ts",

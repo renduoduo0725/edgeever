@@ -34,6 +34,8 @@ import type {
   MemoTemplate,
   ScheduledTask,
   ScheduledTaskRun,
+  WorkspaceExtension,
+  WorkspaceExtensionUpsertInput,
   Notebook,
   Resource,
   ResourceListItem,
@@ -197,6 +199,14 @@ export type TemplateResponse = {
 
 export type ListScheduledTasksResponse = {
   tasks: ScheduledTask[];
+};
+
+export type ListWorkspaceExtensionsResponse = {
+  extensions: WorkspaceExtension[];
+};
+
+export type WorkspaceExtensionResponse = {
+  extension: WorkspaceExtension;
 };
 
 export type ScheduledTaskResponse = {
@@ -1090,6 +1100,20 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
       const suffix = search.size > 0 ? `?${search.toString()}` : "";
       return request<ListScheduledTasksResponse>(`/api/v1/scheduled-tasks${suffix}`);
     },
+
+    listWorkspaceExtensions: () => request<ListWorkspaceExtensionsResponse>("/api/v1/workspace-extensions"),
+
+    upsertWorkspaceExtension: (extensionId: string, payload: WorkspaceExtensionUpsertInput) =>
+      request<WorkspaceExtensionResponse>(
+        `/api/v1/workspace-extensions/${encodeURIComponent(extensionId)}`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
+
+    deleteWorkspaceExtension: (extensionId: string) =>
+      request<WorkspaceExtensionResponse>(
+        `/api/v1/workspace-extensions/${encodeURIComponent(extensionId)}`,
+        { method: "DELETE" },
+      ),
 
     listScheduledTaskRunHistory: (offset = 0, limit = 50) => {
       const search = new URLSearchParams({ offset: String(offset), limit: String(limit) });

@@ -466,7 +466,7 @@ export const WorkspaceScreen = ({
   const openRichEditor = useCallback((memo: MemoDetail, initialFocus: "body" | "title" = "body") => {
     if (hasDiagramDocumentMarker(memo.contentMarkdown)) {
       Alert.alert(
-        resolvedLocale === "en-US" ? "View-only diagram" : "图表暂为只读",
+        resolvedLocale !== "zh-CN" ? "View-only diagram" : "图表暂为只读",
         resolvedLocale === "en-US"
           ? "Visual diagram editing is currently available on Web and desktop."
           : "可视化图表目前请在 Web 或桌面端编辑。"
@@ -1069,7 +1069,7 @@ export const WorkspaceScreen = ({
       memo.contentJson,
       target,
       resource.filename || filename,
-      resolvedLocale === "en-US" ? "Attachment: " : "附件："
+      resolvedLocale !== "zh-CN" ? "Attachment: " : "附件："
     );
     await localUpdateMemoMutation.mutateAsync({
       memo,

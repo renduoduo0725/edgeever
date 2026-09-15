@@ -13,7 +13,7 @@ const LOCALE_PREFERENCE_KEY = "edgeever.mobile.localePreference";
 const THEME_PREFERENCE_KEY = "edgeever.mobile.themePreference";
 
 export type MobileMemoListDensity = "preview" | "compact";
-export type MobileLocalePreference = "system" | "zh-CN" | "en-US";
+export type MobileLocalePreference = "system" | "zh-CN" | "en-US" | "ja";
 export type MobileThemePreference = "system" | "light" | "dark";
 
 export const readMobileMemoListDensity = async (): Promise<MobileMemoListDensity> => {
@@ -44,7 +44,8 @@ export const readMobileThemePreference = async (): Promise<MobileThemePreference
 
 export const writeMobileThemePreference = (theme: MobileThemePreference) => AsyncStorage.setItem(THEME_PREFERENCE_KEY, theme);
 
-const isMobileLocalePreference = (value: unknown): value is MobileLocalePreference => value === "system" || value === "zh-CN" || value === "en-US";
+const isMobileLocalePreference = (value: unknown): value is MobileLocalePreference =>
+  value === "system" || value === "zh-CN" || value === "en-US" || value === "ja";
 
 export const readMobileAiAssistantLastAction = async (
   scope: AiAssistantLastActionScope,

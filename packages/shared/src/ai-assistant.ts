@@ -106,8 +106,12 @@ export const resolveAiAssistantOpenAction = ({
   prompts,
 });
 
-export const getDefaultAiTargetLanguage = (locale: string | undefined): AiTargetLanguage =>
-  locale?.toLowerCase().startsWith("zh") ? "en" : "zh-CN";
+export const getDefaultAiTargetLanguage = (locale: string | undefined): AiTargetLanguage => {
+  const normalized = locale?.toLowerCase() ?? "";
+  if (normalized.startsWith("zh")) return "en";
+  if (normalized.startsWith("ja")) return "ja";
+  return "zh-CN";
+};
 
 export const AI_ASSISTANT_LAST_ACTION_STORAGE_KEY = "edgeever.aiAssistant.lastAction";
 

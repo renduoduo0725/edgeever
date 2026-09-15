@@ -81,6 +81,7 @@ interface EdgeEverDesktopBridge {
     scheduledFor: string;
   }) => void | Promise<void>): () => void;
   onImportMarkdown(callback: (payload: { name: string; content: string }) => void): () => void;
+  onImportScreenshot?(callback: (payload: { name: string; type: string; title?: string; bytes: Uint8Array }) => void): () => void;
 }
 
 interface DesktopUpdateStatus {
