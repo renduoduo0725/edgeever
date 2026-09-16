@@ -45,7 +45,7 @@ S3 兼容对象存储两种后端。
 
 ## 兼容性要求
 
-- 保持 `/api/*`、`/mcp`、`/api/openapi.json` 和 `/api/health` 不变。
+- 保持 `/api/*`、`/mcp`、`/api/health` 以及探活用的 `/api/openapi.json` 不变。`/api/openapi.json` 不是 API 目录。
 - 继续追加 `migrations/*.sql`，禁止为 Docker 分叉数据库结构。
 - 根密钥必须通过环境变量或 Docker secrets 注入，不能写入镜像或数据库。自托管运行入口可以把副本写在 `/data`（SQLite 之外），以便 NAS/GUI 升级丢掉容器环境变量后仍能加密凭据。Cloudflare 继续只使用 Worker Secret。对象存储 Secret 与个人 AI 模型 API Key 默认从已有实例认证 Secret 派生各自用途的专用密钥；高级 AI 密钥轮换场景可选用 `EDGE_EVER_CREDENTIALS_ENCRYPTION_KEY` 覆盖。所有凭据在数据库中只能保存为 AES-GCM 密文。
 - 将 `/data` 作为唯一必需的应用持久化路径，方便 NAS 用户备份一个卷。

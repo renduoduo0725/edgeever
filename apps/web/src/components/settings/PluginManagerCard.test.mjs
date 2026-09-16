@@ -25,6 +25,13 @@ describe("plugin manager card layout", () => {
     expect(catalogCard).toContain("getPluginCatalogRepositoryUrl(item)");
   });
 
+  test("keeps marketplace description below the title row instead of beside header actions", () => {
+    expect(source).toContain("{t(\"plugins.syncDescription\")}");
+    expect(source).toContain('<div className="flex items-center justify-between gap-3">');
+    expect(source).toContain('<p className="text-xs leading-5 text-slate-500">{t("plugins.syncDescription")}</p>');
+    expect(source).not.toContain("flex items-start justify-between gap-3");
+  });
+
   test("shows update checks when marketplace plugins exist without installed extensions", () => {
     expect(source).toContain("snapshot.extensions.length > 0 || (marketplaceQuery.data?.entries.length ?? 0) > 0");
     expect(source).not.toContain("{snapshot.extensions.length > 0 ? (\n              <Button");

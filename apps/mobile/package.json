@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "bun ../../scripts/mobile-dev.mjs",
     "android": "bun ../../scripts/mobile-dev.mjs run:android",
-    "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

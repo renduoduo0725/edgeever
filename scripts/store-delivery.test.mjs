@@ -57,20 +57,22 @@ describe("store delivery command", () => {
 
     expect(workflow).not.toContain("bunx eas-cli");
     expect(workflow.match(/uses: expo\/expo-github-action@v8/g)).toHaveLength(
-      2,
+      1,
     );
-    expect(workflow.match(/eas-version: 21\.4\.0/g)).toHaveLength(2);
-    expect(workflow.match(/packager: npm/g)).toHaveLength(2);
+    expect(workflow.match(/eas-version: 21\.4\.0/g)).toHaveLength(1);
+    expect(workflow.match(/packager: npm/g)).toHaveLength(1);
     expect(workflow).toContain("for attempt in 1 2 3");
     expect(workflow).toContain("Dependency install failed on attempt ${attempt}/3");
     expect(
       workflow.match(
         /edgeever-bun-cache-\$\{GITHUB_RUN_ID\}-\$\{GITHUB_RUN_ATTEMPT\}/g,
       ),
-    ).toHaveLength(3);
-    expect(workflow).toContain("inputs.ios_build_number == ''");
+    ).toHaveLength(2);
+    expect(workflow).not.toContain("eas build");
+    expect(workflow).not.toContain("--platform ios");
+    expect(workflow).toContain("working-directory: apps/ios");
     expect(workflow).toContain(
-      "APP_STORE_BUILD_NUMBER: ${{ inputs.ios_build_number || steps.build.outputs.build_number }}",
+      "APP_STORE_BUILD_NUMBER: ${{ inputs.ios_build_number }}",
     );
     expect(workflow).toContain(
       "APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.EDGEEVER_APPLE_API_ISSUER }}",
@@ -90,7 +92,7 @@ describe("store delivery command", () => {
     );
     expect(workflow).toContain("retrying in 60 seconds (${attempt}/20)");
     const fastfile = readFileSync(
-      new URL("../apps/mobile/fastlane/Fastfile", import.meta.url),
+      new URL("../apps/ios/fastlane/Fastfile", import.meta.url),
       "utf8",
     );
     expect(fastfile).toContain("precheck_include_in_app_purchases: false");

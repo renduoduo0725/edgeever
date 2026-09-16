@@ -10,11 +10,14 @@ describe("Worker bundle boundaries", () => {
     const packageJson = JSON.parse(readRepositoryFile("packages/shared/package.json"));
     const sharedIndex = readRepositoryFile("packages/shared/src/index.ts");
     const contentSource = readRepositoryFile("packages/shared/src/content.ts");
+    const documentExtensions = readRepositoryFile("packages/shared/src/document-extensions.ts");
 
     expect(packageJson.exports["./mathematics"]).toBe("./src/mathematics.ts");
     expect(sharedIndex).not.toContain('export * from "./mathematics"');
     expect(contentSource).toContain('from "./mathematics-markdown"');
     expect(contentSource).not.toContain('from "./mathematics"');
     expect(contentSource).not.toContain("createEdgeEverMathematics");
+    expect(documentExtensions).not.toContain('from "./mathematics"');
+    expect(documentExtensions).not.toContain("createEdgeEverMathematics");
   });
 });

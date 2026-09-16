@@ -39,7 +39,7 @@ This document defines the standard operating specifications and conventions for 
 6. **Start Initial Build & Verify Service**
    - Trigger the initial build. Once deployed, run the following automated verifications:
      - Check `https://<your-worker-domain>/api/health` returns HTTP `200` with JSON `{"ok": true}`.
-     - Check `https://<your-worker-domain>/api/openapi.json` loads the OpenAPI schema properly.
+     - Check `https://<your-worker-domain>/api/openapi.json` is reachable and returns JSON `{"ok": true}`.
      - Verify login API using username `admin` and `EDGE_EVER_AUTH_PASSWORD`.
 
 7. **Verify Upstream Update Channel**

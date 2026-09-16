@@ -13,21 +13,14 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { PluginPanelOpenOptions } from "@edgeever/plugin-api";
-import { Home, Search, UserRound, Plus, ChevronDown, ChevronRight, RefreshCw, X, FileText, Network, Workflow, Boxes } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import * as m from "motion/react-m";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { MemoListPane, MemoSelectionActionBar } from "./MemoListPane";
+import { MobileBottomNav, MobileNotebookPicker } from "./WorkspaceMobileChrome";
 import { QuickMemoSwitcher } from "./QuickMemoSwitcher";
 import { AppConfirmDialog, MemoDeleteConfirmDialog, NotebookNameDialog } from "./dialogs/ConfirmDialogs";
 import { PluginPanelDialog } from "./plugins/PluginPanelDialog";
@@ -52,7 +45,7 @@ import {
 } from "@/lib/mobile-editor";
 import { cn } from "@/lib/utils";
 import { isBrowserOffline, isBrowserOnline } from "@/lib/network-status";
-import { createDefaultDiagramDocument, getDiagramSummary, createExcerpt, diagramFallbackMarkdown, docToText, getNotebookDescendantIds, markdownToDoc, parseDiagramDocument, resolveMemoContentDoc, serializeDiagramDocument, type DiagramKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
+import { createDefaultDiagramDocument, diagramFallbackMarkdown, getNotebookDescendantIds, markdownToDoc, parseDiagramDocument, serializeDiagramDocument, type DiagramKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
 import { toggleMobileMemoSelection } from "@edgeever/shared/mobile-ui";
 import type {
   Pane,
@@ -61,7 +54,6 @@ import type {
   NotebookNameDialogState,
   AppNoticeDialogState,
   MobileBottomNavItem,
-  NotebookNode,
   NotebookDropPosition,
   NotebookMoveOption,
   MemoFilterMode,
@@ -77,17 +69,31 @@ import {
   getSearchShortcutScope,
   getShortcutActionForEvent,
   getNotebookDropSortOrder,
-  buildNotebookTree,
-  notebookTreeContainsId,
-  getNotebookAncestorIds,
-  getExpandableNotebookIds,
-  filterNotebookTree,
   getNotebookMoveOptions,
   getMemoIdsNeedingMove,
   resolveSelectionMoveTargetNotebookId,
 } from "@/lib/app-helpers";
 import { useBrowserBackLayer } from "@/lib/app-hooks";
 import { updateMemoSummaryInLists, type MemoListQueryData } from "@/lib/memo-list-cache";
+import {
+  cacheMemoDetail,
+  clearTrashMemoLists,
+  collectMemoSummariesFromCache,
+  decrementNotebookMemoCounts,
+  getAdjacentMemoIdAfterRemoval,
+  memoDetailQueryKey,
+  memoToSummary,
+  removeMemoSummariesFromLists,
+  type ListNotebooksQueryData,
+} from "@/lib/workspace-memo-cache";
+import {
+  getVerticalScrollContainer,
+  isDesktopViewport,
+  isStandaloneApp,
+  PULL_TO_REFRESH_MAX_PX,
+  PULL_TO_REFRESH_TRIGGER_PX,
+  runWorkspaceViewTransition,
+} from "@/lib/workspace-shell";
 import { shouldAcceptRemoteMemoDetail } from "@/lib/memo-detail-freshness";
 import {
   clearLocalScope,
@@ -117,50 +123,9 @@ import { createPublicNetworkAdapter } from "@/lib/plugins/public-network-adapter
 import { clearRendererRecoveryRequired, isRendererRecoveryRequired } from "@/lib/renderer-recovery";
 import { EditorPaneErrorBoundary, EditorRecoveryPane } from "./EditorPaneErrorBoundary";
 import { isMarkdownFile, readMarkdownFile } from "@/lib/markdown-file-import";
-
-const isDesktopViewport = () => window.matchMedia("(min-width: 1024px)").matches;
-const PULL_TO_REFRESH_TRIGGER_PX = 72;
-const PULL_TO_REFRESH_MAX_PX = 96;
-
-type ViewTransitionDocument = Document & {
-  startViewTransition?: (update: () => void) => unknown;
-};
-
-const runWorkspaceViewTransition = (update: () => void) => {
-  const viewTransitionDocument = document as ViewTransitionDocument;
-
-  if (
-    !viewTransitionDocument.startViewTransition ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  ) {
-    update();
-    return;
-  }
-
-  viewTransitionDocument.startViewTransition(update);
-};
-
-const isStandaloneApp = () =>
-  window.matchMedia("(display-mode: standalone)").matches ||
-  window.matchMedia("(display-mode: fullscreen)").matches ||
-  Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-
-const getVerticalScrollContainer = (target: EventTarget | null) => {
-  let element = target instanceof HTMLElement ? target : null;
-
-  while (element && element !== document.body) {
-    const style = window.getComputedStyle(element);
-    const canScroll = /(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
-
-    if (canScroll) {
-      return element;
-    }
-
-    element = element.parentElement;
-  }
-
-  return null;
-};
+import { compressImageForUpload } from "@/lib/image-compression";
+import { createScreenshotMemo, screenshotFileFromImportPayload, screenshotImportDedupeKey, screenshotImportGate } from "@/lib/screenshot-import";
+import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceUrl } from "@/lib/desktop-resources";
 
 const EditorPane = lazy(() => import("./EditorPane").then((module) => ({ default: module.EditorPane })));
 const DiagramEditorPane = lazy(() => import("./DiagramEditorPane"));
@@ -174,8 +139,6 @@ const EvernoteImportGuidePane = lazy(() =>
 const TagsPane = lazy(() => import("./TagsPane").then((module) => ({ default: module.TagsPane })));
 const TemplatesPane = lazy(() => import("./TemplatesPane").then((module) => ({ default: module.TemplatesPane })));
 const AiPromptsPane = lazy(() => import("./AiPromptsPane").then((module) => ({ default: module.AiPromptsPane })));
-const CompanionPane = lazy(() => import("./CompanionPane"));
-const CompanionDiscoveryHub = lazy(() => import("./CompanionDiscoveryHub"));
 const ExecutionCenterPane = lazy(() =>
   import("./execution/ExecutionCenterPane").then((module) => ({ default: module.ExecutionCenterPane }))
 );
@@ -185,12 +148,6 @@ const PaneLoadingFallback = ({ label = "Loading" }: { label?: string }) => (
     {label}
   </div>
 );
-
-const memoDetailQueryKey = (memoId: string, view: MemoView) => ["memo", memoId, view] as const;
-
-type ListNotebooksQueryData = {
-  notebooks: Notebook[];
-};
 
 type MemoDeleteOptimisticContext = {
   previousMemoLists: Array<[readonly unknown[], MemoListQueryData | undefined]>;
@@ -205,487 +162,6 @@ type EmptyTrashOptimisticContext = {
   previousMemoDetails: Array<[readonly unknown[], { memo: MemoDetail } | undefined]>;
   previousActivePane: Pane;
   previousSelectedMemoId: string | null;
-};
-
-const memoToSummary = (memo: MemoDetail): MemoSummary => ({
-  id: memo.id,
-  notebookId: memo.notebookId,
-  title: memo.title,
-  excerpt: memo.excerpt || createExcerpt(memo.contentText || docToText(resolveMemoContentDoc(memo.contentJson, memo.contentMarkdown))),
-  ...getDiagramSummary(memo.contentMarkdown),
-  tags: memo.tags,
-  isPinned: memo.isPinned,
-  isArchived: memo.isArchived,
-  isDeleted: memo.isDeleted,
-  revision: memo.revision,
-  createdAt: memo.createdAt,
-  updatedAt: memo.updatedAt,
-  deletedAt: memo.deletedAt,
-});
-
-const cacheMemoDetail = (queryClient: QueryClient, memo: MemoDetail, view: MemoView = memo.isDeleted ? "trash" : "notebook") => {
-  queryClient.setQueryData(memoDetailQueryKey(memo.id, view), { memo });
-};
-
-const collectMemoSummariesFromCache = (queryClient: QueryClient, memoIds: Set<string>) => {
-  const summaries = new Map<string, MemoSummary>();
-
-  for (const [, current] of queryClient.getQueriesData<MemoListQueryData>({ queryKey: ["memos"] })) {
-    for (const page of current?.pages ?? []) {
-      for (const memo of page.memos) {
-        if (memoIds.has(memo.id) && !summaries.has(memo.id)) {
-          summaries.set(memo.id, memo);
-        }
-      }
-    }
-  }
-
-  for (const [, current] of queryClient.getQueriesData<{ memo: MemoDetail }>({ queryKey: ["memo"] })) {
-    if (current?.memo && memoIds.has(current.memo.id) && !summaries.has(current.memo.id)) {
-      summaries.set(current.memo.id, memoToSummary(current.memo));
-    }
-  }
-
-  return Array.from(summaries.values());
-};
-
-const removeMemoSummariesFromLists = (queryClient: QueryClient, memoIds: Set<string>) => {
-  queryClient.setQueriesData<MemoListQueryData>({ queryKey: ["memos"] }, (current) => {
-    if (!current) {
-      return current;
-    }
-
-    let changed = false;
-    const pages = current.pages.map((page) => {
-      const memos = page.memos.filter((memo) => !memoIds.has(memo.id));
-
-      if (memos.length === page.memos.length) {
-        return page;
-      }
-
-      changed = true;
-      return {
-        ...page,
-        memos,
-        totalCount: Math.max(0, page.totalCount - (page.memos.length - memos.length)),
-      };
-    });
-
-    return changed ? { ...current, pages } : current;
-  });
-};
-
-const clearTrashMemoLists = (queryClient: QueryClient) => {
-  for (const [queryKey, current] of queryClient.getQueriesData<MemoListQueryData>({ queryKey: ["memos", "trash"] })) {
-    if (!current) {
-      continue;
-    }
-
-    queryClient.setQueryData(queryKey, {
-      ...current,
-      pages: current.pages.map((page) => ({ ...page, memos: [], totalCount: 0, nextCursor: null })),
-    });
-  }
-};
-
-const decrementNotebookMemoCounts = (queryClient: QueryClient, removedMemos: MemoSummary[]) => {
-  if (removedMemos.length === 0) {
-    return;
-  }
-
-  const countsByNotebook = new Map<string, number>();
-
-  for (const memo of removedMemos) {
-    if (memo.isDeleted) {
-      continue;
-    }
-
-    countsByNotebook.set(memo.notebookId, (countsByNotebook.get(memo.notebookId) ?? 0) + 1);
-  }
-
-  if (countsByNotebook.size === 0) {
-    return;
-  }
-
-  queryClient.setQueryData<ListNotebooksQueryData>(["notebooks"], (current) =>
-    current
-      ? {
-          notebooks: current.notebooks.map((notebook) => {
-            const removedCount = countsByNotebook.get(notebook.id) ?? 0;
-            return removedCount > 0 ? { ...notebook, memoCount: Math.max(0, notebook.memoCount - removedCount) } : notebook;
-          }),
-        }
-      : current
-  );
-};
-
-const getAdjacentMemoIdAfterRemoval = (memos: MemoSummary[], removedMemoIds: Set<string>, anchorMemoId: string) => {
-  const anchorIndex = memos.findIndex((memo) => memo.id === anchorMemoId);
-
-  if (anchorIndex < 0) {
-    return null;
-  }
-
-  for (let index = anchorIndex + 1; index < memos.length; index++) {
-    const memoId = memos[index]?.id;
-    if (memoId && !removedMemoIds.has(memoId)) {
-      return memoId;
-    }
-  }
-
-  for (let index = anchorIndex - 1; index >= 0; index--) {
-    const memoId = memos[index]?.id;
-    if (memoId && !removedMemoIds.has(memoId)) {
-      return memoId;
-    }
-  }
-
-  return null;
-};
-
-const MobileBottomNavButton = ({
-  active = false,
-  icon,
-  label,
-  onClick,
-}: {
-  active?: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) => (
-  <button
-    className={cn(
-      "flex h-mobile-touch flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium transition-all duration-200",
-      active ? "text-slate-950" : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
-    )}
-    type="button"
-    aria-current={active ? "page" : undefined}
-    aria-label={label}
-    onClick={onClick}
-  >
-    {icon}
-    <span>{label}</span>
-  </button>
-);
-
-const MobileBottomNav = ({
-  activeItem,
-  canCreateMemo,
-  isCreating,
-  onCreateMemo,
-  onHome,
-  onOpenSettings,
-}: {
-  activeItem: MobileBottomNavItem;
-  canCreateMemo: boolean;
-  isCreating: boolean;
-  onCreateMemo: (kind?: DiagramKind) => void;
-  onHome: () => void;
-  onOpenSettings: () => void;
-}) => {
-  const { t } = useTranslation();
-  const createMemoLabel = !canCreateMemo ? t("nav.createDisabled") : isCreating ? t("nav.creating") : t("nav.createMemo");
-
-  return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-card/95 px-5 pb-[max(0.125rem,env(safe-area-inset-bottom))] pt-0 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
-      aria-label={t("nav.mobileMain")}
-    >
-      <div className="relative grid h-mobile-bottom-nav grid-cols-3 items-center">
-        <MobileBottomNavButton active={activeItem === "home"} icon={<Home className="h-5 w-5" />} label={t("nav.home")} onClick={onHome} />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="flex h-mobile-touch flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
-              type="button"
-              aria-label={createMemoLabel}
-              disabled={!canCreateMemo || isCreating}
-            >
-              <Plus className="h-5 w-5" />
-              <span>{t("nav.createMemo")}</span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" side="top" sideOffset={8} className="w-52">
-            <DropdownMenuItem onSelect={() => onCreateMemo()}><FileText className="h-4 w-4" />{t("diagram.normalNote")}</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onCreateMemo("mind-map")}><Network className="h-4 w-4" />{t("diagram.mindMap")}</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onCreateMemo("flowchart")}><Workflow className="h-4 w-4" />{t("diagram.flowchart")}</DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onCreateMemo("architecture")}><Boxes className="h-4 w-4" />{t("diagram.architecture")}</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <MobileBottomNavButton active={activeItem === "settings"} icon={<UserRound className="h-5 w-5" />} label={t("nav.mine")} onClick={onOpenSettings} />
-      </div>
-    </nav>
-  );
-};
-
-const MobileNotebookPicker = ({
-  currentLabel,
-  notebooks,
-  selectedNotebookId,
-  onClose,
-  onSelectAll,
-  onSelect,
-}: {
-  currentLabel?: string;
-  notebooks: Notebook[];
-  selectedNotebookId: string | null;
-  onClose: () => void;
-  onSelectAll: () => void;
-  onSelect: (notebookId: string) => void;
-}) => {
-  const { t, i18n } = useTranslation();
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const [notebookSearch, setNotebookSearch] = useState("");
-  const tree = useMemo(() => buildNotebookTree(notebooks), [notebooks]);
-  const filteredTree = useMemo(() => filterNotebookTree(tree, notebookSearch), [notebookSearch, tree]);
-  const selectedAncestorIds = useMemo(
-    () => (selectedNotebookId ? getNotebookAncestorIds(tree, selectedNotebookId) : []),
-    [selectedNotebookId, tree]
-  );
-  const expandableNotebookIds = useMemo(() => getExpandableNotebookIds(tree), [tree]);
-  const [expandedNotebookIds, setExpandedNotebookIds] = useState<Set<string>>(() => new Set(selectedAncestorIds));
-  const allSelected = !currentLabel && selectedNotebookId === null;
-  const selectedNotebookName =
-    currentLabel ?? (allSelected ? t("mobileNotebookPicker.allMemos") : notebooks.find((item) => item.id === selectedNotebookId)?.name ?? t("mobileNotebookPicker.notebookFallback"));
-  const searchQuery = notebookSearch.trim();
-  const searchActive = Boolean(searchQuery);
-  const allNotebookBranchesExpanded =
-    expandableNotebookIds.length > 0 && expandableNotebookIds.every((notebookId) => expandedNotebookIds.has(notebookId));
-
-  useEffect(() => {
-    if (selectedAncestorIds.length === 0) {
-      return;
-    }
-    setExpandedNotebookIds((current) => {
-      const next = new Set(current);
-      for (const notebookId of selectedAncestorIds) {
-        next.add(notebookId);
-      }
-      return next;
-    });
-  }, [selectedAncestorIds]);
-
-  useEffect(() => {
-    if (searchActive) {
-      return;
-    }
-    window.setTimeout(() => {
-      const listNode = listRef.current;
-      const targetNotebookId = selectedNotebookId ?? "__all__";
-      const selectedNode = listNode?.querySelector<HTMLElement>(`[data-mobile-notebook-id="${CSS.escape(targetNotebookId)}"]`);
-      selectedNode?.scrollIntoView({ block: "center" });
-    }, 0);
-  }, [searchActive, selectedNotebookId]);
-
-  const handleToggleNotebookExpanded = (notebookId: string) => {
-    setExpandedNotebookIds((current) => {
-      const next = new Set(current);
-      if (next.has(notebookId)) {
-        next.delete(notebookId);
-      } else {
-        next.add(notebookId);
-      }
-      return next;
-    });
-  };
-
-  const handleToggleAllNotebookBranches = () => {
-    setExpandedNotebookIds(allNotebookBranchesExpanded ? new Set() : new Set(expandableNotebookIds));
-  };
-
-  return (
-    <Drawer open={true} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DrawerContent className="inset-x-0 max-h-[82dvh] overflow-hidden border-x-0 border-b-0 pb-[env(safe-area-inset-bottom)] lg:hidden">
-        <header className="flex h-14 items-center justify-between border-b border-slate-200 px-4">
-          <DrawerHeader className="min-w-0 p-0">
-            <DrawerTitle className="text-base">{t("mobileNotebookPicker.title")}</DrawerTitle>
-            <DrawerDescription className="truncate">{t("mobileNotebookPicker.current", { name: selectedNotebookName })}</DrawerDescription>
-          </DrawerHeader>
-          <Button size="icon" variant="ghost" title={t("common.close")} aria-label={t("common.close")} onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </header>
-        <div className="border-b border-slate-100 px-4 py-2">
-          <div className="flex h-9 items-center gap-2 rounded-md bg-slate-100 px-3 text-sm text-slate-500">
-            <Search className="h-4 w-4" />
-            <input
-              className="min-w-0 flex-1 bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
-              value={notebookSearch}
-              placeholder={t("mobileNotebookPicker.searchPlaceholder")}
-              aria-label={t("mobileNotebookPicker.searchPlaceholder")}
-              onChange={(event) => setNotebookSearch(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape" && notebookSearch) {
-                  event.preventDefault();
-                  setNotebookSearch("");
-                }
-              }}
-            />
-            {notebookSearch && (
-              <button
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-card hover:text-slate-700"
-                type="button"
-                title={t("mobileNotebookPicker.clearSearch")}
-                aria-label={t("mobileNotebookPicker.clearSearch")}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => setNotebookSearch("")}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
-        <div ref={listRef} className="max-h-[calc(82dvh_-_8.25rem_-_env(safe-area-inset-bottom))] overflow-y-auto p-2">
-          <button
-            className={cn(
-              "mb-1 flex h-12 w-full items-center gap-3 rounded-md px-3 text-left text-sm transition",
-              allSelected ? "bg-slate-100 font-semibold text-slate-950" : "text-slate-800 hover:bg-slate-50"
-            )}
-            type="button"
-            data-mobile-notebook-id="__all__"
-            aria-label={allSelected ? t("mobileNotebookPicker.currentAll") : t("mobileNotebookPicker.switchAll")}
-            aria-current={allSelected ? "page" : undefined}
-            onClick={onSelectAll}
-          >
-            <span className="min-w-0 flex-1 truncate text-base">{t("mobileNotebookPicker.allMemos")}</span>
-          </button>
-          {filteredTree.length > 0 ? (
-            <>
-              <div className="mb-1 flex h-8 items-center justify-between px-3 text-xs font-semibold text-slate-400">
-                <span>{searchActive ? t("mobileNotebookPicker.matchedNotebooks") : t("mobileNotebookPicker.notebooks")}</span>
-                {!searchActive && expandableNotebookIds.length > 0 && (
-                  <button
-                    className="rounded-md px-2 py-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-                    type="button"
-                    aria-label={allNotebookBranchesExpanded ? t("mobileNotebookPicker.collapseAllAria") : t("mobileNotebookPicker.expandAllAria")}
-                    aria-pressed={allNotebookBranchesExpanded}
-                    onClick={handleToggleAllNotebookBranches}
-                  >
-                    {allNotebookBranchesExpanded ? t("mobileNotebookPicker.collapseAll") : t("mobileNotebookPicker.expandAll")}
-                  </button>
-                )}
-              </div>
-              {filteredTree.map((node) => (
-                <MobileNotebookPickerItem
-                  key={node.id}
-                  node={node}
-                  depth={0}
-                  expandedNotebookIds={expandedNotebookIds}
-                  searchActive={searchActive}
-                  selectedNotebookId={selectedNotebookId}
-                  onSelect={onSelect}
-                  onToggleExpanded={handleToggleNotebookExpanded}
-                />
-              ))}
-            </>
-          ) : (
-            <div className="px-3 py-8 text-center">
-              <div className="text-sm font-medium text-slate-700">
-                {searchQuery ? t("mobileNotebookPicker.noSearchResult", { query: searchQuery }) : t("mobileNotebookPicker.noNotebook")}
-              </div>
-              {searchQuery && (
-                <button
-                  className="mt-3 text-sm font-semibold text-slate-600"
-                  type="button"
-                  onClick={() => setNotebookSearch("")}
-                >
-                  {t("mobileNotebookPicker.showAll")}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      </DrawerContent>
-    </Drawer>
-  );
-};
-
-const MobileNotebookPickerItem = ({
-  node,
-  depth,
-  expandedNotebookIds,
-  searchActive,
-  selectedNotebookId,
-  onSelect,
-  onToggleExpanded,
-}: {
-  node: NotebookNode;
-  depth: number;
-  expandedNotebookIds: Set<string>;
-  searchActive: boolean;
-  selectedNotebookId: string | null;
-  onSelect: (notebookId: string) => void;
-  onToggleExpanded: (notebookId: string) => void;
-}) => {
-  const { t } = useTranslation();
-  const selected = node.id === selectedNotebookId;
-  const hasChildren = node.children.length > 0;
-  const hasSelectedDescendant = selectedNotebookId ? notebookTreeContainsId(node.children, selectedNotebookId) : false;
-  const expanded = searchActive || expandedNotebookIds.has(node.id);
-
-  return (
-    <div>
-      <div
-        data-mobile-notebook-id={node.id}
-        className={cn(
-          "flex h-12 w-full items-center gap-3 rounded-md px-3 text-left text-sm transition",
-          selected
-            ? "bg-slate-100 font-semibold text-slate-950"
-            : hasSelectedDescendant
-              ? "bg-slate-50 text-slate-900 hover:bg-slate-100"
-              : "text-slate-800 hover:bg-slate-50"
-        )}
-        style={{ paddingLeft: `${12 + depth * 18}px` }}
-      >
-        {hasChildren ? (
-          <button
-            className={cn(
-              "flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 transition",
-              searchActive ? "cursor-default" : "hover:bg-slate-100 hover:text-slate-700"
-            )}
-            type="button"
-            disabled={searchActive}
-            aria-label={expanded ? t("mobileNotebookPicker.collapse", { name: node.name }) : t("mobileNotebookPicker.expand", { name: node.name })}
-            aria-expanded={expanded}
-            onClick={(event) => {
-              event.stopPropagation();
-              onToggleExpanded(node.id);
-            }}
-          >
-            {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
-        ) : (
-          <span className="h-8 w-8 shrink-0" aria-hidden="true" />
-        )}
-        <button
-          className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          type="button"
-          aria-label={selected ? t("mobileNotebookPicker.currentNotebook", { name: node.name }) : t("mobileNotebookPicker.switchToNotebook", { name: node.name })}
-          aria-current={selected ? "page" : undefined}
-          onClick={() => onSelect(node.id)}
-        >
-          <span className="min-w-0 flex-1 truncate text-base">{node.name}</span>
-        </button>
-      </div>
-      {hasChildren && expanded ? (
-        <div className="mt-1 border-l border-slate-100 pl-1">
-          {node.children.map((child) => (
-            <MobileNotebookPickerItem
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              expandedNotebookIds={expandedNotebookIds}
-              searchActive={searchActive}
-              selectedNotebookId={selectedNotebookId}
-              onSelect={onSelect}
-              onToggleExpanded={onToggleExpanded}
-            />
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
 };
 
 export const WorkspaceApp = ({
@@ -711,7 +187,6 @@ export const WorkspaceApp = ({
     navigatePlugins: navigateWorkspacePlugins,
     navigateTemplates: navigateWorkspaceTemplates,
     navigateAiPrompts: navigateWorkspaceAiPrompts,
-    navigateCompanion: navigateWorkspaceCompanion,
     navigateExecutionCenter: navigateWorkspaceExecutionCenter,
   } = useWorkspaceRoute();
   const localDataScope = useMemo(
@@ -723,15 +198,13 @@ export const WorkspaceApp = ({
   const isInitialPluginsRoute = route.isPlugins;
   const isInitialTemplatesRoute = route.isTemplates;
   const isInitialAiPromptsRoute = route.isAiPrompts;
-  const isInitialCompanionRoute = route.isCompanion;
-  const previousRouteWasCompanion = useRef(route.isCompanion);
   const isInitialExecutionCenterRoute = route.isExecutionCenter;
   const isInitialMobileEditorReturn = Boolean(route.mobileEditorReturnMemoId);
   const isTrashRoute = route.isTrash;
   const [rendererRecoveryMode, setRendererRecoveryMode] = useState(() =>
     Boolean(window.edgeeverDesktop?.recoveredAfterAbnormalExit) || isRendererRecoveryRequired()
   );
-  const [activePane, setActivePane] = useState<Pane>(() => ((isInitialSettingsRoute || isInitialPluginsRoute || isInitialTemplatesRoute || isInitialAiPromptsRoute || isInitialCompanionRoute || isInitialExecutionCenterRoute) && !isInitialMobileEditorReturn ? "editor" : "memos"));
+  const [activePane, setActivePane] = useState<Pane>(() => ((isInitialSettingsRoute || isInitialPluginsRoute || isInitialTemplatesRoute || isInitialAiPromptsRoute || isInitialExecutionCenterRoute) && !isInitialMobileEditorReturn ? "editor" : "memos"));
   const [memoView, setMemoView] = useState<MemoView>(() => (isTrashRoute ? "trash" : "notebook"));
   const {
     beginMemoSelection,
@@ -752,7 +225,6 @@ export const WorkspaceApp = ({
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const autoSelectedDemoNotebookRef = useRef(false);
   const [createdMemoEditId, setCreatedMemoEditId] = useState<string | null>(null);
-  const [pendingEditorInsert, setPendingEditorInsert] = useState<{ memoId: string; files: File[] } | null>(null);
   const pendingCreatedMemoIdRef = useRef<string | null>(null);
   const pendingQuickSwitcherMemoIdRef = useRef<string | null>(null);
   const creatingMemoSelectionRef = useRef(false);
@@ -1011,7 +483,7 @@ export const WorkspaceApp = ({
     setShortcutSettings,
     shortcutSettings,
   } = useWorkspacePreferences();
-  const [rightView, setRightView] = useState<"editor" | "settings" | "plugins" | "assets" | "tags" | "templates" | "ai-prompts" | "companion" | "execution-center" | "evernote-migration">(() =>
+  const [rightView, setRightView] = useState<"editor" | "settings" | "plugins" | "assets" | "tags" | "templates" | "ai-prompts" | "execution-center" | "evernote-migration">(() =>
     isInitialSettingsRoute
       ? "settings"
       : isInitialPluginsRoute
@@ -1020,8 +492,6 @@ export const WorkspaceApp = ({
         ? "templates"
         : isInitialAiPromptsRoute
           ? "ai-prompts"
-          : isInitialCompanionRoute
-            ? "companion"
           : isInitialExecutionCenterRoute
             ? "execution-center"
           : "editor"
@@ -1033,8 +503,6 @@ export const WorkspaceApp = ({
       ? "settings"
       : isInitialTemplatesRoute || isInitialAiPromptsRoute
         ? "templates"
-        : isInitialCompanionRoute && !isInitialMobileEditorReturn
-          ? "companion"
         : "home"
   );
   const [mobileSearchFocusToken, setMobileSearchFocusToken] = useState(0);
@@ -1207,9 +675,7 @@ export const WorkspaceApp = ({
       templatesOpen ||
       memoSelectionModeActive ||
       // A routed workspace uses browser history, not a synthetic modal back layer.
-      (!route.isCompanion && rightView !== "companion" && (
-        rightView !== "editor" || visibleActivePane === "editor" || visibleActivePane === "notebooks"
-      ))
+      (rightView !== "editor" || visibleActivePane === "editor" || visibleActivePane === "notebooks")
   );
   const mobilePullToRefreshActive = Boolean(
     !isDesktop &&
@@ -1357,8 +823,6 @@ export const WorkspaceApp = ({
   }, []);
 
   useEffect(() => {
-    const returningFromCompanion = previousRouteWasCompanion.current;
-    previousRouteWasCompanion.current = route.isCompanion;
     if (route.isSettings) {
       skipNextHomeRouteSyncRef.current = false;
       setRightView("settings");
@@ -1391,14 +855,6 @@ export const WorkspaceApp = ({
       return;
     }
 
-    if (route.isCompanion) {
-      skipNextHomeRouteSyncRef.current = false;
-      setRightView("companion");
-      setMobileBottomNavActive("companion");
-      setActivePane("editor");
-      return;
-    }
-
     if (route.isExecutionCenter) {
       skipNextHomeRouteSyncRef.current = false;
       setRightView("execution-center");
@@ -1415,8 +871,7 @@ export const WorkspaceApp = ({
     setMemoView(isTrashRoute ? "trash" : "notebook");
     setRightView("editor");
     setMobileBottomNavActive("home");
-    if (returningFromCompanion) setActivePane("memos");
-  }, [isTrashRoute, route.isSettings, route.isPlugins, route.isTemplates, route.isAiPrompts, route.isCompanion, route.isExecutionCenter]);
+  }, [isTrashRoute, route.isSettings, route.isPlugins, route.isTemplates, route.isAiPrompts, route.isExecutionCenter]);
 
   useEffect(() => {
     if (window.edgeeverDesktop?.isAvailable) {
@@ -1729,6 +1184,39 @@ export const WorkspaceApp = ({
     },
   });
 
+  const revealCreatedMemo = (memo: MemoDetail) => {
+    const targetNotebookId = memo.notebookId;
+    const isDiagram = Boolean(parseDiagramDocument(memo.contentMarkdown));
+
+    setMemoView("notebook");
+    setSearch("");
+    setSelectedTag(null);
+    // A newly created memo is not pinned or otherwise guaranteed to match
+    // the active list filter. Leave filtered views so the selected memo
+    // remains visible instead of the list effect falling back to its first
+    // item (for example, the currently pinned memo).
+    setMemoFilterMode("all");
+    if (targetNotebookId !== selectedNotebookId) {
+      setSelectedNotebookId(targetNotebookId);
+    }
+    cacheMemoDetail(queryClient, memo, "notebook");
+    updateMemoSummaryInLists(queryClient, memoToSummary(memo));
+    void Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["memos"], refetchType: "inactive" }),
+      queryClient.invalidateQueries({ queryKey: ["notebooks"], refetchType: "inactive" }),
+    ]);
+    navigateWorkspaceHome();
+    setRightView("editor");
+    pendingCreatedMemoIdRef.current = memo.id;
+    setCreatedMemoEditId(isDiagram ? null : memo.id);
+    setSelectedMemoId(memo.id);
+    setActivePane("editor");
+
+    if (!isDesktopViewport() && !isDiagram) {
+      openStandaloneMobileEditor(memo.id);
+    }
+  };
+
   const createMemoMutation = useMutation({
     mutationFn: async (input: Parameters<typeof repository.createMemo>[0]) => {
       const requiresRemoteMemo = requiresRemoteMemoForStandaloneMobileEditor({
@@ -1741,36 +1229,7 @@ export const WorkspaceApp = ({
       return data;
     },
     onSuccess: (data) => {
-      const targetNotebookId = data.memo.notebookId;
-      const isDiagram = Boolean(parseDiagramDocument(data.memo.contentMarkdown));
-
-      setMemoView("notebook");
-      setSearch("");
-      setSelectedTag(null);
-      // A newly created memo is not pinned or otherwise guaranteed to match
-      // the active list filter. Leave filtered views so the selected memo
-      // remains visible instead of the list effect falling back to its first
-      // item (for example, the currently pinned memo).
-      setMemoFilterMode("all");
-      if (targetNotebookId !== selectedNotebookId) {
-        setSelectedNotebookId(targetNotebookId);
-      }
-      cacheMemoDetail(queryClient, data.memo, "notebook");
-      updateMemoSummaryInLists(queryClient, memoToSummary(data.memo));
-      void Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["memos"], refetchType: "inactive" }),
-        queryClient.invalidateQueries({ queryKey: ["notebooks"], refetchType: "inactive" }),
-      ]);
-      navigateWorkspaceHome();
-      setRightView("editor");
-      pendingCreatedMemoIdRef.current = data.memo.id;
-      setCreatedMemoEditId(isDiagram ? null : data.memo.id);
-      setSelectedMemoId(data.memo.id);
-      setActivePane("editor");
-
-      if (!isDesktopViewport() && !isDiagram) {
-        openStandaloneMobileEditor(data.memo.id);
-      }
+      revealCreatedMemo(data.memo);
     },
     onError: () => {
       clearPendingCreatedMemo();
@@ -2183,30 +1642,70 @@ export const WorkspaceApp = ({
   };
 
   const handleImportScreenshot = useCallback(async (payload: { name: string; type: string; title?: string; bytes: Uint8Array }) => {
+    const importKey = screenshotImportDedupeKey(payload);
+    if (!screenshotImportGate.tryBegin(importKey)) return;
+
     const notebookId = selectedNotebookId && notebooks.some((notebook) => notebook.id === selectedNotebookId) && memoView !== "trash"
       ? selectedNotebookId
       : defaultMemoNotebookId;
-    if (!notebookId) return;
+    if (!notebookId) {
+      screenshotImportGate.fail(importKey);
+      return;
+    }
 
-    const source = payload.bytes instanceof Uint8Array ? payload.bytes : new Uint8Array(payload.bytes);
-    const bytes = new Uint8Array(source.byteLength);
-    bytes.set(source);
-    const file = new File([bytes], payload.name || "screenshot.png", { type: payload.type || "image/png" });
+    const file = screenshotFileFromImportPayload(payload);
+    if (file.size === 0) {
+      screenshotImportGate.fail(importKey);
+      setAppNoticeDialog({
+        title: t("memoList.importScreenshotFailedTitle"),
+        description: t("memoList.importScreenshotEmpty"),
+      });
+      return;
+    }
     setTemplatesOpen(false);
     setMobileBottomNavActive("home");
     creatingMemoSelectionRef.current = true;
     try {
-      const data = await createMemoMutation.mutateAsync({
+      const preparedFile = imageCompressionEnabled ? (await compressImageForUpload(file)).file : file;
+      const memo = await createScreenshotMemo({
         notebookId,
         title: payload.title?.trim() || "",
-        contentMarkdown: "",
-        tags: [],
+        file: preparedFile,
+        createMemo: (input) => repository.createMemo(input),
+        uploadResource: async (memoId, uploadFile) => {
+          try {
+            const { resource } = await repository.uploadMemoResource(memoId, uploadFile);
+            return { url: toDesktopResourceUrl(resource.url), filename: resource.filename };
+          } catch (error) {
+            if (!isDesktopResourceRuntime()) throw error;
+            const staged = await stageDesktopResource(memoId, uploadFile);
+            if (!staged) throw error;
+            return { url: `edgeever-staged://${staged.id}`, filename: uploadFile.name };
+          }
+        },
+        updateMemo: (created, content) => repository.updateMemo(created, {
+          expectedRevision: created.revision,
+          expectedContentHash: created.contentHash,
+          editSessionId: `screenshot:${created.id}`,
+          title: created.title ?? "",
+          contentJson: content.contentJson,
+          contentMarkdown: content.contentMarkdown,
+          tags: created.tags,
+        }),
+        deleteMemo: (memoId) => repository.deleteMemo(memoId, true),
       });
-      setPendingEditorInsert({ memoId: data.memo.id, files: [file] });
+      await putLocalMemo(localDataScope, memo);
+      revealCreatedMemo(memo);
+      screenshotImportGate.finish(importKey);
     } catch {
+      screenshotImportGate.fail(importKey);
       creatingMemoSelectionRef.current = false;
+      setAppNoticeDialog({
+        title: t("memoList.importScreenshotFailedTitle"),
+        description: t("memoList.importScreenshotFailed"),
+      });
     }
-  }, [createMemoMutation, defaultMemoNotebookId, memoView, notebooks, selectedNotebookId]);
+  }, [defaultMemoNotebookId, imageCompressionEnabled, localDataScope, memoView, notebooks, repository, selectedNotebookId, t]);
 
   const handleCreateMemo = (kind?: DiagramKind) => {
     const targetNotebookId = createMemoNotebookId;
@@ -2751,14 +2250,6 @@ export const WorkspaceApp = ({
     setActivePane("editor");
   };
 
-  const handleOpenCompanion = () => {
-    clearHiddenMobileSearch();
-    navigateWorkspaceCompanion();
-    setRightView("companion");
-    setMobileBottomNavActive("companion");
-    setActivePane("editor");
-  };
-
   const handleOpenSettings = () => {
     clearHiddenMobileSearch();
     navigateWorkspaceSettings();
@@ -2952,11 +2443,6 @@ export const WorkspaceApp = ({
 
     if (desktopFocusModeActive) {
       updateDesktopFocusMode(false);
-      return true;
-    }
-
-    if (rightView === "companion") {
-      handleSelectAllMemos();
       return true;
     }
 
@@ -3288,8 +2774,6 @@ export const WorkspaceApp = ({
           ? t("templates.title")
         : rightView === "ai-prompts"
           ? t("aiPrompts.title")
-        : rightView === "companion"
-          ? t("companion.title")
         : rightView === "execution-center"
           ? t("executionHistory.centerTitle")
         : rightView === "evernote-migration"
@@ -3308,16 +2792,6 @@ export const WorkspaceApp = ({
       : isStandaloneRuntime
         ? t("workspace.pullToRefresh.pullNotes")
         : t("workspace.pullToRefresh.pullPage");
-  const editorCompanionDiscoveryHub = authRequired && Boolean(user) && !demoMode ? (
-    <Suspense fallback={null}>
-      <CompanionDiscoveryHub key={localDataScope} scope={localDataScope} onOpenNote={handleOpenPluginNote} onOpenSettings={handleOpenSettings}
-        onNotesChanged={async () => {
-          const result = await refreshWorkspaceFromServer("manual");
-          if ("skipped" in result && result.skipped) throw new Error("Workspace refresh was skipped.");
-        }} />
-    </Suspense>
-  ) : null;
-
   return (
     <WorkspaceMotionProvider>
       <div className="edgeever-workspace-shell flex h-[100dvh] overflow-hidden text-slate-950">
@@ -3395,7 +2869,6 @@ export const WorkspaceApp = ({
                   onOpenAssets={handleOpenAssets}
                   onOpenTags={handleOpenTags}
                   onOpenTemplates={handleOpenTemplates}
-                  companionActive={rightView === "companion"}
                   pluginHost={pluginHost}
                   onOpenPluginManager={handleOpenPluginManager}
                   onOpenSettings={handleOpenSettings}
@@ -3575,8 +3048,6 @@ export const WorkspaceApp = ({
                 <m.div key={rightView} className="h-full min-h-0 min-w-0" {...paneEnterMotion}>
                   {rightView === "settings" ? (
                     <SettingsPane
-                    companionScope={localDataScope}
-                    onOpenCompanion={handleOpenCompanion}
                     onOpenExecutionCenter={handleOpenExecutionCenter}
                     onClose={handleCloseSettings}
                     onOpenTemplates={handleOpenTemplates}
@@ -3621,18 +3092,6 @@ export const WorkspaceApp = ({
                   />
                   ) : rightView === "ai-prompts" ? (
                     <AiPromptsPane key={localDataScope} onClose={handleCloseAiPrompts} onOpenExecutionCenter={handleOpenExecutionCenter} />
-                  ) : rightView === "companion" ? (
-                    <CompanionPane key={localDataScope} available={authRequired && Boolean(user) && !demoMode} onBack={handleSelectAllMemos} onOpenSettings={handleOpenSettings}
-                      beforeApply={async () => {
-                        const { assertCompanionChangesSynced } = await import("@/lib/companion-actions");
-                        await assertCompanionChangesSynced(localDataScope);
-                      }}
-                      onNotesChanged={async () => {
-                        const result = await refreshWorkspaceFromServer("manual");
-                        if ("skipped" in result && result.skipped) throw new Error("Workspace refresh was skipped.");
-                      }}
-                      onOpenNote={handleOpenPluginNote}
-                    />
                   ) : rightView === "execution-center" ? (
                     <ExecutionCenterPane currentDeviceId={scheduledTaskDeviceId} onClose={handleCloseExecutionCenter} />
                   ) : rightView === "evernote-migration" ? (
@@ -3684,23 +3143,30 @@ export const WorkspaceApp = ({
                           onSaveAsTemplate={handleSaveAsTemplate}
                           onToggleDesktopFocusMode={toggleDesktopFocusMode}
                           onOpenExecutionCenter={handleOpenExecutionCenter}
-                          companionDiscoveryHub={editorCompanionDiscoveryHub}
+                          
                         />
                       ) : (
                       <EditorPane
                       onOpenExecutionCenter={handleOpenExecutionCenter}
-                      companionDiscoveryHub={editorCompanionDiscoveryHub}
                       memo={selectedMemo}
                       repository={repository}
                       pluginHost={pluginHost}
                       pluginNavigationRequest={pluginNavigationRequest}
                     onOpenAiPrompts={handleOpenAiPrompts}
+                    companionAvailable={authRequired && Boolean(user) && !demoMode}
+                    beforeCompanionApply={async () => {
+                      const { assertCompanionChangesSynced } = await import("@/lib/companion-actions");
+                      await assertCompanionChangesSynced(localDataScope);
+                    }}
+                    onCompanionNotesChanged={async () => {
+                      const result = await refreshWorkspaceFromServer("manual");
+                      if ("skipped" in result && result.skipped) throw new Error("Workspace refresh was skipped.");
+                    }}
+                    onOpenCompanionNote={handleOpenPluginNote}
                     desktopFocusMode={desktopFocusModeActive}
                     onToggleDesktopFocusMode={toggleDesktopFocusMode}
                     editorContentAlignment={editorContentAlignment}
                     mobileDefaultEditMemoId={createdMemoEditId}
-                    pendingInsertFiles={pendingEditorInsert}
-                    onPendingInsertFilesConsumed={() => setPendingEditorInsert(null)}
                     isTrashView={memoView === "trash"}
                     notebooks={notebooks}
                     isLoading={memoQuery.isLoading}

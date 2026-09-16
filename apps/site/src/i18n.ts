@@ -276,7 +276,7 @@ export const siteCopy = {
         },
         {
           title: "原生 AI Agent 联动与编辑器内置多模型",
-          summary: "内置 REST API、OpenAPI schema、Remote MCP endpoint 与多模型集成，让 AI 真正成为个人知识库的智能副驾驶。",
+          summary: "内置 REST API、Remote MCP endpoint 与多模型集成，让 AI 真正成为个人知识库的智能副驾驶。",
           points: [
             "内置 Remote MCP endpoint：直接授权 Antigravity、Claude Code、Codex 等 AI Agent 读取、生成与整理笔记。",
             "支持接入自己的 AI 模型：无缝配置 OpenAI、Anthropic Claude、Google Gemini、DeepSeek 及自定义兼容接口。",
@@ -547,7 +547,7 @@ export const siteCopy = {
         },
         {
           title: "Native AI Agent Synergy & In-Editor Multi-Model Assistants",
-          summary: "Built-in REST API, OpenAPI schema, Remote MCP endpoint, and multi-model integration turn AI into a true copilot for your notes.",
+          summary: "Built-in REST API, Remote MCP endpoint, and multi-model integration turn AI into a true copilot for your notes.",
           points: [
             "Remote MCP Endpoint: Authorize Antigravity, Claude Code, and Codex to read, summarize, and organize your knowledge base.",
             "Connect Your Own AI Models: Support for OpenAI, Anthropic Claude, Google Gemini, DeepSeek, and custom compatible endpoints.",

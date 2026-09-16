@@ -7,7 +7,7 @@ import {
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { resolveContainerImageSource } from "./container-image-source";
-import openApiSpec from "../../../docs/openapi.json";
+import apiProbe from "../../../docs/openapi.json";
 import releaseSummary from "../../../release-summary.json";
 import {
   authenticateRequest,
@@ -241,7 +241,8 @@ app.get("/api/health", async (c) => {
   });
 });
 
-app.get("/api/openapi.json", (c) => c.json(openApiSpec));
+// Reachability probe only. Not an API catalog. Agents should use MCP.
+app.get("/api/openapi.json", (c) => c.json(apiProbe));
 
 registerPublicShareRoutes(app);
 

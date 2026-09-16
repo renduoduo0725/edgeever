@@ -1,5 +1,28 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+const normalizeIpcBytes = (value) => {
+  if (value instanceof Uint8Array) {
+    const copy = new Uint8Array(value.byteLength);
+    copy.set(value);
+    return copy;
+  }
+  if (value instanceof ArrayBuffer) {
+    return new Uint8Array(value.slice(0));
+  }
+  if (ArrayBuffer.isView(value)) {
+    return new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength));
+  }
+  if (Array.isArray(value)) {
+    return Uint8Array.from(value);
+  }
+  if (value && typeof value === "object" && value.type === "Buffer") {
+    return normalizeIpcBytes(value.data);
+  }
+  return new Uint8Array();
+};
+
+let screenshotImportListener = null;
+
 contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
   isAvailable: true,
   canClearLocalData: ipcRenderer.sendSync("desktop:local-data-reset-available-sync"),
@@ -65,13 +88,17 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
     return () => ipcRenderer.removeListener("desktop:import-markdown", listener);
   },
   onImportScreenshot: (callback) => {
+    if (screenshotImportListener) {
+      ipcRenderer.removeListener("desktop:import-screenshot", screenshotImportListener);
+    }
     const listener = (_event, payload) => {
-      const bytes = payload?.bytes instanceof Uint8Array
-        ? payload.bytes
-        : new Uint8Array(payload?.bytes || []);
-      callback({ ...payload, bytes });
+      callback({ ...payload, bytes: normalizeIpcBytes(payload?.bytes) });
     };
+    screenshotImportListener = listener;
     ipcRenderer.on("desktop:import-screenshot", listener);
-    return () => ipcRenderer.removeListener("desktop:import-screenshot", listener);
+    return () => {
+      ipcRenderer.removeListener("desktop:import-screenshot", listener);
+      if (screenshotImportListener === listener) screenshotImportListener = null;
+    };
   },
 }));

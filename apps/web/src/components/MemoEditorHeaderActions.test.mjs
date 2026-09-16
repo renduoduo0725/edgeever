@@ -16,7 +16,6 @@ describe("shared memo editor header actions", () => {
     expect(actionsSource).toContain("<Search");
     expect(actionsSource).toContain("<GitHubRepositoryLink");
     expect(actionsSource).toContain("<SystemInfoDialog");
-    expect(actionsSource).toContain("{companionDiscoveryHub}");
     expect(actionsSource).toContain("<ExecutionCenterButton");
     expect(actionsSource).toContain("<ThemeToggle />");
     expect(actionsSource).toContain("<MoreHorizontal");

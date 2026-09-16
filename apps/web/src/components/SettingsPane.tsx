@@ -4,7 +4,6 @@ import {
   Database,
   Info,
   LayoutTemplate,
-  PawPrint,
   Shield,
   SlidersHorizontal,
   Sparkles,
@@ -17,13 +16,7 @@ import { useTranslation } from "react-i18next";
 import * as m from "motion/react-m";
 import { SystemInfoDialog } from "@/components/SystemInfoDialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  SETTINGS_CARD_DESCRIPTION_CLASSNAME,
-  SETTINGS_CARD_HEADER_CLASSNAME,
-  SETTINGS_CARD_ICON_CLASSNAME,
-  SETTINGS_CARD_TITLE_CLASSNAME,
-} from "./settings/settings-ui";
+
 import type { EditorContentAlignment, ShortcutSettings } from "@/lib/app-helpers";
 import { WORKSPACE_PAGE_TITLE_CLASSNAME } from "@/lib/workspace-ui";
 import { cn } from "@/lib/utils";
@@ -43,7 +36,6 @@ import { AiModelCard } from "./settings/AiModelCard";
 import { AiTagSuggestionPromptCard } from "./settings/AiTagSuggestionPromptCard";
 import { ThemeToggle } from "./ThemeToggle";
 import type { AuthUser } from "@edgeever/shared";
-import { CompanionDiscoverySettingsCard } from "./settings/CompanionDiscoverySettingsCard";
 import { contentEnterMotion } from "@/lib/motion";
 import { useDeployedUpdateNotice } from "@/hooks/useDeployedUpdateNotice";
 import { ExecutionCenterButton } from "@/components/execution/ExecutionCenterButton";
@@ -66,8 +58,6 @@ interface SettingsPaneProps {
   user: AuthUser | null;
   refreshWorkspaceAfterImport: () => Promise<void>;
   onOpenExecutionCenter: () => void;
-  companionScope: string;
-  onOpenCompanion: () => void;
 }
 
 // Slate and brand color variables already switch values with the root theme.
@@ -77,7 +67,7 @@ const SettingsGroup = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
-type TabKey = "general" | "paw" | "users" | "data" | "ai" | "advanced" | "account";
+type TabKey = "general" | "users" | "data" | "ai" | "advanced" | "account";
 
 interface TabItem {
   key: TabKey;
@@ -108,8 +98,6 @@ export const SettingsPane = ({
   user,
   refreshWorkspaceAfterImport,
   onOpenExecutionCenter,
-  companionScope,
-  onOpenCompanion,
 }: SettingsPaneProps) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>("general");
@@ -159,16 +147,6 @@ export const SettingsPane = ({
           },
         ]
       : []),
-    {
-      key: "paw",
-      label: t("settings.tabs.paw"),
-      badge: "Beta",
-      icon: PawPrint,
-      colorClass: "text-emerald-700",
-      bgColorClass: "bg-emerald-50/80",
-      hoverColorClass: "hover:bg-emerald-50/40",
-      iconColorClass: "text-emerald-600",
-    },
     {
       key: "advanced",
       label: t("settings.tabs.advanced"),
@@ -236,27 +214,6 @@ export const SettingsPane = ({
             />
             <FeedbackLink className="hidden lg:flex" />
             <ProductHuntLink className="hidden lg:flex" />
-          </SettingsGroup>
-        );
-      case "paw":
-        return (
-          <SettingsGroup>
-            {authRequired && user && !demoMode ? (
-              <CompanionDiscoverySettingsCard scope={companionScope} onOpenCompanion={onOpenCompanion}
-                onOpenAiSettings={() => setActiveTab("ai")} />
-            ) : (
-              <Card className="shadow-none">
-                <CardHeader className={SETTINGS_CARD_HEADER_CLASSNAME}>
-                  <CardTitle className={SETTINGS_CARD_TITLE_CLASSNAME}>
-                    <PawPrint className={SETTINGS_CARD_ICON_CLASSNAME} />
-                    {t("companion.discovery.settingsTitle")}
-                  </CardTitle>
-                  <CardDescription className={SETTINGS_CARD_DESCRIPTION_CLASSNAME}>
-                    {t("companion.unavailableHelp")}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            )}
           </SettingsGroup>
         );
       case "users":

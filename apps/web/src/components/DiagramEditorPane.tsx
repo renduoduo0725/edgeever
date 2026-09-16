@@ -164,7 +164,6 @@ type DiagramEditorPaneProps = {
   onSaveAsTemplate: (memo: MemoDetail, name: string) => Promise<void>;
   onToggleDesktopFocusMode: () => void;
   onOpenExecutionCenter: () => void;
-  companionDiscoveryHub?: ReactNode;
 };
 
 type NodeData = { label: string; shape: DiagramNodeShape; parentId?: string; resourceIcon?: ArchitectureResourceIcon };
@@ -1343,7 +1342,6 @@ export const DiagramEditorPane = ({
   onSaveAsTemplate,
   onToggleDesktopFocusMode,
   onOpenExecutionCenter,
-  companionDiscoveryHub,
 }: DiagramEditorPaneProps) => {
   const { t } = useTranslation();
   const { resolvedTheme } = useAppearanceTheme();
@@ -2777,7 +2775,6 @@ export const DiagramEditorPane = ({
               </Button>
             )}
             <MemoEditorHeaderActions
-              companionDiscoveryHub={companionDiscoveryHub}
               moreMenuClassName="w-48"
               onOpenExecutionCenter={onOpenExecutionCenter}
               onSearch={openSearch}

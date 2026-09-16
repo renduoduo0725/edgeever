@@ -7,11 +7,11 @@ platform :ios do
   lane :submit_review do
     version = ENV.fetch("APP_STORE_VERSION")
     build_number = ENV.fetch("APP_STORE_BUILD_NUMBER")
-    release_notes = {
-      "zh-Hans" => ENV.fetch("APP_STORE_RELEASE_NOTES_ZH"),
-      "en-US" => ENV.fetch("APP_STORE_RELEASE_NOTES_EN")
-    }
-    if ENV["APP_STORE_RELEASE_NOTES_JA"].to_s.strip != ""
+    notes_zh = ENV["APP_STORE_RELEASE_NOTES_ZH"].to_s.strip
+    notes_en = ENV["APP_STORE_RELEASE_NOTES_EN"].to_s.strip
+    has_notes = notes_zh != "" && notes_en != ""
+    release_notes = has_notes ? { "zh-Hans" => notes_zh, "en-US" => notes_en } : nil
+    if has_notes && ENV["APP_STORE_RELEASE_NOTES_JA"].to_s.strip != ""
       release_notes["ja"] = ENV.fetch("APP_STORE_RELEASE_NOTES_JA")
     end
 
@@ -33,7 +33,7 @@ platform :ios do
       phased_release: false,
       force: true,
       skip_binary_upload: true,
-      skip_metadata: false,
+      skip_metadata: !has_notes,
       skip_screenshots: true,
       release_notes: release_notes,
       run_precheck_before_submit: false,

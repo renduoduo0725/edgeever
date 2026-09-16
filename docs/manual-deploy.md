@@ -23,7 +23,7 @@ For local CLI deployment, set `EDGE_EVER_DEPLOYMENT_URL=https://<your-worker-dom
 After deployment, confirm:
 
 - `/api/health` returns `200` with `"ok": true`
-- `/api/openapi.json` is reachable
+- `/api/openapi.json` is reachable (probe only, not an API catalog)
 - `admin` can log in with the password supplied through `EDGE_EVER_PASSWORD`
 
 ## Create resources manually

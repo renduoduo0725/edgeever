@@ -1,6 +1,6 @@
-# EdgeEver Mobile Builds
+# EdgeEver Android Builds
 
-EdgeEver Mobile is built with Expo and React Native. Main-branch Android packages are built directly on GitHub Actions, without using EAS Build quota.
+The Android app in `apps/mobile` is built with Expo and React Native. iOS store binaries come from `apps/ios` (SwiftUI), not this tree. Main-branch Android packages are built directly on GitHub Actions, without using EAS Build quota.
 
 ## App Updates
 
@@ -139,25 +139,10 @@ repository.
 
 ### iOS App Store build
 
-The production iOS app uses the bundle identifier `org.edgeever.mobile`. The
-Apple Developer team and distribution credentials are managed through EAS so
-that the App Store archive can be built without storing signing certificates in
-the repository or on the release machine:
-
-```sh
-cd apps/mobile
-bunx eas-cli credentials:configure-build --platform ios --profile production
-bunx eas-cli build --platform ios --profile production
-```
-
-The first command requires the Apple Account Holder to authenticate and may
-prompt for two-factor authentication. The production profile automatically
-increments the App Store build number. Routine delivery should use the separate
-store-delivery workflow, which builds from an immutable formal Release tag,
-uploads to App Store Connect, and submits that exact build to App Review.
-Approved builds are released automatically. Apple credentials, App Store
-Connect API keys, certificates, and provisioning profiles must never be
-committed.
+iOS is a SwiftUI app in `apps/ios`, using the same bundle identifier
+`org.edgeever.mobile`. Do not build or submit iOS from `apps/mobile` or EAS.
+On macOS beta hosts, archives must go through Xcode Cloud. See
+[iOS Xcode Cloud](ios-xcode-cloud.md) and [Mobile Store Delivery](store-delivery.md).
 
 ## EAS
 

@@ -1,10 +1,7 @@
 import "katex/dist/katex.min.css";
 import { Node, mergeAttributes } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
-import { TableKit } from "@tiptap/extension-table";
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { useQuery } from "@tanstack/react-query";
 import { Clock3, FileText, LoaderCircle, ShieldCheck } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo } from "react";
@@ -17,9 +14,7 @@ import { resolvePublicShareBody } from "@/lib/public-share-body";
 import {
   parseImageWidth,
   getImageReferrerPolicy,
-  ImageGallery,
-  MergeDivider,
-  PluginEmbed,
+  createEdgeEverDocumentExtensions,
   type PublicMemoShare,
 } from "@edgeever/shared";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
@@ -81,19 +76,16 @@ const SharedThemeBlock = Node.create({
 const SharedRichText = ({ content }: { content: PublicMemoShare["contentJson"] }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ codeBlock: false, link: { openOnClick: true } }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
+      ...createEdgeEverDocumentExtensions({
+        mathematics: createEdgeEverMathematics(),
+        starterKit: { codeBlock: false, link: { openOnClick: true } },
+        image: SharedImage.configure({ allowBase64: false, inline: false }),
+        pdf: PdfAttachment,
+        file: FileAttachment,
+        table: { table: { renderWrapper: true } },
+      }),
       EdgeEverCodeBlock.configure({ lowlight: codeBlockLowlight, defaultLanguage: "plaintext" }),
-      MergeDivider,
-      PluginEmbed,
-      PdfAttachment,
-      FileAttachment,
-      ...createEdgeEverMathematics(),
       SharedThemeBlock,
-      ImageGallery,
-      SharedImage.configure({ allowBase64: false, inline: false }),
-      TableKit.configure({ table: { renderWrapper: true } }),
     ],
     content,
     editable: false,

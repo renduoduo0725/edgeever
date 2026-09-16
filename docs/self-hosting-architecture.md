@@ -52,7 +52,7 @@ ambiguous.
 
 ## Compatibility requirements
 
-- Keep `/api/*`, `/mcp`, `/api/openapi.json`, and `/api/health` unchanged.
+- Keep `/api/*`, `/mcp`, `/api/health`, and the `/api/openapi.json` reachability probe unchanged. `/api/openapi.json` is not an API catalog.
 - Keep the current migration files append-only; do not fork the schema for
   Docker.
 - Keep root secrets in environment variables or Docker secrets, never in the

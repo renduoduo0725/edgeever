@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import { IconTooltip } from "./editor/EditorPaneChrome";
 
 export const MemoEditorHeaderActions = ({
-  companionDiscoveryHub,
   moreButtonClassName,
   moreMenuClassName,
   moreMenuItems,
@@ -27,7 +26,6 @@ export const MemoEditorHeaderActions = ({
   textNoteActions,
   textNoteMenuItems,
 }: {
-  companionDiscoveryHub?: ReactNode;
   moreButtonClassName?: string;
   moreMenuClassName?: string;
   moreMenuItems: ReactNode;
@@ -72,7 +70,6 @@ export const MemoEditorHeaderActions = ({
           {deployedUpdateUnseen ? <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-white" /> : null}
         </Button>
       </IconTooltip>
-      {companionDiscoveryHub}
       <ExecutionCenterButton className="h-8 w-8" onClick={onOpenExecutionCenter} />
       <ThemeToggle />
       <DropdownMenu>

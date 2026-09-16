@@ -45,6 +45,9 @@ credentials.json
 # Local App Review crash dumps / image self-test screenshots.
 .tmp-app-review-crashes/
 
+# Generated Expo iOS tree; store iOS is apps/ios.
+apps/mobile/ios/
+
 # Local brand concept and research drafts.
 /assets/brand/edgeever-concept-13.png
 /docs/notion-ai-feature-landscape.en-US.md

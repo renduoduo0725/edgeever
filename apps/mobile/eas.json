@@ -17,18 +17,10 @@
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production",
-      "ios": {
-        "image": "latest"
-      }
+      "channel": "production"
     }
   },
   "submit": {
-    "production": {
-      "ios": {
-        "ascAppId": "6792625631"
-      }
-    },
     "store-internal": {
       "android": {
         "track": "internal",
@@ -51,11 +43,6 @@
       "android": {
         "track": "production",
         "releaseStatus": "completed"
-      }
-    },
-    "store-ios": {
-      "ios": {
-        "ascAppId": "6792625631"
       }
     }
   }

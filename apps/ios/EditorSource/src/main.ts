@@ -1,20 +1,17 @@
 import "./styles.css";
 import "katex/dist/katex.min.css";
 import { Graph } from "@antv/x6";
-import { Editor, mergeAttributes, Node } from "@tiptap/core";
-import StarterKit from "@tiptap/starter-kit";
+import { Editor } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
 import CodeBlock from "@tiptap/extension-code-block";
-import { TableKit } from "@tiptap/extension-table";
-import { Markdown } from "@tiptap/markdown";
 import { EdgeEverLink } from "@edgeever/shared/editor-link";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { NodeSelection } from "@tiptap/pm/state";
 import mermaid from "mermaid";
 import { toCanvas } from "html-to-image";
 import {
+  createEdgeEverDocumentExtensions,
   createNativeUnsupportedContentExtensions,
   diagramDocumentToX6Cells,
   attachDiagramReader,
@@ -44,100 +41,15 @@ import {
   buildNoteImageCardMarkup,
   generateCardCss,
 } from "@edgeever/shared/note-image-card";
-import { createEdgeEverMathematics } from "./mathematics";
-import { createImageInsertTransaction, createNativeImageGalleryView, groupUploadedImages, NATIVE_IMAGE_GALLERY_CSS } from "@edgeever/shared/native-image-gallery";
+import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
+import { createIosImageGallery } from "./document-nodes";
+import { createImageInsertTransaction, groupUploadedImages, NATIVE_IMAGE_GALLERY_CSS } from "@edgeever/shared/native-image-gallery";
 
 const galleryStyle = document.createElement("style");
 galleryStyle.textContent = NATIVE_IMAGE_GALLERY_CSS;
 document.head.append(galleryStyle);
 
 Graph.registerConnector(MIND_MAP_CONNECTOR_NAME, mindMapConnector, true);
-
-/** Keep in sync with packages/shared MergeDivider (iOS bundle cannot import monorepo shared). */
-const MERGE_DIVIDER_MARKDOWN_MARKER = "<!-- edgeever:merge-divider -->";
-const MERGE_DIVIDER_TOKENIZER =
-  /^<!--\s*edgeever:merge-divider\s*-->\s*(?:\n+---[ \t]*(?:\n+|$)|(?:\n+|$))/;
-
-const MergeDivider = Node.create({
-  name: "edgeeverMergeDivider",
-  group: "block",
-  atom: true,
-  selectable: true,
-  draggable: true,
-  parseHTML() {
-    return [{ tag: "hr[data-edgeever-merge-divider]" }];
-  },
-  renderHTML({ HTMLAttributes }) {
-    return [
-      "hr",
-      mergeAttributes(HTMLAttributes, {
-        "data-edgeever-merge-divider": "true",
-        class: "edgeever-merge-divider",
-      }),
-    ];
-  },
-  renderMarkdown() {
-    return `${MERGE_DIVIDER_MARKDOWN_MARKER}\n\n---`;
-  },
-  parseMarkdown(_token, helpers) {
-    return helpers.createNode("edgeeverMergeDivider");
-  },
-  markdownTokenizer: {
-    name: "edgeeverMergeDivider",
-    level: "block",
-    start(source: string) {
-      return source.indexOf(MERGE_DIVIDER_MARKDOWN_MARKER);
-    },
-    tokenize(source: string) {
-      const match = MERGE_DIVIDER_TOKENIZER.exec(source);
-      if (!match) return undefined;
-      return {
-        type: "edgeeverMergeDivider",
-        raw: match[0],
-        text: "",
-      };
-    },
-  },
-});
-
-/** Keep in sync with packages/shared ImageGallery to avoid duplicate TipTap runtime types. */
-const ImageGallery = Node.create({
-  name: "edgeeverImageGallery",
-  group: "block",
-  content: "image+",
-  defining: true,
-  isolating: true,
-  addNodeView() { return createNativeImageGalleryView(() => locale); },
-  addAttributes() {
-    return {
-      layout: {
-        default: "auto",
-        parseHTML: (element: HTMLElement) => {
-          const layout = element.getAttribute("data-image-gallery-layout");
-          return layout === "1" || layout === "2" || layout === "3" ? layout : "auto";
-        },
-        renderHTML: (attributes: { layout?: unknown }) => ({
-          "data-image-gallery-layout": attributes.layout === "1" || attributes.layout === "2" || attributes.layout === "3"
-            ? attributes.layout
-            : "auto",
-        }),
-      },
-    };
-  },
-  parseHTML() {
-    return [{ tag: "div[data-edgeever-image-gallery]" }];
-  },
-  renderHTML({ node, HTMLAttributes }) {
-    return [
-      "div",
-      mergeAttributes(HTMLAttributes, {
-        "data-edgeever-image-gallery": "true",
-        "data-image-count": String(node.childCount),
-      }),
-      0,
-    ];
-  },
-});
 
 type BridgeMessage =
   | { type: "ready"; startupMs: number }
@@ -830,30 +742,25 @@ function createEdgeEverImageExtension() {
 
 function buildExtensions(placeholder: string) {
   return [
-    StarterKit.configure({
-      codeBlock: false,
-      link: false,
+    ...createEdgeEverDocumentExtensions({
+      mathematics: createEdgeEverMathematics(),
+      starterKit: { codeBlock: false, link: false },
+      image: createEdgeEverImageExtension(),
+      gallery: createIosImageGallery(() => locale),
+      pdf: false,
+      file: false,
+      pluginEmbed: false,
+      table: { table: { resizable: false } },
+      markdown: true,
     }),
     EdgeEverLink,
     NativeAttachmentMetadata,
-    TaskList,
-    TaskItem.configure({ nested: true }),
-    MergeDivider,
-    ...createEdgeEverMathematics(),
     CodeBlock.configure({
       languageClassPrefix: "language-",
-    }),
-    ImageGallery,
-    createEdgeEverImageExtension(),
-    TableKit.configure({
-      table: { resizable: false },
     }),
     ...createNativeUnsupportedContentExtensions(),
     Placeholder.configure({
       placeholder,
-    }),
-    Markdown.configure({
-      markedOptions: { gfm: true },
     }),
   ];
 }

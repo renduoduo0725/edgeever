@@ -138,7 +138,7 @@ It is meant to be an open, lightweight, long-lived personal notes foundation:
 - Classic three-pane workflow
 - Rich text, images, nested notebooks, and revision history
 - Cloudflare-native deployment
-- Clear data model with REST API, OpenAPI, and MCP
+- Clear data model with REST API and MCP
 - Low cost for individual users
 - Friendly to AI agents
 

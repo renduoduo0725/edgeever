@@ -23,7 +23,7 @@
 部署完成后，确认：
 
 - `/api/health` 返回 `200` 和 `"ok": true`
-- `/api/openapi.json` 可以访问
+- `/api/openapi.json` 可以访问（仅探活，不是 API 目录）
 - `admin` 可以使用通过 `EDGE_EVER_PASSWORD` 提供的密码登录
 
 ## 手动创建资源

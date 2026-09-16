@@ -229,7 +229,6 @@ export const App = () => {
           <Route path="/plugins/:pluginId" element={<AuthenticatedWorkspace />} />
           <Route path="/templates" element={<AuthenticatedWorkspace />} />
           <Route path="/ai-prompts" element={<AuthenticatedWorkspace />} />
-          <Route path="/companion" element={<AuthenticatedWorkspace />} />
           <Route path="/execution-center" element={<AuthenticatedWorkspace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

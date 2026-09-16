@@ -1860,6 +1860,19 @@ textarea {
   color: #1e293b;
   line-height: 1.7;
 }
+.companion-markdown.markdown-content > :first-child {
+  margin-top: 0;
+}
+.companion-markdown.markdown-content > :last-child {
+  margin-bottom: 0;
+}
+.companion-markdown.markdown-content h2,
+.companion-markdown.markdown-content h3 {
+  margin-top: 0.85rem;
+}
+.companion-markdown.markdown-content hr {
+  margin: 0.75rem 0;
+}
 .markdown-content h1 {
   font-size: 1.5rem;
   font-weight: 700;

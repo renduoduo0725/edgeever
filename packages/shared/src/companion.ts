@@ -9,13 +9,22 @@ export const CompanionMemoryUpdateSchema = z.object({
   content: z.string().trim().min(1).max(500),
   version: z.number().int().positive(),
 }).strict();
+export const CompanionTurnFocusSchema = z.object({
+  memoId: z.string().trim().min(1).max(100).optional(),
+  notebookId: z.string().trim().min(1).max(100).optional(),
+  notebookTitle: z.string().trim().max(160).optional(),
+  title: z.string().trim().max(160).optional(),
+  selectionMarkdown: z.string().max(2000).optional(),
+}).strict();
 export const CompanionTurnInputSchema = z.object({
   id: CompanionIdSchema,
   threadId: CompanionIdSchema,
   message: z.string().trim().min(1).max(4000),
   useMemory: z.boolean().default(true),
   allowNotes: z.boolean().default(false),
+  allowWrites: z.boolean().optional(),
   locale: z.enum(["zh-CN", "en-US", "ja"]).default("en-US"),
+  focus: CompanionTurnFocusSchema.optional(),
 }).strict();
 export type CompanionTurnInput = z.infer<typeof CompanionTurnInputSchema>;
 export type CompanionMemory = {
@@ -32,7 +41,7 @@ export type CompanionMemory = {
   createdAt: string;
   updatedAt: string;
 };
-export type CompanionSource = { id: string; title: string; revision: number };
+export type CompanionSource = { id: string; title: string; revision: number; notebookId?: string };
 
 export const CompanionDiscoverySettingsInputSchema = z.object({
   enabled: z.boolean(),

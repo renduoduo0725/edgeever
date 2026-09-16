@@ -198,7 +198,7 @@ export const jaSiteCopy = {
       },
       {
         title: "ネイティブな AI Agent とエディタ内の複数モデル",
-        summary: "REST API、OpenAPI、Remote MCP、複数モデル接続で、AI をノートの相棒にします。",
+        summary: "REST API、Remote MCP、複数モデル接続で、AI をノートの相棒にします。",
         points: [
           "Remote MCP: Antigravity、Claude Code、Codex に読み取り、要約、整理を任せられます。",
           "自分のモデル: OpenAI、Anthropic Claude、Google Gemini、DeepSeek、互換エンドポイント。",

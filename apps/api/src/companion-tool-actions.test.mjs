@@ -121,6 +121,35 @@ describe("shared companion MCP adapter", () => {
     expect(f.sqlite.query("SELECT COUNT(*) AS n FROM companion_actions").get().n).toBe(0);
     expect(createCompanionTools({ ...f, scope, input: { ...f.input, allowNotes: false } })).toEqual({});
   });
+  test("read-only note access keeps MCP reads and omits write tools", async () => {
+    const f = await setup();
+    const tools = createCompanionTools({
+      ...f, scope, input: { ...f.input, allowWrites: false },
+      signal: new AbortController().signal, assertActive: async () => {}, sources: [],
+    });
+    expect(tools.get_memo).toBeTruthy();
+    expect(tools.search_memos).toBeTruthy();
+    expect(tools.create_memo).toBeUndefined();
+    expect(tools.update_memo).toBeUndefined();
+    expect(tools.merge_memos).toBeUndefined();
+    expect(await tools.get_memo.execute({ memoId: f.notes[0].id })).toMatchObject({ content: "One original content" });
+    expect(f.sqlite.query("SELECT COUNT(*) AS n FROM companion_actions").get().n).toBe(0);
+  });
+  test("create_memo, update_memo and trash_memos execute immediately", async () => {
+    const f = await setup();
+    const tools = createCompanionTools({ ...f, scope, signal: new AbortController().signal, assertActive: async () => {}, sources: [] });
+    const created = await tools.create_memo.execute({ notebookId: "ideas", title: "New", contentMarkdown: "Exact new body" });
+    expect(created).toMatchObject({ applied: true });
+    const createdId = created.memo?.id ?? created.id;
+    expect(createdId).toBeTruthy();
+    expect(await getMemoDetail(f.db, scope.workspaceId, createdId)).toMatchObject({ title: "New", contentMarkdown: "Exact new body" });
+    await tools.get_memo.execute({ memoId: f.notes[0].id });
+    expect(await tools.update_memo.execute({ memoId: f.notes[0].id, title: "Changed", contentMarkdown: "Exact replacement" })).toMatchObject({ applied: true });
+    expect(await getMemoDetail(f.db, scope.workspaceId, f.notes[0].id)).toMatchObject({ title: "Changed", contentMarkdown: "Exact replacement" });
+    expect(await tools.trash_memos.execute({ memoIds: [f.notes[0].id] })).toMatchObject({ applied: true });
+    expect((await getMemoDetail(f.db, scope.workspaceId, f.notes[0].id, true)).isDeleted).toBe(true);
+    expect(f.sqlite.query("SELECT COUNT(*) AS n FROM companion_actions").get().n).toBe(0);
+  });
   test("repeated complete reads return a reference without consuming the note budget again", async () => {
     const f = await setup();
     for (const note of f.notes) await updateMemoRecord(f.db, scope.workspaceId, note.id, { contentMarkdown: "x".repeat(6000) }, actor, "owner");

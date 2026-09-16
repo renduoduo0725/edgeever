@@ -473,7 +473,6 @@ export const NotebookPane = ({
   onOpenTags,
   onOpenAssets,
   onOpenTemplates,
-  companionActive,
   pluginHost,
   onOpenPluginManager,
   onOpenTrash,
@@ -512,7 +511,6 @@ export const NotebookPane = ({
   onOpenTags: () => void;
   onOpenAssets: () => void;
   onOpenTemplates: () => void;
-  companionActive: boolean;
   pluginHost: EdgeEverPluginHost;
   onOpenPluginManager: () => void;
   onOpenTrash: () => void;
@@ -738,9 +736,9 @@ export const NotebookPane = ({
           </button>
         )}
 
-        <nav className="mb-1 space-y-1" aria-label={t("companion.primaryNavigation")}>
+        <nav className="mb-1 space-y-1" aria-label={t("notebookPane.entries")}>
           <SidebarNavButton
-            active={!companionActive && view === "notebook" && selectedNotebookId === null}
+            active={view === "notebook" && selectedNotebookId === null}
             icon={<LayoutList className="h-4 w-4" />}
             label={t("notebookPane.allMemos")}
             onClick={onBackToList}
@@ -810,7 +808,7 @@ export const NotebookPane = ({
                 key={node.id}
                 node={node}
                 depth={0}
-                selectedNotebookId={companionActive ? null : selectedNotebookId}
+                selectedNotebookId={selectedNotebookId}
                 onSelect={onSelect}
                 onCreateNotebook={onCreateNotebook}
                 onRenameNotebook={onRenameNotebook}
@@ -868,15 +866,15 @@ export const NotebookPane = ({
               </DropdownMenu>
             </div>
 
-            <nav className="mt-3 flex min-h-0 flex-1 flex-col items-center gap-1" aria-label={t("companion.primaryNavigation")}>
+            <nav className="mt-3 flex min-h-0 flex-1 flex-col items-center gap-1" aria-label={t("notebookPane.entries")}>
               <SidebarRailButton
-                active={!companionActive && view === "notebook" && selectedNotebookId === null}
+                active={view === "notebook" && selectedNotebookId === null}
                 icon={<LayoutList className="h-4 w-4" />}
                 label={t("notebookPane.allMemos")}
                 onClick={onBackToList}
               />
               <SidebarRailButton
-                active={!companionActive && view === "notebook" && selectedNotebookId !== null}
+                active={view === "notebook" && selectedNotebookId !== null}
                 icon={<NotebookIcon className="h-4 w-4" />}
                 label={t("notebookPane.notebooks")}
                 onClick={onToggleCollapsed}
@@ -933,6 +931,7 @@ export const NotebookPane = ({
               sideOffset={6}
               className="w-64 rounded-lg border border-slate-200 bg-card p-1.5 shadow-xl  "
             >
+              <TooltipProvider delayDuration={0} skipDelayDuration={0}>
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-400 ">
                   {t("pwa.sidebarGroupApps") || "客户端应用"}
@@ -956,50 +955,60 @@ export const NotebookPane = ({
                     </div>
                   </a>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a
-                    href={DESKTOP_DOWNLOAD_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`${t("pwa.sidebarLinux")} ${t("pwa.sidebarLinuxBadge")}`}
-                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900   "
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <BrandIconContainer>
-                        <BrandIcon path={LINUX_ICON_PATH} className="h-4 w-4" />
-                      </BrandIconContainer>
-                      <span className="truncate font-medium">{t("pwa.sidebarLinux") || "Linux"}</span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1 text-amber-700 ">
-                      <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold ">
-                        {t("pwa.sidebarLinuxBadge") || "Preview"}
-                      </span>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </div>
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <a
-                    href={DESKTOP_DOWNLOAD_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`${t("pwa.sidebarWindows")} ${t("pwa.sidebarWindowsBadge")}`}
-                    className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900   "
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <BrandIconContainer>
-                        <BrandIcon path={WINDOWS_ICON_PATH} color="#0078D4" />
-                      </BrandIconContainer>
-                      <span className="truncate font-medium">{t("pwa.sidebarWindows") || "Windows"}</span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1 text-amber-700 ">
-                      <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold ">
-                        {t("pwa.sidebarWindowsBadge") || "Preview"}
-                      </span>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </div>
-                  </a>
-                </DropdownMenuItem>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={DESKTOP_DOWNLOAD_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${t("pwa.sidebarLinux")}: ${t("pwa.sidebarLinuxAvailability")}`}
+                        className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900   "
+                      >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <BrandIconContainer>
+                            <BrandIcon path={LINUX_ICON_PATH} className="h-4 w-4" />
+                          </BrandIconContainer>
+                          <span className="truncate font-medium">{t("pwa.sidebarLinux") || "Linux"}</span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1 text-slate-400 group-hover:text-slate-600 ">
+                          <span className="text-[11px]">AppImage</span>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs whitespace-normal">
+                    {t("pwa.sidebarLinuxAvailability")}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={DESKTOP_DOWNLOAD_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`${t("pwa.sidebarWindows")}: ${t("pwa.sidebarWindowsAvailability")}`}
+                        className="group flex cursor-pointer items-center justify-between gap-2.5 rounded-md px-2 py-1.5 text-sm text-slate-700 outline-none transition-colors hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:text-slate-900   "
+                      >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <BrandIconContainer>
+                            <BrandIcon path={WINDOWS_ICON_PATH} color="#0078D4" />
+                          </BrandIconContainer>
+                          <span className="truncate font-medium">{t("pwa.sidebarWindows") || "Windows"}</span>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1 text-slate-400 group-hover:text-slate-600 ">
+                          <span className="text-[11px]">EXE</span>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs whitespace-normal">
+                    {t("pwa.sidebarWindowsAvailability")}
+                  </TooltipContent>
+                </Tooltip>
                 <DropdownMenuItem asChild>
                   <a
                     href={ANDROID_PLAY_URL}
@@ -1110,6 +1119,7 @@ export const NotebookPane = ({
                   </a>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
+              </TooltipProvider>
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex items-center gap-1">

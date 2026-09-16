@@ -2,8 +2,9 @@
 
 [![GitHub Stars](https://img.shields.io/github/stars/tianma-if/edgeever?style=social)](https://github.com/tianma-if/edgeever/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/tianma-if/edgeever?style=social)](https://github.com/tianma-if/edgeever/network/members)
+[![Docker Pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls)](https://github.com/tianma-if/edgeever/pkgs/container/edgeever)
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt)](https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social)
-[![爱发电赞助](https://img.shields.io/badge/爱发电-赞助支持-946ce6?style=social&logo=github-sponsors)](https://afdian.com/a/tianma-if)
+[![爱发电赞助](https://img.shields.io/badge/爱发电-946ce6?style=social&logo=github-sponsors)](https://afdian.com/a/tianma-if)
 
 简体中文 | [繁體中文](README.zh-TW.md) | [English](README.md) | [日本語](README.ja.md)
 
@@ -176,7 +177,7 @@ EdgeEver 的 Web 与桌面端支持插件和无代码主题，可从插件市场
 - iOS App：`apps/ios` 中的原生 SwiftUI（iOS 17+），内置 TipTap EditorBundle、GRDB 本地镜像/outbox，界面与 Android 壳层对齐。
 - 原生桌面端：Electron + Rust sidecar，兼顾跨平台一致体验与高性能本地数据服务；基于 SQLite 支持离线编辑、联网后增量同步与本地备份。
 - 网页裁剪：Manifest V3、Mozilla Readability、Turndown，支持 Chrome、Microsoft Edge 与 Firefox。
-- 后端：一套基于 Hono/Zod 的业务应用，提供 REST API、OpenAPI 与 Remote MCP；Cloudflare 使用 Workers/D1/R2，Docker 使用 Bun/SQLite/本地文件或 S3。
+- 后端：一套基于 Hono/Zod 的业务应用，提供 REST API 与 Remote MCP；Cloudflare 使用 Workers/D1/R2，Docker 使用 Bun/SQLite/本地文件或 S3。
 - 官网：Astro 静态站点，位于 `apps/site`，可独立构建并部署到 Cloudflare Pages。
 
 ## 快速开始
@@ -193,7 +194,7 @@ bun run dev
 ```text
 apps/web          Vite + React 前端、PWA、离线草稿与同步队列
 apps/extension    Chrome/Edge/Firefox Manifest V3 网页裁剪插件
-apps/api          Cloudflare Worker + Hono API、OpenAPI、MCP endpoint
+apps/api          Cloudflare Worker + Hono API、MCP endpoint
 apps/mobile       Expo + React Native Android App
 apps/ios          原生 SwiftUI iOS App（TipTap EditorBundle、GRDB）
 apps/desktop      Electron 桌面端壳层、preload bridge 与原生打包配置
@@ -204,7 +205,7 @@ crates/desktop-sidecar
                    Rust sidecar，负责本地 SQLite、离线数据、备份与资源服务
 scripts           Wrangler 封装、密码 hash、CLI、MCP stdio bridge、Evernote ENEX 导入
 migrations        D1/SQLite 共用、只增不改的数据库 migration
-docs              OpenAPI schema、架构、迁移与部署文档
+docs              架构、迁移与部署文档
 .github/workflows Web、移动端、iOS、桌面端打包、部署与 Release 的 CI
 wrangler.toml     Cloudflare Workers、Assets、D1、R2 配置
 ```
@@ -220,16 +221,6 @@ content_text      搜索、摘要和索引使用
 ```
 
 请打开 **我的** -> **导入与导出**，导出或导入 EdgeEver ZIP。压缩包中的 `notes/` 目录可直接作为 Markdown 阅读和迁移，结构化数据则用于在 EdgeEver 实例之间完整恢复；导入时目标实例中的无关数据会保留，相同 EdgeEver ID 的内容会被覆盖。
-
-## API 文档
-
-OpenAPI schema：
-
-```text
-https://你的域名/api/openapi.json
-```
-
-仓库内文件：[docs/openapi.json](docs/openapi.json)。
 
 ## MCP
 

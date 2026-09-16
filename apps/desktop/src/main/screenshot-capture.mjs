@@ -6,9 +6,68 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFileCallback);
 const MAC_SCREENCAPTURE = "/usr/sbin/screencapture";
-const MIN_CROP_EDGE = 4;
 
-export const macScreencaptureArgs = (outputPath) => ["-i", "-x", "-t", "png", outputPath];
+export const macScreencaptureArgs = (outputPath) => ["-x", "-t", "png", outputPath];
+
+export const normalizeIpcBytes = (value) => {
+  if (value instanceof Uint8Array) {
+    const copy = new Uint8Array(value.byteLength);
+    copy.set(value);
+    return copy;
+  }
+  if (value instanceof ArrayBuffer) {
+    return new Uint8Array(value.slice(0));
+  }
+  if (ArrayBuffer.isView(value)) {
+    return new Uint8Array(value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength));
+  }
+  if (Array.isArray(value)) {
+    return Uint8Array.from(value);
+  }
+  if (value && typeof value === "object" && value.type === "Buffer") {
+    return normalizeIpcBytes(value.data);
+  }
+  return new Uint8Array();
+};
+
+export const screenshotImportIpcPayload = (captured) => ({
+  name: captured.name,
+  type: captured.type,
+  title: captured.title,
+  bytes: normalizeIpcBytes(captured.bytes),
+});
+
+// Full-screen capture finishes in a few hundred milliseconds. macOS/Electron
+// tray menus can deliver the same click twice after that, so keep the capture
+// locked through a short cooldown instead of releasing it in the same tick.
+export const SCREENSHOT_CAPTURE_COOLDOWN_MS = 2000;
+
+export const createScreenshotCaptureGuard = ({
+  cooldownMs = SCREENSHOT_CAPTURE_COOLDOWN_MS,
+  schedule = setTimeout,
+  cancel = clearTimeout,
+} = {}) => {
+  let inFlight = false;
+  let cooldownTimer = null;
+  return {
+    tryBegin() {
+      if (inFlight) return false;
+      inFlight = true;
+      if (cooldownTimer != null) {
+        cancel(cooldownTimer);
+        cooldownTimer = null;
+      }
+      return true;
+    },
+    end() {
+      if (cooldownTimer != null) cancel(cooldownTimer);
+      cooldownTimer = schedule(() => {
+        inFlight = false;
+        cooldownTimer = null;
+      }, cooldownMs);
+    },
+  };
+};
 
 export const isChineseDesktopLocale = (locale) =>
   typeof locale === "string" && locale.toLowerCase().startsWith("zh");
@@ -29,24 +88,6 @@ export const isScreenshotCancelledExit = (error) => {
   return code === 1 || code === 2;
 };
 
-export const clampCropRect = (rect, imageSize) => {
-  const x = Math.max(0, Math.round(Number(rect?.x) || 0));
-  const y = Math.max(0, Math.round(Number(rect?.y) || 0));
-  const width = Math.max(0, Math.round(Number(rect?.width) || 0));
-  const height = Math.max(0, Math.round(Number(rect?.height) || 0));
-  const maxWidth = Math.max(0, Math.round(Number(imageSize?.width) || 0) - x);
-  const maxHeight = Math.max(0, Math.round(Number(imageSize?.height) || 0) - y);
-  return {
-    x,
-    y,
-    width: Math.min(width, maxWidth),
-    height: Math.min(height, maxHeight),
-  };
-};
-
-export const isUsableCropRect = (rect) =>
-  Boolean(rect) && rect.width >= MIN_CROP_EDGE && rect.height >= MIN_CROP_EDGE;
-
 export const readCapturedScreenshot = async (outputPath, io = { readFile, unlink, stat }) => {
   try {
     const info = await io.stat(outputPath);
@@ -63,7 +104,7 @@ export const readCapturedScreenshot = async (outputPath, io = { readFile, unlink
   }
 };
 
-export const captureMacInteractiveScreenshot = async ({
+export const captureMacScreenScreenshot = async ({
   execFile = execFileAsync,
   outputPath,
   readFile: readCapturedFile = readFile,
@@ -101,26 +142,7 @@ const matchCaptureSource = (sources, display) => {
   return sources.find((source) => source && String(source.display_id) === displayId) || sources[0];
 };
 
-export const cropCapturedImage = (image, rect, scaleFactor = 1) => {
-  const size = image?.getSize?.() || { width: 0, height: 0 };
-  const crop = clampCropRect({
-    x: (Number(rect?.x) || 0) * scaleFactor,
-    y: (Number(rect?.y) || 0) * scaleFactor,
-    width: (Number(rect?.width) || 0) * scaleFactor,
-    height: (Number(rect?.height) || 0) * scaleFactor,
-  }, size);
-  if (!isUsableCropRect(crop)) return null;
-  return toPngBytes(image.crop(crop));
-};
-
-export const captureRegionScreenshot = async ({
-  BrowserWindow,
-  desktopCapturer,
-  screen,
-  ipcMain,
-  overlayHtmlPath,
-  overlayPreloadPath,
-}) => {
+export const captureDisplayScreenshot = async ({ desktopCapturer, screen }) => {
   const point = screen.getCursorScreenPoint();
   const display = screen.getDisplayNearestPoint(point);
   const thumbnailSize = displayThumbnailSize(display);
@@ -136,76 +158,17 @@ export const captureRegionScreenshot = async ({
 
   const screenshotBytes = toPngBytes(thumbnail);
   if (!screenshotBytes) throw new Error("Screen capture is unavailable");
-
-  return await new Promise((resolve, reject) => {
-    const completeChannel = "desktop:screenshot-overlay-complete";
-    const cancelChannel = "desktop:screenshot-overlay-cancel";
-    let settled = false;
-    const overlay = new BrowserWindow({
-      x: display.bounds.x,
-      y: display.bounds.y,
-      width: display.bounds.width,
-      height: display.bounds.height,
-      frame: false,
-      resizable: false,
-      movable: false,
-      minimizable: false,
-      maximizable: false,
-      fullscreenable: false,
-      skipTaskbar: true,
-      alwaysOnTop: true,
-      hasShadow: false,
-      show: false,
-      hiddenInMissionControl: true,
-      webPreferences: {
-        preload: overlayPreloadPath,
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
-      },
-    });
-    overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    overlay.setAlwaysOnTop(true, "screen-saver");
-
-    const finish = (result, error) => {
-      if (settled) return;
-      settled = true;
-      ipcMain.removeListener(completeChannel, onComplete);
-      ipcMain.removeListener(cancelChannel, onCancel);
-      if (!overlay.isDestroyed()) overlay.close();
-      if (error) reject(error);
-      else resolve(result);
-    };
-
-    const onComplete = (_event, rect) => {
-      try {
-        finish(cropCapturedImage(thumbnail, rect, display.scaleFactor || 1));
-      } catch (error) {
-        finish(null, error);
-      }
-    };
-    const onCancel = () => finish(null);
-
-    ipcMain.on(completeChannel, onComplete);
-    ipcMain.on(cancelChannel, onCancel);
-    overlay.on("closed", () => finish(null));
-    overlay.webContents.once("did-finish-load", () => {
-      overlay.webContents.send("desktop:screenshot-overlay-init", { bytes: screenshotBytes });
-      overlay.show();
-      overlay.focus();
-    });
-    overlay.loadFile(overlayHtmlPath).catch((error) => finish(null, error));
-  });
+  return screenshotBytes;
 };
 
-export const captureInteractiveScreenshot = async (input) => {
+export const captureScreenToNote = async (input) => {
   const bytes = input.platform === "darwin"
-    ? await captureMacInteractiveScreenshot(input)
-    : await captureRegionScreenshot(input);
-  if (!bytes) return null;
+    ? await captureMacScreenScreenshot(input)
+    : await captureDisplayScreenshot(input);
+  if (!bytes || bytes.byteLength === 0) return null;
   const capturedAt = input.now ? new Date(input.now) : new Date();
   return {
-    bytes,
+    bytes: normalizeIpcBytes(bytes),
     name: screenshotFileName(capturedAt),
     type: "image/png",
     title: screenshotNoteTitle(input.locale, capturedAt),

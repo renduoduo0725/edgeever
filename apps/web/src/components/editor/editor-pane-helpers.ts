@@ -1,0 +1,163 @@
+import type { Editor } from "@tiptap/react";
+import type { MemoDetail, MemoEditSession } from "@edgeever/shared";
+import { isDesktopResourceRuntime } from "@/lib/desktop-resources";
+import { isBrowserOffline } from "@/lib/network-status";
+import { isLocalMemoId } from "@/lib/local-mirror";
+import type { MemoUpdateSyncPayload } from "@/lib/local-db";
+import { getAttachmentLinkFromEventTarget } from "./attachment-resource-menu";
+import type { NoteLinkHintPosition } from "./EditorPaneChrome";
+
+export const SUPPORTED_PASTE_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "image/avif"]);
+export const MOBILE_EDITOR_QUERY = "(max-width: 639px)";
+export const MOBILE_DRAFT_PERSIST_DELAY_MS = 800;
+
+export const createLocalEditSession = (memo: MemoDetail): MemoEditSession => ({
+  id: `local-edit:${memo.id}`,
+  memoId: memo.id,
+  baseRevision: memo.revision,
+  baseContentHash: memo.contentHash,
+  expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+});
+
+export const requiresLocalEditSession = (memo: MemoDetail) =>
+  isDesktopResourceRuntime() ||
+  isLocalMemoId(memo.id) ||
+  isBrowserOffline();
+
+export type AiSelectionContext = {
+  kind: "markdown" | "plain";
+  from: number;
+  to: number;
+  contentMarkdown: string;
+} | {
+  kind: "rich";
+  from: number;
+  to: number;
+  contentMarkdown: string;
+  isInline: boolean;
+};
+
+export type AiInsertionTarget = {
+  kind: "markdown" | "plain" | "rich";
+  position: number;
+};
+
+export const getNoteLinkFromEventTarget = (target: EventTarget | null) =>
+  target instanceof Element
+    ? target.closest<HTMLAnchorElement>('a.edgeever-note-link, a[href^="#memo="]')
+    : null;
+
+/** Any navigable editor link (external or note). Attachment chips have their own menu. */
+export const getEditorNavigableLinkFromEventTarget = (target: EventTarget | null) => {
+  if (!(target instanceof Element)) {
+    return null;
+  }
+
+  const link = target.closest<HTMLAnchorElement>("a[href]");
+  if (!link || getAttachmentLinkFromEventTarget(link)) {
+    return null;
+  }
+
+  return link;
+};
+
+export const getNoteLinkHintPosition = (link: HTMLAnchorElement): NoteLinkHintPosition => {
+  const rect = link.getBoundingClientRect();
+  const placement = rect.top < 48 ? "below" : "above";
+
+  return {
+    left: Math.min(Math.max(rect.left + rect.width / 2, 12), window.innerWidth - 12),
+    top: placement === "above" ? rect.top - 8 : rect.bottom + 8,
+    placement,
+  };
+};
+
+export type MobilePlainTextElement = HTMLTextAreaElement | HTMLDivElement;
+
+export const isEditorReady = (editor: Editor | null | undefined): editor is Editor =>
+  Boolean(editor && !editor.isDestroyed && (editor as { extensionManager?: unknown }).extensionManager);
+
+export const getMobilePlainTextElementValue = (element: MobilePlainTextElement | null) => {
+  if (!element) {
+    return "";
+  }
+
+  return "value" in element ? element.value : element.innerText;
+};
+
+export const setMobilePlainTextElementValue = (element: MobilePlainTextElement | null, value: string) => {
+  if (!element) {
+    return;
+  }
+
+  if ("value" in element) {
+    element.value = value;
+    return;
+  }
+
+  if (element.innerText !== value) {
+    element.textContent = value;
+  }
+};
+
+export const focusMobilePlainTextElement = (element: MobilePlainTextElement | null) => {
+  if (!element) {
+    return;
+  }
+
+  element.focus({ preventScroll: true });
+
+  if ("setSelectionRange" in element) {
+    element.setSelectionRange(element.value.length, element.value.length);
+    return;
+  }
+
+  if (typeof document === "undefined" || typeof window === "undefined") {
+    return;
+  }
+
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+};
+
+export const getResourceFilesFromDataTransfer = (dataTransfer: DataTransfer | null) => {
+  if (!dataTransfer) {
+    return [];
+  }
+
+  const fileItems = Array.from(dataTransfer.items ?? [])
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file));
+  const files = fileItems.length > 0 ? fileItems : Array.from(dataTransfer.files ?? []);
+
+  return files.filter((file) => file.size > 0);
+};
+
+export const syncStatusToSaveState = (status: "pending" | "syncing" | "conflict" | "error") => {
+  if (status === "conflict") {
+    return "conflict";
+  }
+  if (status === "syncing") {
+    return "saving";
+  }
+  return "queued";
+};
+
+export class MemoSaveRequestError extends Error {
+  originalError: unknown;
+  payload: MemoUpdateSyncPayload;
+  tagsText: string;
+
+  constructor(originalError: unknown, payload: MemoUpdateSyncPayload, tagsText: string) {
+    super(originalError instanceof Error ? originalError.message : "Memo save failed");
+    this.name = "MemoSaveRequestError";
+    this.originalError = originalError;
+    this.payload = payload;
+    this.tagsText = tagsText;
+  }
+};

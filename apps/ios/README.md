@@ -2,8 +2,6 @@
 
 Native SwiftUI client for EdgeEver. This replaces the React Native / Expo iOS target.
 
-**Design document:** [`docs/ios-swift-rewrite.md`](../../docs/ios-swift-rewrite.md)
-
 **App Store binaries on macOS beta:** use **Xcode Cloud (manual)** — [`docs/ios-xcode-cloud.md`](../../docs/ios-xcode-cloud.md).
 
 ## Status

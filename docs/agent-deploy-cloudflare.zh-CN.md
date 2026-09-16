@@ -39,7 +39,7 @@
 6. **启动首次构建与服务验证**
    - 触发启动首次构建，待构建部署完成后，进行如下自动化验证：
      - 检查 `https://<你的 Worker 域名>/api/health` 返回 `200` 状态码且 JSON 内容为 `{"ok": true}`。
-     - 检查 `https://<你的 Worker 域名>/api/openapi.json` 能够正常加载 OpenAPI 规范。
+     - 检查 `https://<你的 Worker 域名>/api/openapi.json` 可以访问，且 JSON 含 `"ok": true`。
      - 使用用户名 `admin` 和 `EDGE_EVER_AUTH_PASSWORD` 验证登录 API。
 
 7. **验证上游更新通道**

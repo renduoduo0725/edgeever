@@ -1,7 +1,7 @@
 # 使用 Docker 部署 EdgeEver
 
 EdgeEver 在 Cloudflare 与 Docker 中共用同一套 Web 应用、Hono 路由、业务服务、
-鉴权、OpenAPI、MCP 实现和只增不改的 migration。两种部署仅有薄运行入口和基础
+鉴权、MCP 实现和只增不改的 migration。两种部署仅有薄运行入口和基础
 设施适配器不同：Docker 使用 Bun + SQLite + 本地文件（或 S3 兼容对象存储），
 Cloudflare 使用 Workers + D1 + R2。
 

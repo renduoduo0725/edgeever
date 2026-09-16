@@ -29,7 +29,7 @@ import { isAllowedPrintPreviewUrl } from "./window-open-policy.mjs";
 import { showWindow } from "./window-visibility.mjs";
 import { trayIconPath } from "./tray-icon.mjs";
 import { writeRichClipboard } from "./clipboard-write.mjs";
-import { captureInteractiveScreenshot, writeScreenshotTempPath } from "./screenshot-capture.mjs";
+import { captureScreenToNote, createScreenshotCaptureGuard, screenshotImportIpcPayload, writeScreenshotTempPath } from "./screenshot-capture.mjs";
 import { LocalDataResetError, scheduleMacLocalDataReset } from "./local-data-reset.mjs";
 import { buildDesktopDiagnosticIssueUrl, normalizeDesktopDiagnostic } from "./desktop-diagnostics.mjs";
 import { createRendererStartupGuard } from "./renderer-startup-guard.mjs";
@@ -508,7 +508,7 @@ const importMarkdownFile = async (filePath) => {
 
 let pendingMarkdownImport = null;
 let pendingScreenshotImport = null;
-let screenshotCaptureInFlight = false;
+const screenshotCaptureGuard = createScreenshotCaptureGuard();
 let rendererReady = false;
 
 const flushPendingMarkdownImport = () => {
@@ -519,23 +519,26 @@ const flushPendingMarkdownImport = () => {
 };
 
 const sendScreenshotImport = (payload) => {
+  const ipcPayload = screenshotImportIpcPayload(payload);
+  if (!ipcPayload.bytes.byteLength) return;
   if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoading() || !rendererReady) {
-    pendingScreenshotImport = payload;
+    pendingScreenshotImport = ipcPayload;
     return;
   }
-  mainWindow.webContents.send("desktop:import-screenshot", payload);
+  pendingScreenshotImport = null;
+  mainWindow.webContents.send("desktop:import-screenshot", ipcPayload);
 };
 
 const flushPendingScreenshotImport = () => {
   if (!pendingScreenshotImport || !rendererReady || !mainWindow || mainWindow.isDestroyed()) return;
   const payload = pendingScreenshotImport;
   pendingScreenshotImport = null;
+  if (!payload.bytes?.byteLength) return;
   mainWindow.webContents.send("desktop:import-screenshot", payload);
 };
 
 const captureScreenshotToNote = async () => {
-  if (screenshotCaptureInFlight) return;
-  screenshotCaptureInFlight = true;
+  if (!screenshotCaptureGuard.tryBegin()) return;
   const copy = desktopMenuCopy(app.getLocale());
   const wasVisible = Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible());
   const revealWindow = () => {
@@ -546,16 +549,12 @@ const captureScreenshotToNote = async () => {
     if (process.platform === "darwin") app.hide();
     else if (wasVisible) mainWindow.hide();
     await new Promise((resolve) => setTimeout(resolve, 250));
-    const captured = await captureInteractiveScreenshot({
+    const captured = await captureScreenToNote({
       platform: process.platform,
       locale: app.getLocale(),
       outputPath: process.platform === "darwin" ? writeScreenshotTempPath(app.getPath("temp")) : undefined,
-      BrowserWindow,
       desktopCapturer,
       screen,
-      ipcMain,
-      overlayHtmlPath: join(currentDirectory, "../screenshot/overlay.html"),
-      overlayPreloadPath: join(currentDirectory, "../screenshot/overlay-preload.cjs"),
     });
     if (!captured) {
       if (wasVisible) revealWindow();
@@ -573,7 +572,7 @@ const captureScreenshotToNote = async () => {
       message: copy.screenshotFailed,
     });
   } finally {
-    screenshotCaptureInFlight = false;
+    screenshotCaptureGuard.end();
   }
 };
 

@@ -138,7 +138,7 @@ EdgeEver 不想成为一个包办一切的超级应用。
 - 保留经典三栏体验
 - 支持富文本、图片、嵌套笔记本和历史版本
 - 可以部署在 Cloudflare 上
-- 数据模型清晰，支持 REST API、OpenAPI 和 MCP
+- 数据模型清晰，支持 REST API 和 MCP
 - 对个人用户尽量低成本
 - 对 AI Agent 足够友好
 

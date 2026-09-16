@@ -401,20 +401,15 @@ export const PluginManagerCard = ({
   return (
     <Card className="w-full min-w-0 shadow-none">
       <CardHeader className="p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="flex items-center gap-2 text-sm">
-              <Puzzle className="h-4 w-4 text-emerald-700" />
-              {selectedPluginId ? t("plugins.details.title") : t("plugins.title")}
-              <span className="inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-700   ">
-                Beta
-              </span>
-            </CardTitle>
-            {selectedPluginId ? null : (
-              <p className="mt-1 text-xs leading-5 text-slate-500">{t("plugins.syncDescription")}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex min-w-0 items-center gap-2 text-sm">
+            <Puzzle className="h-4 w-4 shrink-0 text-emerald-700" />
+            {selectedPluginId ? t("plugins.details.title") : t("plugins.title")}
+            <span className="inline-flex items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-700">
+              Beta
+            </span>
+          </CardTitle>
+          <div className="flex shrink-0 items-center gap-1">
             {snapshot.extensions.length > 0 || (marketplaceQuery.data?.entries.length ?? 0) > 0 ? (
               <Button
                 variant="ghost"
@@ -443,11 +438,14 @@ export const PluginManagerCard = ({
               <a href={developerDocsUrl} target="_blank" rel="noreferrer" aria-label={t("plugins.developerDocs")}>
                 <BookOpen className="h-4 w-4" />
                 <span className="hidden sm:inline">{t("plugins.developerDocs")}</span>
-                <ExternalLink className="hidden h-3.5 w-3.5 sm:block" />
+                <ExternalLink className="hidden h-3.5 w-3.5 sm:inline" />
               </a>
             </Button>
           </div>
         </div>
+        {selectedPluginId ? null : (
+          <p className="text-xs leading-5 text-slate-500">{t("plugins.syncDescription")}</p>
+        )}
       </CardHeader>
       <CardContent className="grid gap-4 p-4 pt-0 sm:px-5 sm:pb-5">
         {error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{error}</div> : null}

@@ -3,9 +3,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-  type Dispatch,
+  useState,
   type RefObject,
-  type SetStateAction,
 } from "react";
 import type { Editor } from "@tiptap/react";
 import {
@@ -23,18 +22,10 @@ type EditorNoteSearchControllerOptions = {
   dirtyVersion: number;
   editor: Editor | null;
   editorScrollContainerRef: RefObject<HTMLDivElement | null>;
-  noteSearchIndex: number;
-  noteSearchInputRef: RefObject<HTMLInputElement | null>;
-  noteSearchOpen: boolean;
-  noteSearchQuery: string;
-  noteSearchReplacement: string;
   readOnly: boolean;
   replaceFocusToken: number;
   searchFocusToken: number;
   memoId: string | null;
-  setNoteSearchIndex: Dispatch<SetStateAction<number>>;
-  setNoteSearchOpen: Dispatch<SetStateAction<boolean>>;
-  setNoteSearchReplaceOpen: Dispatch<SetStateAction<boolean>>;
 };
 
 const isEditorReady = (editor: Editor | null | undefined): editor is Editor =>
@@ -54,18 +45,16 @@ export const useEditorNoteSearchController = ({
   editor,
   editorScrollContainerRef,
   memoId,
-  noteSearchIndex,
-  noteSearchInputRef,
-  noteSearchOpen,
-  noteSearchQuery,
-  noteSearchReplacement,
   readOnly,
   replaceFocusToken,
   searchFocusToken,
-  setNoteSearchIndex,
-  setNoteSearchOpen,
-  setNoteSearchReplaceOpen,
 }: EditorNoteSearchControllerOptions) => {
+  const [noteSearchOpen, setNoteSearchOpen] = useState(false);
+  const [noteSearchQuery, setNoteSearchQuery] = useState("");
+  const [noteSearchReplaceOpen, setNoteSearchReplaceOpen] = useState(false);
+  const [noteSearchReplacement, setNoteSearchReplacement] = useState("");
+  const [noteSearchIndex, setNoteSearchIndex] = useState(0);
+  const noteSearchInputRef = useRef<HTMLInputElement | null>(null);
   const automaticSelectionRef = useRef<{ editor: Editor; identity: string } | null>(null);
   const noteSearchMatches = useMemo(
     () => getEditorSearchMatches(editor, noteSearchQuery),
@@ -145,7 +134,26 @@ export const useEditorNoteSearchController = ({
     setNoteSearchOpen(true);
     setNoteSearchReplaceOpen(showReplace);
     focusSearchInput();
-  }, [focusSearchInput, setNoteSearchOpen, setNoteSearchReplaceOpen]);
+  }, [focusSearchInput]);
+
+  const openFromSelection = useCallback((text: string, showReplace = false) => {
+    setNoteSearchQuery(text);
+    setNoteSearchOpen(true);
+    setNoteSearchReplaceOpen(showReplace);
+    focusSearchInput();
+  }, [focusSearchInput]);
+
+  const openWithQuery = useCallback((query: string) => {
+    setNoteSearchQuery(query);
+    setNoteSearchIndex(0);
+    setNoteSearchReplaceOpen(false);
+    setNoteSearchOpen(true);
+    window.requestAnimationFrame(() => noteSearchInputRef.current?.focus());
+  }, []);
+
+  const closeReplace = useCallback(() => {
+    setNoteSearchReplaceOpen(false);
+  }, []);
 
   const openReplace = useCallback(() => {
     if (readOnly) return;
@@ -271,7 +279,9 @@ export const useEditorNoteSearchController = ({
   ]);
 
   return {
+    closeReplace,
     closeSearch,
+    inputRef: noteSearchInputRef,
     matchLabel: formatNoteSearchMatchLabel(
       noteSearchQuery,
       noteSearchIndex,
@@ -279,8 +289,16 @@ export const useEditorNoteSearchController = ({
     ),
     matches: noteSearchMatches,
     moveMatch,
+    openFromSelection,
     openReplace,
     openSearch,
+    openWithQuery,
+    query: noteSearchQuery,
     replaceAllMatches,
+    replaceOpen: noteSearchReplaceOpen,
+    replacement: noteSearchReplacement,
+    searchOpen: noteSearchOpen,
+    setQuery: setNoteSearchQuery,
+    setReplacement: setNoteSearchReplacement,
   };
 };
