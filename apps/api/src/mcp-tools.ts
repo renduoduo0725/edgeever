@@ -18,6 +18,35 @@ const DIAGRAM_IR_NODE_TYPES = [
   "boundary",
 ] as const;
 
+const diagramNodeProperties = {
+  id: { type: "string", minLength: 1, maxLength: 100 },
+  label: { type: "string", maxLength: 500 },
+  type: { type: "string", enum: [...DIAGRAM_IR_NODE_TYPES] },
+  parentId: { type: "string", minLength: 1, maxLength: 100 },
+  resourceIcon: { type: "string", enum: [...ARCHITECTURE_RESOURCE_ICONS] },
+};
+
+const diagramNodeSchema = {
+  type: "object",
+  required: ["id", "label"],
+  additionalProperties: false,
+  properties: diagramNodeProperties,
+};
+
+const diagramEdgeSchema = {
+  type: "object",
+  required: ["source", "target"],
+  additionalProperties: false,
+  properties: {
+    id: { type: "string", minLength: 1, maxLength: 100 },
+    source: { type: "string", minLength: 1, maxLength: 100 },
+    target: { type: "string", minLength: 1, maxLength: 100 },
+    label: { type: "string", maxLength: 500 },
+    type: { type: "string", enum: ["dependency", "request", "async", "data"] },
+    bidirectional: { type: "boolean" },
+  },
+};
+
 const MCP_TOOL_DEFINITIONS = [
   {
     name: "get_current_user",
@@ -31,7 +60,7 @@ const MCP_TOOL_DEFINITIONS = [
   },
   {
     name: "search_memos",
-    description: "Search active EdgeEver memos by text, tag, notebook, time range, pin state, or resource presence.",
+    description: "Search active EdgeEver memos by text, tag, notebook, time range, pin state, or resource presence. query is optional. For recently created or added notes, pass createdAfter and omit query; do not put this week/最近/新增 in query. Time bounds accept YYYY-MM-DD or ISO date-time.",
     inputSchema: {
       type: "object",
       additionalProperties: false,
@@ -39,10 +68,10 @@ const MCP_TOOL_DEFINITIONS = [
         query: { type: "string" },
         notebookId: { type: "string" },
         tags: { type: "array", items: { type: "string" } },
-        createdAfter: { type: "string", format: "date-time" },
-        createdBefore: { type: "string", format: "date-time" },
-        updatedAfter: { type: "string", format: "date-time" },
-        updatedBefore: { type: "string", format: "date-time" },
+        createdAfter: { type: "string", description: "ISO 8601 date (YYYY-MM-DD) or date-time. Date-only means 00:00:00.000Z." },
+        createdBefore: { type: "string", description: "ISO 8601 date (YYYY-MM-DD) or date-time. Date-only means 23:59:59.999Z." },
+        updatedAfter: { type: "string", description: "ISO 8601 date (YYYY-MM-DD) or date-time. Date-only means 00:00:00.000Z." },
+        updatedBefore: { type: "string", description: "ISO 8601 date (YYYY-MM-DD) or date-time. Date-only means 23:59:59.999Z." },
         isPinned: { type: "boolean" },
         hasResources: { type: "boolean" },
         limit: { type: "integer", minimum: 1, maximum: 50 },
@@ -120,34 +149,12 @@ const MCP_TOOL_DEFINITIONS = [
           type: "array",
           minItems: 1,
           maxItems: 200,
-          items: {
-            type: "object",
-            required: ["id", "label"],
-            additionalProperties: false,
-            properties: {
-              id: { type: "string", minLength: 1, maxLength: 100 },
-              label: { type: "string", maxLength: 500 },
-              type: { type: "string", enum: [...DIAGRAM_IR_NODE_TYPES] },
-              parentId: { type: "string", minLength: 1, maxLength: 100 },
-              resourceIcon: { type: "string", enum: [...ARCHITECTURE_RESOURCE_ICONS] },
-            },
-          },
+          items: diagramNodeSchema,
         },
         edges: {
           type: "array",
           maxItems: 400,
-          items: {
-            type: "object",
-            required: ["source", "target"],
-            additionalProperties: false,
-            properties: {
-              source: { type: "string", minLength: 1, maxLength: 100 },
-              target: { type: "string", minLength: 1, maxLength: 100 },
-              label: { type: "string", maxLength: 500 },
-              type: { type: "string", enum: ["dependency", "request", "async", "data"] },
-              bidirectional: { type: "boolean" },
-            },
-          },
+          items: diagramEdgeSchema,
         },
       },
     },
@@ -184,76 +191,33 @@ const MCP_TOOL_DEFINITIONS = [
           minItems: 1,
           maxItems: 100,
           items: {
-            oneOf: [
-              {
-                type: "object", required: ["op", "node"], additionalProperties: false,
+            type: "object",
+            required: ["op"],
+            additionalProperties: false,
+            properties: {
+              op: {
+                type: "string",
+                enum: ["add_node", "update_node", "remove_node", "add_edge", "update_edge", "remove_edge"],
+              },
+              node: diagramNodeSchema,
+              nodeId: { type: "string", minLength: 1 },
+              edge: diagramEdgeSchema,
+              edgeId: { type: "string", minLength: 1 },
+              changes: {
+                type: "object",
+                additionalProperties: false,
                 properties: {
-                  op: { const: "add_node" },
-                  node: {
-                    type: "object", required: ["id", "label"], additionalProperties: false,
-                    properties: {
-                      id: { type: "string", minLength: 1, maxLength: 100 },
-                      label: { type: "string", maxLength: 500 },
-                      type: { type: "string", enum: [...DIAGRAM_IR_NODE_TYPES] },
-                      parentId: { type: "string", minLength: 1, maxLength: 100 },
-                      resourceIcon: { type: "string", enum: [...ARCHITECTURE_RESOURCE_ICONS] },
-                    },
-                  },
+                  label: { type: "string", maxLength: 500 },
+                  type: { type: "string", enum: [...DIAGRAM_IR_NODE_TYPES] },
+                  parentId: { type: "string", maxLength: 100 },
+                  resourceIcon: { type: "string", enum: [...ARCHITECTURE_RESOURCE_ICONS] },
+                  source: { type: "string", minLength: 1, maxLength: 100 },
+                  target: { type: "string", minLength: 1, maxLength: 100 },
+                  bidirectional: { type: "boolean" },
                 },
               },
-              {
-                type: "object", required: ["op", "nodeId", "changes"], additionalProperties: false,
-                properties: {
-                  op: { const: "update_node" }, nodeId: { type: "string", minLength: 1 },
-                  changes: {
-                    type: "object", minProperties: 1, additionalProperties: false,
-                    properties: {
-                      label: { type: "string", maxLength: 500 },
-                      type: { type: "string", enum: [...DIAGRAM_IR_NODE_TYPES] },
-                      parentId: { type: ["string", "null"], maxLength: 100 },
-                      resourceIcon: { type: ["string", "null"], enum: [...ARCHITECTURE_RESOURCE_ICONS, null] },
-                    },
-                  },
-                },
-              },
-              {
-                type: "object", required: ["op", "nodeId"], additionalProperties: false,
-                properties: { op: { const: "remove_node" }, nodeId: { type: "string", minLength: 1 }, cascade: { type: "boolean" } },
-              },
-              {
-                type: "object", required: ["op", "edge"], additionalProperties: false,
-                properties: {
-                  op: { const: "add_edge" },
-                  edge: {
-                    type: "object", required: ["source", "target"], additionalProperties: false,
-                    properties: {
-                      id: { type: "string", minLength: 1, maxLength: 100 },
-                      source: { type: "string", minLength: 1, maxLength: 100 }, target: { type: "string", minLength: 1, maxLength: 100 },
-                      label: { type: "string", maxLength: 500 }, type: { type: "string", enum: ["dependency", "request", "async", "data"] },
-                      bidirectional: { type: "boolean" },
-                    },
-                  },
-                },
-              },
-              {
-                type: "object", required: ["op", "edgeId", "changes"], additionalProperties: false,
-                properties: {
-                  op: { const: "update_edge" }, edgeId: { type: "string", minLength: 1 },
-                  changes: {
-                    type: "object", minProperties: 1, additionalProperties: false,
-                    properties: {
-                      source: { type: "string", minLength: 1, maxLength: 100 }, target: { type: "string", minLength: 1, maxLength: 100 },
-                      label: { type: ["string", "null"], maxLength: 500 }, type: { type: ["string", "null"], enum: ["dependency", "request", "async", "data", null] },
-                      bidirectional: { type: ["boolean", "null"] },
-                    },
-                  },
-                },
-              },
-              {
-                type: "object", required: ["op", "edgeId"], additionalProperties: false,
-                properties: { op: { const: "remove_edge" }, edgeId: { type: "string", minLength: 1 } },
-              },
-            ],
+              cascade: { type: "boolean" },
+            },
           },
         },
       },
@@ -655,7 +619,6 @@ const MCP_TOOL_DEFINITIONS = [
       type: "object",
       required: ["name"],
       additionalProperties: false,
-      anyOf: [{ required: ["memoId"] }, { required: ["contentMarkdown"] }],
       properties: {
         name: { type: "string", minLength: 1, maxLength: 160 },
         description: { type: "string", maxLength: 500 },
@@ -673,13 +636,6 @@ const MCP_TOOL_DEFINITIONS = [
       type: "object",
       required: ["templateId"],
       additionalProperties: false,
-      anyOf: [
-        { required: ["name"] },
-        { required: ["description"] },
-        { required: ["title"] },
-        { required: ["contentMarkdown"] },
-        { required: ["tags"] },
-      ],
       properties: {
         templateId: { type: "string", minLength: 1 },
         name: { type: "string", minLength: 1, maxLength: 160 },
@@ -763,13 +719,6 @@ const MCP_TOOL_DEFINITIONS = [
       type: "object",
       required: ["instructionId"],
       additionalProperties: false,
-      anyOf: [
-        { required: ["name"] },
-        { required: ["description"] },
-        { required: ["instruction"] },
-        { required: ["parameterKind"] },
-        { required: ["resultMode"] },
-      ],
       properties: {
         instructionId: { type: "string", minLength: 1 },
         name: { type: "string", minLength: 1, maxLength: 80 },

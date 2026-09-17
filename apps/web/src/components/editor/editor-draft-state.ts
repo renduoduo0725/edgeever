@@ -94,7 +94,14 @@ export const resolveEditorDraftState = ({
   const repairedSavedContent = source === "memo" && Boolean(
     memo.contentJson && normalizeImageGalleries(memo.contentJson) !== memo.contentJson,
   );
-  const contentMarkdown = docToMarkdown(contentJson);
+  const storedMarkdown = source === "draft"
+    ? null
+    : source === "queue"
+      ? (typeof queuedPayload?.contentMarkdown === "string" ? queuedPayload.contentMarkdown : null)
+      : (typeof memo.contentMarkdown === "string" ? memo.contentMarkdown : null);
+  // Prefer the stored source so Markdown-mode extra blank lines survive
+  // hydration. JSON→Markdown collapses `\n\n\n` into a single paragraph break.
+  const contentMarkdown = storedMarkdown || docToMarkdown(contentJson);
   const sourceVersion = source === "draft" && draft
     ? draft.updatedAt
     : source === "queue" && queuedUpdate

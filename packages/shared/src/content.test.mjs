@@ -411,6 +411,26 @@ describe("Theme block compatibility", () => {
   });
 });
 
+describe("extra blank lines", () => {
+  test("keeps two visual blank lines as an empty paragraph", () => {
+    const doc = markdownToDoc("A\n\n\nB");
+    const emptyParagraphs = doc.content.filter((node) =>
+      node.type === "paragraph" && (!node.content || node.content.length === 0)
+    );
+
+    expect(emptyParagraphs).toHaveLength(1);
+    expect(doc.content.map((node) => node.type)).toEqual(["paragraph", "paragraph", "paragraph"]);
+  });
+
+  test("does not rewrite extra blank lines inside fenced code", () => {
+    const markdown = "before\n\n```\nline\n\n\nline\n```\n\nafter";
+    const doc = markdownToDoc(markdown);
+    const code = doc.content.find((node) => node.type === "codeBlock");
+
+    expect(code?.content?.[0]?.text).toBe("line\n\n\nline");
+  });
+});
+
 describe("image gallery compatibility", () => {
   const galleryDoc = {
     type: "doc",

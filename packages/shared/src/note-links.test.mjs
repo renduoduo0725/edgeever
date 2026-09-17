@@ -15,6 +15,17 @@ describe("stable memo links", () => {
     expect(parseMemoLinkHref("#memo=")).toBeNull();
   });
 
+  test("reads memo ids from resolved hash URLs", () => {
+    expect(parseMemoLinkHref("/#memo=memo_flow")).toBe("memo_flow");
+    expect(parseMemoLinkHref("http://127.0.0.1:5173/#memo=memo_flow")).toBe("memo_flow");
+    expect(parseMemoLinkHref("http://127.0.0.1:5173/#memo=memo%2F%E4%B8%AD")).toBe("memo/中");
+  });
+
+  test("restores the memo_ prefix when a model drops it from the hash", () => {
+    expect(parseMemoLinkHref("#memo=04833dc5c42d4286800f13be0405f099")).toBe("memo_04833dc5c42d4286800f13be0405f099");
+    expect(parseMemoLinkHref("#memo=memo_04833dc5c42d4286800f13be0405f099")).toBe("memo_04833dc5c42d4286800f13be0405f099");
+  });
+
   test("preserves memo links in Markdown", () => {
     const markdown = "查看 [项目笔记](#memo=memo_project)。";
     const doc = markdownToDoc(markdown);

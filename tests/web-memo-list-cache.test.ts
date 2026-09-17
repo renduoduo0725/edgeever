@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 import type { MemoSummary } from "@edgeever/shared";
-import { updateMemoSummaryInLists, type MemoListQueryData } from "../apps/web/src/lib/memo-list-cache";
+import { remapMemoIdsInLists, updateMemoSummaryInLists, type MemoListQueryData } from "../apps/web/src/lib/memo-list-cache";
 
 const memo = (overrides: Partial<MemoSummary> = {}): MemoSummary => ({
   id: "memo-apple",
@@ -59,6 +59,22 @@ describe("memo list cache updates", () => {
     const flattened = cached?.pages.flatMap((page) => page.memos) ?? [];
     expect(flattened).toHaveLength(1);
     expect(flattened[0]?.revision).toBe(3);
+    expect(cached?.pages[0]?.totalCount).toBe(1);
+  });
+
+  test("replaces a temporary create id so the list does not show two empty notes", () => {
+    const queryClient = new QueryClient();
+    const queryKey = ["memos", "notebook", "nb-inbox", "", "all", "updated-desc"] as const;
+    queryClient.setQueryData(queryKey, queryData([
+      [memo({ id: "memo_remote_1", title: "", excerpt: "" }), memo({ id: "memo_local_1", title: "", excerpt: "" })],
+    ], 2));
+
+    remapMemoIdsInLists(queryClient, new Map([["memo_local_1", "memo_remote_1"]]));
+
+    const cached = queryClient.getQueryData<MemoListQueryData>(queryKey);
+    const flattened = cached?.pages.flatMap((page) => page.memos) ?? [];
+    expect(flattened).toHaveLength(1);
+    expect(flattened[0]?.id).toBe("memo_remote_1");
     expect(cached?.pages[0]?.totalCount).toBe(1);
   });
 

@@ -77,7 +77,19 @@ describe("screenshot capture helpers", () => {
     const encoded = { type: "Buffer", data: [137, 80, 78, 71] };
     expect(new Uint8Array(encoded).byteLength).toBe(0);
     expect(Array.from(normalizeIpcBytes(encoded))).toEqual([137, 80, 78, 71]);
+    expect(screenshotImportIpcPayload({
+      captureId: "shot-1",
+      name: "screenshot.png",
+      type: "image/png",
+      title: "截图",
+      bytes: Buffer.from([1, 2, 3]),
+    })).toMatchObject({
+      captureId: "shot-1",
+      name: "screenshot.png",
+      title: "截图",
+    });
     expect(Array.from(screenshotImportIpcPayload({
+      captureId: "shot-1",
       name: "screenshot.png",
       type: "image/png",
       title: "截图",
@@ -111,6 +123,7 @@ describe("desktop screenshot to note wiring", () => {
     expect(mainSource).toContain("captureScreenshotToNote");
     expect(mainSource).toContain("captureScreenToNote");
     expect(mainSource).toContain("createScreenshotCaptureGuard");
+    expect(mainSource).toContain("sentScreenshotCaptureIds");
     expect(mainSource).toContain("pendingScreenshotImport = null");
     expect(mainSource).not.toContain("overlay.html");
     expect(mainSource).toContain("copy.screenshotToNote");
@@ -118,10 +131,13 @@ describe("desktop screenshot to note wiring", () => {
     expect(mainSource).not.toContain('label: copy.backupNow, click: () => sendDesktopCommand("backup-now")');
     expect(preloadSource).toContain("onImportScreenshot");
     expect(preloadSource).toContain("screenshotImportListener");
+    expect(preloadSource).toContain("rendererReadySent");
+    expect(preloadSource).toContain("removeAllListeners");
     expect(preloadSource).toContain('value.type === "Buffer"');
     expect(workspaceSource).toContain("onImportScreenshot");
     expect(workspaceSource).toContain("createScreenshotMemo");
     expect(workspaceSource).toContain("screenshotImportGate");
+    expect(workspaceSource).toContain("handleImportScreenshotRef");
     expect(workspaceSource).toContain("screenshotFileFromImportPayload");
     expect(workspaceSource).not.toContain("setPendingEditorInsert");
   });

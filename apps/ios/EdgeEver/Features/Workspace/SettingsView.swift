@@ -562,52 +562,69 @@ struct SettingsView: View {
         return false
     }
 
-    private var clientSystemInfoItems: [(label: String, value: String)] {
+    private struct SystemInfoItem {
+        let label: String
+        let value: String
+        var localOnly = false
+    }
+
+    private var clientSystemInfoItems: [SystemInfoItem] {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
         let language = env.preferences.localeCode == "system"
             ? "\(env.preferences.resolvedLocale.identifier) (\(env.preferences.t("跟随系统", en: "Follow system")))"
             : env.preferences.resolvedLocale.identifier
         return [
-            (env.preferences.t("版本", en: "Version"), "v\(version)"),
-            (env.preferences.t("构建", en: "Build"), build),
-            (env.preferences.t("客户端", en: "Client"), env.preferences.t("移动应用", en: "Mobile app")),
-            (env.preferences.t("系统", en: "System"), "iOS"),
-            (env.preferences.t("系统版本", en: "System version"), UIDevice.current.systemVersion),
-            (env.preferences.t("语言", en: "Language"), language),
-            (env.preferences.t("时区", en: "Time zone"), TimeZone.current.identifier),
-            (env.preferences.t("安装形态", en: "Mode"), env.preferences.t("原生 SwiftUI 应用", en: "Native SwiftUI app")),
+            SystemInfoItem(label: env.preferences.t("版本", en: "Version"), value: "v\(version)"),
+            SystemInfoItem(label: env.preferences.t("构建", en: "Build"), value: build),
+            SystemInfoItem(label: env.preferences.t("客户端", en: "Client"), value: env.preferences.t("移动应用", en: "Mobile app")),
+            SystemInfoItem(label: env.preferences.t("系统", en: "System"), value: "iOS"),
+            SystemInfoItem(label: env.preferences.t("系统版本", en: "System version"), value: UIDevice.current.systemVersion),
+            SystemInfoItem(label: env.preferences.t("语言", en: "Language"), value: language),
+            SystemInfoItem(label: env.preferences.t("时区", en: "Time zone"), value: TimeZone.current.identifier),
+            SystemInfoItem(label: env.preferences.t("安装形态", en: "Mode"), value: env.preferences.t("原生 SwiftUI 应用", en: "Native SwiftUI app")),
         ]
     }
 
-    private var cloudSystemInfoItems: [(label: String, value: String)] {
-        var items: [(label: String, value: String)] = [
-            (env.preferences.t("实例版本", en: "Instance version"), instanceVersion.map { "v\($0.replacingOccurrences(of: "^v", with: "", options: .regularExpression))" } ?? unknownSystemInfoValue),
-            (env.preferences.t("实例构建", en: "Instance build"), instanceHealth?.build ?? unknownSystemInfoValue),
-            (env.preferences.t("数据库版本", en: "Database version"), instanceHealth?.migration ?? unknownSystemInfoValue),
-            (env.preferences.t("数据库后端", en: "Database backend"), databaseBackendLabel(instanceHealth?.storage?.database)),
-            (env.preferences.t("新上传对象存储", en: "New upload object storage"), objectStorageLabel(instanceHealth)),
-        ]
-        if instanceHealth?.objectStorageProvider == "s3" {
-            items.append((
-                env.preferences.t("已有附件", en: "Existing attachments"),
-                env.preferences.t("继续从原存储读取", en: "Read from original storage")
+    private var cloudSystemInfoItems: [SystemInfoItem] {
+        var items: [SystemInfoItem] = []
+        if let instanceURL = env.session.session?.baseUrl, !instanceURL.isEmpty {
+            items.append(SystemInfoItem(
+                label: env.preferences.t("实例地址", en: "Instance URL", ja: "インスタンス URL"),
+                value: instanceURL,
+                localOnly: true
             ))
         }
-        items.append((
-            env.preferences.t("部署平台", en: "Deployment platform"),
-            deploymentPlatformLabel(instanceHealth?.runtime)
+        items.append(contentsOf: [
+            SystemInfoItem(
+                label: env.preferences.t("实例版本", en: "Instance version"),
+                value: instanceVersion.map { "v\($0.replacingOccurrences(of: "^v", with: "", options: .regularExpression))" } ?? unknownSystemInfoValue
+            ),
+            SystemInfoItem(label: env.preferences.t("实例构建", en: "Instance build"), value: instanceHealth?.build ?? unknownSystemInfoValue),
+            SystemInfoItem(label: env.preferences.t("数据库版本", en: "Database version"), value: instanceHealth?.migration ?? unknownSystemInfoValue),
+            SystemInfoItem(label: env.preferences.t("数据库后端", en: "Database backend"), value: databaseBackendLabel(instanceHealth?.storage?.database)),
+            SystemInfoItem(label: env.preferences.t("新上传对象存储", en: "New upload object storage"), value: objectStorageLabel(instanceHealth)),
+        ])
+        if instanceHealth?.objectStorageProvider == "s3" {
+            items.append(SystemInfoItem(
+                label: env.preferences.t("已有附件", en: "Existing attachments"),
+                value: env.preferences.t("继续从原存储读取", en: "Read from original storage")
+            ))
+        }
+        items.append(SystemInfoItem(
+            label: env.preferences.t("部署平台", en: "Deployment platform"),
+            value: deploymentPlatformLabel(instanceHealth?.runtime)
         ))
         if instanceHealth?.runtime == "self-hosted-bun" {
-            items.append((
-                env.preferences.t("容器镜像来源", en: "Container image source"),
-                containerImageSourceLabel(instanceHealth?.containerImageSource)
+            items.append(SystemInfoItem(
+                label: env.preferences.t("容器镜像来源", en: "Container image source"),
+                value: containerImageSourceLabel(instanceHealth?.containerImageSource)
             ))
         }
         return items
     }
 
-    private var connectionSystemInfoItems: [(label: String, value: String)] {
+    private var connectionSystemInfoItems: [SystemInfoItem] {
         let queueItems = env.session.dataScope.flatMap { try? env.outbox.listItems(scope: $0) } ?? []
         let pending = queueItems.filter { $0.status == .pending || $0.status == .syncing }.count
         let failed = queueItems.filter { $0.status == .error || $0.status == .conflict }.count
@@ -617,10 +634,13 @@ struct SettingsView: View {
                 ? env.preferences.t("连接失败", en: "Connection failed")
                 : env.preferences.t("正在检查", en: "Checking")
         return [
-            (env.preferences.t("实例连接", en: "Instance connection"), connection),
-            (env.preferences.t("请求耗时", en: "Request latency"), instanceLatencyMilliseconds.map { "\($0) ms" } ?? unknownSystemInfoValue),
-            (env.preferences.t("待同步", en: "Pending sync"), String(pending)),
-            (env.preferences.t("失败或冲突", en: "Failed or conflicted"), String(failed)),
+            SystemInfoItem(label: env.preferences.t("实例连接", en: "Instance connection"), value: connection),
+            SystemInfoItem(
+                label: env.preferences.t("健康检查耗时", en: "Health check time", ja: "ヘルスチェック時間"),
+                value: instanceLatencyMilliseconds.map { "\($0) ms" } ?? unknownSystemInfoValue
+            ),
+            SystemInfoItem(label: env.preferences.t("待同步", en: "Pending sync"), value: String(pending)),
+            SystemInfoItem(label: env.preferences.t("失败或冲突", en: "Failed or conflicted"), value: String(failed)),
         ]
     }
 
@@ -668,14 +688,19 @@ struct SettingsView: View {
     }
 
     private var systemInfoText: String {
-        [
-            systemInfoTextSection(env.preferences.t("云端实例", en: "Cloud instance"), items: cloudSystemInfoItems),
-            systemInfoTextSection(env.preferences.t("当前客户端", en: "Current client"), items: clientSystemInfoItems),
-            systemInfoTextSection(env.preferences.t("连接与同步", en: "Connection and sync"), items: connectionSystemInfoItems),
+        systemInfoText(includeLocalOnly: true)
+    }
+
+    private func systemInfoText(includeLocalOnly: Bool) -> String {
+        let keep: (SystemInfoItem) -> Bool = includeLocalOnly ? { _ in true } : { !$0.localOnly }
+        return [
+            systemInfoTextSection(env.preferences.t("云端实例", en: "Cloud instance"), items: cloudSystemInfoItems.filter(keep)),
+            systemInfoTextSection(env.preferences.t("当前客户端", en: "Current client"), items: clientSystemInfoItems.filter(keep)),
+            systemInfoTextSection(env.preferences.t("连接与同步", en: "Connection and sync"), items: connectionSystemInfoItems.filter(keep)),
         ].joined(separator: "\n\n")
     }
 
-    private func systemInfoTextSection(_ title: String, items: [(label: String, value: String)]) -> String {
+    private func systemInfoTextSection(_ title: String, items: [SystemInfoItem]) -> String {
         ([title] + items.map { "\($0.label): \($0.value)" }).joined(separator: "\n")
     }
 
@@ -726,7 +751,7 @@ struct SettingsView: View {
         \(notice)
 
         ```text
-        \(systemInfoText)
+        \(systemInfoText(includeLocalOnly: false))
         ```
         """
         var components = URLComponents(string: "https://github.com/tianma-if/edgeever/issues/new")
@@ -766,7 +791,7 @@ struct SettingsView: View {
         title: String,
         description: String,
         icon: String,
-        items: [(label: String, value: String)],
+        items: [SystemInfoItem],
         notice: String? = nil
     ) -> some View {
         settingsGroup(title: title, icon: icon) {
@@ -835,6 +860,7 @@ struct SettingsView: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(AppTheme.title)
                 .multilineTextAlignment(.trailing)
+                .textSelection(.enabled)
         }
         .padding(16)
         .overlay(alignment: .top) {

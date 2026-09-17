@@ -156,3 +156,62 @@ export const resolveMarkdownModeContent = (
     editedProjection,
   );
 };
+
+/**
+ * After autosave the editor hydrates from JSON. Serialization is lossy (extra
+ * blank lines, `&nbsp;` markers). If the incoming document is only a projection
+ * of the live buffer, keep the buffer so the caret and keystrokes stay put.
+ */
+export const shouldKeepLiveMarkdownSource = ({
+  snapshot,
+  memoId,
+  liveMarkdownSource,
+  incomingMarkdown,
+  incomingContent,
+}: {
+  snapshot: MarkdownModeSnapshot | null;
+  memoId: string | null | undefined;
+  liveMarkdownSource: string;
+  incomingMarkdown: string;
+  incomingContent: TiptapDoc;
+}) => {
+  if (!snapshot || !memoId || snapshot.memoId !== memoId) {
+    return false;
+  }
+
+  const live = normalizeMarkdownSource(liveMarkdownSource);
+  const incoming = normalizeMarkdownSource(incomingMarkdown);
+  if (live === incoming) {
+    return true;
+  }
+
+  if (nodesEqual(resolveMarkdownModeContent(snapshot, memoId, liveMarkdownSource), incomingContent)) {
+    return true;
+  }
+
+  // Regenerated Markdown (JSON → Markdown) of equivalent prose must not replace
+  // the author's buffer. A real remote/history body has different parsed text.
+  return incoming === normalizeMarkdownSource(docToMarkdown(incomingContent))
+    && nodesEqual(markdownToDoc(live), markdownToDoc(incoming));
+};
+
+/** Restore the exact source the user last had when the rich document was not edited. */
+export const selectMarkdownSourceForDocument = (
+  snapshot: MarkdownModeSnapshot | null,
+  memoId: string | null | undefined,
+  contentJson: TiptapDoc,
+  serializedMarkdown: string,
+) => {
+  if (!snapshot || !memoId || snapshot.memoId !== memoId) {
+    return serializedMarkdown;
+  }
+
+  if (
+    nodesEqual(snapshot.contentJson, contentJson)
+    || docToMarkdown(snapshot.contentJson) === docToMarkdown(contentJson)
+  ) {
+    return snapshot.markdownSource;
+  }
+
+  return serializedMarkdown;
+};

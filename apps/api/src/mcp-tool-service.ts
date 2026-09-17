@@ -451,8 +451,8 @@ const applyDiagramOperations = async (
       const index = findNodeIndex(nodeId);
       const previous = nodes[index];
       const candidate: Record<string, unknown> = { ...previous, ...operation.changes, id: nodeId };
-      if (operation.changes.parentId === null) delete candidate.parentId;
-      if (operation.changes.resourceIcon === null) delete candidate.resourceIcon;
+      if (operation.changes.parentId === null || operation.changes.parentId === "") delete candidate.parentId;
+      if (operation.changes.resourceIcon === null || operation.changes.resourceIcon === "") delete candidate.resourceIcon;
       const next = parseDiagramNode(candidate, operationIndex);
       nodes[index] = next;
       if (operation.changes.label !== undefined || operation.changes.type !== undefined) resizedNodeIds.add(nodeId);
@@ -514,8 +514,8 @@ const applyDiagramOperations = async (
       const index = findEdgeIndex(edgeId);
       const candidate: Record<string, unknown> = { ...edges[index], ...operation.changes };
       delete candidate.id;
-      if (operation.changes.label === null) delete candidate.label;
-      if (operation.changes.type === null) delete candidate.type;
+      if (operation.changes.label === null || operation.changes.label === "") delete candidate.label;
+      if (operation.changes.type === null || operation.changes.type === "") delete candidate.type;
       if (operation.changes.bidirectional === null) delete candidate.bidirectional;
       edges[index] = { id: edgeId, ...parseDiagramEdge(candidate, operationIndex) };
       counts.updatedEdges += 1;

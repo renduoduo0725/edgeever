@@ -1824,13 +1824,18 @@ textarea {
 }
 
 .ProseMirror.edgeever-note-rich-editor p.is-empty::before {
-  color: #94a3b8;
+  color: #a8b5c4;
   content: attr(data-placeholder);
   float: left;
   font-size: inherit;
+  font-weight: inherit;
   height: 0;
   line-height: inherit;
   pointer-events: none;
+}
+
+:root.dark .ProseMirror.edgeever-note-rich-editor p.is-empty::before {
+  color: #64748b;
 }
 
 /* Custom premium scrollbar style */
@@ -1866,9 +1871,34 @@ textarea {
 .companion-markdown.markdown-content > :last-child {
   margin-bottom: 0;
 }
+.companion-markdown.markdown-content h1,
 .companion-markdown.markdown-content h2,
-.companion-markdown.markdown-content h3 {
-  margin-top: 0.85rem;
+.companion-markdown.markdown-content h3,
+.companion-markdown.markdown-content h4 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 0.7rem;
+  margin-bottom: 0.2rem;
+  padding: 0;
+  border: none;
+}
+.companion-markdown.markdown-content h1:first-child,
+.companion-markdown.markdown-content h2:first-child,
+.companion-markdown.markdown-content h3:first-child,
+.companion-markdown.markdown-content h4:first-child {
+  margin-top: 0;
+}
+.companion-markdown.markdown-content p {
+  margin: 0.4rem 0;
+}
+.companion-markdown.markdown-content ul,
+.companion-markdown.markdown-content ol {
+  margin: 0.25rem 0 0.45rem;
+  padding-left: 1.15rem;
+}
+.companion-markdown.markdown-content li {
+  margin: 0.12rem 0;
 }
 .companion-markdown.markdown-content hr {
   margin: 0.75rem 0;

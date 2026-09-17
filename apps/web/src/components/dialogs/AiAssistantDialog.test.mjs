@@ -22,5 +22,9 @@ describe("AI assistant modes", () => {
     expect(chat).not.toContain("edgeever.assistant.threadId");
     expect(chat).toContain('event.key !== "Enter"');
     expect(chat).toContain("requestSubmit()");
+    expect(chat).toContain("useMemory");
+    expect(chat).not.toContain("useMemory: false");
+    expect(chat).toContain("parseCompanionMentionQuery");
+    expect(chat).toContain("resumeCompanionTurn");
   });
 });

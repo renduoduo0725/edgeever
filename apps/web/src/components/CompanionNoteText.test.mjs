@@ -13,6 +13,7 @@ describe("companion note citations", () => {
       { id: "memo_1", title: "随手记下", revision: 1, notebookId: "nb_1" },
       { id: "memo_2", title: "周会", revision: 1, notebookId: "nb_1" },
     ]);
+    expect(markup).toContain("companion-markdown");
     expect(markup).toContain("<h3");
     expect(markup).toContain("<ol>");
     expect(markup).toContain("<strong>");

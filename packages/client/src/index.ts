@@ -5,6 +5,7 @@ import {
   probeAiProviderCors,
   streamDirectAiGeneration,
 } from "./ai-direct-stream";
+
 import { createPluginCapabilities } from './plugin-capabilities';
 import { aiDirectTargetKey } from "@edgeever/shared";
 import type {
@@ -15,7 +16,9 @@ import type {
   CompanionAction,
   CompanionTurn,
   CompanionTurnInput,
+  CompanionTurnResume,
   CompanionEvent,
+  CompanionToolExecuteResult,
   ApiToken,
   AuthSession,
   LoginInput,
@@ -59,6 +62,7 @@ import type {
   SyncChange,
   SyncChangesResponse,
   DeploymentMetadata,
+  PluginAiGenerateRequest,
   PluginPublicFetchRequest,
   PluginPublicFetchResponse,
 } from "@edgeever/shared";
@@ -95,7 +99,7 @@ export type EdgeEverClientOptions = {
   baseUrl?: string | (() => string);
   token?: string | null | (() => string | null | undefined);
   fetch?: typeof fetch;
-  /** Native/desktop note AI calls the model API directly after a short prepare hop. */
+  /** Native/desktop note AI and Agent calls the model API directly after a short prepare hop. */
   directAiGeneration?: boolean;
   /**
    * Browser-only: probe whether the model host allows CORS, then direct-connect.
@@ -618,9 +622,179 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     return createResourceMultipartSink(upload);
   };
 
+  const consumeCompanionStream = async (path: string, body: string, signal: AbortSignal | undefined, onEvent: (event: CompanionEvent) => void) => {
+    const { context, response } = await send(path, { method: "POST", body, signal });
+    if (!response.ok) await throwRequestError(context, response);
+    if (!response.body) throw new ApiRequestError("Stream unavailable", 502, "companion_failed");
+    await consumeEventStream(response.body, onEvent);
+  };
+
+  const runPreparedCompanion = async (
+    prepared: import("@edgeever/shared").CompanionPreparedTurn,
+    streamOptions: { signal?: AbortSignal; onEvent: (event: CompanionEvent) => void },
+  ) => {
+    const { streamDirectCompanion } = await import("./companion-direct-stream");
+    const turnId = prepared.turn.id;
+    await streamDirectCompanion(prepared, {
+      fetch: providerFetch(),
+      signal: streamOptions.signal,
+      onEvent: streamOptions.onEvent,
+      executeTool: (body) => request<CompanionToolExecuteResult>(
+        `/api/v1/companion/turns/${encodeURIComponent(turnId)}/tools`,
+        { method: "POST", body: JSON.stringify(body), signal: streamOptions.signal },
+      ),
+      checkpoint: (body) => request(
+        `/api/v1/companion/turns/${encodeURIComponent(turnId)}/checkpoint`,
+        { method: "POST", body: JSON.stringify(body), signal: streamOptions.signal },
+      ),
+      complete: (body) => request<{ turn: CompanionTurn }>(
+        `/api/v1/companion/turns/${encodeURIComponent(turnId)}/complete`,
+        { method: "POST", body: JSON.stringify(body), signal: streamOptions.signal },
+      ),
+    });
+  };
+
+  const runCompanionDirect = async (
+    preparePath: string,
+    payload: unknown,
+    streamOptions: { signal?: AbortSignal; onEvent: (event: CompanionEvent) => void },
+    proxy: () => Promise<void>,
+    proxyExisting: (turnId: string) => Promise<void>,
+  ) => {
+    const prepare = async () => {
+      const { context, response } = await send(preparePath, {
+        method: "POST", body: JSON.stringify(payload), signal: streamOptions.signal,
+      });
+      if (response.ok) {
+        const { parsePreparedCompanion } = await import("./companion-direct-stream");
+        const prepared = parsePreparedCompanion(await response.json());
+        if (!prepared) throw new ApiRequestError("The companion prepare response is invalid", 502, "companion_failed");
+        return prepared;
+      }
+      if (response.status !== 404) await throwRequestError(context, response);
+      return null;
+    };
+
+    if (options.directAiGeneration) {
+      const prepared = await prepare();
+      if (prepared) {
+        await runPreparedCompanion(prepared, streamOptions);
+        return;
+      }
+      await proxy();
+      return;
+    }
+
+    if (options.tryDirectAiGeneration) {
+      const { context, response } = await send("/api/v1/ai/direct-target", { signal: streamOptions.signal });
+      if (response.ok) {
+        const target = parseAiDirectTarget(await response.json());
+        const cacheKey = target ? aiDirectTargetKey(target) : "";
+        let allowed = cacheKey ? corsCapability.get(cacheKey) : false;
+        if (target && allowed === undefined) {
+          allowed = await probeAiProviderCors(target, providerFetch(), streamOptions.signal);
+          corsCapability.set(cacheKey, allowed);
+        }
+        if (target && allowed) {
+          try {
+            const prepared = await prepare();
+            if (prepared) {
+              try {
+                await runPreparedCompanion(prepared, streamOptions);
+                return;
+              } catch (error) {
+                if (!isAiCorsFailure(error)) throw error;
+                corsCapability.set(cacheKey, false);
+                await proxyExisting(prepared.turn.id);
+                return;
+              }
+            }
+          } catch (error) {
+            if (!isAiCorsFailure(error)) throw error;
+            if (cacheKey) corsCapability.set(cacheKey, false);
+          }
+        }
+      } else if (response.status !== 404 && response.status !== 409) {
+        await throwRequestError(context, response);
+      }
+    }
+
+    await proxy();
+  };
+
+  const runDirectOrProxy = async <T, P>(args: {
+    signal?: AbortSignal;
+    prepare: () => Promise<P | null>;
+    run: (prepared: P) => Promise<T>;
+    proxy: () => Promise<T>;
+    recover?: (prepared: P) => Promise<T>;
+  }): Promise<T> => {
+    const attemptPrepare = async () => {
+      if (options.directAiGeneration) return args.prepare();
+      if (!options.tryDirectAiGeneration) return null;
+      const { context, response } = await send("/api/v1/ai/direct-target", { signal: args.signal });
+      if (!response.ok) {
+        if (response.status !== 404 && response.status !== 409) await throwRequestError(context, response);
+        return null;
+      }
+      const target = parseAiDirectTarget(await response.json());
+      const cacheKey = target ? aiDirectTargetKey(target) : "";
+      let allowed = cacheKey ? corsCapability.get(cacheKey) : false;
+      if (target && allowed === undefined) {
+        allowed = await probeAiProviderCors(target, providerFetch(), args.signal);
+        corsCapability.set(cacheKey, allowed);
+      }
+      if (!target || !allowed) return null;
+      try {
+        return await args.prepare();
+      } catch (error) {
+        if (!isAiCorsFailure(error)) throw error;
+        if (cacheKey) corsCapability.set(cacheKey, false);
+        return null;
+      }
+    };
+    const prepared = await attemptPrepare();
+    if (prepared == null) return args.proxy();
+    try {
+      return await args.run(prepared);
+    } catch (error) {
+      if (!isAiCorsFailure(error)) throw error;
+      return args.recover ? args.recover(prepared) : args.proxy();
+    }
+  };
+
+  const pluginCapabilities = createPluginCapabilities(request, requestPluginPublic);
+
   return {
     getInstanceHealth: () => request<InstanceHealth>("/api/health"),
-    ...createPluginCapabilities(request, requestPluginPublic),
+    ...pluginCapabilities,
+    pluginAi: {
+      status: pluginCapabilities.pluginAi.status,
+      generate: async (input: PluginAiGenerateRequest & { signal?: AbortSignal }) => {
+        const { signal, ...payload } = input;
+        return runDirectOrProxy({
+          signal,
+          prepare: async () => {
+            const { context, response } = await send("/api/v1/plugins/ai/generate/prepare", {
+              method: "POST", body: JSON.stringify(payload), signal,
+            });
+            if (response.ok) {
+              const { parsePreparedAiText } = await import("./ai-direct-generate");
+              const prepared = parsePreparedAiText(await response.json());
+              if (!prepared) throw new ApiRequestError("The AI prepare response is invalid", 502, "plugin_ai_failed");
+              return prepared;
+            }
+            if (response.status !== 404) await throwRequestError(context, response);
+            return null;
+          },
+          run: async (prepared) => {
+            const { generateDirectAiText } = await import("./ai-direct-generate");
+            return { text: await generateDirectAiText(prepared, { fetch: providerFetch(), signal }) };
+          },
+          proxy: () => pluginCapabilities.pluginAi.generate(input),
+        });
+      },
+    },
 
     getInstanceRelease: () => request<InstanceRelease>("/api/release"),
 
@@ -785,17 +959,70 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     },
 
     suggestAiTags: (payload: AiTagSuggestionsRequestInput, signal?: AbortSignal) =>
-      request<AiTagSuggestionsResponse>("/api/v1/ai/tag-suggestions", {
-        method: "POST",
-        body: JSON.stringify(payload),
+      runDirectOrProxy({
         signal,
+        prepare: async () => {
+          const { context, response } = await send("/api/v1/ai/tag-suggestions/prepare", {
+            method: "POST", body: JSON.stringify(payload), signal,
+          });
+          if (response.ok) {
+            const { parsePreparedTagSuggestions } = await import("./ai-direct-generate");
+            const prepared = parsePreparedTagSuggestions(await response.json());
+            if (!prepared) throw new ApiRequestError("The AI prepare response is invalid", 502, "ai_tag_suggestions_failed");
+            return prepared;
+          }
+          if (response.status !== 404) await throwRequestError(context, response);
+          return null;
+        },
+        run: async (prepared) => {
+          const { generateDirectAiText, suggestionsFromDirectText } = await import("./ai-direct-generate");
+          const text = await generateDirectAiText(prepared, { fetch: providerFetch(), signal });
+          return { suggestions: suggestionsFromDirectText(text, prepared) };
+        },
+        proxy: () => request<AiTagSuggestionsResponse>("/api/v1/ai/tag-suggestions", {
+          method: "POST", body: JSON.stringify(payload), signal,
+        }),
       }),
 
     listCompanionMemories: () => request<{ memories: CompanionMemory[] }>("/api/v1/companion/memories"),
     getCompanionDiscoverySettings: () => request<{ settings: CompanionDiscoverySettings }>("/api/v1/companion/discovery/settings"),
     saveCompanionDiscoverySettings: (input: CompanionDiscoverySettingsInput) => request<{ settings: CompanionDiscoverySettings }>("/api/v1/companion/discovery/settings", { method: "PUT", body: JSON.stringify(input) }),
     listCompanionDiscoveries: () => request<{ items: CompanionDiscoveryItem[] }>("/api/v1/companion/discovery"),
-    checkCompanionDiscoveries: (locale: string, signal?: AbortSignal) => request<{ items: CompanionDiscoveryItem[] }>(`/api/v1/companion/discovery/check?locale=${encodeURIComponent(locale)}`, { method: "POST", body: "{}", signal }),
+    checkCompanionDiscoveries: (locale: string, signal?: AbortSignal) =>
+      runDirectOrProxy({
+        signal,
+        prepare: async () => {
+          const { context, response } = await send(
+            `/api/v1/companion/discovery/check/prepare?locale=${encodeURIComponent(locale)}`,
+            { method: "POST", body: "{}", signal },
+          );
+          if (response.ok) {
+            const { parsePreparedDiscovery } = await import("./ai-direct-generate");
+            const prepared = parsePreparedDiscovery(await response.json());
+            if (!prepared) throw new ApiRequestError("The companion prepare response is invalid", 502, "companion_failed");
+            return prepared;
+          }
+          if (response.status !== 404) await throwRequestError(context, response);
+          return null;
+        },
+        run: async (prepared) => {
+          if (prepared.quiet) return { items: prepared.items };
+          const { generateDirectDiscoveryOutput } = await import("./ai-direct-generate");
+          const output = await generateDirectDiscoveryOutput(prepared, { fetch: providerFetch(), signal });
+          return request<{ items: CompanionDiscoveryItem[] }>("/api/v1/companion/discovery/check/complete", {
+            method: "POST", body: JSON.stringify({ turnId: prepared.turnId, output }), signal,
+          });
+        },
+        proxy: () => request<{ items: CompanionDiscoveryItem[] }>(
+          `/api/v1/companion/discovery/check?locale=${encodeURIComponent(locale)}`,
+          { method: "POST", body: "{}", signal },
+        ),
+        recover: (prepared) => prepared.quiet
+          ? Promise.resolve({ items: prepared.items })
+          : request<{ items: CompanionDiscoveryItem[] }>("/api/v1/companion/discovery/check/proxy", {
+            method: "POST", body: JSON.stringify({ turnId: prepared.turnId }), signal,
+          }),
+      }),
     acknowledgeCompanionDiscovery: (id: string, dismiss = false) => request<{ ok: true }>(`/api/v1/companion/discovery/${encodeURIComponent(id)}/${dismiss ? "dismiss" : "seen"}`, { method: "POST", body: "{}" }),
     rememberCompanionDiscoveryFeedback: (id: string) => request<{ ok: true }>(`/api/v1/companion/discovery/${encodeURIComponent(id)}/feedback`, { method: "POST", body: "{}" }),
     listCompanionActions: () => request<{ actions: CompanionAction[] }>("/api/v1/companion/actions"),
@@ -811,18 +1038,43 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     listCompanionTurns: () => request<{ turns: CompanionTurn[] }>("/api/v1/companion/turns"),
     getCompanionTurn: (id: string) => request<{ turn: CompanionTurn }>(`/api/v1/companion/turns/${encodeURIComponent(id)}`),
     cancelCompanionTurn: (id: string) => request<{ ok: true }>(`/api/v1/companion/turns/${encodeURIComponent(id)}/cancel`, { method: "POST", body: "{}" }),
+    resumeCompanionTurn: async (id: string, payload: CompanionTurnResume = {}, options: { signal?: AbortSignal; onEvent: (event: CompanionEvent) => void }) => {
+      await runCompanionDirect(
+        `/api/v1/companion/turns/${encodeURIComponent(id)}/resume/prepare`,
+        payload,
+        options,
+        () => consumeCompanionStream(
+          `/api/v1/companion/turns/${encodeURIComponent(id)}/resume`,
+          JSON.stringify(payload),
+          options.signal,
+          options.onEvent,
+        ),
+        () => consumeCompanionStream(
+          `/api/v1/companion/turns/${encodeURIComponent(id)}/proxy`,
+          "{}",
+          options.signal,
+          options.onEvent,
+        ),
+      );
+    },
     clearCompanionHistory: () => request<{ ok: true }>("/api/v1/companion/history", { method: "DELETE" }),
     exportCompanion: () => request<{ version: 2; controls: { useMemory: boolean; learningEnabled: boolean }; exportedAt: string; memories: CompanionMemory[]; turns: CompanionTurn[]; actions: CompanionAction[] }>("/api/v1/companion/export"),
     importCompanionMemories: (memories: { content: string; kind?: "explicit" | "inferred" }[], controls?: { useMemory: boolean; learningEnabled: boolean }) => request<{ memories: CompanionMemory[] }>("/api/v1/companion/import-memories", {
       method: "POST", body: JSON.stringify({ version: 2, memories, controls }),
     }),
     streamCompanion: async (payload: CompanionTurnInput, options: { signal?: AbortSignal; onEvent: (event: CompanionEvent) => void }) => {
-      const { context, response } = await send("/api/v1/companion/turns", {
-        method: "POST", body: JSON.stringify(payload), signal: options.signal,
-      });
-      if (!response.ok) await throwRequestError(context, response);
-      if (!response.body) throw new ApiRequestError("Stream unavailable", 502, "companion_failed");
-      await consumeEventStream(response.body, options.onEvent);
+      await runCompanionDirect(
+        "/api/v1/companion/turns/prepare",
+        payload,
+        options,
+        () => consumeCompanionStream("/api/v1/companion/turns", JSON.stringify(payload), options.signal, options.onEvent),
+        (turnId) => consumeCompanionStream(
+          `/api/v1/companion/turns/${encodeURIComponent(turnId)}/proxy`,
+          "{}",
+          options.signal,
+          options.onEvent,
+        ),
+      );
     },
 
     streamAiGeneration: async (

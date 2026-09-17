@@ -24,6 +24,7 @@ import { MobileBottomNav, MobileNotebookPicker } from "./WorkspaceMobileChrome";
 import { QuickMemoSwitcher } from "./QuickMemoSwitcher";
 import { AppConfirmDialog, MemoDeleteConfirmDialog, NotebookNameDialog } from "./dialogs/ConfirmDialogs";
 import { PluginPanelDialog } from "./plugins/PluginPanelDialog";
+import { shouldDiscardPluginNoteSearchRequest } from "./editor/note-search";
 import { api, getOrCreateClientDeviceId } from "@/lib/api";
 import { MarkdownExportMemoryLimitError, type MarkdownExportProgress } from "@/lib/markdown-export";
 import { exportSelectedMemosAsMarkdownZip } from "@/lib/selected-markdown-export";
@@ -226,8 +227,9 @@ export const WorkspaceApp = ({
   const autoSelectedDemoNotebookRef = useRef(false);
   const [createdMemoEditId, setCreatedMemoEditId] = useState<string | null>(null);
   const pendingCreatedMemoIdRef = useRef<string | null>(null);
-  const pendingQuickSwitcherMemoIdRef = useRef<string | null>(null);
+  const pendingQuickSwitcherMemoIdRef = useRef<string | null>(null); // also companion/plugin opens not yet in the list
   const creatingMemoSelectionRef = useRef(false);
+  const createMemoInFlightRef = useRef(false);
   const memoDocumentActionIdRef = useRef(0);
   const [memoDocumentActionRequest, setMemoDocumentActionRequest] = useState<MemoDocumentActionRequest | null>(null);
   const [memoDeleteConfirmation, setMemoDeleteConfirmation] = useState<MemoDeleteConfirmation | null>(null);
@@ -1235,6 +1237,9 @@ export const WorkspaceApp = ({
       clearPendingCreatedMemo();
       setCreatedMemoEditId(null);
     },
+    onSettled: () => {
+      createMemoInFlightRef.current = false;
+    },
   });
 
   const saveTemplateMutation = useMutation({
@@ -1641,7 +1646,7 @@ export const WorkspaceApp = ({
     setNotebookDeleteConfirmation(notebook);
   };
 
-  const handleImportScreenshot = useCallback(async (payload: { name: string; type: string; title?: string; bytes: Uint8Array }) => {
+  const handleImportScreenshot = useCallback(async (payload: { captureId?: string; name: string; type: string; title?: string; bytes: Uint8Array }) => {
     const importKey = screenshotImportDedupeKey(payload);
     if (!screenshotImportGate.tryBegin(importKey)) return;
 
@@ -1649,13 +1654,13 @@ export const WorkspaceApp = ({
       ? selectedNotebookId
       : defaultMemoNotebookId;
     if (!notebookId) {
-      screenshotImportGate.fail(importKey);
+      screenshotImportGate.fail();
       return;
     }
 
     const file = screenshotFileFromImportPayload(payload);
     if (file.size === 0) {
-      screenshotImportGate.fail(importKey);
+      screenshotImportGate.fail();
       setAppNoticeDialog({
         title: t("memoList.importScreenshotFailedTitle"),
         description: t("memoList.importScreenshotEmpty"),
@@ -1698,7 +1703,7 @@ export const WorkspaceApp = ({
       revealCreatedMemo(memo);
       screenshotImportGate.finish(importKey);
     } catch {
-      screenshotImportGate.fail(importKey);
+      screenshotImportGate.fail();
       creatingMemoSelectionRef.current = false;
       setAppNoticeDialog({
         title: t("memoList.importScreenshotFailedTitle"),
@@ -1707,12 +1712,22 @@ export const WorkspaceApp = ({
     }
   }, [defaultMemoNotebookId, imageCompressionEnabled, localDataScope, memoView, notebooks, repository, selectedNotebookId, t]);
 
+  const handleImportScreenshotRef = useRef(handleImportScreenshot);
+  handleImportScreenshotRef.current = handleImportScreenshot;
+
   const handleCreateMemo = (kind?: DiagramKind) => {
     const targetNotebookId = createMemoNotebookId;
 
     if (!targetNotebookId || memoView === "trash") {
       return;
     }
+
+    // Desktop Cmd+N is handled by both the native menu and the in-app shortcut.
+    // A second click can also land before React Query flips `isPending`.
+    if (createMemoInFlightRef.current || createMemoMutation.isPending) {
+      return;
+    }
+    createMemoInFlightRef.current = true;
 
     setTemplatesOpen(false);
     setMobileBottomNavActive("home");
@@ -2185,7 +2200,7 @@ export const WorkspaceApp = ({
     navigateWorkspaceHome();
     setMemoView("notebook");
     setSelectedTag(null);
-    setSelectedNotebookId(notebookId);
+    if (notebookId) setSelectedNotebookId(notebookId);
     setSearch("");
     setMemoFilterMode("all");
     setRightView("editor");
@@ -2193,6 +2208,7 @@ export const WorkspaceApp = ({
     clearMemoSelection();
     clearPendingCreatedMemo();
     setCreatedMemoEditId(null);
+    pendingQuickSwitcherMemoIdRef.current = memoId;
     setSelectedMemoId(memoId);
     setActivePane("editor");
     if (options?.search) {
@@ -2204,6 +2220,12 @@ export const WorkspaceApp = ({
   }, [clearMemoSelection, clearPendingCreatedMemo, navigateWorkspaceHome, setSelectedMemoId, setSelectedNotebookId]);
 
   useEffect(() => pluginHost.setNavigationAdapter({ openNote: handleOpenPluginNote }), [handleOpenPluginNote, pluginHost]);
+
+  useEffect(() => {
+    if (shouldDiscardPluginNoteSearchRequest(pluginNavigationRequest, selectedMemoId)) {
+      setPluginNavigationRequest(null);
+    }
+  }, [pluginNavigationRequest, selectedMemoId]);
 
   const handleCancelMobileSearch = () => {
     setSearch("");
@@ -2363,14 +2385,14 @@ export const WorkspaceApp = ({
       createMemoMutation.mutate({ notebookId, title, contentMarkdown: payload.content, tags: [] });
     });
     const removeScreenshotListener = bridge.onImportScreenshot?.((payload) => {
-      void handleImportScreenshot(payload);
+      void handleImportScreenshotRef.current(payload);
     }) ?? (() => {});
     return () => {
       removeCommandListener();
       removeMarkdownListener();
       removeScreenshotListener();
     };
-  }, [createMemoMutation, defaultMemoNotebookId, handleCreateMemo, handleCreateNotebook, handleGlobalSearch, handleImportScreenshot, notebooks, selectedNotebookId, toggleDesktopFocusMode]);
+  }, [createMemoMutation, defaultMemoNotebookId, handleCreateMemo, handleCreateNotebook, handleGlobalSearch, notebooks, selectedNotebookId, toggleDesktopFocusMode]);
 
   const handleWorkspaceBackRequest = useCallback(() => {
     if (appNoticeDialog) {

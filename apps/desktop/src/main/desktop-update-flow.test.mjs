@@ -49,6 +49,8 @@ describe("desktop update flow", () => {
     expect(systemInfoSource).toContain("getClientRuntimeDiagnostics");
     expect(systemInfoSource).toContain('t("systemInfo.runtimeEngine")');
     expect(systemInfoSource).toContain('t("systemInfo.connectionSection")');
+    expect(systemInfoSource).toContain('t("systemInfo.dataDirectory")');
+    expect(mainSource).toContain("dataDir: sidecarDataDirectory(activeAccountId)");
   });
 
   test("rechecks for updates while a packaged app remains open", () => {

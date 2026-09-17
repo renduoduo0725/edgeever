@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AppConfirmDialog } from "@/components/dialogs/ConfirmDialogs";
-import { getWebSystemInfoItems } from "@/components/settings/SystemInfoCard";
+import { getShareableWebSystemInfoItems } from "@/components/settings/SystemInfoCard";
 import { api, getConfiguredDesktopApiBaseUrl } from "@/lib/api";
 import {
   createDesktopSyncDiagnosticText,
@@ -87,7 +87,7 @@ export const DesktopSyncIssuesDialog = ({
       text: createDesktopSyncDiagnosticText(items, globalIssue),
     },
     privacyNotice: t("feedback.privacyNotice"),
-    systemInfo: getWebSystemInfoItems(t, i18n.language, {
+    systemInfo: getShareableWebSystemInfoItems(t, i18n.language, {
       clientRuntime: clientRuntimeQuery.data,
       instance: healthQuery.data?.health,
       instanceVersion: releaseQuery.data?.version,

@@ -116,6 +116,9 @@ describe("desktop release workflow", () => {
     expect(protocolE2eVerifier).toContain('fetch("edgeever-staged://" + pending.id)');
     expect(protocolE2eVerifier).toContain('const url = "edgeever-resource://resource/${cachedResourceId}"');
     expect(protocolE2eVerifier).toContain('DOM.setFileInputFiles');
+    expect(protocolE2eVerifier).toContain("renderer.bootstrap-ready");
+    expect(protocolE2eVerifier).toContain("objectId");
+    expect(protocolE2eVerifier).not.toContain("documentNode.root.nodeId");
     expect(protocolE2eVerifier).toContain('Browser.setDownloadBehavior');
     expect(packagedStartupVerifier).toContain('new Set(["renderer.origin-ready", "sidecar.ready", "renderer.bootstrap-ready"])');
     expect(packagedStartupVerifier).toContain('"renderer.origin-ready"');

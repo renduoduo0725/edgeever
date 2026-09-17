@@ -22,6 +22,7 @@ const normalizeIpcBytes = (value) => {
 };
 
 let screenshotImportListener = null;
+let rendererReadySent = false;
 
 contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
   isAvailable: true,
@@ -84,7 +85,10 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
   onImportMarkdown: (callback) => {
     const listener = (_event, payload) => callback(payload);
     ipcRenderer.on("desktop:import-markdown", listener);
-    ipcRenderer.send("desktop:renderer-ready");
+    if (!rendererReadySent) {
+      rendererReadySent = true;
+      ipcRenderer.send("desktop:renderer-ready");
+    }
     return () => ipcRenderer.removeListener("desktop:import-markdown", listener);
   },
   onImportScreenshot: (callback) => {
@@ -95,6 +99,7 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
       callback({ ...payload, bytes: normalizeIpcBytes(payload?.bytes) });
     };
     screenshotImportListener = listener;
+    ipcRenderer.removeAllListeners("desktop:import-screenshot");
     ipcRenderer.on("desktop:import-screenshot", listener);
     return () => {
       ipcRenderer.removeListener("desktop:import-screenshot", listener);

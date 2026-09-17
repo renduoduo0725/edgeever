@@ -56,6 +56,7 @@ interface EdgeEverDesktopBridge {
     osRelease: string;
     electron: string;
     chrome: string;
+    dataDir: string;
   }>;
   setAccountScope(accountId: string | null): Promise<{ ready: true; scope: string }>;
   updateStatus(): Promise<DesktopUpdateStatus>;
@@ -81,7 +82,7 @@ interface EdgeEverDesktopBridge {
     scheduledFor: string;
   }) => void | Promise<void>): () => void;
   onImportMarkdown(callback: (payload: { name: string; content: string }) => void): () => void;
-  onImportScreenshot?(callback: (payload: { name: string; type: string; title?: string; bytes: Uint8Array }) => void): () => void;
+  onImportScreenshot?(callback: (payload: { captureId?: string; name: string; type: string; title?: string; bytes: Uint8Array }) => void): () => void;
 }
 
 interface DesktopUpdateStatus {

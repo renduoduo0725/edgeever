@@ -2,10 +2,10 @@ import { expect, test } from 'bun:test';
 import { Hono } from 'hono';
 import { registerPluginCapabilityRoutes } from './plugin-capability-routes';
 
-function fixture({ kind = 'user', demo = false, fetch = async () => new Response('public data'), generate = async input => ({ text: input.prompt.toUpperCase() }) } = {}) {
+function fixture({ kind = 'user', demo = false, fetch = async () => new Response('public data'), generate = async input => ({ text: input.prompt.toUpperCase() }), loadCredentials } = {}) {
   const app = new Hono();
   app.use('*', async (c, next) => { if (kind) c.set('auth', { kind, workspaceId: 'workspace' }); await next(); });
-  registerPluginCapabilityRoutes(app, { isDemoMode: () => demo, aiStatus: async () => ({ configured: true, modelName: 'Test model' }), generate });
+  registerPluginCapabilityRoutes(app, { isDemoMode: () => demo, aiStatus: async () => ({ configured: true, modelName: 'Test model' }), generate, loadCredentials });
   const env = { publicNetworkFetch: fetch };
   return (path, body, signal) => app.request(`/api/v1/plugins/${path}`, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal } : {}, env);
 }
@@ -42,6 +42,20 @@ test('oversized and cancelled public responses fail without exposing upstream er
   const cancelled = fixture({ fetch: async (_url, init) => { init.signal.throwIfAborted(); return new Response('unexpected'); } });
   const controller = new AbortController(); controller.abort();
   expect((await cancelled('network/fetch', { url: 'https://example.org' }, controller.signal)).status).toBe(502);
+});
+
+test('generic AI prepare returns credentials without invoking the provider', async () => {
+  let generated = 0;
+  const call = fixture({
+    generate: async () => { generated++; return { text: 'nope' }; },
+    loadCredentials: async () => ({ provider: 'openai-compatible', baseUrl: 'https://api.example/v1', apiKey: 'plugin-key', modelId: 'model-a' }),
+  });
+  const response = await call('ai/generate/prepare', { system: 'Translate', prompt: 'hello', maxOutputTokens: 100 });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    apiKey: 'plugin-key', system: 'Translate', prompt: 'hello', maxOutputTokens: 100,
+  });
+  expect(generated).toBe(0);
 });
 
 test('generic AI validates ordinary prompts, returns text, and redacts provider errors', async () => {

@@ -304,6 +304,36 @@ describe("AI route contracts", () => {
     sqlite.close();
   });
 
+  test("prepares tag suggestions with model credentials and no provider call", async () => {
+    const app = createApp();
+    const { environment: databaseEnvironment } = createDatabaseEnvironment();
+    const created = await app.request(
+      "/api/v1/ai/providers",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(validSettings),
+      },
+      databaseEnvironment,
+    );
+    expect(created.status).toBe(201);
+    const response = await app.request(
+      "/api/v1/ai/tag-suggestions/prepare",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "Note", contentMarkdown: "Body about React", currentTags: ["Current"] }),
+      },
+      databaseEnvironment,
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.apiKey).toBe("secret");
+    expect(body.prompt).toContain("Body about React");
+    expect(body.currentTags).toEqual(["Current"]);
+    expect(body.maxOutputTokens).toBe(300);
+  });
+
   test("defers prompt-specific action and parameter validation to the saved prompt", () => {
     expect(AiGenerateSchema.safeParse({
       action: "custom",

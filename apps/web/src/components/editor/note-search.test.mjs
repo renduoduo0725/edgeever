@@ -5,6 +5,8 @@ import {
   getNextSearchMatchIndex,
   getSearchNavigationIdentity,
   getSearchMatchesFromDocument,
+  shouldDiscardPluginNoteSearchRequest,
+  shouldResetNoteSearchForMemoChange,
 } from "./note-search.ts";
 
 const schema = new Schema({
@@ -54,6 +56,25 @@ describe("note search", () => {
     expect(formatNoteSearchMatchLabel("alpha", 1, 3)).toBe("2/3");
     expect(formatNoteSearchMatchLabel("alpha", 0, 0)).toBe("0/0");
     expect(formatNoteSearchMatchLabel("  ", 0, 3)).toBe("0/0");
+  });
+
+  test("resets in-note search when switching notes, including leftover plugin jumps", () => {
+    expect(shouldResetNoteSearchForMemoChange("note-a", "note-b")).toBe(true);
+    expect(shouldResetNoteSearchForMemoChange("note-a", "note-a")).toBe(false);
+    expect(shouldResetNoteSearchForMemoChange(null, "note-b")).toBe(true);
+    expect(shouldResetNoteSearchForMemoChange(null, null)).toBe(false);
+    // Desktop create keeps the editor instance key while the local id remaps.
+    expect(shouldResetNoteSearchForMemoChange("memo_local_1", "memo_local_1")).toBe(false);
+    expect(shouldDiscardPluginNoteSearchRequest(
+      { noteId: "note-a" },
+      "note-b",
+    )).toBe(true);
+    expect(shouldDiscardPluginNoteSearchRequest(
+      { noteId: "note-a" },
+      "note-a",
+    )).toBe(false);
+    expect(shouldDiscardPluginNoteSearchRequest(null, "note-b")).toBe(false);
+    expect(shouldDiscardPluginNoteSearchRequest({ noteId: "note-a" }, null)).toBe(true);
   });
 
   test("does not treat document edits as a new search navigation request", () => {

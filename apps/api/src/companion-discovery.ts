@@ -1,6 +1,6 @@
 import { learnCompanionPreferences, refreshCompanionPreferences, applicableMemories } from "./companion-learning";
 import { selectCompanionMemories } from "./companion-memory-context";
-import { CompanionDiscoveryOutputSchema, type CompanionDiscoveryItem, type CompanionDiscoverySettings,
+import { CompanionDiscoveryOutputSchema, type CompanionDiscoveryItem, type CompanionDiscoveryOutput, type CompanionDiscoverySettings,
   type CompanionDiscoverySettingsInput, type MemoDetail } from "@edgeever/shared";
 import type { DatabaseAdapter } from "./storage-contract";
 import type { CompanionScope } from "./companion-service";
@@ -11,7 +11,7 @@ import { companionWorkspaceCursor, proposeCompanionToolAction, workspaceCursorSq
 import { getCompanionAction } from "./companion-actions";
 import type { loadDefaultAiModel } from "./ai-service";
 import type { generateCompanionDiscovery } from "./companion-discovery-runtime";
-import { discoveryInputHash } from "./companion-discovery-context";
+import { discoveryContext, discoveryInputHash, type DiscoveryContextInput } from "./companion-discovery-context";
 
 type SettingsRow = { learning_enabled: number; recall_enabled: number; last_memory_revision: number; enabled: number; version: number; last_cursor: number;
   last_check_at: string | null; last_status: CompanionDiscoverySettings["lastStatus"]; active_turn_id: string | null; last_input_hash: string | null };
@@ -143,18 +143,42 @@ async function candidatesFor(db: DatabaseAdapter, scope: CompanionScope) {
   return notes;
 }
 
-export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScope, options: {
-  locale: string; signal: AbortSignal; loadModel: () => ReturnType<typeof loadDefaultAiModel>;
-  generate?: typeof generateCompanionDiscovery;
-}) {
+type DiscoverySession = {
+  generationInput: DiscoveryContextInput;
+  inputHash: string;
+  cursor: number;
+  settingsVersion: number;
+  memoryRevision: number;
+  recallEnabled: boolean;
+  now: string;
+};
+
+const discoverySession = (value: unknown): DiscoverySession | null => {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const generationInput = record.generationInput && typeof record.generationInput === "object"
+    ? record.generationInput as DiscoveryContextInput : null;
+  if (!generationInput || typeof record.inputHash !== "string" || typeof record.cursor !== "number"
+    || typeof record.settingsVersion !== "number" || typeof record.memoryRevision !== "number"
+    || typeof record.recallEnabled !== "boolean" || typeof record.now !== "string") return null;
+  return {
+    generationInput, inputHash: record.inputHash, cursor: record.cursor, settingsVersion: record.settingsVersion,
+    memoryRevision: record.memoryRevision, recallEnabled: record.recallEnabled, now: record.now,
+  };
+};
+
+export async function startDiscoveryCheck(db: DatabaseAdapter, scope: CompanionScope, options: {
+  locale: string; signal: AbortSignal;
+  loadModelId: () => Promise<string>;
+}): Promise<{ turnId: string; generationInput: DiscoveryContextInput; inputHash: string } | null> {
   let settings = await settingsRow(db, scope);
-  if (!settings?.enabled) return;
+  if (!settings?.enabled) return null;
   await learnCompanionPreferences(db, scope);
   await refreshCompanionPreferences(db, scope);
   const memoryRevision = await companionRevision(db, scope);
   const allMemories = await listCompanionMemories(db, scope, false);
   settings = await settingsRow(db, scope);
-  if (!settings?.enabled) return;
+  if (!settings?.enabled) return null;
   if (await companionRevision(db, scope) !== memoryRevision) throw changed();
   const cursor = await companionWorkspaceCursor(db, scope.workspaceId);
   const now = new Date().toISOString();
@@ -164,7 +188,7 @@ export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScop
       AND (last_check_at IS NULL OR last_check_at < ? OR (last_memory_revision <> ? AND last_check_at < ?))`)
     .bind(now, cursor, memoryRevision, turnId, ...keys(scope), settings.version, cursor, memoryRevision,
       new Date(Date.now() - 86400000).toISOString(), memoryRevision, new Date(Date.now() - 3600000).toISOString()).run();
-  if (Number(claim.meta.changes) !== 1) return;
+  if (Number(claim.meta.changes) !== 1) return null;
   let turn: Awaited<ReturnType<typeof beginCompanionTurn>> | null = null;
   const finish = (status: string, inputHash: string | null = null) => db.prepare(`UPDATE companion_discovery_settings SET last_status = ?, active_turn_id = NULL,
     last_input_hash = COALESCE(?, last_input_hash)
@@ -179,7 +203,7 @@ export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScop
   };
   try {
     const candidates = await candidatesFor(db, scope);
-    if (candidates.length < 1) { await finish("quiet"); return; }
+    if (candidates.length < 1) { await finish("quiet"); return null; }
     await assertCurrent();
     const memories = settings.recall_enabled ? selectCompanionMemories(applicableMemories(allMemories,
       candidates.map(note => note.notebookId), candidates.flatMap(note => note.tags)),
@@ -201,34 +225,77 @@ export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScop
       WHERE s.workspace_id = ?`).bind(scope.workspaceId).first();
     const inputHash = await discoveryInputHash({ ...generationInput, settingsVersion: settings.version, contextRevision, modelConfiguration });
     await assertCurrent();
-    if (inputHash === settings.last_input_hash) { await finish("quiet"); return; }
-    const model = await options.loadModel();
+    if (inputHash === settings.last_input_hash) { await finish("quiet"); return null; }
+    const modelId = await options.loadModelId();
     turn = await beginCompanionTurn(db, scope, { id: turnId, threadId: turnId, message: "Quiet discovery", useMemory: settings.recall_enabled === 1,
-      allowNotes: true, locale: options.locale === "zh-CN" ? "zh-CN" : "en-US" }, model.modelId);
-    await db.prepare("UPDATE companion_turns SET origin = 'discovery' WHERE id = ? AND workspace_id = ? AND owner_id = ?").bind(turnId, ...keys(scope)).run();
+      allowNotes: true, locale: options.locale === "zh-CN" ? "zh-CN" : "en-US" }, modelId);
+    const session: DiscoverySession = {
+      generationInput, inputHash, cursor, settingsVersion: settings.version, memoryRevision,
+      recallEnabled: settings.recall_enabled === 1, now,
+    };
+    await db.prepare("UPDATE companion_turns SET origin = 'discovery', agent_session_json = ? WHERE id = ? AND workspace_id = ? AND owner_id = ?")
+      .bind(JSON.stringify(session), turnId, ...keys(scope)).run();
     await assertCurrent();
-    const generate = options.generate ?? (await import("./companion-discovery-runtime")).generateCompanionDiscovery;
-    const { suggestion } = CompanionDiscoveryOutputSchema.parse(await generate({ ...generationInput, model, signal: options.signal }));
+    return { turnId, generationInput, inputHash };
+  } catch (error) {
+    if (turn) await checkpointCompanionTurn(db, scope, turn, "", [], "failed").catch(() => {});
+    await finish("failed");
+    throw error;
+  }
+}
+
+export async function completeDiscoveryGeneration(db: DatabaseAdapter, scope: CompanionScope, turnId: string, output: unknown, signal: AbortSignal) {
+  const turn = await getCompanionTurn(db, scope, turnId);
+  const session = discoverySession(turn ? JSON.parse(turn.agent_session_json || "{}") : null);
+  if (!turn || turn.status !== "running" || !session) throw changed();
+  const finish = (status: string, inputHash: string | null = null) => db.prepare(`UPDATE companion_discovery_settings SET last_status = ?, active_turn_id = NULL,
+    last_input_hash = COALESCE(?, last_input_hash)
+    WHERE workspace_id = ? AND owner_id = ? AND active_turn_id = ?`).bind(status, inputHash, ...keys(scope), turnId).run();
+  const assertCurrent = async () => {
+    signal.throwIfAborted();
+    const current = await settingsRow(db, scope);
+    if (await companionRevision(db, scope) !== session.memoryRevision || !current?.enabled || current.version !== session.settingsVersion
+      || current.active_turn_id !== turnId || await companionWorkspaceCursor(db, scope.workspaceId) !== session.cursor) throw changed();
+    if ((await getCompanionTurn(db, scope, turnId))?.status !== "running"
+      || await companionRevision(db, scope) !== turn.memory_revision) throw changed();
+  };
+  try {
+    await assertCurrent();
+    const parsed = CompanionDiscoveryOutputSchema.parse(output);
+    const candidateIds = new Set(session.generationInput.candidates.map(note => note.id));
+    const decoded = parsed.suggestion && parsed.suggestion.sourceIds.every(id => candidateIds.has(id))
+      ? parsed
+      : discoveryContext(session.generationInput).decode(parsed);
+    const { suggestion } = decoded;
     await assertCurrent();
     if (!suggestion) {
       await db.prepare("DELETE FROM companion_turns WHERE id = ? AND workspace_id = ? AND owner_id = ?").bind(turnId, ...keys(scope)).run();
-      await finish("quiet", inputHash); return;
+      await finish("quiet", session.inputHash); return;
     }
+    const candidates: MemoDetail[] = [];
+    for (const id of candidateIds) {
+      const note = await getMemoDetail(db, scope.workspaceId, id);
+      if (!note) throw changed();
+      candidates.push(note);
+    }
+    const memories = session.generationInput.memories ?? [];
+    const notebooks = session.generationInput.notebooks ?? [];
     const sources = suggestion.sourceIds.map(id => candidates.find(note => note.id === id));
     if (sources.some(note => !note) || new Set(suggestion.sourceIds).size !== sources.length || !suggestion.sourceIds.includes(candidates[0].id)) throw changed();
     const notes = sources as MemoDetail[];
     if ((suggestion.memoryIds ?? []).some(id => !memories.some(memory => memory.id === id))) throw changed();
     if (["insight", "merge", "append"].includes(suggestion.kind) && notes.length < 2) throw changed();
-    if (settings.recall_enabled && allMemories.some(memory => (!memory.state || memory.state === "active") && notes.some(note => memory.ruleKey === JSON.stringify(["avoid", note.notebookId, suggestion.kind])))) {
+    const allMemories = await listCompanionMemories(db, scope, false);
+    if (session.recallEnabled && allMemories.some(memory => (!memory.state || memory.state === "active") && notes.some(note => memory.ruleKey === JSON.stringify(["avoid", note.notebookId, suggestion.kind])))) {
       await db.prepare("DELETE FROM companion_turns WHERE id = ? AND workspace_id = ? AND owner_id = ?").bind(turnId, ...keys(scope)).run();
-      await finish("quiet", inputHash); return;
+      await finish("quiet", session.inputHash); return;
     }
     const fingerprint = `${suggestion.kind}:${[...suggestion.sourceIds].sort().join(":")}${["move", "tag"].includes(suggestion.kind) ? `:${suggestion.notebookId ?? ""}:${JSON.stringify(suggestion.tags ?? [])}` : ""}`;
     const duplicate = await db.prepare("SELECT id FROM companion_discoveries WHERE workspace_id = ? AND owner_id = ? AND fingerprint = ?")
       .bind(...keys(scope), fingerprint).first();
     if (duplicate) {
       await db.prepare("DELETE FROM companion_turns WHERE id = ? AND workspace_id = ? AND owner_id = ?").bind(turnId, ...keys(scope)).run();
-      await finish("quiet", inputHash); return;
+      await finish("quiet", session.inputHash); return;
     }
     let actionId: string | null = null;
     const inspected = new Map(notes.map(note => [note.id, note.revision]));
@@ -257,7 +324,7 @@ export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScop
         toolName = "update_memo";
         args = { memoId: target.id, contentMarkdown: `${target.contentMarkdown}\n\n---\n\n${source.contentMarkdown}` };
       }
-      actionId = (await proposeCompanionToolAction(db, scope, turnId, toolName, args, suggestion.body, cursor, inspected,
+      actionId = (await proposeCompanionToolAction(db, scope, turnId, toolName, args, suggestion.body, session.cursor, inspected,
         notes.map(note => note.id))).proposalId;
     }
     const sourceRefs = notes.map(note => ({ id: note.id, title: note.title || "", notebookId: note.notebookId, revision: note.revision }));
@@ -271,21 +338,64 @@ export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScop
         WHERE s.workspace_id = ? AND s.owner_id = ? AND s.enabled = 1 AND s.version = ? AND s.active_turn_id = ?
           AND t.status = 'running' AND t.memory_revision = cs.memory_revision AND t.expires_at > ?
           AND (${workspaceCursorSql}) = ?) THEN 1 ELSE 0 END)`)
-        .bind(id, ...keys(scope), settings.version, turnId, new Date().toISOString(), scope.workspaceId, cursor),
+        .bind(id, ...keys(scope), session.settingsVersion, turnId, new Date().toISOString(), scope.workspaceId, session.cursor),
       db.prepare(`INSERT INTO companion_discoveries(id, workspace_id, owner_id, turn_id, action_id, settings_version,
         kind, title, body, sources_json, fingerprint, created_at, memory_ids_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .bind(id, ...keys(scope), turnId, actionId, settings.version, suggestion.kind, suggestion.title, suggestion.body, JSON.stringify(sourceRefs), fingerprint, now, JSON.stringify(suggestion.memoryIds ?? [])),
+        .bind(id, ...keys(scope), turnId, actionId, session.settingsVersion, suggestion.kind, suggestion.title, suggestion.body, JSON.stringify(sourceRefs), fingerprint, session.now, JSON.stringify(suggestion.memoryIds ?? [])),
       db.prepare("UPDATE companion_turns SET status = 'completed', response = ?, sources_json = ? WHERE id = ?")
         .bind(suggestion.body, JSON.stringify(sourceRefs), turnId),
       db.prepare("DELETE FROM companion_action_checks WHERE id = ?").bind(id),
     ]);
-    await finish("ready", inputHash);
+    await finish("ready", session.inputHash);
   } catch (error) {
-    if (turn) await checkpointCompanionTurn(db, scope, turn, "", [], "failed").catch(() => {});
+    await checkpointCompanionTurn(db, scope, turn, "", [], "failed").catch(() => {});
     await finish("failed");
     throw error;
   }
 }
+
+export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScope, options: {
+  locale: string; signal: AbortSignal; loadModel: () => ReturnType<typeof loadDefaultAiModel>;
+  generate?: typeof generateCompanionDiscovery;
+}) {
+  let model: Awaited<ReturnType<typeof loadDefaultAiModel>> | undefined;
+  const started = await startDiscoveryCheck(db, scope, {
+    locale: options.locale, signal: options.signal,
+    loadModelId: async () => {
+      model = await options.loadModel();
+      return model.modelId;
+    },
+  });
+  if (!started || !model) return;
+  try {
+    const generate = options.generate ?? (await import("./companion-discovery-runtime")).generateCompanionDiscovery;
+    const output = await generate({ ...started.generationInput, model, signal: options.signal });
+    await completeDiscoveryGeneration(db, scope, started.turnId, output, options.signal);
+  } catch (error) {
+    const turn = await getCompanionTurn(db, scope, started.turnId);
+    if (turn?.status === "running") {
+      await checkpointCompanionTurn(db, scope, turn, "", [], "failed").catch(() => {});
+      await db.prepare(`UPDATE companion_discovery_settings SET last_status = 'failed', active_turn_id = NULL
+        WHERE workspace_id = ? AND owner_id = ? AND active_turn_id = ?`).bind(...keys(scope), started.turnId).run();
+    }
+    throw error;
+  }
+}
+
+export const discoveryPreparePayload = (args: {
+  turnId: string; generationInput: DiscoveryContextInput;
+  credentials: { provider: "openai-compatible" | "anthropic" | "google"; baseUrl: string; apiKey: string; modelId: string };
+}) => {
+  const context = discoveryContext(args.generationInput);
+  return {
+    quiet: false as const,
+    turnId: args.turnId,
+    ...args.credentials,
+    instructions: context.instructions,
+    prompt: context.prompt,
+    maxOutputTokens: 1200,
+  };
+};
 
 // An explicit feedback button is a user statement, not an inference from dismissal.
 export async function rememberDiscoveryFeedback(db: DatabaseAdapter, scope: CompanionScope, id: string) {

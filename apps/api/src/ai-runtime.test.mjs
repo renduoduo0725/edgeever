@@ -1,5 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { parseAiTagSuggestionNames } from "./ai-runtime.ts";
+import { openaiCompatibleHeaders, parseAiTagSuggestionNames } from "./ai-runtime.ts";
+
+describe("OpenAI-compatible provider headers", () => {
+  test("identifies OpenRouter so rankings and tool routes stay attributed", () => {
+    expect(openaiCompatibleHeaders("https://openrouter.ai/api/v1")).toEqual({
+      "HTTP-Referer": "https://edgeever.org",
+      "X-Title": "EdgeEver",
+    });
+    expect(openaiCompatibleHeaders("https://api.openai.com/v1")).toBeUndefined();
+  });
+});
 
 describe("AI tag response parsing", () => {
   test("parses the requested suggestions object", () => {

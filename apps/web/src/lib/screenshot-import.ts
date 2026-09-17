@@ -33,34 +33,47 @@ export const screenshotFileFromImportPayload = (payload: {
 };
 
 export const screenshotImportDedupeKey = (payload: {
+  captureId?: string;
   name?: string;
   title?: string;
-  bytes?: { byteLength?: number } | null;
-}) => [payload.title?.trim() || "", payload.name || "", String(payload.bytes?.byteLength ?? 0)].join("\u0000");
+}) => payload.captureId?.trim() || [payload.title?.trim() || "", payload.name || ""].join("\u0000");
 
-export const createScreenshotImportGate = (cooldownMs = 2000) => {
-  let inFlightKey: string | null = null;
-  let lastKey: string | null = null;
-  let lastAt = 0;
+export const createScreenshotImportGate = (cooldownMs = 15_000) => {
+  let inFlight = false;
+  const seen = new Map<string, number>();
   return {
     tryBegin(key: string, now = Date.now()) {
-      if (inFlightKey) return false;
-      if (lastKey === key && now - lastAt < cooldownMs) return false;
-      inFlightKey = key;
+      if (inFlight) return false;
+      const lastAt = seen.get(key);
+      if (lastAt != null && now - lastAt < cooldownMs) return false;
+      inFlight = true;
       return true;
     },
     finish(key: string, now = Date.now()) {
-      if (inFlightKey === key) inFlightKey = null;
-      lastKey = key;
-      lastAt = now;
+      inFlight = false;
+      seen.set(key, now);
     },
-    fail(key: string) {
-      if (inFlightKey === key) inFlightKey = null;
+    fail() {
+      inFlight = false;
     },
   };
 };
 
-export const screenshotImportGate = createScreenshotImportGate();
+const SCREENSHOT_IMPORT_GATE_KEY = "__edgeeverScreenshotImportGate";
+
+export const getScreenshotImportGate = () => {
+  const scope = globalThis as typeof globalThis & {
+    [SCREENSHOT_IMPORT_GATE_KEY]?: ReturnType<typeof createScreenshotImportGate>;
+  };
+  scope[SCREENSHOT_IMPORT_GATE_KEY] ??= createScreenshotImportGate();
+  return scope[SCREENSHOT_IMPORT_GATE_KEY];
+};
+
+export const screenshotImportGate = {
+  tryBegin: (key: string, now?: number) => getScreenshotImportGate().tryBegin(key, now),
+  finish: (key: string, now?: number) => getScreenshotImportGate().finish(key, now),
+  fail: () => getScreenshotImportGate().fail(),
+};
 
 const escapeMarkdownImageAlt = (value: string) => value.replaceAll("\\", "\\\\").replaceAll("]", "\\]");
 

@@ -50,10 +50,17 @@ type MobileInstanceDiagnostics = {
   version: string;
 };
 
+type MobileSystemInfoItem = {
+  fullWidth?: boolean;
+  label: string;
+  localOnly?: boolean;
+  value: string;
+};
+
 type MobileSystemInfoGroup = {
   description: string;
   id: "cloud" | "client" | "connection";
-  items: Array<{ label: string; value: string }>;
+  items: MobileSystemInfoItem[];
   notice?: string;
   title: string;
 };
@@ -139,6 +146,7 @@ export const SettingsView = ({
     void Linking.openURL(buildMobileFeedbackUrl(localePreference, {
       connectionState: instanceResult ? "connected" : instanceDiagnosticsQuery.isError ? "failed" : "checking",
       instance: instanceResult,
+      instanceUrl: session?.baseUrl,
       sync: syncResult,
     }));
   };
@@ -164,6 +172,7 @@ export const SettingsView = ({
             connectionState={instanceDiagnosticsQuery.data ? "connected" : instanceDiagnosticsQuery.isError ? "failed" : "checking"}
             defaultExpanded
             instance={instanceDiagnosticsQuery.data}
+            instanceUrl={session?.baseUrl}
             sync={syncDiagnosticsQuery.data}
           />
         </View>
@@ -356,11 +365,13 @@ const SystemInfoCard = ({
   connectionState,
   defaultExpanded = false,
   instance,
+  instanceUrl,
   sync,
 }: {
   connectionState: "checking" | "connected" | "failed";
   defaultExpanded?: boolean;
   instance?: MobileInstanceDiagnostics;
+  instanceUrl?: string;
   sync?: MobileSyncDiagnostics;
 }) => {
   const [copied, setCopied] = useState(false);
@@ -369,7 +380,7 @@ const SystemInfoCard = ({
   const localePreference = useMobileLocalePreference();
   const english = isEnglishMobileLocale(localePreference);
   const copy = getMobileSystemInfoText(localePreference);
-  const infoGroups = getMobileSystemInfoGroups(localePreference, { connectionState, instance, sync });
+  const infoGroups = getMobileSystemInfoGroups(localePreference, { connectionState, instance, instanceUrl, sync });
   const description = hasUpdate ? copy.updateAvailableDescription : copy.description;
   const checking = status === "checking";
   const downloading = status === "downloading";
@@ -457,26 +468,22 @@ const MobileSystemInfoSection = ({ group }: { group: MobileSystemInfoGroup }) =>
       </View>
     ) : null}
     <View style={styles.systemInfoRows}>
-      {Array.from({ length: Math.ceil(group.items.length / 3) }, (_, rowIndex) => {
-        const rowItems = group.items.slice(rowIndex * 3, rowIndex * 3 + 3);
-
-        return (
-          <View
-            key={`${group.id}-row-${rowIndex}`}
-            style={[styles.systemInfoRow, rowIndex === Math.ceil(group.items.length / 3) - 1 && styles.systemInfoRowLast]}
-          >
-            {rowItems.map((item, itemIndex) => (
-              <View
-                key={item.label}
-                style={[styles.systemInfoCell, itemIndex < rowItems.length - 1 && styles.systemInfoCellDivider]}
-              >
-                <Text numberOfLines={1} style={styles.panelLabel}>{item.label}</Text>
-                <Text numberOfLines={1} selectable style={styles.systemInfoListValue}>{item.value}</Text>
-              </View>
-            ))}
-          </View>
-        );
-      })}
+      {layoutMobileSystemInfoRows(group.items).map((rowItems, rowIndex, rows) => (
+        <View
+          key={`${group.id}-row-${rowIndex}`}
+          style={[styles.systemInfoRow, rowIndex === rows.length - 1 && styles.systemInfoRowLast]}
+        >
+          {rowItems.map((item, itemIndex) => (
+            <View
+              key={item.label}
+              style={[styles.systemInfoCell, itemIndex < rowItems.length - 1 && styles.systemInfoCellDivider]}
+            >
+              <Text numberOfLines={1} style={styles.panelLabel}>{item.label}</Text>
+              <Text numberOfLines={item.fullWidth ? 3 : 1} selectable style={styles.systemInfoListValue}>{item.value}</Text>
+            </View>
+          ))}
+        </View>
+      ))}
     </View>
   </View>
 );
@@ -511,6 +518,7 @@ const getMobileSystemInfoText = (localePreference: MobileLocaleMode) =>
         installMode: "Mode",
         instanceBuild: "Instance build",
         instanceConnection: "Instance connection",
+        instanceUrl: "Instance URL",
         instanceVersion: "Instance version",
         language: "Language",
         newUploadObjectStorage: "New upload object storage",
@@ -518,7 +526,7 @@ const getMobileSystemInfoText = (localePreference: MobileLocaleMode) =>
         platform: "System",
         mobileApp: "Mobile app",
         platformVersion: "System version",
-        requestLatency: "Request latency",
+        requestLatency: "Health check time",
         timeZone: "Time zone",
         openUpdate: "Get update",
         title: "System info",
@@ -554,6 +562,7 @@ const getMobileSystemInfoText = (localePreference: MobileLocaleMode) =>
         installMode: "安装形态",
         instanceBuild: "实例构建",
         instanceConnection: "实例连接",
+        instanceUrl: "实例地址",
         instanceVersion: "实例版本",
         language: "语言",
         newUploadObjectStorage: "新上传对象存储",
@@ -561,7 +570,7 @@ const getMobileSystemInfoText = (localePreference: MobileLocaleMode) =>
         platform: "系统",
         mobileApp: "移动应用",
         platformVersion: "系统版本",
-        requestLatency: "请求耗时",
+        requestLatency: "健康检查耗时",
         timeZone: "时区",
         openUpdate: "前往更新",
         title: "系统信息",
@@ -614,11 +623,34 @@ const getMobileObjectStorage = (health: InstanceHealth | undefined, english: boo
   }
 };
 
+const layoutMobileSystemInfoRows = (items: MobileSystemInfoItem[]) => {
+  const rows: MobileSystemInfoItem[][] = [];
+  let buffer: MobileSystemInfoItem[] = [];
+  for (const item of items) {
+    if (item.fullWidth) {
+      if (buffer.length > 0) {
+        rows.push(buffer);
+        buffer = [];
+      }
+      rows.push([item]);
+      continue;
+    }
+    buffer.push(item);
+    if (buffer.length === 3) {
+      rows.push(buffer);
+      buffer = [];
+    }
+  }
+  if (buffer.length > 0) rows.push(buffer);
+  return rows;
+};
+
 const getMobileSystemInfoGroups = (
   localePreference: MobileLocaleMode,
   diagnostics: {
     connectionState?: "checking" | "connected" | "failed";
     instance?: MobileInstanceDiagnostics;
+    instanceUrl?: string;
     sync?: MobileSyncDiagnostics;
   } = {},
 ): MobileSystemInfoGroup[] => {
@@ -655,6 +687,9 @@ const getMobileSystemInfoGroups = (
       id: "cloud",
       notice: getMobileClientAheadNotice(copy, instance?.version, instance?.health.runtime),
       items: [
+        ...(diagnostics.instanceUrl
+          ? [{ fullWidth: true, label: copy.instanceUrl, localOnly: true, value: diagnostics.instanceUrl }]
+          : []),
         { label: copy.instanceVersion, value: instance?.version ? `v${instance.version.replace(/^v/, "")}` : copy.unknown },
         { label: copy.instanceBuild, value: instance?.health.build || copy.unknown },
         { label: copy.databaseVersion, value: instance?.health.migration || copy.unknown },
@@ -714,10 +749,12 @@ const buildMobileFeedbackUrl = (
     privacyNotice: english
       ? "GitHub Issues are public. Do not include passwords, tokens, instance URLs, or private note content."
       : "GitHub Issue 公开可见，请勿提交密码、Token、实例地址或私人笔记内容。",
-    systemInfo: infoGroups.flatMap((group) => group.items.map((item) => ({
-      label: `${group.title} / ${item.label}`,
-      value: item.value,
-    }))),
+    systemInfo: infoGroups.flatMap((group) => group.items
+      .filter((item) => !item.localOnly)
+      .map((item) => ({
+        label: `${group.title} / ${item.label}`,
+        value: item.value,
+      }))),
     systemInfoHeading: english ? "System information" : "系统信息",
     systemInfoNotice: english
       ? "The following information was generated by EdgeEver to help diagnose the issue."

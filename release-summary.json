@@ -1,23 +1,23 @@
 {
-  "version": "1.74.0",
+  "version": "1.76.0",
   "changes": {
     "en-US": [
-      "Add Agent mode to the in-app AI assistant so it can search, organize, and write notes; the standalone Paw page, discovery hub, and settings tab are gone, with those capabilities folded into the assistant. The open note is context rather than a search filter, note writes apply immediately, and the transcript stays on the newest reply.",
-      "Prevent a single tray or menu-bar screenshot from creating two notes.",
-      "Make the macOS menu-bar cat a heavier template glyph that matches neighboring status icons.",
-      "Shorten plugin marketplace copy so the header stays aligned with its actions."
+      "Call model APIs from the client for Agent, tag suggestions, plugin generate, and Paw checks, so Cloudflare requests stay short. The instance still prepares credentials and runs tools, and CORS failures fall back to the existing proxy.",
+      "Keep Agent tool schemas compatible with OpenAI-style calling, so OpenAI-compatible models no longer fail before the first token. Surface clearer errors for rejected credentials, insufficient credit, rate limits, and models that do not support tool calling.",
+      "Show the connected instance URL on desktop and mobile, and the local data directory on desktop, in system info. Make the dialog draggable, keep the body scrollable, and distinguish an empty sync queue from never having synced.",
+      "Quiet the empty-paragraph placeholder: keep it at body size, shorten the copy, drop the leading Latin Space, and use a lighter color so it no longer reads as a larger type size."
     ],
     "zh-CN": [
-      "内置 AI 助手新增 Agent 模式，可检索、整理并直接改笔记；独立的爪印页面、发现中心和设置页已下线，能力都收进助手。当前打开的笔记只作为上下文，不会限制搜索范围；笔记写入立即生效，对话会跟着最新回复滚动。",
-      "从托盘或菜单栏截屏时，同一次操作不会再生成两篇笔记。",
-      "macOS 菜单栏猫咪图标加粗描边，和其他状态图标一样清晰。",
-      "缩短插件市场说明文案，让标题行与操作按钮对齐。"
+      "Agent、标签建议、插件生成和 Paw 检查改为由客户端直接调用模型接口，缩短 Cloudflare 请求时间。实例仍负责准备凭证和执行工具；遇到 CORS 失败时回退到原有代理。",
+      "让 Agent 的工具 schema 兼容 OpenAI 风格调用，避免兼容接口在发出第一个 token 前就失败。密钥被拒、额度不足、限流和不支持工具调用的模型会给出更明确的提示。",
+      "系统信息在桌面端和移动端显示已连接的实例地址，桌面端还显示本地数据目录。对话框可拖动、正文可滚动，并区分“当前无需同步”和“尚未同步”。",
+      "空段落占位提示改为正文字号、更短的文案和更浅的颜色，并去掉开头的拉丁文 Space，不再看起来比正文更大。"
     ],
     "ja": [
-      "アプリ内 AI アシスタントに Agent モードを追加し、ノートの検索・整理・書き込みができるようにしました。独立した Paw ページ、発見ハブ、設定タブは廃止し、それらの機能はアシスタントに統合しています。開いているノートは検索範囲ではなく文脈として扱い、ノートの書き込みは即時反映され、会話は最新の返信に追従します。",
-      "トレイまたはメニューバーからのスクリーンショットが、1回の操作で2つのノートを作らないようにしました。",
-      "macOS メニューバーの猫アイコンを、他のステータスアイコンと同じ太さのテンプレート画像にしました。",
-      "プラグインマーケットの説明文を短くし、見出し行と操作ボタンが揃うようにしました。"
+      "Agent、タグ提案、プラグイン生成、Paw チェックはクライアントからモデル API を直接呼び、Cloudflare へのリクエストを短くします。インスタンスは認証情報の準備とツール実行を担当し、CORS 失敗時は従来のプロキシにフォールバックします。",
+      "Agent のツールスキーマを OpenAI 形式の呼び出しに合わせ、互換モデルが最初のトークン前に失敗しないようにしました。認証拒否、残高不足、レート制限、ツール非対応モデルには、より具体的なエラーを表示します。",
+      "システム情報に、デスクトップとモバイルでは接続中のインスタンス URL、デスクトップではローカルデータディレクトリを表示します。ダイアログをドラッグでき、本文はスクロールしたまま、未同期と同期対象なしを区別します。",
+      "空段落のプレースホルダーを本文サイズのまま短くし、先頭のラテン語 Space を外して色を薄くし、本文より大きく見えないようにしました。"
     ]
   }
 }

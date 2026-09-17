@@ -77,6 +77,36 @@ export type MobilePlainTextElement = HTMLTextAreaElement | HTMLDivElement;
 export const isEditorReady = (editor: Editor | null | undefined): editor is Editor =>
   Boolean(editor && !editor.isDestroyed && (editor as { extensionManager?: unknown }).extensionManager);
 
+export const CREATED_MEMO_FOCUS_MAX_ATTEMPTS = 120;
+
+export const isCreatedMemoEditorFocused = (editor: Editor | null | undefined) =>
+  isEditorReady(editor) && editor.isEditable && (editor.isFocused || editor.view.hasFocus());
+
+/**
+ * Keep retrying create-note autofocus until the editor is actually editable
+ * and focused. Hydration sets a ref before React has flipped `editable`, and
+ * desktop id remapping can blur a successful first focus.
+ */
+export const shouldRetryCreatedMemoFocus = ({
+  attempt,
+  editorEditable,
+  editorFocused,
+  editorReady,
+  hydratedForMemo,
+  maxAttempts = CREATED_MEMO_FOCUS_MAX_ATTEMPTS,
+}: {
+  attempt: number;
+  editorEditable: boolean;
+  editorFocused: boolean;
+  editorReady: boolean;
+  hydratedForMemo: boolean;
+  maxAttempts?: number;
+}) => {
+  if (attempt >= maxAttempts) return false;
+  if (!editorReady || !hydratedForMemo || !editorEditable) return true;
+  return !editorFocused;
+};
+
 export const getMobilePlainTextElementValue = (element: MobilePlainTextElement | null) => {
   if (!element) {
     return "";

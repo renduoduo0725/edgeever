@@ -7,8 +7,8 @@ import {
   AiProviderConnectionTestSchema,
   AiTagSuggestionPromptUpdateSchema,
   AiTagSuggestionsRequestSchema,
-  MAX_AI_TAG_SUGGESTIONS,
-  normalizeTags,
+  buildAiTagSuggestionRequest,
+  finalizeAiTagSuggestions,
   promptNeedsTargetLanguage,
   promptNeedsTone,
   type AiAction,
@@ -571,6 +571,49 @@ export const registerAiRoutes = (app: Hono<AppEnv>, dependencies: AiRouteDepende
   );
 
   app.post(
+    "/api/v1/ai/tag-suggestions/prepare",
+    zValidator("json", AiTagSuggestionsRequestSchema),
+    async (context) => {
+      const denied = requireUser(context);
+      if (denied) return denied;
+      try {
+        const input = context.req.valid("json");
+        const workspaceId = getWorkspaceId(context);
+        const tagSummaries = await listTagSummaries(context.env.storage.db, workspaceId);
+        const allCanonicalTags = new Map(
+          tagSummaries.map((tag) => [tag.name.toLocaleLowerCase(), tag.name]),
+        );
+        const popularTags = [...tagSummaries]
+          .sort((left, right) => right.memoCount - left.memoCount || left.name.localeCompare(right.name))
+          .slice(0, 200)
+          .map((tag) => tag.name);
+        const existingTags = Array.from(new Set([
+          ...input.currentTags.map((tag) => allCanonicalTags.get(tag.toLocaleLowerCase()) ?? tag),
+          ...popularTags,
+        ]));
+        const credentials = await loadDefaultAiModelCredentials(
+          context.env.storage.db,
+          workspaceId,
+          context.env,
+        );
+        const fields = buildAiTagSuggestionRequest({
+          ...input,
+          existingTags,
+          instruction: await getAiTagSuggestionPrompt(context.env.storage.db, workspaceId, input.locale),
+        });
+        return context.json({
+          ...credentials,
+          ...fields,
+          currentTags: input.currentTags,
+          canonicalTags: Object.fromEntries(allCanonicalTags),
+        });
+      } catch (error) {
+        return withAiError(context, error, "ai_tag_suggestions_failed");
+      }
+    },
+  );
+
+  app.post(
     "/api/v1/ai/tag-suggestions",
     zValidator("json", AiTagSuggestionsRequestSchema),
     async (context) => {
@@ -591,6 +634,7 @@ export const registerAiRoutes = (app: Hono<AppEnv>, dependencies: AiRouteDepende
           ...input.currentTags.map((tag) => allCanonicalTags.get(tag.toLocaleLowerCase()) ?? tag),
           ...popularTags,
         ]));
+        const canonicalTags = Object.fromEntries(allCanonicalTags);
         const rawSuggestions = dependencies.suggestTags
           ? await dependencies.suggestTags({ ...input, existingTags })
           : await generateAiTagSuggestions({
@@ -600,18 +644,7 @@ export const registerAiRoutes = (app: Hono<AppEnv>, dependencies: AiRouteDepende
             model: await loadDefaultAiModel(context.env.storage.db, workspaceId, context.env),
             abortSignal: context.req.raw.signal,
           });
-        const currentTagKeys = new Set(input.currentTags.map((tag) => tag.toLocaleLowerCase()));
-        const suggestionNames = normalizeTags(
-          normalizeTags(rawSuggestions)
-            .filter((name) => !currentTagKeys.has(name.toLocaleLowerCase()))
-            .map((name) => allCanonicalTags.get(name.toLocaleLowerCase()) ?? name),
-        ).slice(0, MAX_AI_TAG_SUGGESTIONS);
-        const suggestions = suggestionNames
-          .map((name) => {
-            const canonicalName = allCanonicalTags.get(name.toLocaleLowerCase());
-            return { name: canonicalName ?? name, existing: Boolean(canonicalName) };
-          });
-        return context.json({ suggestions });
+        return context.json({ suggestions: finalizeAiTagSuggestions(rawSuggestions, input.currentTags, canonicalTags) });
       } catch (error) {
         return withAiError(context, error, "ai_tag_suggestions_failed");
       }

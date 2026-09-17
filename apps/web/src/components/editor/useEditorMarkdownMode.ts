@@ -10,6 +10,8 @@ import type { TiptapDoc } from "@edgeever/shared";
 import {
   createMarkdownModeSnapshot,
   resolveMarkdownModeContent,
+  selectMarkdownSourceForDocument,
+  shouldKeepLiveMarkdownSource,
   type MarkdownModeSnapshot,
 } from "./editor-mode-content";
 import { getEditorScrollProgress, restoreEditorScrollProgress } from "./editor-mode-scroll";
@@ -31,6 +33,8 @@ export const useEditorMarkdownMode = ({
 }) => {
   const [isMarkdownMode, setIsMarkdownMode] = useState(false);
   const [markdownSource, setMarkdownSource] = useState("");
+  const markdownSourceRef = useRef(markdownSource);
+  markdownSourceRef.current = markdownSource;
   const markdownSourceEditorRef = useRef<MarkdownSourceEditorRef | null>(null);
   const markdownModeSnapshotRef = useRef<MarkdownModeSnapshot | null>(null);
 
@@ -55,19 +59,23 @@ export const useEditorMarkdownMode = ({
       return;
     }
 
-    hydratingRef.current = true;
-    editor.commands.setContent(resolveMarkdownModeContent(
+    const currentMemoId = getMemoId();
+    const content = resolveMarkdownModeContent(
       markdownModeSnapshotRef.current,
-      getMemoId(),
-      markdownSource,
-    ));
-    markdownModeSnapshotRef.current = null;
+      currentMemoId,
+      markdownSourceRef.current,
+    );
+    hydratingRef.current = true;
+    editor.commands.setContent(content);
+    markdownModeSnapshotRef.current = currentMemoId
+      ? createMarkdownModeSnapshot(currentMemoId, content, markdownSourceRef.current)
+      : null;
     setIsMarkdownMode(false);
     restoreScrollAfterModeChange("rich", scrollProgress);
     window.setTimeout(() => {
       hydratingRef.current = false;
     }, 0);
-  }, [editor, getMemoId, hydratingRef, markdownSource, restoreScrollAfterModeChange]);
+  }, [editor, getMemoId, hydratingRef, restoreScrollAfterModeChange]);
 
   const handleMarkdownModeChange = useCallback(() => {
     if (effectiveReadOnly || !isEditorReady(editor)) {
@@ -87,12 +95,20 @@ export const useEditorMarkdownMode = ({
     if (!currentMemoId) {
       return;
     }
-    const snapshot = createMarkdownModeSnapshot(
+    const contentJson = editor.getJSON() as TiptapDoc;
+    const serialized = createMarkdownModeSnapshot(currentMemoId, contentJson);
+    const markdown = selectMarkdownSourceForDocument(
+      markdownModeSnapshotRef.current,
       currentMemoId,
-      editor.getJSON() as TiptapDoc,
+      contentJson,
+      serialized.markdownSource,
     );
-    markdownModeSnapshotRef.current = snapshot;
-    setMarkdownSource(snapshot.markdownSource);
+    markdownModeSnapshotRef.current = createMarkdownModeSnapshot(
+      currentMemoId,
+      contentJson,
+      markdown,
+    );
+    setMarkdownSource(markdown);
     setIsMarkdownMode(true);
     restoreScrollAfterModeChange("markdown", scrollProgress);
   }, [
@@ -111,11 +127,27 @@ export const useEditorMarkdownMode = ({
     setIsMarkdownMode(false);
   }, []);
 
-  const hydrateMarkdownSource = useCallback((memoId: string, content: TiptapDoc, markdown: string) => {
-    setMarkdownSource(markdown);
-    markdownModeSnapshotRef.current = isMarkdownMode
-      ? createMarkdownModeSnapshot(memoId, content, markdown)
-      : null;
+  const hydrateMarkdownSource = useCallback((
+    memoId: string,
+    content: TiptapDoc,
+    markdown: string,
+    options?: { force?: boolean },
+  ) => {
+    const keepLiveSource = !options?.force
+      && isMarkdownMode
+      && shouldKeepLiveMarkdownSource({
+        snapshot: markdownModeSnapshotRef.current,
+        memoId,
+        liveMarkdownSource: markdownSourceRef.current,
+        incomingMarkdown: markdown,
+        incomingContent: content,
+      });
+    const nextSource = keepLiveSource ? markdownSourceRef.current : markdown;
+    if (!keepLiveSource) {
+      setMarkdownSource(markdown);
+    }
+    markdownModeSnapshotRef.current = createMarkdownModeSnapshot(memoId, content, nextSource);
+    return keepLiveSource;
   }, [isMarkdownMode]);
 
   const clearMarkdownSnapshot = useCallback(() => {

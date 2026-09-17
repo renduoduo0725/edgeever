@@ -10,9 +10,9 @@ import {
 } from "./settings-ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { SystemInfoPanel, type SystemInfoItem, getWebSystemInfoItems } from "./SystemInfoPanel";
+import { SystemInfoPanel, type SystemInfoItem, getShareableWebSystemInfoItems, getWebSystemInfoItems } from "./SystemInfoPanel";
 
-export { getWebSystemInfoItems };
+export { getShareableWebSystemInfoItems, getWebSystemInfoItems };
 export type { SystemInfoItem };
 
 export const SystemInfoCard = ({ defaultExpanded = false }: { defaultExpanded?: boolean }) => {

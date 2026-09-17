@@ -3,8 +3,9 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { MemoDetail, MemoTemplate, Notebook, Resource } from "@edgeever/shared";
 import { isBrowserOffline } from "@/lib/network-status";
 import { emptySyncQueueSummary, type SyncQueueSummary } from "@/lib/sync-queue";
-import { notifyMemoIdRemapped, notifyMemoSyncAcknowledged } from "@/lib/sync-events";
+import { MEMO_ID_REMAPPED_EVENT, notifyMemoIdRemapped, notifyMemoSyncAcknowledged } from "@/lib/sync-events";
 import { observeLocalMemoIdMappings, putLocalMemo, replaceLocalMemoId } from "@/lib/local-mirror";
+import { remapMemoIdsInLists } from "@/lib/memo-list-cache";
 import { preserveRemappedMemoDetailQueries, resolveSyncedMemoId } from "@/lib/workspace-refresh";
 
 type UseWorkspaceQueuedSyncOptions = {
@@ -38,6 +39,10 @@ export const useWorkspaceQueuedSync = ({
     // editor otherwise renders its loading state between the local-id and
     // remote-id queries, which looks like a full editor reload after create.
     preserveRemappedMemoDetailQueries(queryClient, memoIdMappings);
+    // The create path inserts the temporary id into the list cache. If sync
+    // later adds the durable id without replacing that row, the list shows two
+    // empty notes for one create.
+    remapMemoIdsInLists(queryClient, memoIdMappings);
     notifyMemoIdRemapped(memoIdMappings);
     const selectedMemoId = selectedMemoIdRef.current;
     const pendingMemoId = pendingCreatedMemoIdRef.current;
@@ -58,6 +63,15 @@ export const useWorkspaceQueuedSync = ({
   }, [pendingCreatedMemoIdRef, queryClient, selectedMemoIdRef, setCreatedMemoEditId, setSelectedMemoId]);
 
   useEffect(() => observeLocalMemoIdMappings(localDataScope, applyMemoIdMappings), [applyMemoIdMappings, localDataScope]);
+
+  useEffect(() => {
+    const handleMemoIdRemapped = (event: Event) => {
+      const mappings = (event as CustomEvent<ReadonlyMap<string, string>>).detail;
+      if (mappings instanceof Map) remapMemoIdsInLists(queryClient, mappings);
+    };
+    window.addEventListener(MEMO_ID_REMAPPED_EVENT, handleMemoIdRemapped);
+    return () => window.removeEventListener(MEMO_ID_REMAPPED_EVENT, handleMemoIdRemapped);
+  }, [queryClient]);
 
   const invalidateSyncQueries = useCallback(() => Promise.all([
     queryClient.invalidateQueries({ queryKey: ["memos"] }),

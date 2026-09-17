@@ -13,6 +13,24 @@ export const getSearchNavigationIdentity = (
   query: string,
 ) => JSON.stringify([memoId, source, query]);
 
+export const CLOSED_NOTE_SEARCH_STATE = {
+  open: false,
+  query: "",
+  replaceOpen: false,
+  replacement: "",
+  index: 0,
+} as const;
+
+export const shouldResetNoteSearchForMemoChange = (
+  previousMemoId: string | null,
+  nextMemoId: string | null,
+) => previousMemoId !== nextMemoId;
+
+export const shouldDiscardPluginNoteSearchRequest = (
+  request: { noteId: string } | null | undefined,
+  selectedMemoId: string | null | undefined,
+) => request != null && request.noteId !== selectedMemoId;
+
 export const NOTE_SEARCH_HIGHLIGHT_PLUGIN_KEY = new PluginKey("edgeever-note-search-highlight");
 
 export const getSearchMatchesFromDocument = (

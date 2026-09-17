@@ -8,12 +8,14 @@ import {
 } from "react";
 import type { Editor } from "@tiptap/react";
 import {
+  CLOSED_NOTE_SEARCH_STATE,
   createNoteSearchHighlightPlugin,
   formatNoteSearchMatchLabel,
   getNextSearchMatchIndex,
   getSearchMatchesFromDocument,
   getSearchNavigationIdentity,
   NOTE_SEARCH_HIGHLIGHT_PLUGIN_KEY,
+  shouldResetNoteSearchForMemoChange,
   type NoteSearchMatch,
 } from "./note-search";
 
@@ -21,6 +23,7 @@ type EditorNoteSearchControllerOptions = {
   contentSearchQuery: string;
   dirtyVersion: number;
   editor: Editor | null;
+  editorInstanceKey: string | null;
   editorScrollContainerRef: RefObject<HTMLDivElement | null>;
   readOnly: boolean;
   replaceFocusToken: number;
@@ -43,6 +46,7 @@ export const useEditorNoteSearchController = ({
   contentSearchQuery,
   dirtyVersion,
   editor,
+  editorInstanceKey,
   editorScrollContainerRef,
   memoId,
   readOnly,
@@ -56,6 +60,18 @@ export const useEditorNoteSearchController = ({
   const [noteSearchIndex, setNoteSearchIndex] = useState(0);
   const noteSearchInputRef = useRef<HTMLInputElement | null>(null);
   const automaticSelectionRef = useRef<{ editor: Editor; identity: string } | null>(null);
+  const previousEditorInstanceKeyRef = useRef(editorInstanceKey);
+  // Reset on a real note switch, not when desktop sync remaps a local id.
+  // The editor instance key stays stable across that handoff.
+  if (shouldResetNoteSearchForMemoChange(previousEditorInstanceKeyRef.current, editorInstanceKey)) {
+    previousEditorInstanceKeyRef.current = editorInstanceKey;
+    setNoteSearchOpen(CLOSED_NOTE_SEARCH_STATE.open);
+    setNoteSearchQuery(CLOSED_NOTE_SEARCH_STATE.query);
+    setNoteSearchReplaceOpen(CLOSED_NOTE_SEARCH_STATE.replaceOpen);
+    setNoteSearchReplacement(CLOSED_NOTE_SEARCH_STATE.replacement);
+    setNoteSearchIndex(CLOSED_NOTE_SEARCH_STATE.index);
+  }
+
   const noteSearchMatches = useMemo(
     () => getEditorSearchMatches(editor, noteSearchQuery),
     [dirtyVersion, editor, memoId, noteSearchQuery],

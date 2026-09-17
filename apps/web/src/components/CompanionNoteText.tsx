@@ -32,10 +32,13 @@ export function CompanionNoteText({
     const target = event.target;
     if (!(target instanceof Element)) return;
     const link = target.closest("a");
-    if (!link) return;
-    const memoId = parseMemoLinkHref(link.getAttribute("href"));
+    if (!(link instanceof HTMLAnchorElement)) return;
+    const memoId = parseMemoLinkHref(link.getAttribute("href"))
+      ?? parseMemoLinkHref(link.hash)
+      ?? parseMemoLinkHref(link.href);
     if (!memoId) return;
     event.preventDefault();
+    event.stopPropagation();
     onOpenNote(memoId, byId.get(memoId)?.notebookId ?? "");
   };
 

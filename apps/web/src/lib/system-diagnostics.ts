@@ -7,6 +7,7 @@ export type ClientRuntimeDiagnostics = {
   appVersion: string | null;
   architecture: string | null;
   autoUpdateSupported: boolean | null;
+  dataDirectory: string | null;
   engine: string | null;
   operatingSystem: string | null;
 };
@@ -80,6 +81,7 @@ export const getClientRuntimeDiagnostics = async (): Promise<ClientRuntimeDiagno
       appVersion: info.appVersion,
       architecture: info.architecture === "unknown" ? null : info.architecture,
       autoUpdateSupported: info.autoUpdateSupported,
+      dataDirectory: info.dataDir && info.dataDir !== "unknown" ? info.dataDir : null,
       engine: [
         info.electron === "unknown" ? null : `Electron ${info.electron}`,
         info.chrome === "unknown" ? null : `Chromium ${info.chrome}`,
@@ -106,6 +108,7 @@ export const getClientRuntimeDiagnostics = async (): Promise<ClientRuntimeDiagno
     appVersion: null,
     architecture: architecture || null,
     autoUpdateSupported: null,
+    dataDirectory: null,
     engine: browserEngine(navigator.userAgent),
     operatingSystem: browserOperatingSystem(
       navigator.userAgent,

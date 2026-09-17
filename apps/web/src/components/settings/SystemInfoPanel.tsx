@@ -25,6 +25,7 @@ export type SystemInfoItem = {
   mono?: boolean;
   colSpan?: "full" | "two" | "double-sm";
   status?: "connected" | "connecting" | "failed" | "warning" | "error" | "default";
+  localOnly?: boolean;
 };
 
 type InstanceSystemDiagnostics = Pick<InstanceHealth, "build" | "containerImageSource" | "deployment" | "migration" | "objectStorageProvider" | "storage"> & {
@@ -34,6 +35,7 @@ type InstanceSystemDiagnostics = Pick<InstanceHealth, "build" | "containerImageS
 export type SystemInfoDiagnostics = {
   clientRuntime?: ClientRuntimeDiagnostics | null;
   instance?: Partial<InstanceSystemDiagnostics> | null;
+  instanceUrl?: string | null;
   instanceVersion?: string | null;
 };
 
@@ -85,6 +87,22 @@ const getColSpanClass = (colSpan?: SystemInfoItem["colSpan"]) => {
   return "col-span-1";
 };
 
+const formatLastSuccessfulSync = (
+  t: (key: string) => string,
+  language: string,
+  sync: ClientSyncDiagnostics | undefined,
+) => {
+  if (!sync) return t("systemInfo.unknown");
+  if (sync.lastSyncedAt) {
+    const lastSyncedDate = new Date(sync.lastSyncedAt);
+    if (Number.isFinite(lastSyncedDate.getTime())) {
+      return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(lastSyncedDate);
+    }
+  }
+  const outstanding = sync.pending + sync.syncing + sync.error + sync.conflict;
+  return outstanding > 0 ? t("systemInfo.neverSynced") : t("systemInfo.nothingToSync");
+};
+
 const getWebSystemInfoGroups = (
   t: (key: string) => string,
   language: string,
@@ -107,6 +125,9 @@ const getWebSystemInfoGroups = (
     },
     clientKind !== "desktopApp",
   );
+  const instanceUrl = clientKind === "desktopApp"
+    ? (diagnostics.instanceUrl ?? getConfiguredDesktopApiBaseUrl()).trim()
+    : "";
 
   return [
     {
@@ -114,6 +135,14 @@ const getWebSystemInfoGroups = (
       title: t("systemInfo.cloudSection"),
       description: t("systemInfo.cloudSectionDescription"),
       items: [
+        ...(instanceUrl
+          ? [{
+              label: t("systemInfo.instanceUrl"),
+              value: instanceUrl,
+              colSpan: "full" as const,
+              localOnly: true,
+            }]
+          : []),
         {
           label: t("systemInfo.instanceVersion"),
           value: diagnostics.instanceVersion
@@ -194,6 +223,15 @@ const getWebSystemInfoGroups = (
         },
         { label: t("systemInfo.language"), value: navigator.language || language, mono: true },
         { label: t("systemInfo.timeZone"), value: timeZone, mono: true, colSpan: "double-sm" },
+        ...(clientKind === "desktopApp"
+          ? [{
+              label: t("systemInfo.dataDirectory"),
+              value: diagnostics.clientRuntime?.dataDirectory ?? t("systemInfo.unknown"),
+              mono: true,
+              colSpan: "full" as const,
+              localOnly: true,
+            }]
+          : []),
       ],
     },
   ];
@@ -205,6 +243,14 @@ export const getWebSystemInfoItems = (
   diagnostics: SystemInfoDiagnostics = {},
 ): SystemInfoItem[] => getWebSystemInfoGroups(t, language, diagnostics)
   .flatMap((group) => group.items);
+
+export const getShareableWebSystemInfoItems = (
+  t: (key: string) => string,
+  language: string,
+  diagnostics: SystemInfoDiagnostics = {},
+) => getWebSystemInfoItems(t, language, diagnostics)
+  .filter((item) => !item.localOnly)
+  .map(({ label, value }) => ({ label, value }));
 
 export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
   const { t, i18n } = useTranslation();
@@ -261,15 +307,10 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
     const groups = getWebSystemInfoGroups(t, i18n.language, {
       clientRuntime: clientRuntimeQuery.data,
       instance: healthQuery.data?.health,
+      instanceUrl: desktopAvailable ? instanceUrl : null,
       instanceVersion: release?.version,
     });
-    const lastSyncedAt = syncDiagnosticsQuery.data?.lastSyncedAt;
-    const lastSyncedDate = lastSyncedAt ? new Date(lastSyncedAt) : null;
-    const formattedLastSync = !syncDiagnosticsQuery.data
-      ? t("systemInfo.unknown")
-      : lastSyncedDate && Number.isFinite(lastSyncedDate.getTime())
-        ? new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(lastSyncedDate)
-        : t("systemInfo.neverSynced");
+    const formattedLastSync = formatLastSuccessfulSync(t, i18n.language, syncDiagnosticsQuery.data);
     const pendingCount = syncDiagnosticsQuery.data
       ? syncDiagnosticsQuery.data.pending + syncDiagnosticsQuery.data.syncing
       : null;
@@ -315,10 +356,12 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
     return groups;
   }, [
     clientRuntimeQuery.data,
+    desktopAvailable,
     healthQuery.data,
     healthQuery.isError,
     healthQuery.isSuccess,
     i18n.language,
+    instanceUrl,
     release?.version,
     syncDiagnosticsQuery.data,
     t,

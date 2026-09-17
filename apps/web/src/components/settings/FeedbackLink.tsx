@@ -3,7 +3,7 @@ import { ExternalLink, MessageSquare } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { getWebSystemInfoItems } from "./SystemInfoCard";
+import { getShareableWebSystemInfoItems } from "./SystemInfoCard";
 
 export const FeedbackLink = ({ className }: { className?: string }) => {
   const { t, i18n } = useTranslation();
@@ -13,7 +13,7 @@ export const FeedbackLink = ({ className }: { className?: string }) => {
         contentHeading: t("feedback.issueContentHeading"),
         contentPrompt: t("feedback.issueContentPrompt"),
         privacyNotice: t("feedback.privacyNotice"),
-        systemInfo: getWebSystemInfoItems(t, i18n.language),
+        systemInfo: getShareableWebSystemInfoItems(t, i18n.language),
         systemInfoHeading: t("feedback.systemInfoHeading"),
         systemInfoNotice: t("feedback.systemInfoNotice"),
         titlePrefix: t("feedback.issueTitlePrefix"),

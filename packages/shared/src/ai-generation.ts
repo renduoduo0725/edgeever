@@ -20,6 +20,19 @@ export type AiPreparedGeneration = AiDirectTarget & {
   resultBoundary: AiGenerationResultBoundary;
 };
 
+export type AiPreparedTextGeneration = AiDirectTarget & {
+  apiKey: string;
+  system: string;
+  prompt: string;
+  maxOutputTokens: number;
+  temperature?: number;
+};
+
+export type AiPreparedTagSuggestions = AiPreparedTextGeneration & {
+  currentTags: string[];
+  canonicalTags: Record<string, string>;
+};
+
 export const aiDirectTargetKey = (target: AiDirectTarget) =>
   `${target.provider}\0${target.baseUrl}\0${target.modelId}`;
 

@@ -53,7 +53,9 @@ describe("editor typography contract", () => {
     );
 
     expect(placeholderRules).toMatch(/font-size\s*:\s*inherit/);
+    expect(placeholderRules).toMatch(/font-weight\s*:\s*inherit/);
     expect(placeholderRules).toMatch(/line-height\s*:\s*inherit/);
+    expect(placeholderRules).toMatch(/color\s*:\s*#a8b5c4/);
   });
 
   test("keeps bold and italic text visible across platform font fallbacks", () => {

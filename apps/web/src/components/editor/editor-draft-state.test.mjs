@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { markdownToDoc } from "@edgeever/shared";
 import {
   resolveEditorDraftState,
   shouldReplaceEditorDocument,
@@ -51,6 +52,30 @@ describe("editor draft source resolution", () => {
     expect(state.title).toBe("Remote");
     expect(state.contentMarkdown).toBe("remote body");
     expect(state.hasUnsavedChanges).toBe(false);
+  });
+
+  test("preserves stored markdown that a JSON roundtrip would collapse", () => {
+    const stored = "时代公馆\n\n\n*提示：表格*";
+    const state = resolveEditorDraftState({
+      memo: {
+        ...memo,
+        contentJson: markdownToDoc(stored),
+        contentMarkdown: stored,
+      },
+    });
+
+    expect(state.contentMarkdown).toBe(stored);
+  });
+
+  test("falls back to serialized markdown when the stored source is empty", () => {
+    const state = resolveEditorDraftState({
+      memo: {
+        ...memo,
+        contentMarkdown: "",
+      },
+    });
+
+    expect(state.contentMarkdown).toBe("remote body");
   });
 
   test("repairs invalid saved gallery images and marks the memo for autosave", () => {
@@ -139,6 +164,24 @@ describe("editor draft source resolution", () => {
     expect(state.tagsText).toBe("queued");
     expect(state.contentMarkdown).toBe("queued body");
     expect(state.hasUnsavedChanges).toBe(false);
+  });
+
+  test("preserves queued markdown that a JSON roundtrip would collapse", () => {
+    const stored = "时代公馆\n\n\n*提示：表格*";
+    const state = resolveEditorDraftState({
+      memo,
+      queuedUpdate: {
+        ...queue,
+        payload: {
+          ...queue.payload,
+          contentJson: markdownToDoc(stored),
+          contentMarkdown: stored,
+        },
+      },
+    });
+
+    expect(state.source).toBe("queue");
+    expect(state.contentMarkdown).toBe(stored);
   });
 
   test("keeps the draft authoritative while its update remains queued", () => {

@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { docToMarkdown } from "@edgeever/shared";
+import { docToMarkdown, markdownToDoc } from "@edgeever/shared";
 import {
   createMarkdownModeSnapshot,
   isMarkdownSourceUnchanged,
   resolveMarkdownModeContent,
+  selectMarkdownSourceForDocument,
+  shouldKeepLiveMarkdownSource,
 } from "./editor-mode-content.ts";
 
 const tableTaskListDocument = {
@@ -79,5 +81,64 @@ describe("Markdown editor mode content preservation", () => {
 
     expect(isMarkdownSourceUnchanged(snapshot, "memo-2", snapshot.markdownSource)).toBe(false);
     expect(resolved).not.toEqual(tableTaskListDocument);
+  });
+
+  test("keeps extra blank lines that a JSON roundtrip would rewrite", () => {
+    const live = "时代公馆\n\n\n*提示：表格*";
+    const content = markdownToDoc(live);
+    const incomingMarkdown = docToMarkdown(content);
+    const snapshot = createMarkdownModeSnapshot("memo-1", content, live);
+
+    expect(incomingMarkdown).not.toBe(live);
+    expect(shouldKeepLiveMarkdownSource({
+      snapshot,
+      memoId: "memo-1",
+      liveMarkdownSource: live,
+      incomingMarkdown,
+      incomingContent: content,
+    })).toBe(true);
+    expect(selectMarkdownSourceForDocument(snapshot, "memo-1", content, incomingMarkdown)).toBe(live);
+  });
+
+  test("restores the exact markdown source when switching back to an unedited rich document", () => {
+    const live = "LINE_A\n\n\nLINE_B";
+    const content = markdownToDoc(live);
+    const snapshot = createMarkdownModeSnapshot("memo-1", content, live);
+
+    expect(selectMarkdownSourceForDocument(
+      snapshot,
+      "memo-1",
+      JSON.parse(JSON.stringify(content)),
+      docToMarkdown(content),
+    )).toBe(live);
+  });
+
+  test("replaces the live markdown buffer when incoming content actually changed", () => {
+    const live = "时代公馆\n\n\n*提示：表格*";
+    const snapshot = createMarkdownModeSnapshot("memo-1", markdownToDoc(live), live);
+    const incomingMarkdown = "另一段内容";
+    const incomingContent = markdownToDoc(incomingMarkdown);
+
+    expect(shouldKeepLiveMarkdownSource({
+      snapshot,
+      memoId: "memo-1",
+      liveMarkdownSource: live,
+      incomingMarkdown,
+      incomingContent,
+    })).toBe(false);
+  });
+
+  test("does not keep a live buffer that belongs to another memo", () => {
+    const live = "时代公馆\n\n\n*提示：表格*";
+    const content = markdownToDoc(live);
+    const snapshot = createMarkdownModeSnapshot("memo-1", content, live);
+
+    expect(shouldKeepLiveMarkdownSource({
+      snapshot,
+      memoId: "memo-2",
+      liveMarkdownSource: live,
+      incomingMarkdown: docToMarkdown(content),
+      incomingContent: content,
+    })).toBe(false);
   });
 });
