@@ -382,6 +382,14 @@ export const AiPromptTemplateUpdateSchema = z.object({
   message: "At least one field is required.",
 });
 
+export const MemoShareUpdateSchema = z.object({
+  passwordProtected: z.boolean(),
+});
+
+export const PublicShareUnlockSchema = z.object({
+  password: z.string().min(1).max(64),
+});
+
 export type NotebookCreateInput = z.infer<typeof NotebookCreateSchema>;
 export type NotebookUpdateInput = z.infer<typeof NotebookUpdateSchema>;
 export type MemoCreateInput = z.infer<typeof MemoCreateSchema>;
@@ -418,3 +426,5 @@ export type AiTagSuggestionsRequestInput = z.infer<typeof AiTagSuggestionsReques
 export type AiTagSuggestionPromptUpdateInput = z.infer<typeof AiTagSuggestionPromptUpdateSchema>;
 export type AiPromptTemplateCreateInput = z.input<typeof AiPromptTemplateCreateSchema>;
 export type AiPromptTemplateUpdateInput = z.infer<typeof AiPromptTemplateUpdateSchema>;
+export type MemoShareUpdateInput = z.infer<typeof MemoShareUpdateSchema>;
+export type PublicShareUnlockInput = z.infer<typeof PublicShareUnlockSchema>;

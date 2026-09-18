@@ -45,14 +45,15 @@ test("keeps the desktop sync status bar and sidebar chrome compact without shrin
   expect(source).not.toContain('className="mb-2 space-y-1"');
 });
 
-test("marks diagram note types as beta without labeling regular notes", () => {
+test("lists diagram note types in the create menu without beta badges", () => {
   const createTypeMenu = source.split("const CreateMemoTypeItems")[1]?.split("const getSyncStatusLabel")[0];
-  const regularNoteItem = createTypeMenu?.split('onSelect={() => onCreateMemo()}>')[1]?.split("</DropdownMenuItem>")[0];
-  const betaBadgeCount = createTypeMenu?.match(/<DiagramBetaBadge \/>/g)?.length;
 
-  expect(regularNoteItem).not.toContain("DiagramBetaBadge");
+  expect(createTypeMenu).toContain('onCreateMemo()');
+  expect(createTypeMenu).toContain('onCreateMemo("mind-map")');
+  expect(createTypeMenu).toContain('onCreateMemo("flowchart")');
   expect(createTypeMenu).toContain('onCreateMemo("architecture")');
-  expect(betaBadgeCount).toBe(3);
+  expect(createTypeMenu).not.toContain("DiagramBetaBadge");
+  expect(createTypeMenu).not.toContain("Beta");
 });
 
 describe("NotebookPane sidebar collapse", () => {

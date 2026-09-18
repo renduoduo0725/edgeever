@@ -2,12 +2,14 @@ import "katex/dist/katex.min.css";
 import { Node, mergeAttributes } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
 import { EditorContent, useEditor } from "@tiptap/react";
-import { useQuery } from "@tanstack/react-query";
-import { Clock3, FileText, LoaderCircle, ShieldCheck } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Clock3, FileText, LoaderCircle, LockKeyhole, ShieldCheck } from "lucide-react";
+import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
-import { api } from "@/lib/api";
+import { ApiRequestError, api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { EdgeEverCodeBlock, codeBlockLowlight } from "@/lib/code-block";
 import { withEnvironmentTitlePrefix } from "@/lib/environment-title";
 import { resolvePublicShareBody } from "@/lib/public-share-body";
@@ -126,6 +128,59 @@ const SharedDocument = ({
   return <SharedRichText content={body.content} />;
 };
 
+const isSharePasswordError = (error: unknown, code: string) =>
+  error instanceof ApiRequestError && error.code === code;
+
+const PublicSharePasswordForm = ({
+  token,
+  onUnlocked,
+}: {
+  token: string;
+  onUnlocked: () => Promise<unknown>;
+}) => {
+  const { t } = useTranslation();
+  const [password, setPassword] = useState("");
+  const unlockMutation = useMutation({
+    mutationFn: () => api.unlockPublicMemoShare(token, password),
+    onSuccess: () => onUnlocked(),
+  });
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!password.trim() || unlockMutation.isPending) return;
+    unlockMutation.mutate();
+  };
+  const errorKey = isSharePasswordError(unlockMutation.error, "share_unlock_rate_limited")
+    ? "sharing.passwordRateLimited"
+    : unlockMutation.error
+      ? "sharing.passwordInvalid"
+      : null;
+
+  return (
+    <main className="flex min-h-[100dvh] items-center justify-center bg-slate-50 px-5">
+      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-card p-8 shadow-sm">
+        <LockKeyhole className="mx-auto h-9 w-9 text-emerald-600" />
+        <h1 className="mt-4 text-center text-xl font-semibold text-slate-900">{t("sharing.passwordRequiredTitle")}</h1>
+        <p className="mt-2 text-center text-sm leading-6 text-slate-500">{t("sharing.passwordRequiredHint")}</p>
+        <form className="mt-6 space-y-3" onSubmit={submit}>
+          <Input
+            type="password"
+            value={password}
+            autoComplete="off"
+            autoFocus
+            aria-label={t("sharing.passwordLabel")}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <Button className="w-full" variant="solid" type="submit" disabled={!password.trim() || unlockMutation.isPending}>
+            {unlockMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" />}
+            {t("sharing.passwordSubmit")}
+          </Button>
+          {errorKey ? <p className="text-sm text-rose-600" role="alert">{t(errorKey)}</p> : null}
+        </form>
+      </section>
+    </main>
+  );
+};
+
 export const PublicSharePage = () => {
   const { t, i18n } = useTranslation();
   const { token = "" } = useParams();
@@ -136,6 +191,7 @@ export const PublicSharePage = () => {
     retry: false,
   });
   const share = shareQuery.data?.share;
+  const passwordRequired = isSharePasswordError(shareQuery.error, "share_password_required");
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -148,12 +204,17 @@ export const PublicSharePage = () => {
         `${share.title?.trim() || t("common.untitledMemo")} · EdgeEver`,
         { development: import.meta.env.DEV, profile: __EDGEEVER_DEVELOPMENT_PROFILE__ },
       );
+    } else if (passwordRequired) {
+      document.title = withEnvironmentTitlePrefix(t("sharing.passwordRequiredTitle"), {
+        development: import.meta.env.DEV,
+        profile: __EDGEEVER_DEVELOPMENT_PROFILE__,
+      });
     }
     return () => {
       document.title = previousTitle;
       robots.remove();
     };
-  }, [share, t]);
+  }, [passwordRequired, share, t]);
 
   if (shareQuery.isLoading) {
     return (
@@ -161,6 +222,10 @@ export const PublicSharePage = () => {
         <LoaderCircle className="h-6 w-6 animate-spin" aria-label={t("sharing.publicLoading")} />
       </main>
     );
+  }
+
+  if (passwordRequired) {
+    return <PublicSharePasswordForm token={token} onUnlocked={() => shareQuery.refetch()} />;
   }
 
   if (!share) {

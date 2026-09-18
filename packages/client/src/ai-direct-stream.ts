@@ -126,7 +126,15 @@ export const probeAiProviderCors = async (
     resultBoundary: { start: "<edgeever-result-probe>", end: "</edgeever-result-probe>" },
   });
   try {
-    await fetchImpl(request.url, { method: "OPTIONS", mode: "cors", signal });
+    // POST with the dummy key so the browser preflight matches the real direct request.
+    const response = await fetchImpl(request.url, {
+      method: "POST",
+      mode: "cors",
+      headers: request.headers,
+      body: request.body,
+      signal,
+    });
+    await response.body?.cancel().catch(() => {});
     return true;
   } catch (error) {
     if (signal?.aborted) throw error;

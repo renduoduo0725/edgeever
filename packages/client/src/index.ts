@@ -803,6 +803,12 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     getPublicMemoShare: (token: string) =>
       request<PublicMemoShareResponse>(`/api/public/shares/${encodeURIComponent(token)}`),
 
+    unlockPublicMemoShare: (token: string, password: string) =>
+      request<{ ok: true }>(`/api/public/shares/${encodeURIComponent(token)}/unlock`, {
+        method: "POST",
+        body: JSON.stringify({ password }),
+      }),
+
     listLoginDeviceSessions: () =>
       request<ListLoginDeviceSessionsResponse>("/api/v1/auth/sessions"),
 
@@ -1487,6 +1493,12 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
       request<{ share: MemoShare }>(`/api/v1/memos/${memoId}/share`, {
         method: "POST",
         body: JSON.stringify({}),
+      }),
+
+    updateMemoShare: (memoId: string, payload: { passwordProtected: boolean }) =>
+      request<{ share: MemoShare }>(`/api/v1/memos/${memoId}/share`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
       }),
 
     revokeMemoShare: (memoId: string) =>

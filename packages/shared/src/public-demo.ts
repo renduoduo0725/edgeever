@@ -16,3 +16,13 @@ export const resolveInstanceUrlInput = (value: string) => {
   }
   return publicDemoAliasHost(trimmed) === "demo" ? PUBLIC_DEMO_INSTANCE_URL : trimmed;
 };
+
+/** Resolve aliases, default missing schemes to https://, and drop trailing slashes. */
+export const normalizeInstanceUrl = (value: string) => {
+  const resolved = resolveInstanceUrlInput(value);
+  if (!resolved) {
+    return resolved;
+  }
+  const withProtocol = /:\/\//.test(resolved) ? resolved : `https://${resolved}`;
+  return withProtocol.replace(/\/+$/, "");
+};

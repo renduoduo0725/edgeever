@@ -4,7 +4,7 @@ import {
   type EdgeEverClientRequestContext,
 } from "@edgeever/client";
 import type { AuthSession } from "@edgeever/shared";
-import { resolveInstanceUrlInput } from "@edgeever/shared";
+import { normalizeInstanceUrl } from "@edgeever/shared";
 import { createClientUuid } from "./client-id";
 
 export { ApiRequestError };
@@ -102,14 +102,14 @@ export const clearCachedDesktopSession = () => {
 };
 
 export const getConfiguredDesktopApiBaseUrl = () => {
-  if (typeof window === "undefined") return "";
+  if (typeof window === "undefined" || !window.edgeeverDesktop?.isAvailable) return "";
 
   try {
     const savedUrl = (window.localStorage.getItem(DESKTOP_API_BASE_URL_STORAGE_KEY) ?? "").trim();
     if (savedUrl) return savedUrl.replace(/\/$/, "");
   } catch {}
 
-  const bridgeUrl = (window.edgeeverDesktop?.apiBaseUrl ?? "").trim();
+  const bridgeUrl = (window.edgeeverDesktop.apiBaseUrl ?? "").trim();
   return bridgeUrl.replace(/\/$/, "");
 };
 
@@ -121,7 +121,7 @@ export class DesktopInstanceUrlError extends Error {
 }
 
 export const saveDesktopApiBaseUrl = async (value: string) => {
-  const normalized = resolveInstanceUrlInput(value).replace(/\/$/, "");
+  const normalized = normalizeInstanceUrl(value);
   let parsed: URL;
   try {
     parsed = new URL(normalized);
@@ -225,7 +225,7 @@ const beforeRequest = ({ path }: EdgeEverClientRequestContext) => {
 };
 
 const handleUnauthorized = ({ path, token }: EdgeEverClientRequestContext) => {
-  if (path === "/api/v1/auth/login" || typeof window === "undefined") return;
+  if (path === "/api/v1/auth/login" || path.startsWith("/api/public/") || typeof window === "undefined") return;
   const isDesktop = Boolean(window.edgeeverDesktop?.isAvailable);
   void notifyUnauthorized(isDesktop, token);
 };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { PUBLIC_DEMO_INSTANCE_URL, resolveInstanceUrlInput } from "./public-demo.ts";
+import { PUBLIC_DEMO_INSTANCE_URL, normalizeInstanceUrl, resolveInstanceUrlInput } from "./public-demo.ts";
 
 describe("public demo instance URL", () => {
   test("maps the App Review 'demo' alias to the public instance", () => {
@@ -15,5 +15,15 @@ describe("public demo instance URL", () => {
     expect(resolveInstanceUrlInput("https://notes.example.com")).toBe("https://notes.example.com");
     expect(resolveInstanceUrlInput("demo.example.com")).toBe("demo.example.com");
     expect(resolveInstanceUrlInput("")).toBe("");
+  });
+
+  test("prefixes https when a host has no protocol", () => {
+    expect(normalizeInstanceUrl("example.workers.dev")).toBe("https://example.workers.dev");
+    expect(normalizeInstanceUrl(" example.workers.dev/ ")).toBe("https://example.workers.dev");
+    expect(normalizeInstanceUrl("https://notes.example.com/")).toBe("https://notes.example.com");
+    expect(normalizeInstanceUrl("http://127.0.0.1:8787")).toBe("http://127.0.0.1:8787");
+    expect(normalizeInstanceUrl("ftp://example.com")).toBe("ftp://example.com");
+    expect(normalizeInstanceUrl("demo")).toBe(PUBLIC_DEMO_INSTANCE_URL);
+    expect(normalizeInstanceUrl("")).toBe("");
   });
 });

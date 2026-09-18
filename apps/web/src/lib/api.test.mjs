@@ -74,7 +74,7 @@ const {
 
 describe("desktop instance setup", () => {
   test("can retry with a valid URL after invalid input", async () => {
-    await expect(saveDesktopApiBaseUrl("not-an-instance")).rejects.toThrow();
+    await expect(saveDesktopApiBaseUrl("ftp://example.com")).rejects.toThrow();
 
     const saving = saveDesktopApiBaseUrl(" https://notes.example.com/ ");
     await Promise.resolve();
@@ -98,6 +98,25 @@ describe("desktop instance setup", () => {
     expect(calls).toEqual([["bridge:start", "https://demo.edgeever.org"]]);
     completeSave();
     await expect(saving).resolves.toBe("https://demo.edgeever.org");
+  });
+
+  test("prefixes https when the instance host has no protocol", async () => {
+    calls.length = 0;
+    const saving = saveDesktopApiBaseUrl(" example.workers.dev/ ");
+    await Promise.resolve();
+    expect(calls).toEqual([["bridge:start", "https://example.workers.dev"]]);
+    completeSave();
+    await expect(saving).resolves.toBe("https://example.workers.dev");
+    expect(storage.get(DESKTOP_API_BASE_URL_STORAGE_KEY)).toBe("https://example.workers.dev");
+  });
+
+  test("keeps an explicit http instance URL", async () => {
+    calls.length = 0;
+    const saving = saveDesktopApiBaseUrl("http://127.0.0.1:8787/");
+    await Promise.resolve();
+    expect(calls).toEqual([["bridge:start", "http://127.0.0.1:8787"]]);
+    completeSave();
+    await expect(saving).resolves.toBe("http://127.0.0.1:8787");
   });
 
   test("clears the cached session when the login form changes instances", async () => {
@@ -126,6 +145,14 @@ describe("desktop instance setup", () => {
     expect(storage.get(DESKTOP_API_BASE_URL_STORAGE_KEY)).toBe("https://other.example.com");
     expect(getConfiguredDesktopApiBaseUrl()).toBe("https://other.example.com");
     window.edgeeverDesktop.apiBaseUrl = "";
+  });
+
+  test("ignores a leftover desktop instance URL in the browser", () => {
+    storage.set(DESKTOP_API_BASE_URL_STORAGE_KEY, "https://example.workers.dev");
+    window.edgeeverDesktop.isAvailable = false;
+    expect(getConfiguredDesktopApiBaseUrl()).toBe("");
+    window.edgeeverDesktop.isAvailable = true;
+    expect(getConfiguredDesktopApiBaseUrl()).toBe("https://example.workers.dev");
   });
 
   test("preserves the desktop token when refreshing the same authenticated session", async () => {

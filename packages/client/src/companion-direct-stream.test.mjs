@@ -95,6 +95,8 @@ describe("direct companion client", () => {
           }), { headers: { "content-type": "application/json" } });
         }
         if (String(url).includes("integrate.api.nvidia.com")) {
+          expect(init?.method).toBe("POST");
+          expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer edgeever-cors-probe");
           throw new TypeError("Failed to fetch");
         }
         return new Response("data: {\"type\":\"text-delta\",\"text\":\"proxied\"}\n\n", {

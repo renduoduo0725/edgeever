@@ -40,7 +40,7 @@ import {
   MoreVertical,
   CheckCircle2,
   TagX,
-  Link2,
+  Image as ImageIcon,
   Share2,
   FileDown,
   FileCode2,
@@ -1635,7 +1635,7 @@ export const MemoListPane = ({
                     disabled={isLocalMemoId(memoContextMenu.memo.id)}
                     onClick={() => requestContextDocumentAction("share")}
                   >
-                    <Link2 className="h-4 w-4 text-slate-500" />
+                    <Share2 className="h-4 w-4 text-slate-500" />
                     {t(isLocalMemoId(memoContextMenu.memo.id) ? "sharing.afterSync" : "sharing.action")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1663,7 +1663,7 @@ export const MemoListPane = ({
                     className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
                     onClick={() => requestContextDocumentAction("share-image")}
                   >
-                    <Share2 className="h-4 w-4 text-slate-500" />
+                    <ImageIcon className="h-4 w-4 text-slate-500" />
                     {t("editor.imageShare.action")}
                   </DropdownMenuItem>
                   <DropdownMenuItem

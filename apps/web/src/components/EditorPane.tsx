@@ -24,7 +24,7 @@ import {
   FileDown,
   FileCode2,
   Printer,
-  Link2,
+  Image as ImageIcon,
   Share2,
   Copy,
   Lock,
@@ -3343,7 +3343,7 @@ const RichEditorPane = ({
                 disabled={effectiveReadOnly}
                 onClick={() => setShareOpen(true)}
               >
-                <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
+                <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">{t("sharing.active")}</span>
               </button>
             )}
@@ -3566,7 +3566,7 @@ const RichEditorPane = ({
                     disabled={isLocalMemoId(memo.id)}
                     onClick={() => setShareOpen(true)}
                   >
-                    <Link2 className={cn("h-4 w-4", isMemoShared ? "text-emerald-600" : "text-slate-500")} />
+                    <Share2 className={cn("h-4 w-4", isMemoShared ? "text-emerald-600" : "text-slate-500")} />
                     {t(isLocalMemoId(memo.id) ? "sharing.afterSync" : isMemoShared ? "sharing.manage" : "sharing.action")}
                   </DropdownMenuItem>
                 )}
@@ -3595,7 +3595,7 @@ const RichEditorPane = ({
                   className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
                   onClick={handleOpenImageShare}
                 >
-                  <Share2 className="h-4 w-4 text-slate-500" />
+                  <ImageIcon className="h-4 w-4 text-slate-500" />
                   {t("editor.imageShare.action")}
                 </DropdownMenuItem>
                 {readOnly ? (

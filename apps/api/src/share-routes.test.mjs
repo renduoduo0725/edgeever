@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { Database } from "bun:sqlite";
 import { globSync, readFileSync } from "node:fs";
 import { Hono } from "hono";
-import { registerPublicShareRoutes } from "./share-routes.ts";
+import { hashPassword } from "./auth-crypto.ts";
+import { registerMemoShareRoutes, registerPublicShareRoutes } from "./share-routes.ts";
 
 class SqliteD1PreparedStatement {
   constructor(db, sql, bindings = []) {
@@ -200,6 +201,141 @@ describe("public memo shares", () => {
       "inline; filename=\"walkthrough.webm\"; filename*=UTF-8''walkthrough.webm",
     );
     expect(response.headers.get("Accept-Ranges")).toBe("bytes");
+    sqlite.close();
+  });
+});
+
+const memberAuth = {
+  kind: "user",
+  actorType: "user",
+  actorId: "user_member",
+  username: "member",
+  displayName: "Member",
+  scopes: [],
+  workspaceId: "ws_member",
+  role: "member",
+};
+
+const createShareApp = (environment) => {
+  const app = new Hono();
+  app.use("/api/v1/*", async (c, next) => {
+    c.set("auth", memberAuth);
+    await next();
+  });
+  registerPublicShareRoutes(app);
+  registerMemoShareRoutes(app);
+  return app;
+};
+
+const readCookieValue = (response, name) => {
+  const header = response.headers.get("Set-Cookie") ?? "";
+  const prefix = `${name}=`;
+  const part = header.split(";").find((item) => item.trim().startsWith(prefix));
+  return part ? part.trim().slice(prefix.length) : "";
+};
+
+describe("password-protected memo shares", () => {
+  test("keeps existing shares public until a password is enabled", async () => {
+    const { sqlite, environment } = createDatabaseEnvironment();
+    const app = createShareApp(environment);
+
+    const publicResponse = await app.request(`/api/public/shares/${sourceToken}`, {}, environment);
+    expect(publicResponse.status).toBe(200);
+    expect(await publicResponse.json()).toMatchObject({ share: { title: "Source" } });
+
+    const enabled = await app.request(`/api/v1/memos/memo_source/share`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passwordProtected: true }),
+    }, environment);
+    expect(enabled.status).toBe(200);
+    const enabledBody = await enabled.json();
+    expect(enabledBody.share.passwordProtected).toBe(true);
+    expect(enabledBody.share.password).toHaveLength(8);
+    expect(enabledBody.share).not.toHaveProperty("passwordHash");
+
+    const locked = await app.request(`/api/public/shares/${sourceToken}`, {}, environment);
+    expect(locked.status).toBe(403);
+    expect(await locked.json()).toEqual({
+      error: { code: "share_password_required", message: "Password required to view this shared note" },
+    });
+    sqlite.close();
+  });
+
+  test("unlocks with the generated password and then serves the note and attachments", async () => {
+    const { sqlite, environment } = createDatabaseEnvironment();
+    const password = "testPass";
+    sqlite.query("UPDATE memo_shares SET password_hash = ? WHERE token = ?")
+      .run(await hashPassword(password), sourceToken);
+    sqlite.query(
+      `INSERT INTO resources (id, memo_id, object_key, kind, mime_type, filename, byte_size)
+       VALUES (?, ?, ?, 'attachment', 'application/pdf', 'shared.pdf', 10)`,
+    ).run("res_locked", "memo_source", "locked-key");
+    environment.storage.resources = {
+      get: async () => ({
+        body: new Blob([new Uint8Array(10)]).stream(),
+        size: 10,
+        writeHttpMetadata: () => {},
+      }),
+    };
+    const app = createShareApp(environment);
+
+    const deniedResource = await app.request(
+      `/api/public/shares/${sourceToken}/resources/res_locked/blob`,
+      {},
+      environment,
+    );
+    expect(deniedResource.status).toBe(403);
+
+    const wrong = await app.request(`/api/public/shares/${sourceToken}/unlock`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: "wrong-password" }),
+    }, environment);
+    expect(wrong.status).toBe(403);
+    expect((await wrong.json()).error.code).toBe("share_password_invalid");
+
+    const unlocked = await app.request(`/api/public/shares/${sourceToken}/unlock`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    }, environment);
+    expect(unlocked.status).toBe(200);
+    const cookie = readCookieValue(unlocked, "ee_share");
+    expect(cookie).toBeTruthy();
+
+    const headers = { Cookie: `ee_share=${cookie}` };
+    const share = await app.request(`/api/public/shares/${sourceToken}`, { headers }, environment);
+    expect(share.status).toBe(200);
+    expect(await share.json()).toMatchObject({ share: { title: "Source" } });
+
+    const resource = await app.request(
+      `/api/public/shares/${sourceToken}/resources/res_locked/blob`,
+      { headers },
+      environment,
+    );
+    expect(resource.status).toBe(200);
+    sqlite.close();
+  });
+
+  test("clearing the password makes the existing link public again", async () => {
+    const { sqlite, environment } = createDatabaseEnvironment();
+    sqlite.query("UPDATE memo_shares SET password_hash = ? WHERE token = ?")
+      .run(await hashPassword("secretPwd"), sourceToken);
+    const app = createShareApp(environment);
+
+    const cleared = await app.request(`/api/v1/memos/memo_source/share`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passwordProtected: false }),
+    }, environment);
+    expect(cleared.status).toBe(200);
+    const clearedBody = await cleared.json();
+    expect(clearedBody.share).toMatchObject({ passwordProtected: false });
+    expect(clearedBody.share.password).toBeUndefined();
+
+    const publicResponse = await app.request(`/api/public/shares/${sourceToken}`, {}, environment);
+    expect(publicResponse.status).toBe(200);
     sqlite.close();
   });
 });

@@ -1,23 +1,21 @@
 {
-  "version": "1.76.0",
+  "version": "1.77.0",
   "changes": {
     "en-US": [
-      "Call model APIs from the client for Agent, tag suggestions, plugin generate, and Paw checks, so Cloudflare requests stay short. The instance still prepares credentials and runs tools, and CORS failures fall back to the existing proxy.",
-      "Keep Agent tool schemas compatible with OpenAI-style calling, so OpenAI-compatible models no longer fail before the first token. Surface clearer errors for rejected credentials, insufficient credit, rate limits, and models that do not support tool calling.",
-      "Show the connected instance URL on desktop and mobile, and the local data directory on desktop, in system info. Make the dialog draggable, keep the body scrollable, and distinguish an empty sync queue from never having synced.",
-      "Quiet the empty-paragraph placeholder: keep it at body size, shorten the copy, drop the leading Latin Space, and use a lighter color so it no longer reads as a larger type size."
+      "Let note owners turn on an optional auto-generated password when sharing a public link. Visitors must unlock the page before reading the note or attachments; existing public links stay open until a password is enabled.",
+      "Probe model CORS with a dummy POST so browser direct-connect sends Authorization instead of falling back to the instance proxy on hosts that reject GET or HEAD preflights.",
+      "Accept instance hosts without an https prefix, and ignore leftover desktop instance URLs in the browser so web sessions do not call a saved desktop API.",
+      "Keep the login card shadow from becoming a light halo in dark mode.",
+      "Rename the generate assistant tab from Instruction to Q&A.",
+      "Remove Beta badges from mind-map, flowchart, and architecture note types in the create-memo menu."
     ],
     "zh-CN": [
-      "Agent、标签建议、插件生成和 Paw 检查改为由客户端直接调用模型接口，缩短 Cloudflare 请求时间。实例仍负责准备凭证和执行工具；遇到 CORS 失败时回退到原有代理。",
-      "让 Agent 的工具 schema 兼容 OpenAI 风格调用，避免兼容接口在发出第一个 token 前就失败。密钥被拒、额度不足、限流和不支持工具调用的模型会给出更明确的提示。",
-      "系统信息在桌面端和移动端显示已连接的实例地址，桌面端还显示本地数据目录。对话框可拖动、正文可滚动，并区分“当前无需同步”和“尚未同步”。",
-      "空段落占位提示改为正文字号、更短的文案和更浅的颜色，并去掉开头的拉丁文 Space，不再看起来比正文更大。"
-    ],
-    "ja": [
-      "Agent、タグ提案、プラグイン生成、Paw チェックはクライアントからモデル API を直接呼び、Cloudflare へのリクエストを短くします。インスタンスは認証情報の準備とツール実行を担当し、CORS 失敗時は従来のプロキシにフォールバックします。",
-      "Agent のツールスキーマを OpenAI 形式の呼び出しに合わせ、互換モデルが最初のトークン前に失敗しないようにしました。認証拒否、残高不足、レート制限、ツール非対応モデルには、より具体的なエラーを表示します。",
-      "システム情報に、デスクトップとモバイルでは接続中のインスタンス URL、デスクトップではローカルデータディレクトリを表示します。ダイアログをドラッグでき、本文はスクロールしたまま、未同期と同期対象なしを区別します。",
-      "空段落のプレースホルダーを本文サイズのまま短くし、先頭のラテン語 Space を外して色を薄くし、本文より大きく見えないようにしました。"
+      "分享公开链接时可开启自动生成的访问密码。访客需先解锁才能阅读笔记和附件；已有公开链接在开启密码前保持可直接访问。",
+      "用空 POST 探测模型 CORS，让网页直连带上 Authorization，不再因主机拒绝 GET/HEAD 预检而回退到实例代理。",
+      "登录时可填写不带 https 前缀的实例地址；浏览器会忽略桌面端留下的实例 URL，避免网页会话误连到桌面保存的接口。",
+      "修复深色模式下登录卡片阴影变成浅色光环的问题。",
+      "将生成助手标签从「指令」改为「问答模式」。",
+      "去掉侧栏新建菜单里思维导图、流程图和架构图旁的 Beta 标记。"
     ]
   }
 }

@@ -33,7 +33,6 @@ import {
   Workflow,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -97,15 +96,6 @@ const BrandIcon = ({ path, color, className }: { path: string; color?: string; c
   >
     <path fill="currentColor" d={path} />
   </svg>
-);
-
-const DiagramBetaBadge = () => (
-  <Badge
-    variant="outline"
-    className="ml-auto border-emerald-200/80 bg-emerald-50 px-1.5 py-0 text-[10px] leading-4 tracking-wide text-emerald-700   "
-  >
-    Beta
-  </Badge>
 );
 
 const AppStoreIcon = () => (
@@ -320,17 +310,14 @@ const CreateMemoTypeItems = ({ onCreateMemo }: { onCreateMemo: (kind?: DiagramKi
       <DropdownMenuItem onSelect={() => onCreateMemo("mind-map")}>
         <Network className="h-4 w-4" />
         {t("diagram.mindMap")}
-        <DiagramBetaBadge />
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => onCreateMemo("flowchart")}>
         <Workflow className="h-4 w-4" />
         {t("diagram.flowchart")}
-        <DiagramBetaBadge />
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={() => onCreateMemo("architecture")}>
         <Boxes className="h-4 w-4" />
         {t("diagram.architecture")}
-        <DiagramBetaBadge />
       </DropdownMenuItem>
     </>
   );
