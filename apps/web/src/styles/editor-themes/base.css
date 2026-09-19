@@ -47,7 +47,10 @@
 
 .edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror h1,
 .edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror h2,
-.edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror h3 {
+.edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror h3,
+.edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror h4,
+.edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror h5,
+.edgeever-editor[data-editor-theme]:not([data-editor-theme="default"]) .ProseMirror h6 {
 
   color: var(--editor-theme-heading, var(--editor-theme-text));
 }

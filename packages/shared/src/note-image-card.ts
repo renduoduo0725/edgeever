@@ -265,6 +265,9 @@ export const NOTE_IMAGE_FONT_SIZES: Record<
     h1: string;
     h2: string;
     h3: string;
+    h4: string;
+    h5: string;
+    h6: string;
     meta: string;
     code: string;
   }
@@ -276,6 +279,9 @@ export const NOTE_IMAGE_FONT_SIZES: Record<
     h1: "21px",
     h2: "18px",
     h3: "16px",
+    h4: "15px",
+    h5: "14.5px",
+    h6: "14.5px",
     meta: "12px",
     code: "12.5px",
   },
@@ -286,6 +292,9 @@ export const NOTE_IMAGE_FONT_SIZES: Record<
     h1: "24px",
     h2: "20px",
     h3: "17.5px",
+    h4: "16.5px",
+    h5: "16px",
+    h6: "16px",
     meta: "13px",
     code: "13.5px",
   },
@@ -296,6 +305,9 @@ export const NOTE_IMAGE_FONT_SIZES: Record<
     h1: "27px",
     h2: "22.5px",
     h3: "19px",
+    h4: "18px",
+    h5: "18px",
+    h6: "18px",
     meta: "14px",
     code: "15px",
   },
@@ -477,6 +489,9 @@ export const generateCardCss = ({
       --ee-h1-size: ${sizeCfg.h1};
       --ee-h2-size: ${sizeCfg.h2};
       --ee-h3-size: ${sizeCfg.h3};
+      --ee-h4-size: ${sizeCfg.h4};
+      --ee-h5-size: ${sizeCfg.h5};
+      --ee-h6-size: ${sizeCfg.h6};
       --ee-meta-size: ${sizeCfg.meta};
       --ee-code-size: ${sizeCfg.code};
     }
@@ -592,7 +607,10 @@ export const generateCardCss = ({
 
     .edgeever-card-body h1,
     .edgeever-card-body h2,
-    .edgeever-card-body h3 {
+    .edgeever-card-body h3,
+    .edgeever-card-body h4,
+    .edgeever-card-body h5,
+    .edgeever-card-body h6 {
       color: var(--ee-heading-color);
       line-height: 1.28;
       font-weight: 720;
@@ -607,6 +625,9 @@ export const generateCardCss = ({
     }
     .edgeever-card-body h2 { font-size: var(--ee-h2-size); margin: 1.4em 0 0.6em; }
     .edgeever-card-body h3 { font-size: var(--ee-h3-size); margin: 1.2em 0 0.5em; }
+    .edgeever-card-body h4 { font-size: var(--ee-h4-size); margin: 1.1em 0 0.45em; }
+    .edgeever-card-body h5 { font-size: var(--ee-h5-size); margin: 1em 0 0.4em; }
+    .edgeever-card-body h6 { font-size: var(--ee-h6-size); margin: 0.9em 0 0.35em; }
 
     .edgeever-card-body p { margin: 0 0 1em; }
 

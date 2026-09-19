@@ -291,20 +291,26 @@ export const getEditableMemoTitle = (title: string | null | undefined) =>
 
 export const getMemoTitle = (title: string | null | undefined) => title?.trim() || DEFAULT_MEMO_TITLE;
 
+export const EDITOR_HEADING_LEVELS = [1, 2, 3, 4, 5, 6] as const;
+export type EditorHeadingLevel = (typeof EDITOR_HEADING_LEVELS)[number];
+
+export const headingBlockValue = (level: EditorHeadingLevel) => `heading-${level}` as const;
+
+export const parseHeadingBlockValue = (value: string): EditorHeadingLevel | null => {
+  const match = /^heading-([1-6])$/.exec(value);
+  return match ? Number(match[1]) as EditorHeadingLevel : null;
+};
+
 export const getActiveBlockValue = (editor: any): string => {
   if (!editor || editor.isDestroyed || !editor.extensionManager) {
     return "paragraph";
   }
 
   try {
-    if (editor.isActive("heading", { level: 1 })) {
-      return "heading-1";
-    }
-    if (editor.isActive("heading", { level: 2 })) {
-      return "heading-2";
-    }
-    if (editor.isActive("heading", { level: 3 })) {
-      return "heading-3";
+    for (const level of EDITOR_HEADING_LEVELS) {
+      if (editor.isActive("heading", { level })) {
+        return headingBlockValue(level);
+      }
     }
   } catch {
     return "paragraph";

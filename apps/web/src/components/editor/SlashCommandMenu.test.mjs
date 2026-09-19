@@ -18,6 +18,9 @@ const labels = {
     "heading-1": "标题 1",
     "heading-2": "标题 2",
     "heading-3": "标题 3",
+    "heading-4": "标题 4",
+    "heading-5": "标题 5",
+    "heading-6": "标题 6",
     "bullet-list": "无序列表",
     "ordered-list": "有序列表",
     "task-list": "任务清单",
@@ -39,10 +42,10 @@ describe("slash command menu", () => {
 
   test("shows all commands for a bare slash", () => {
     const unfilteredItems = filterSlashCommandItems(items, "");
-    const heading3Index = unfilteredItems.findIndex((item) => item.id === "heading-3");
+    const heading6Index = unfilteredItems.findIndex((item) => item.id === "heading-6");
 
-    expect(unfilteredItems).toHaveLength(18);
-    expect(unfilteredItems.slice(heading3Index + 1, heading3Index + 4).map((item) => item.id)).toEqual([
+    expect(unfilteredItems).toHaveLength(21);
+    expect(unfilteredItems.slice(heading6Index + 1, heading6Index + 4).map((item) => item.id)).toEqual([
       "current-date",
       "current-time",
       "current-date-time",
@@ -53,6 +56,7 @@ describe("slash command menu", () => {
     expect(filterSlashCommandItems(items, "AI").map((item) => item.id)).toEqual(["ai"]);
     expect(filterSlashCommandItems(items, "待办").map((item) => item.id)).toEqual(["task-list"]);
     expect(filterSlashCommandItems(items, "h2").map((item) => item.id)).toEqual(["heading-2"]);
+    expect(filterSlashCommandItems(items, "h5").map((item) => item.id)).toEqual(["heading-5"]);
     expect(filterSlashCommandItems(items, "今天").map((item) => item.id)).toEqual(["current-date"]);
     expect(filterSlashCommandItems(items, "timestamp").map((item) => item.id)).toEqual(["current-date-time"]);
   });
@@ -64,6 +68,9 @@ describe("slash command menu", () => {
       "h1",
       "h2",
       "h3",
+      "h4",
+      "h5",
+      "h6",
       "date",
       "time",
       "datetime",

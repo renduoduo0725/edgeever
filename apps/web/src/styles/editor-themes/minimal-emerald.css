@@ -37,7 +37,9 @@
 .edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h1,
 .edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h2,
 .edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h3,
-.edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h4 {
+.edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h4,
+.edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h5,
+.edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h6 {
   color: var(--editor-theme-heading);
   font-family: var(--editor-theme-font);
   font-weight: 600;
@@ -66,6 +68,21 @@
   letter-spacing: -0.01em;
   border: 0;
   padding-left: 0;
+}
+
+.edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h4 {
+  font-size: 1.05rem;
+  margin: 1.25rem 0 0.55rem;
+}
+
+.edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h5 {
+  font-size: 1rem;
+  margin: 1.1rem 0 0.45rem;
+}
+
+.edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror h6 {
+  font-size: 0.95rem;
+  margin: 1rem 0 0.4rem;
 }
 
 .edgeever-editor[data-editor-theme="minimal-emerald"]:not([data-editor-theme="default"]) .ProseMirror strong {

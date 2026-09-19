@@ -37,6 +37,15 @@ export const cacheMemoDetail = (queryClient: QueryClient, memo: MemoDetail, view
   queryClient.setQueryData(memoDetailQueryKey(memo.id, view), { memo });
 };
 
+export const evictIdleMemoDetails = (queryClient: QueryClient, keepMemoId: string | null) => {
+  queryClient.removeQueries({
+    predicate: (query) => {
+      const [kind, memoId] = query.queryKey;
+      return kind === "memo" && typeof memoId === "string" && memoId !== keepMemoId;
+    },
+  });
+};
+
 export const collectMemoSummariesFromCache = (queryClient: QueryClient, memoIds: Set<string>) => {
   const summaries = new Map<string, MemoSummary>();
 

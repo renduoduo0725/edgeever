@@ -53,7 +53,10 @@ body {
 
 .edgeever-html-content h1,
 .edgeever-html-content h2,
-.edgeever-html-content h3 {
+.edgeever-html-content h3,
+.edgeever-html-content h4,
+.edgeever-html-content h5,
+.edgeever-html-content h6 {
   color: #0f172a;
   line-height: 1.25;
 }
@@ -71,6 +74,21 @@ body {
 .edgeever-html-content h3 {
   margin: 1.25rem 0 0.55rem;
   font-size: 1.15rem;
+}
+
+.edgeever-html-content h4 {
+  margin: 1.15rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.edgeever-html-content h5 {
+  margin: 1.05rem 0 0.45rem;
+  font-size: 1rem;
+}
+
+.edgeever-html-content h6 {
+  margin: 0.95rem 0 0.4rem;
+  font-size: 0.95rem;
 }
 
 .edgeever-html-content p {

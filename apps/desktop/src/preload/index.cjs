@@ -76,6 +76,17 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
     ipcRenderer.on("desktop:command", listener);
     return () => ipcRenderer.removeListener("desktop:command", listener);
   },
+  onHibernatePrepare: (callback) => {
+    const listener = async () => {
+      try {
+        await callback();
+      } finally {
+        ipcRenderer.send("desktop:hibernate-prepared");
+      }
+    };
+    ipcRenderer.on("desktop:hibernate-prepare", listener);
+    return () => ipcRenderer.removeListener("desktop:hibernate-prepare", listener);
+  },
   syncScheduledTasks: (tasks) => ipcRenderer.invoke("desktop:sync-scheduled-tasks", tasks),
   onScheduledTask: (callback) => {
     const listener = (_event, payload) => callback(payload);

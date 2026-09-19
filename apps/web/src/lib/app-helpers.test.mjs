@@ -35,6 +35,8 @@ import {
   writeEditorPhonePreviewFollowPreference,
   resolveSelectionMoveTargetNotebookId,
   getMemoIdsNeedingMove,
+  getActiveBlockValue,
+  parseHeadingBlockValue,
 } from "./app-helpers.ts";
 
 const originalWindow = globalThis.window;
@@ -510,5 +512,34 @@ describe("selection move target", () => {
     expect(getMemoIdsNeedingMove(memos, ["memo-1", "memo-2", "memo-3"], "archive")).toEqual(["memo-1", "memo-3"]);
     expect(getMemoIdsNeedingMove(memos, ["memo-2"], "archive")).toEqual([]);
     expect(getMemoIdsNeedingMove(memos, ["memo-1"], "")).toEqual([]);
+  });
+});
+
+describe("editor heading block value", () => {
+  test("parses heading-1 through heading-6 and rejects other values", () => {
+    expect(parseHeadingBlockValue("heading-1")).toBe(1);
+    expect(parseHeadingBlockValue("heading-6")).toBe(6);
+    expect(parseHeadingBlockValue("heading-7")).toBe(null);
+    expect(parseHeadingBlockValue("paragraph")).toBe(null);
+  });
+
+  test("reports the active heading level including 4 through 6", () => {
+    const editor = {
+      isDestroyed: false,
+      extensionManager: {},
+      isActive: (name, attrs) => name === "heading" && attrs.level === 5,
+    };
+
+    expect(getActiveBlockValue(editor)).toBe("heading-5");
+    expect(getActiveBlockValue({
+      isDestroyed: false,
+      extensionManager: {},
+      isActive: (name, attrs) => name === "heading" && attrs.level === 3,
+    })).toBe("heading-3");
+    expect(getActiveBlockValue({
+      isDestroyed: false,
+      extensionManager: {},
+      isActive: () => false,
+    })).toBe("paragraph");
   });
 });

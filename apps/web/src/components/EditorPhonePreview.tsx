@@ -28,7 +28,7 @@ type EditorPhonePreviewProps = {
 };
 
 const BLOCK_SELECTOR =
-  "p, h1, h2, h3, li, blockquote, pre, img, table, hr, figure, [data-edgeever-theme-block]";
+  "p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, img, table, hr, figure, [data-edgeever-theme-block]";
 
 export const collectPhonePreviewBlocks = (root: Element) =>
   [...root.querySelectorAll<HTMLElement>(BLOCK_SELECTOR)].filter((element) => {

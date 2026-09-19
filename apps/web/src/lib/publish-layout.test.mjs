@@ -92,6 +92,8 @@ describe("publish layout catalog", () => {
     expect(planHeadingDecoration("h2", "stub", 0)).toEqual({ kind: "chapter", chapterLabel: "01" });
     expect(planHeadingDecoration("h2", "grove", 0)).toEqual({ kind: "none" });
     expect(planHeadingDecoration("h1", "letter", 0)).toEqual({ kind: "title" });
+    expect(planHeadingDecoration("h4", "letter", 0)).toEqual({ kind: "none" });
+    expect(planHeadingDecoration("h6", "guide", 0)).toEqual({ kind: "none" });
     expect(PUBLISH_LAYOUT_CHROME.letter.chapter).toBe("aside-serif");
     expect(PUBLISH_LAYOUT_CHROME.letter.quote).toBe("grid-card");
     expect(PUBLISH_LAYOUT_CHROME.brief.quoteBanner).toBe("EDITOR'S NOTE");
@@ -110,6 +112,8 @@ describe("publish layout CSS", () => {
     expect(phone.p).toContain("margin: 0 0 28px");
     expect(phone.h1).toContain("font-size: 24px");
     expect(phone.h2).toContain("font-size: 20px");
+    expect(phone.h4).toContain("font-size: 14px");
+    expect(phone.h6).toContain("font-size: 13px");
     expect(desktop.p).toContain("font-size: 15px");
     expect(desktop.p).toContain("line-height: 2");
   });

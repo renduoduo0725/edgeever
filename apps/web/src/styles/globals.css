@@ -667,7 +667,10 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 :root.dark .ProseMirror,
 :root.dark .ProseMirror h1,
 :root.dark .ProseMirror h2,
-:root.dark .ProseMirror h3 {
+:root.dark .ProseMirror h3,
+:root.dark .ProseMirror h4,
+:root.dark .ProseMirror h5,
+:root.dark .ProseMirror h6 {
   color: hsl(var(--foreground));
 }
 
@@ -945,6 +948,31 @@ textarea {
   letter-spacing: -0.01em;
   margin: 1.15rem 0 0.5rem;
   color: #1e293b;
+}
+
+.ProseMirror h4 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.006em;
+  margin: 1.05rem 0 0.45rem;
+  color: #1e293b;
+}
+
+.ProseMirror h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.42;
+  margin: 0.95rem 0 0.4rem;
+  color: #334155;
+}
+
+.ProseMirror h6 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.45;
+  margin: 0.85rem 0 0.35rem;
+  color: #334155;
 }
 
 .ProseMirror p {
@@ -1874,7 +1902,9 @@ textarea {
 .companion-markdown.markdown-content h1,
 .companion-markdown.markdown-content h2,
 .companion-markdown.markdown-content h3,
-.companion-markdown.markdown-content h4 {
+.companion-markdown.markdown-content h4,
+.companion-markdown.markdown-content h5,
+.companion-markdown.markdown-content h6 {
   font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.4;
@@ -1886,7 +1916,9 @@ textarea {
 .companion-markdown.markdown-content h1:first-child,
 .companion-markdown.markdown-content h2:first-child,
 .companion-markdown.markdown-content h3:first-child,
-.companion-markdown.markdown-content h4:first-child {
+.companion-markdown.markdown-content h4:first-child,
+.companion-markdown.markdown-content h5:first-child,
+.companion-markdown.markdown-content h6:first-child {
   margin-top: 0;
 }
 .companion-markdown.markdown-content p {

@@ -36,6 +36,31 @@ describe("shared Markdown conversion", () => {
     });
   });
 
+  test("preserves heading levels 1 through 6", () => {
+    const markdown = `# H1
+
+## H2
+
+### H3
+
+#### H4
+
+##### H5
+
+###### H6`;
+
+    const doc = markdownToDoc(markdown);
+    expect(doc.content.map((node) => [node.type, node.attrs?.level])).toEqual([
+      ["heading", 1],
+      ["heading", 2],
+      ["heading", 3],
+      ["heading", 4],
+      ["heading", 5],
+      ["heading", 6],
+    ]);
+    expect(docToMarkdown(doc)).toBe(markdown);
+  });
+
   test("serializes TipTap marks and block nodes back to Markdown", () => {
     const markdown = `# 标题
 

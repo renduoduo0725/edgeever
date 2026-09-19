@@ -506,6 +506,9 @@ export const PHONE_ARTICLE_RHYTHM = {
   h1Size: "24px",
   h2Size: "20px",
   h3Size: "15px",
+  h4Size: "14px",
+  h5Size: "13px",
+  h6Size: "13px",
 } as const;
 
 const resolvePublishRhythm = (layout: PublishLayoutId, _surface: PublishSurface): PublishRhythm =>
@@ -831,6 +834,30 @@ export const buildPublishStyles = (
       "font-weight": "700",
       color: chrome.small === "slash" ? palette.accent : palette.textStrong,
       ...h3Rules,
+    }),
+    h4: css({
+      margin: phone ? "12px 0 6px" : "20px 0 10px",
+      "font-size": phone ? PHONE_ARTICLE_RHYTHM.h4Size : "14px",
+      "line-height": "1.5",
+      "letter-spacing": rhythm.headingLetterSpacing,
+      "font-weight": "700",
+      color: palette.textStrong,
+    }),
+    h5: css({
+      margin: phone ? "10px 0 6px" : "16px 0 8px",
+      "font-size": phone ? PHONE_ARTICLE_RHYTHM.h5Size : "13px",
+      "line-height": "1.5",
+      "letter-spacing": rhythm.headingLetterSpacing,
+      "font-weight": "700",
+      color: palette.textStrong,
+    }),
+    h6: css({
+      margin: phone ? "10px 0 6px" : "14px 0 8px",
+      "font-size": phone ? PHONE_ARTICLE_RHYTHM.h6Size : "13px",
+      "line-height": "1.5",
+      "letter-spacing": rhythm.headingLetterSpacing,
+      "font-weight": "700",
+      color: palette.textMuted,
     }),
     blockquote: css({
       "line-height": rhythm.lineHeight,
@@ -1481,7 +1508,7 @@ const decorateHeadings = (
 ) => {
   const chrome = PUBLISH_LAYOUT_CHROME[layout];
   const phone = surface === "phone";
-  const headings = Array.from(root.querySelectorAll<HTMLElement>("h1, h2, h3")).filter((heading) => {
+  const headings = Array.from(root.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6")).filter((heading) => {
     if (heading.closest("table, pre, [data-edgeever-theme-block]")) return false;
     if (heading.closest("[data-ee-publish-heading]")) return false;
     return true;

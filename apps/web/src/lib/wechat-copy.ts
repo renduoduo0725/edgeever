@@ -15,6 +15,9 @@ const WECHAT_STYLES: Record<string, string> = {
   h1: "margin: 1.2em 0 0.6em; font-size: 24px; line-height: 1.35; font-weight: 700; color: #1f2937;",
   h2: "margin: 1.1em 0 0.55em; font-size: 21px; line-height: 1.4; font-weight: 700; color: #1f2937;",
   h3: "margin: 1em 0 0.5em; font-size: 18px; line-height: 1.45; font-weight: 700; color: #1f2937;",
+  h4: "margin: 0.95em 0 0.45em; font-size: 16px; line-height: 1.5; font-weight: 700; color: #1f2937;",
+  h5: "margin: 0.9em 0 0.4em; font-size: 15px; line-height: 1.5; font-weight: 700; color: #1f2937;",
+  h6: "margin: 0.85em 0 0.35em; font-size: 14px; line-height: 1.5; font-weight: 700; color: #1f2937;",
   blockquote: `margin: 1em 0; padding: 0.6em 1em; border-left: 4px solid #10b981; background: #f0fdf4; color: #4b5563; line-height: ${BODY_LINE_HEIGHT};`,
   ul: `margin: 0 0 1em; padding-left: 1.6em; line-height: ${BODY_LINE_HEIGHT};`,
   ol: `margin: 0 0 1em; padding-left: 1.6em; line-height: ${BODY_LINE_HEIGHT};`,
@@ -56,7 +59,7 @@ const applyLegacyWeChatStyles = (
     } else if (customColors) {
       if (tagName === "p") {
         style = `margin: 0 0 ${PARAGRAPH_SPACING}; padding: 0; line-height: ${BODY_LINE_HEIGHT}; font-size: ${BODY_FONT_SIZE}; color: ${textColor};`;
-      } else if (tagName === "h1" || tagName === "h2" || tagName === "h3") {
+      } else if (tagName === "h1" || tagName === "h2" || tagName === "h3" || tagName === "h4" || tagName === "h5" || tagName === "h6") {
         style = style.replace("color: #1f2937;", `color: ${textColor};`);
       } else if (tagName === "blockquote") {
         style = `margin: 1em 0; padding: 0.6em 1em; border-left: 4px solid ${accent}; background: ${soft}; color: ${textColor}; line-height: ${BODY_LINE_HEIGHT};`;

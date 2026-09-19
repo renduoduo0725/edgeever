@@ -26,8 +26,10 @@ import { MemoEditorToolbarDivider, MemoEditorToolbarRow } from "@/components/Mem
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
+  EDITOR_HEADING_LEVELS,
   formatShortcutBinding,
   getActiveBlockValue,
+  parseHeadingBlockValue,
   readEditorToolbarExpandedPreference,
   writeEditorToolbarExpandedPreference,
   type ShortcutBinding,
@@ -270,18 +272,9 @@ export const EditorToolbar = ({
         return;
       }
 
-      if (value === "heading-1") {
-        chain.setHeading({ level: 1 }).run();
-        return;
-      }
-
-      if (value === "heading-2") {
-        chain.setHeading({ level: 2 }).run();
-        return;
-      }
-
-      if (value === "heading-3") {
-        chain.setHeading({ level: 3 }).run();
+      const headingLevel = parseHeadingBlockValue(value);
+      if (headingLevel) {
+        chain.setHeading({ level: headingLevel }).run();
       }
     });
   };
@@ -433,9 +426,11 @@ export const EditorToolbar = ({
             </SelectTrigger>
             <SelectContent className="bg-card border border-slate-200 rounded-md py-1 shadow-md">
               <SelectItem value="paragraph">{t("editorToolbar.paragraph")}</SelectItem>
-              <SelectItem value="heading-1">{t("editorToolbar.heading1")}</SelectItem>
-              <SelectItem value="heading-2">{t("editorToolbar.heading2")}</SelectItem>
-              <SelectItem value="heading-3">{t("editorToolbar.heading3")}</SelectItem>
+              {EDITOR_HEADING_LEVELS.map((level) => (
+                <SelectItem key={level} value={`heading-${level}`}>
+                  {t(`editorToolbar.heading${level}`)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 

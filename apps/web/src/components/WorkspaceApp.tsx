@@ -78,6 +78,7 @@ import { useBrowserBackLayer } from "@/lib/app-hooks";
 import { updateMemoSummaryInLists, type MemoListQueryData } from "@/lib/memo-list-cache";
 import {
   cacheMemoDetail,
+  evictIdleMemoDetails,
   clearTrashMemoLists,
   collectMemoSummariesFromCache,
   decrementNotebookMemoCounts,
@@ -122,6 +123,11 @@ import { loadResolvedPluginMarketplace } from "@/lib/plugins/plugin-marketplace"
 import { updateOfficialMarketplacePlugins } from "@/lib/plugins/plugin-updates";
 import { createPublicNetworkAdapter } from "@/lib/plugins/public-network-adapter";
 import { clearRendererRecoveryRequired, isRendererRecoveryRequired } from "@/lib/renderer-recovery";
+import {
+  readDesktopWorkspaceRestoreState,
+  shouldRestoreDesktopWorkspace,
+  writeDesktopWorkspaceRestoreState,
+} from "@/lib/desktop-workspace-restore";
 import { EditorPaneErrorBoundary, EditorRecoveryPane } from "./EditorPaneErrorBoundary";
 import { isMarkdownFile, readMarkdownFile } from "@/lib/markdown-file-import";
 import { compressImageForUpload } from "@/lib/image-compression";
@@ -205,8 +211,15 @@ export const WorkspaceApp = ({
   const [rendererRecoveryMode, setRendererRecoveryMode] = useState(() =>
     Boolean(window.edgeeverDesktop?.recoveredAfterAbnormalExit) || isRendererRecoveryRequired()
   );
+  const [desktopWorkspaceRestore] = useState(() => (
+    shouldRestoreDesktopWorkspace() && !isRendererRecoveryRequired()
+      ? readDesktopWorkspaceRestoreState()
+      : null
+  ));
   const [activePane, setActivePane] = useState<Pane>(() => ((isInitialSettingsRoute || isInitialPluginsRoute || isInitialTemplatesRoute || isInitialAiPromptsRoute || isInitialExecutionCenterRoute) && !isInitialMobileEditorReturn ? "editor" : "memos"));
-  const [memoView, setMemoView] = useState<MemoView>(() => (isTrashRoute ? "trash" : "notebook"));
+  const [memoView, setMemoView] = useState<MemoView>(() => (
+    isTrashRoute ? "trash" : desktopWorkspaceRestore?.memoView ?? "notebook"
+  ));
   const {
     beginMemoSelection,
     clearMemoSelection,
@@ -222,12 +235,20 @@ export const WorkspaceApp = ({
     setSelectedMemoIds,
     setSelectedNotebookId,
     setSelectionMoveTargetNotebookId,
-  } = useWorkspaceSelection();
+  } = useWorkspaceSelection(desktopWorkspaceRestore);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const autoSelectedDemoNotebookRef = useRef(false);
   const [createdMemoEditId, setCreatedMemoEditId] = useState<string | null>(null);
   const pendingCreatedMemoIdRef = useRef<string | null>(null);
-  const pendingQuickSwitcherMemoIdRef = useRef<string | null>(null); // also companion/plugin opens not yet in the list
+  const pendingQuickSwitcherMemoIdRef = useRef<string | null>(desktopWorkspaceRestore?.selectedMemoId ?? null); // also companion/plugin opens not yet in the list
+  useEffect(() => {
+    if (!window.edgeeverDesktop?.isAvailable) return;
+    writeDesktopWorkspaceRestoreState({
+      selectedMemoId,
+      selectedNotebookId,
+      memoView,
+    });
+  }, [memoView, selectedMemoId, selectedNotebookId]);
   const creatingMemoSelectionRef = useRef(false);
   const createMemoInFlightRef = useRef(false);
   const memoDocumentActionIdRef = useRef(0);
@@ -1120,6 +1141,15 @@ export const WorkspaceApp = ({
     queryFn: () => repository.getMemo(detailMemoId as string, memoView === "trash"),
     enabled: Boolean(detailMemoId),
   });
+  const prefetchMemoDetail = useCallback((memoId: string) => {
+    void queryClient.prefetchQuery({
+      queryKey: memoDetailQueryKey(memoId, memoView),
+      queryFn: () => repository.getMemo(memoId, memoView === "trash"),
+    });
+  }, [memoView, queryClient, repository]);
+  useEffect(() => {
+    evictIdleMemoDetails(queryClient, detailMemoId);
+  }, [detailMemoId, queryClient]);
 
   useEffect(() => {
     const handleMemoDetailRefreshed = (event: Event) => {
@@ -2995,6 +3025,7 @@ export const WorkspaceApp = ({
                 setSelectedMemoId(memoId);
                 setActivePane("editor");
               }}
+              onPrefetchMemo={prefetchMemoDetail}
               onToggleMemo={(memoId, rangeMemoIds) => {
                 setMemoSelectionMode(true);
                 setSelectedMemoIds((current) => {

@@ -819,10 +819,34 @@ html[data-theme="dark"] .ProseMirror pre code {
 .edgeever-prose h1,
 .edgeever-prose h2,
 .edgeever-prose h3,
+.edgeever-prose h4,
+.edgeever-prose h5,
+.edgeever-prose h6,
 .ProseMirror h1,
 .ProseMirror h2,
-.ProseMirror h3 {
+.ProseMirror h3,
+.ProseMirror h4,
+.ProseMirror h5,
+.ProseMirror h6 {
   line-height: 1.25;
+}
+
+.edgeever-prose h4,
+.ProseMirror h4 {
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.edgeever-prose h5,
+.ProseMirror h5 {
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.edgeever-prose h6,
+.ProseMirror h6 {
+  font-size: 0.95rem;
+  font-weight: 650;
 }
 
 .edgeever-mermaid {
@@ -883,7 +907,7 @@ body.viewer-mode #toolbar {
 .edgeever-image-meta { margin: 0 0 28px; padding-bottom: 18px; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
 .edgeever-image-content { font-size: 17px; line-height: 1.82; }
 .edgeever-image-content, .edgeever-image-content .tiptap { min-height: 0 !important; height: auto !important; overflow: visible !important; background: #fff !important; color: #172033 !important; }
-.edgeever-image-content h1, .edgeever-image-content h2, .edgeever-image-content h3 { color: #0f172a !important; }
+.edgeever-image-content h1, .edgeever-image-content h2, .edgeever-image-content h3, .edgeever-image-content h4, .edgeever-image-content h5, .edgeever-image-content h6 { color: #0f172a !important; }
 .edgeever-image-content pre { background: #f1f5f9 !important; color: #172033 !important; }
 .edgeever-image-content code { color: inherit !important; }
 .edgeever-image-content blockquote { color: #475569 !important; border-color: #94a3b8 !important; }

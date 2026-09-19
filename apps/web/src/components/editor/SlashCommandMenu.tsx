@@ -14,6 +14,9 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Heading4,
+  Heading5,
+  Heading6,
   Link,
   List,
   ListOrdered,
@@ -38,6 +41,9 @@ export type SlashCommandId =
   | "heading-1"
   | "heading-2"
   | "heading-3"
+  | "heading-4"
+  | "heading-5"
+  | "heading-6"
   | "bullet-list"
   | "ordered-list"
   | "task-list"
@@ -98,6 +104,9 @@ export const createSlashCommandItems = (labels: SlashCommandLabels): SlashComman
   { id: "heading-1", command: "h1", group: "basic", icon: Heading1, label: labels.items["heading-1"], keywords: ["heading", "标题"] },
   { id: "heading-2", command: "h2", group: "basic", icon: Heading2, label: labels.items["heading-2"], keywords: ["heading", "标题"] },
   { id: "heading-3", command: "h3", group: "basic", icon: Heading3, label: labels.items["heading-3"], keywords: ["heading", "标题"] },
+  { id: "heading-4", command: "h4", group: "basic", icon: Heading4, label: labels.items["heading-4"], keywords: ["heading", "标题"] },
+  { id: "heading-5", command: "h5", group: "basic", icon: Heading5, label: labels.items["heading-5"], keywords: ["heading", "标题"] },
+  { id: "heading-6", command: "h6", group: "basic", icon: Heading6, label: labels.items["heading-6"], keywords: ["heading", "标题"] },
   { id: "current-date", command: "date", group: "basic", icon: CalendarDays, label: labels.items["current-date"], keywords: ["today", "日期", "今天"] },
   { id: "current-time", command: "time", group: "basic", icon: Clock3, label: labels.items["current-time"], keywords: ["now", "时间", "现在"] },
   { id: "current-date-time", command: "datetime", group: "basic", icon: CalendarClock, label: labels.items["current-date-time"], keywords: ["timestamp", "日期时间", "时间戳"] },
@@ -225,6 +234,9 @@ const runSlashCommand = ({
     case "heading-1": chain.setHeading({ level: 1 }).run(); break;
     case "heading-2": chain.setHeading({ level: 2 }).run(); break;
     case "heading-3": chain.setHeading({ level: 3 }).run(); break;
+    case "heading-4": chain.setHeading({ level: 4 }).run(); break;
+    case "heading-5": chain.setHeading({ level: 5 }).run(); break;
+    case "heading-6": chain.setHeading({ level: 6 }).run(); break;
     case "bullet-list": chain.toggleBulletList().run(); break;
     case "ordered-list": chain.toggleOrderedList().run(); break;
     case "task-list": chain.toggleTaskList().run(); break;

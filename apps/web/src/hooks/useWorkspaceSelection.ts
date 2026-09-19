@@ -1,8 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 
-export const useWorkspaceSelection = () => {
-  const [selectedNotebookId, setSelectedNotebookId] = useState<string | null>(null);
-  const [selectedMemoId, setSelectedMemoId] = useState<string | null>(null);
+export const useWorkspaceSelection = (initial?: {
+  selectedMemoId?: string | null;
+  selectedNotebookId?: string | null;
+} | null) => {
+  const [selectedNotebookId, setSelectedNotebookId] = useState<string | null>(initial?.selectedNotebookId ?? null);
+  const [selectedMemoId, setSelectedMemoId] = useState<string | null>(initial?.selectedMemoId ?? null);
   const selectedMemoIdRef = useRef(selectedMemoId);
   selectedMemoIdRef.current = selectedMemoId;
   const [selectedMemoIds, setSelectedMemoIds] = useState<Set<string>>(() => new Set());

@@ -39,7 +39,10 @@
 
 .edgeever-editor[data-paper-theme]:not([data-editor-theme="default"]) .ProseMirror h1,
 .edgeever-editor[data-paper-theme]:not([data-editor-theme="default"]) .ProseMirror h2,
-.edgeever-editor[data-paper-theme]:not([data-editor-theme="default"]) .ProseMirror h3 {
+.edgeever-editor[data-paper-theme]:not([data-editor-theme="default"]) .ProseMirror h3,
+.edgeever-editor[data-paper-theme]:not([data-editor-theme="default"]) .ProseMirror h4,
+.edgeever-editor[data-paper-theme]:not([data-editor-theme="default"]) .ProseMirror h5,
+.edgeever-editor[data-paper-theme]:not([data-editor-theme="default"]) .ProseMirror h6 {
   color: var(--publish-text-strong);
   border: 0;
   padding-left: 0;
@@ -620,6 +623,17 @@
 .edgeever-editor[data-publish-surface="phone"][data-paper-theme] .ProseMirror h3 {
   font-size: 0.9375rem;
   margin: 0.9rem 0 0.5rem;
+}
+
+.edgeever-editor[data-publish-surface="phone"][data-paper-theme] .ProseMirror h4 {
+  font-size: 0.875rem;
+  margin: 0.8rem 0 0.45rem;
+}
+
+.edgeever-editor[data-publish-surface="phone"][data-paper-theme] .ProseMirror h5,
+.edgeever-editor[data-publish-surface="phone"][data-paper-theme] .ProseMirror h6 {
+  font-size: 0.8125rem;
+  margin: 0.7rem 0 0.4rem;
 }
 
 .edgeever-editor[data-publish-surface="phone"][data-paper-theme] .ProseMirror blockquote {

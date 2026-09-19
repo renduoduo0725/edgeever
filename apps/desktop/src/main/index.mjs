@@ -45,6 +45,11 @@ import { createPluginPublicNetworkRuntime } from "./plugin-public-network.mjs";
 import { createAiDirectRuntime } from "./ai-direct.mjs";
 import { shouldQuitAfterAllWindowsClosed } from "./window-lifecycle.mjs";
 import {
+  RENDERER_HIBERNATE_PREPARE_TIMEOUT_MS,
+  createRendererHibernateController,
+  workingSetBytesFromProcessMemoryInfo,
+} from "./renderer-hibernate.mjs";
+import {
   DESKTOP_APP_ENTRY_URL,
   DESKTOP_APP_ORIGIN,
   DESKTOP_APP_SCHEME,
@@ -512,6 +517,69 @@ let pendingScreenshotImport = null;
 const screenshotCaptureGuard = createScreenshotCaptureGuard();
 const sentScreenshotCaptureIds = new Set();
 let rendererReady = false;
+
+const getRendererHibernateBackgroundState = () => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return { focused: false, visible: false, quitting: isQuitting, loading: false };
+  }
+  return {
+    focused: mainWindow.isFocused(),
+    visible: mainWindow.isVisible() && !mainWindow.isMinimized(),
+    quitting: isQuitting,
+    loading: mainWindow.webContents.isLoading(),
+  };
+};
+
+const getRendererWorkingSetBytes = async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return 0;
+  try {
+    return workingSetBytesFromProcessMemoryInfo(await mainWindow.webContents.getProcessMemoryInfo());
+  } catch {
+    return 0;
+  }
+};
+
+const prepareRendererForHibernate = () => new Promise((resolve) => {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoading()) {
+    resolve("unavailable");
+    return;
+  }
+  const timeout = setTimeout(() => {
+    ipcMain.removeListener("desktop:hibernate-prepared", onPrepared);
+    resolve("timeout");
+  }, RENDERER_HIBERNATE_PREPARE_TIMEOUT_MS);
+  const onPrepared = (event) => {
+    if (event.sender !== mainWindow?.webContents) return;
+    clearTimeout(timeout);
+    ipcMain.removeListener("desktop:hibernate-prepared", onPrepared);
+    resolve("ready");
+  };
+  ipcMain.on("desktop:hibernate-prepared", onPrepared);
+  mainWindow.webContents.send("desktop:hibernate-prepare");
+});
+
+const reloadHibernatedRenderer = () => {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isFocused() || isQuitting) return;
+  rendererReady = false;
+  armRendererStartupGuard();
+  mainWindow.webContents.reload();
+};
+
+const rendererHibernate = createRendererHibernateController({
+  getBackgroundState: getRendererHibernateBackgroundState,
+  getMemoryBytes: getRendererWorkingSetBytes,
+  prepareRenderer: prepareRendererForHibernate,
+  reloadRenderer: reloadHibernatedRenderer,
+  onDiagnostic: (event, details) => { void writeDiagnostic(event, details); },
+});
+
+const syncRendererHibernate = () => {
+  if (isQuitting || !mainWindow || mainWindow.isDestroyed() || mainWindow.isFocused()) {
+    rendererHibernate.cancel();
+    return;
+  }
+  rendererHibernate.noteBackground();
+};
 
 const flushPendingMarkdownImport = () => {
   if (!pendingMarkdownImport || !rendererReady || !mainWindow || mainWindow.isDestroyed()) return;
@@ -1192,6 +1260,12 @@ const createWindow = async () => {
       mainWindow.hide();
     }
   });
+  mainWindow.on("hide", syncRendererHibernate);
+  mainWindow.on("show", syncRendererHibernate);
+  mainWindow.on("minimize", syncRendererHibernate);
+  mainWindow.on("restore", syncRendererHibernate);
+  mainWindow.on("blur", syncRendererHibernate);
+  mainWindow.on("focus", syncRendererHibernate);
 
   // Install startup diagnostics before navigation. A renderer exception can
   // happen while loadFile/loadURL is still resolving, so listeners registered

@@ -1,21 +1,19 @@
 {
-  "version": "1.77.0",
+  "version": "1.78.0",
   "changes": {
     "en-US": [
-      "Let note owners turn on an optional auto-generated password when sharing a public link. Visitors must unlock the page before reading the note or attachments; existing public links stay open until a password is enabled.",
-      "Probe model CORS with a dummy POST so browser direct-connect sends Authorization instead of falling back to the instance proxy on hosts that reject GET or HEAD preflights.",
-      "Accept instance hosts without an https prefix, and ignore leftover desktop instance URLs in the browser so web sessions do not call a saved desktop API.",
-      "Keep the login card shadow from becoming a light halo in dark mode.",
-      "Rename the generate assistant tab from Instruction to Q&A.",
-      "Remove Beta badges from mind-map, flowchart, and architecture note types in the create-memo menu."
+      "Support rich-text headings through H6 in the toolbar, slash commands, and Markdown, including Android, iOS, export, and WeChat copy.",
+      "Window the memo list so only visible cards mount, keeping long notebooks responsive while scrolling.",
+      "Reuse the editor across notes, prefetch details on pointer down, and skip the card-menu scroll lock so switching short notes no longer remounts the editor.",
+      "Recycle the hidden desktop renderer after a long background session or a high working set, then restore the last notebook and note when the window reopens.",
+      "Drop decoded images and previous note bodies when switching notes so image-heavy notes do not keep bitmaps and JSON in the renderer."
     ],
     "zh-CN": [
-      "分享公开链接时可开启自动生成的访问密码。访客需先解锁才能阅读笔记和附件；已有公开链接在开启密码前保持可直接访问。",
-      "用空 POST 探测模型 CORS，让网页直连带上 Authorization，不再因主机拒绝 GET/HEAD 预检而回退到实例代理。",
-      "登录时可填写不带 https 前缀的实例地址；浏览器会忽略桌面端留下的实例 URL，避免网页会话误连到桌面保存的接口。",
-      "修复深色模式下登录卡片阴影变成浅色光环的问题。",
-      "将生成助手标签从「指令」改为「问答模式」。",
-      "去掉侧栏新建菜单里思维导图、流程图和架构图旁的 Beta 标记。"
+      "富文本标题支持到六级：工具栏、斜杠命令和 Markdown 都可用，并同步到安卓、iOS、导出和公众号复制。",
+      "笔记列表只渲染当前可见的卡片，笔记本很长时滚动不再把全部卡片挂进页面。",
+      "切换笔记时复用编辑器、按下时预取正文，并去掉卡片菜单的滚动锁定，短笔记不再整页重挂编辑器。",
+      "桌面端在长时间后台或占用偏高时回收隐藏的渲染进程，重新打开窗口时恢复上次的笔记本和笔记。",
+      "切换笔记时释放上一篇的图片和解码后的正文，避免图多的笔记把位图和 JSON 留在渲染进程里。"
     ]
   }
 }

@@ -24,6 +24,30 @@ describe("desktop create-note wiring", () => {
     expect(editorSource).toContain("editorInstanceKey: editorInstanceMemoKey");
   });
 
+  test("reuses the TipTap view when switching memos and resets the document instead of remounting", () => {
+    expect(editorSource).toContain("resetEditorDocument");
+    expect(editorSource).toContain("switching notes now");
+    expect(editorSource).toContain("also reuses it and resets undo history via resetEditorDocument");
+    expect(editorSource).not.toContain("an actual memo switch still receives a fresh undo history.");
+  });
+
+  test("prefetches memo detail when a list card is pressed", () => {
+    expect(workspaceSource).toContain("prefetchMemoDetail");
+    expect(workspaceSource).toContain("onPrefetchMemo={prefetchMemoDetail}");
+    expect(workspaceSource).toContain("queryClient.prefetchQuery");
+  });
+
+  test("evicts idle memo bodies when switching notes", () => {
+    expect(workspaceSource).toContain("evictIdleMemoDetails(queryClient, detailMemoId)");
+  });
+
+  test("restores the last desktop memo after a renderer hibernate reload", () => {
+    expect(workspaceSource).toContain("readDesktopWorkspaceRestoreState");
+    expect(workspaceSource).toContain("writeDesktopWorkspaceRestoreState");
+    expect(workspaceSource).toContain("useWorkspaceSelection(desktopWorkspaceRestore)");
+    expect(editorSource).toContain("onHibernatePrepare");
+  });
+
   test("keeps retrying create-note autofocus until the editor is editable and focused", () => {
     expect(editorSource).toContain("shouldRetryCreatedMemoFocus");
     expect(editorSource).toContain("isCreatedMemoEditorFocused");
