@@ -766,4 +766,142 @@ mod tests {
             1
         );
     }
+
+    #[test]
+    fn sync_apply_does_not_revive_a_second_inbox() {
+        let database = Connection::open_in_memory().unwrap();
+        database
+            .execute_batch(
+                "PRAGMA foreign_keys = ON;
+                 CREATE TABLE notebooks (
+                   id TEXT PRIMARY KEY,
+                   parent_id TEXT REFERENCES notebooks(id),
+                   name TEXT NOT NULL,
+                   slug TEXT,
+                   icon TEXT,
+                   color TEXT,
+                   sort_order INTEGER NOT NULL DEFAULT 0,
+                   is_deleted INTEGER NOT NULL DEFAULT 0,
+                   created_at TEXT NOT NULL DEFAULT 'now',
+                   updated_at TEXT NOT NULL DEFAULT 'now',
+                   deleted_at TEXT
+                 );
+                 CREATE UNIQUE INDEX idx_notebooks_one_active_inbox
+                   ON notebooks(slug)
+                   WHERE is_deleted = 0 AND slug = 'inbox';
+                 CREATE TABLE memos (
+                   id TEXT PRIMARY KEY,
+                   notebook_id TEXT NOT NULL REFERENCES notebooks(id),
+                   title TEXT,
+                   excerpt TEXT NOT NULL,
+                   tags_json TEXT NOT NULL,
+                   is_pinned INTEGER NOT NULL,
+                   is_archived INTEGER NOT NULL,
+                   is_deleted INTEGER NOT NULL,
+                   source_memo_ids TEXT NOT NULL,
+                   merge_source_count INTEGER NOT NULL,
+                   merged_into_memo_id TEXT REFERENCES memos(id),
+                   created_at TEXT NOT NULL,
+                   updated_at TEXT NOT NULL,
+                   deleted_at TEXT
+                 );
+                 CREATE TABLE memo_contents (
+                   memo_id TEXT PRIMARY KEY REFERENCES memos(id) ON DELETE CASCADE,
+                   content_json TEXT NOT NULL,
+                   content_markdown TEXT NOT NULL,
+                   content_text TEXT NOT NULL,
+                   content_hash TEXT NOT NULL,
+                   revision INTEGER NOT NULL,
+                   updated_at TEXT NOT NULL DEFAULT 'now'
+                 );
+                 INSERT INTO notebooks (id, name, slug, is_deleted)
+                 VALUES ('nb_historical_inbox', '等待分类', 'inbox', 0);
+                 INSERT INTO memos (
+                   id, notebook_id, title, excerpt, tags_json, is_pinned, is_archived, is_deleted,
+                   source_memo_ids, merge_source_count, created_at, updated_at
+                 ) VALUES (
+                   'kept-memo', 'nb_historical_inbox', 'kept', '', '[]', 0, 0, 0,
+                   '[]', 0, '2026-06-30T00:00:00.000Z', '2026-06-30T00:00:00.000Z'
+                 );",
+            )
+            .unwrap();
+
+        apply_sync_changes(
+            &database,
+            &json!({ "changes": [{
+                "entityType": "notebook",
+                "operation": "upsert",
+                "entityId": "ws_default_inbox",
+                "notebook": {
+                    "name": "等待分类",
+                    "slug": "inbox",
+                    "parentId": null,
+                    "createdAt": "2026-09-10T00:00:00.000Z",
+                    "updatedAt": "2026-09-10T00:00:00.000Z"
+                }
+            }] }),
+        )
+        .unwrap();
+
+        assert_eq!(
+            database
+                .query_row(
+                    "SELECT is_deleted FROM notebooks WHERE id = 'nb_historical_inbox'",
+                    [],
+                    |row| row.get::<_, i64>(0),
+                )
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            database
+                .query_row(
+                    "SELECT is_deleted FROM notebooks WHERE id = 'ws_default_inbox'",
+                    [],
+                    |row| row.get::<_, i64>(0),
+                )
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            database
+                .query_row(
+                    "SELECT notebook_id FROM memos WHERE id = 'kept-memo'",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .unwrap(),
+            "nb_historical_inbox"
+        );
+        assert_eq!(
+            database
+                .query_row(
+                    "SELECT COUNT(*) FROM notebooks WHERE is_deleted = 0 AND slug = 'inbox'",
+                    [],
+                    |row| row.get::<_, i64>(0),
+                )
+                .unwrap(),
+            1
+        );
+
+        apply_sync_changes(
+            &database,
+            &json!({ "changes": [{
+                "entityType": "notebook",
+                "operation": "delete",
+                "entityId": "ws_default_inbox"
+            }] }),
+        )
+        .unwrap();
+        assert_eq!(
+            database
+                .query_row(
+                    "SELECT is_deleted FROM notebooks WHERE id = 'ws_default_inbox'",
+                    [],
+                    |row| row.get::<_, i64>(0),
+                )
+                .unwrap(),
+            1
+        );
+    }
 }

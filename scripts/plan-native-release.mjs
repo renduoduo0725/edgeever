@@ -31,6 +31,7 @@ export const planNativeRelease = (platform, changedFiles) => {
           "apps/desktop/",
           "apps/web/",
           "crates/desktop-sidecar/",
+          "migrations/",
           "packages/client/",
           "packages/shared/",
         ];

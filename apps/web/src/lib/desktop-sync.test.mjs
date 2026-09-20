@@ -13,6 +13,8 @@ const {
   orderBootstrapNotebooks,
   orderDesktopSyncChanges,
   resolveDesktopMemoSyncBase,
+  resolveDesktopStaleMemoUpdate,
+  desktopLocalRevisionWitnessesRemote,
   rewriteStagedResource,
   shouldAttemptDesktopRecoveryPull,
   shouldPullDesktopChanges,
@@ -142,6 +144,91 @@ describe("desktop memo sync base", () => {
       { revision: 9, contentHash: "cloud-9" },
       { expectedRevision: 3, expectedContentHash: "cloud-3" },
     )).toEqual({ expectedRevision: 3, expectedContentHash: "cloud-3" });
+  });
+
+  test("acks a lost save when the cloud already has the queued payload", () => {
+    expect(resolveDesktopStaleMemoUpdate({
+      current: { revision: 10, contentHash: "hash-a" },
+      expected: { expectedRevision: 9, expectedContentHash: "hash-before" },
+      payload: { title: "", tags: [], contentMarkdown: "一期验收通过。", contentJson: { type: "doc" } },
+      remote: { title: "无标题笔记", tags: [], contentMarkdown: "一期验收通过。", contentHash: "hash-a", contentJson: { type: "doc" } },
+      localRevisions: [],
+    })).toBe("ack");
+  });
+
+  test("rebases a later local draft when a sidecar snapshot already contains the cloud body", () => {
+    const remote = {
+      title: "无标题笔记",
+      tags: [],
+      contentMarkdown: "一期验收通过。",
+      contentHash: "hash-a",
+      contentJson: { type: "doc", content: [{ type: "paragraph" }] },
+    };
+
+    expect(desktopLocalRevisionWitnessesRemote([
+      {
+        id: "revision_local_1",
+        revision: 9,
+        contentHash: "sidecar-a",
+        contentMarkdown: "一期验收通过。",
+        contentJson: remote.contentJson,
+      },
+    ], remote, 9)).toBe(true);
+
+    expect(resolveDesktopStaleMemoUpdate({
+      current: { revision: 10, contentHash: "hash-a" },
+      expected: { expectedRevision: 9, expectedContentHash: "hash-before" },
+      payload: { title: "", tags: [], contentMarkdown: "一期验收通过。然后继续写。", contentJson: { type: "doc" } },
+      remote,
+      localRevisions: [{
+        id: "revision_local_1",
+        revision: 9,
+        contentHash: "sidecar-a",
+        contentMarkdown: "一期验收通过。",
+        contentJson: remote.contentJson,
+      }],
+    })).toBe("rebase");
+  });
+
+  test("does not treat an older local snapshot or a remote-cached revision as proof", () => {
+    const remote = {
+      title: "无标题笔记",
+      tags: [],
+      contentMarkdown: "别人改过的正文",
+      contentHash: "hash-other",
+      contentJson: { type: "doc" },
+    };
+
+    expect(desktopLocalRevisionWitnessesRemote([
+      {
+        id: "revision_local_old",
+        revision: 3,
+        contentHash: "hash-other",
+        contentMarkdown: "别人改过的正文",
+        contentJson: remote.contentJson,
+      },
+      {
+        id: "rev_remote_cached",
+        revision: 10,
+        contentHash: "hash-other",
+        contentMarkdown: "别人改过的正文",
+        contentJson: remote.contentJson,
+      },
+    ], remote, 9)).toBe(false);
+
+    expect(resolveDesktopStaleMemoUpdate({
+      current: { revision: 10, contentHash: "hash-other" },
+      expected: { expectedRevision: 9, expectedContentHash: "hash-before" },
+      payload: { title: "", tags: [], contentMarkdown: "本地还在写的草稿", contentJson: { type: "doc" } },
+      remote,
+      localRevisions: [{
+        id: "revision_local_9",
+        revision: 9,
+        contentHash: "sidecar-local",
+        contentMarkdown: "本地还在写的草稿",
+        contentJson: { type: "doc" },
+      }],
+    })).toBe("conflict");
   });
 });
 

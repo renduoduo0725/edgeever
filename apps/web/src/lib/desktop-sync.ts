@@ -2,10 +2,15 @@ import {
   getMemoSyncBaseConflictDetails,
   getSyncRetryAt,
   hasSyncStateReset,
+  isDesktopLocalRevisionId,
   isMemoSyncBaseCurrent,
+  memoUpdatePayloadMatchesRemote,
+  resolveSameDeviceMemoSyncRecovery,
   type DesktopOutboxItem,
   type DesktopRpcParams,
   type DesktopRpcResponses,
+  type MemoDetail,
+  type SameDeviceMemoSyncRecovery,
   type SyncBootstrapResponse,
   type SyncChangesResponse,
   type TiptapDoc,
@@ -58,6 +63,24 @@ const valueReferencesStagedResource = (value: unknown, placeholder: string): boo
 export const isStagedResourceReferenced = (payloads: unknown[], stagedId: string) => {
   const placeholder = `edgeever-staged://${stagedId}`;
   return payloads.some((payload) => valueReferencesStagedResource(payload, placeholder));
+};
+
+const stagedIdsReferencedByLocalMemos = async (rewrites: StagedResourceRewrite[]) => {
+  const referenced = new Set<string>();
+  for (const rewrite of rewrites) {
+    const stagedId = rewrite.placeholder.startsWith("edgeever-staged://")
+      ? rewrite.placeholder.slice("edgeever-staged://".length)
+      : rewrite.placeholder;
+    try {
+      const local = await request("memo.get", { memoId: rewrite.memoId, includeDeleted: true });
+      if (isStagedResourceReferenced([local.memo.contentJson, local.memo.contentMarkdown], stagedId)) {
+        referenced.add(stagedId);
+      }
+    } catch {
+      referenced.add(stagedId);
+    }
+  }
+  return referenced;
 };
 
 const remapStagedResourceMemoIds = async (memoIdMappings: ReadonlyMap<string, string>) => {
@@ -208,8 +231,8 @@ export const resolveDesktopMemoSyncBase = (
   // Older desktop clients advanced the cached cloud revision for every local
   // autosave. A base ahead of the actual server is therefore a local counter,
   // not evidence of a concurrent remote edit. Rebase that impossible state so
-  // existing drafts recover automatically. Bases behind the server remain
-  // conflicts and keep the normal adopt-cloud/copy-draft protection.
+  // existing drafts recover automatically. Bases behind the server are inspected
+  // by resolveDesktopStaleMemoUpdate before becoming a user-facing conflict.
   if (expected.expectedRevision > current.revision) {
     return {
       expectedRevision: current.revision,
@@ -218,6 +241,54 @@ export const resolveDesktopMemoSyncBase = (
   }
   return expected;
 };
+
+type DesktopLocalRevisionWitness = {
+  id: string;
+  revision: number;
+  contentHash: string;
+  contentMarkdown: string;
+  contentJson?: unknown;
+};
+
+export const desktopLocalRevisionWitnessesRemote = (
+  revisions: ReadonlyArray<DesktopLocalRevisionWitness>,
+  remote: { contentHash: string; contentMarkdown: string; contentJson?: unknown },
+  expectedRevision: number,
+) => revisions.some((revision) => {
+  if (!isDesktopLocalRevisionId(revision.id) || revision.revision < expectedRevision) {
+    return false;
+  }
+  if (revision.contentHash === remote.contentHash) {
+    return true;
+  }
+  if (revision.contentMarkdown !== remote.contentMarkdown) {
+    return false;
+  }
+  return revision.contentMarkdown !== ""
+    || JSON.stringify(revision.contentJson ?? null) === JSON.stringify(remote.contentJson ?? null);
+});
+
+export const resolveDesktopStaleMemoUpdate = (input: {
+  current: { revision: number; contentHash: string };
+  expected: { expectedRevision: number; expectedContentHash: string };
+  payload: {
+    title?: unknown;
+    tags?: unknown;
+    contentMarkdown?: unknown;
+    contentJson?: unknown;
+  };
+  remote: Pick<MemoDetail, "title" | "tags" | "contentMarkdown" | "contentHash" | "contentJson">;
+  localRevisions: ReadonlyArray<DesktopLocalRevisionWitness>;
+}): SameDeviceMemoSyncRecovery => resolveSameDeviceMemoSyncRecovery({
+  current: input.current,
+  expected: input.expected,
+  payloadMatchesRemote: memoUpdatePayloadMatchesRemote(input.payload, input.remote),
+  remoteProducedLocally: desktopLocalRevisionWitnessesRemote(
+    input.localRevisions,
+    input.remote,
+    input.expected.expectedRevision,
+  ),
+});
 
 const acknowledge = async (
   item: DesktopOutboxItem,
@@ -259,17 +330,44 @@ const syncOutboxItem = async (item: DesktopOutboxItem, stagedRewrites: StagedRes
     };
     const currentBase = { revision: editSession.baseRevision, contentHash: editSession.baseContentHash };
     const expectedBase = resolveDesktopMemoSyncBase(currentBase, queuedBase);
+    let syncBase = expectedBase;
     if (!isMemoSyncBaseCurrent(currentBase, expectedBase)) {
-      throw new ApiRequestError(
-        "Note changed before the offline draft could sync.",
-        409,
-        "revision_conflict",
-        getMemoSyncBaseConflictDetails(currentBase, expectedBase),
-      );
+      const remote = await api.getMemo(memoId, { includeDeleted: true });
+      let localRevisions: DesktopLocalRevisionWitness[] = [];
+      try {
+        localRevisions = (await request("memo.revisions", { memoId, limit: 200 })).revisions;
+      } catch {
+        // A lost acknowledgement of the exact payload can still be acked
+        // without local history. Missing snapshots keep a genuine remote edit
+        // as a conflict.
+      }
+      const recovery = resolveDesktopStaleMemoUpdate({
+        current: currentBase,
+        expected: expectedBase,
+        payload,
+        remote: remote.memo,
+        localRevisions,
+      });
+      if (recovery === "ack") {
+        await acknowledge(item, remote.memo);
+        return remote.memo;
+      }
+      if (recovery !== "rebase") {
+        throw new ApiRequestError(
+          "Note changed before the offline draft could sync.",
+          409,
+          "revision_conflict",
+          getMemoSyncBaseConflictDetails(currentBase, expectedBase),
+        );
+      }
+      syncBase = {
+        expectedRevision: currentBase.revision,
+        expectedContentHash: currentBase.contentHash,
+      };
     }
     const data = await api.updateMemo(memoId, {
-      expectedRevision: expectedBase.expectedRevision,
-      expectedContentHash: expectedBase.expectedContentHash,
+      expectedRevision: syncBase.expectedRevision,
+      expectedContentHash: syncBase.expectedContentHash,
       editSessionId: editSession.id,
       title: String(payload.title ?? ""),
       contentJson: payload.contentJson as TiptapDoc,
@@ -633,7 +731,23 @@ export const syncDesktopData = () => {
       mergeMemoIdMappings(memoIdMappings, outbox.memoIdMappings);
       mergeSyncedMemos(syncedMemos, outbox.syncedMemos);
       if (stagedResources.failed === 0 && outbox.failed === 0 && outbox.conflicted === 0 && creates.conflicted === 0) {
-        await removeSyncedStagedResources(stagedResources.stagedIds);
+        const stillReferenced = await stagedIdsReferencedByLocalMemos(stagedResources.rewrites);
+        if (stillReferenced.size > 0) {
+          try {
+            await patchCreatedMemoResources(stagedResources.rewrites.filter((rewrite) => {
+              const stagedId = rewrite.placeholder.slice("edgeever-staged://".length);
+              return stillReferenced.has(stagedId);
+            }));
+          } catch {
+            // Keep the staged files so a later save can finish rewriting the note.
+          }
+        }
+        const remainingReferenced = stillReferenced.size > 0
+          ? await stagedIdsReferencedByLocalMemos(stagedResources.rewrites)
+          : stillReferenced;
+        await removeSyncedStagedResources(
+          stagedResources.stagedIds.filter((stagedId) => !remainingReferenced.has(stagedId)),
+        );
       }
       phase = "read_status";
       const remaining = await request("sync.status", {});

@@ -100,6 +100,7 @@ import { ShareNoteImageDialog } from "./dialogs/ShareNoteImageDialog";
 import { AiAssistantDialog, type AiAssistantAnchor } from "./dialogs/AiAssistantDialog";
 import { api } from "@/lib/api";
 import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceDownloadUrl, toDesktopResourceUrl } from "@/lib/desktop-resources";
+import { contentReferencesStagedResourceUrl, findMatchingMemoResource, repairMemoStagedResourceUrls, repairTiptapStagedResourceUrls } from "@/lib/staged-resource-repair";
 import { cn, formatDateTime, parseTagsText } from "@/lib/utils";
 import { EDITOR_CONTENT_MAX_WIDTH, EDITOR_CONTENT_MAX_WIDTH_COLLAPSED } from "@/lib/workspace-ui";
 import {
@@ -924,15 +925,31 @@ const RichEditorPane = ({
           resource = { ...uploadedResource, url: toDesktopResourceUrl(uploadedResource.url) };
         } catch (error) {
           if (!isDesktopResourceRuntime()) throw error;
-          const staged = await stageDesktopResource(targetMemoId, uploadFile);
-          if (!staged) throw error;
-          resource = {
-            kind: isImage ? "image" : "attachment",
-            filename: uploadFile.name,
-            mimeType: uploadFile.type || null,
-            byteSize: uploadFile.size,
-            url: `edgeever-staged://${staged.id}`,
-          };
+          const listed = await repository.listResources().catch(() => ({ resources: [] as Array<{ memoId?: string; url: string; filename?: string | null; kind?: string | null; mimeType?: string | null; byteSize?: number }> }));
+          const existing = findMatchingMemoResource(
+            listed.resources.filter((item) => item.memoId === targetMemoId),
+            uploadFile.name,
+            isImage ? "image" : "attachment",
+          );
+          if (existing) {
+            resource = {
+              kind: isImage ? "image" : "attachment",
+              filename: existing.filename || uploadFile.name,
+              mimeType: existing.mimeType || uploadFile.type || null,
+              byteSize: existing.byteSize ?? uploadFile.size,
+              url: toDesktopResourceUrl(existing.url),
+            };
+          } else {
+            const staged = await stageDesktopResource(targetMemoId, uploadFile);
+            if (!staged) throw error;
+            resource = {
+              kind: isImage ? "image" : "attachment",
+              filename: uploadFile.name,
+              mimeType: uploadFile.type || null,
+              byteSize: uploadFile.size,
+              url: `edgeever-staged://${staged.id}`,
+            };
+          }
         }
         if (resource.kind === "image") {
           imageReadiness.push(waitForImageSourceReady(resource.url));
@@ -2171,6 +2188,46 @@ const RichEditorPane = ({
 
       if (cancelled) {
         return;
+      }
+
+      const queuedPayload = queuedUpdate?.kind === "memo.update"
+        ? queuedUpdate.payload as MemoUpdateSyncPayload
+        : null;
+      if (
+        isDesktopResourceRuntime()
+        && (
+          contentReferencesStagedResourceUrl(draft?.contentJson)
+          || contentReferencesStagedResourceUrl(queuedPayload?.contentJson)
+          || contentReferencesStagedResourceUrl(queuedPayload?.contentMarkdown)
+        )
+      ) {
+        const [listed, staged] = await Promise.all([
+          repository.listResources().catch(() => ({ resources: [] as Array<{ memoId?: string; url: string; filename?: string | null; kind?: string | null }> })),
+          window.edgeeverDesktop?.listStagedResources?.().catch(() => []) ?? Promise.resolve([]),
+        ]);
+        if (cancelled) return;
+        const liveStagedIds = new Set((staged ?? []).filter((item) => item.memoId === memo.id).map((item) => item.id));
+        const memoResources = listed.resources.filter((resource) => resource.memoId === memo.id);
+        if (draft && contentReferencesStagedResourceUrl(draft.contentJson)) {
+          draft = {
+            ...draft,
+            contentJson: repairTiptapStagedResourceUrls(draft.contentJson, memoResources, liveStagedIds),
+          };
+        }
+        if (queuedUpdate && queuedPayload) {
+          const repairedQueue = repairMemoStagedResourceUrls({
+            contentJson: queuedPayload.contentJson,
+            contentMarkdown: queuedPayload.contentMarkdown,
+          }, memoResources, liveStagedIds);
+          queuedUpdate = {
+            ...queuedUpdate,
+            payload: {
+              ...queuedPayload,
+              contentJson: repairedQueue.contentJson ?? queuedPayload.contentJson,
+              contentMarkdown: repairedQueue.contentMarkdown,
+            },
+          };
+        }
       }
 
       if (queuedUpdate && isMemoUpdateAlreadyApplied(memo, queuedUpdate)) {

@@ -133,6 +133,7 @@ import { isMarkdownFile, readMarkdownFile } from "@/lib/markdown-file-import";
 import { compressImageForUpload } from "@/lib/image-compression";
 import { createScreenshotMemo, screenshotFileFromImportPayload, screenshotImportDedupeKey, screenshotImportGate } from "@/lib/screenshot-import";
 import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceUrl } from "@/lib/desktop-resources";
+import { findMatchingMemoResource } from "@/lib/staged-resource-repair";
 
 const EditorPane = lazy(() => import("./EditorPane").then((module) => ({ default: module.EditorPane })));
 const DiagramEditorPane = lazy(() => import("./DiagramEditorPane"));
@@ -1713,6 +1714,13 @@ export const WorkspaceApp = ({
             return { url: toDesktopResourceUrl(resource.url), filename: resource.filename };
           } catch (error) {
             if (!isDesktopResourceRuntime()) throw error;
+            const listed = await repository.listResources().catch(() => ({ resources: [] as Array<{ memoId?: string; url: string; filename?: string | null; kind?: string | null }> }));
+            const existing = findMatchingMemoResource(
+              listed.resources.filter((resource) => resource.memoId === memoId),
+              uploadFile.name,
+              "image",
+            );
+            if (existing) return { url: toDesktopResourceUrl(existing.url), filename: existing.filename || uploadFile.name };
             const staged = await stageDesktopResource(memoId, uploadFile);
             if (!staged) throw error;
             return { url: `edgeever-staged://${staged.id}`, filename: uploadFile.name };

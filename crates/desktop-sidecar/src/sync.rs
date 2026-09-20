@@ -741,6 +741,29 @@ fn resolve_sync_notebook_id(
     ensure_active_inbox(tx)
 }
 
+fn active_inbox_exists_except(tx: &Transaction<'_>, notebook_id: &str) -> Result<bool, String> {
+    tx.query_row(
+        "SELECT EXISTS(
+           SELECT 1 FROM notebooks
+           WHERE is_deleted = 0
+             AND id <> ?1
+             AND (slug = 'inbox' OR id = 'nb_inbox' OR id GLOB '*_inbox')
+         )",
+        [notebook_id],
+        |row| row.get(0),
+    )
+    .map_err(|e| e.to_string())
+}
+
+fn notebook_is_active(tx: &Transaction<'_>, notebook_id: &str) -> Result<bool, String> {
+    tx.query_row(
+        "SELECT EXISTS(SELECT 1 FROM notebooks WHERE id = ?1 AND is_deleted = 0)",
+        [notebook_id],
+        |row| row.get(0),
+    )
+    .map_err(|e| e.to_string())
+}
+
 fn apply_one_sync_change(
     tx: &Transaction<'_>,
     change: &Value,
@@ -768,7 +791,18 @@ fn apply_one_sync_change(
     }
     if entity_type == "notebook" {
         if operation == "delete" {
-            tx.execute("UPDATE notebooks SET is_deleted = 1, deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?1 AND slug <> 'inbox' AND id <> 'nb_inbox' AND id NOT GLOB '*_inbox'", [&entity_id]).map_err(|e| e.to_string())?;
+            if active_inbox_exists_except(tx, &entity_id)? {
+                tx.execute(
+                    "UPDATE notebooks
+                     SET is_deleted = 1, deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'),
+                         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+                     WHERE id = ?1",
+                    [&entity_id],
+                )
+                .map_err(|e| e.to_string())?;
+            } else {
+                tx.execute("UPDATE notebooks SET is_deleted = 1, deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?1 AND slug <> 'inbox' AND id <> 'nb_inbox' AND id NOT GLOB '*_inbox'", [&entity_id]).map_err(|e| e.to_string())?;
+            }
             return Ok(());
         }
         let notebook = change
@@ -793,7 +827,11 @@ fn apply_one_sync_change(
             None
         };
         let slug = if inbox { Some("inbox") } else { requested_slug };
-        tx.execute("INSERT INTO notebooks (id, parent_id, name, slug, icon, color, sort_order, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) ON CONFLICT(id) DO UPDATE SET parent_id=excluded.parent_id, name=excluded.name, slug=excluded.slug, icon=excluded.icon, color=excluded.color, sort_order=excluded.sort_order, updated_at=excluded.updated_at, is_deleted=0", rusqlite::params![entity_id, parent_id, string_param(notebook, "name")?, slug, notebook.get("icon").and_then(Value::as_str), notebook.get("color").and_then(Value::as_str), notebook.get("sortOrder").and_then(Value::as_i64).unwrap_or(0), string_param(notebook, "createdAt")?, string_param(notebook, "updatedAt")?]).map_err(|e| e.to_string())?;
+        let keep_inactive = inbox
+            && active_inbox_exists_except(tx, &entity_id)?
+            && !notebook_is_active(tx, &entity_id)?;
+        let is_deleted = i64::from(keep_inactive);
+        tx.execute("INSERT INTO notebooks (id, parent_id, name, slug, icon, color, sort_order, created_at, updated_at, is_deleted, deleted_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CASE WHEN ?10 = 1 THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') ELSE NULL END) ON CONFLICT(id) DO UPDATE SET parent_id=excluded.parent_id, name=excluded.name, slug=excluded.slug, icon=excluded.icon, color=excluded.color, sort_order=excluded.sort_order, updated_at=excluded.updated_at, is_deleted=excluded.is_deleted, deleted_at=excluded.deleted_at", rusqlite::params![entity_id, parent_id, string_param(notebook, "name")?, slug, notebook.get("icon").and_then(Value::as_str), notebook.get("color").and_then(Value::as_str), notebook.get("sortOrder").and_then(Value::as_i64).unwrap_or(0), string_param(notebook, "createdAt")?, string_param(notebook, "updatedAt")?, is_deleted]).map_err(|e| e.to_string())?;
         return Ok(());
     }
     if operation == "delete" {

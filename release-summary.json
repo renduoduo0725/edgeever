@@ -1,19 +1,15 @@
 {
-  "version": "1.78.0",
+  "version": "1.78.1",
   "changes": {
     "en-US": [
-      "Support rich-text headings through H6 in the toolbar, slash commands, and Markdown, including Android, iOS, export, and WeChat copy.",
-      "Window the memo list so only visible cards mount, keeping long notebooks responsive while scrolling.",
-      "Reuse the editor across notes, prefetch details on pointer down, and skip the card-menu scroll lock so switching short notes no longer remounts the editor.",
-      "Recycle the hidden desktop renderer after a long background session or a high working set, then restore the last notebook and note when the window reopens.",
-      "Drop decoded images and previous note bodies when switching notes so image-heavy notes do not keep bitmaps and JSON in the renderer."
+      "Collapse duplicate inbox notebooks left by an earlier migration so each workspace keeps one inbox, and desktop sync no longer revives a second empty inbox.",
+      "Keep desktop screenshot notes from losing their uploaded image after the staging file is deleted.",
+      "Recover same-device memo updates when the server already applied the change but the desktop lost the acknowledgement, instead of showing a false conflict."
     ],
     "zh-CN": [
-      "富文本标题支持到六级：工具栏、斜杠命令和 Markdown 都可用，并同步到安卓、iOS、导出和公众号复制。",
-      "笔记列表只渲染当前可见的卡片，笔记本很长时滚动不再把全部卡片挂进页面。",
-      "切换笔记时复用编辑器、按下时预取正文，并去掉卡片菜单的滚动锁定，短笔记不再整页重挂编辑器。",
-      "桌面端在长时间后台或占用偏高时回收隐藏的渲染进程，重新打开窗口时恢复上次的笔记本和笔记。",
-      "切换笔记时释放上一篇的图片和解码后的正文，避免图多的笔记把位图和 JSON 留在渲染进程里。"
+      "合并历史迁移留下的重复「等待分类」笔记本，每个工作区只保留一个收件箱；桌面同步也不会再把第二个空收件箱拉回来。",
+      "桌面端截图笔记在暂存文件被清掉后，会改用已上传的图片地址，不再变成文件名碎片。",
+      "同一台电脑上，服务端已经收下笔记但确认丢失时，桌面端会按本机最近保存内容自动对齐，不再误报冲突。"
     ]
   }
 }

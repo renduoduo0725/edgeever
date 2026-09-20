@@ -11,6 +11,8 @@ import {
   hasSyncStateReset,
   isSyncMetadataInitialized,
   isMemoSyncBaseCurrent,
+  memoUpdatePayloadMatchesRemote,
+  resolveSameDeviceMemoSyncRecovery,
   splitSyncBootstrapWriteBatches,
   summarizeSyncQueue,
 } from "./sync.ts";
@@ -86,6 +88,47 @@ describe("shared sync queue contract", () => {
       currentContentHash: "remote-hash",
       source: "offline_sync",
     });
+  });
+
+  test("treats a lost acknowledgement of the same payload as already applied", () => {
+    const current = { revision: 10, contentHash: "cloud-a" };
+    const expected = { expectedRevision: 9, expectedContentHash: "cloud-before-a" };
+
+    expect(resolveSameDeviceMemoSyncRecovery({
+      current,
+      expected,
+      payloadMatchesRemote: true,
+      remoteProducedLocally: false,
+    })).toBe("ack");
+    expect(memoUpdatePayloadMatchesRemote(
+      { title: "", tags: [], contentMarkdown: "我们和客户签合同包含了几期。", contentJson: { type: "doc" } },
+      { title: "无标题笔记", tags: [], contentMarkdown: "我们和客户签合同包含了几期。", contentJson: { type: "doc" } },
+    )).toBe(true);
+  });
+
+  test("rebases a later local draft when this device produced the cloud snapshot", () => {
+    const current = { revision: 10, contentHash: "cloud-a" };
+    const expected = { expectedRevision: 9, expectedContentHash: "cloud-before-a" };
+
+    expect(resolveSameDeviceMemoSyncRecovery({
+      current,
+      expected,
+      payloadMatchesRemote: false,
+      remoteProducedLocally: true,
+    })).toBe("rebase");
+  });
+
+  test("keeps a genuine remote edit as a conflict", () => {
+    expect(resolveSameDeviceMemoSyncRecovery({
+      current: { revision: 10, contentHash: "cloud-other" },
+      expected: { expectedRevision: 9, expectedContentHash: "cloud-before-a" },
+      payloadMatchesRemote: false,
+      remoteProducedLocally: false,
+    })).toBe("conflict");
+    expect(memoUpdatePayloadMatchesRemote(
+      { title: "无标题笔记", tags: [], contentMarkdown: "本地草稿", contentJson: { type: "doc", content: [] } },
+      { title: "无标题笔记", tags: [], contentMarkdown: "别人改过", contentJson: { type: "doc", content: [] } },
+    )).toBe(false);
   });
 
   test("detects a reset shared by mobile and desktop mirrors", () => {

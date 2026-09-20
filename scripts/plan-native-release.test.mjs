@@ -94,4 +94,16 @@ describe("native release planning", () => {
       planNativeRelease("desktop", ["package.json", "release-summary.json", "AGENTS.md"]),
     ).toEqual({ rebuild: false, relevantChanges: [] });
   });
+
+  test("rebuilds desktop when bundled sidecar migrations change", () => {
+    expect(
+      planNativeRelease("desktop", [
+        "migrations/0053_collapse_duplicate_inbox_notebooks.sql",
+        "apps/api/src/notebook-service.test.mjs",
+      ]),
+    ).toEqual({
+      rebuild: true,
+      relevantChanges: ["migrations/0053_collapse_duplicate_inbox_notebooks.sql"],
+    });
+  });
 });
