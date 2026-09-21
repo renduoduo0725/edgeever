@@ -17,9 +17,9 @@ describe("system information client/instance version hint", () => {
 });
 
 describe("system information diagnostic fields", () => {
-  test("shows desktop instance URL and data directory only as local-only fields", () => {
+  test("shows desktop instance URL as local-only field and omits data directory", () => {
     expect(source).toContain('t("systemInfo.instanceUrl")');
-    expect(source).toContain('t("systemInfo.dataDirectory")');
+    expect(source).not.toContain('t("systemInfo.dataDirectory")');
     expect(source).toContain("localOnly: true");
     expect(source).toContain('clientKind === "desktopApp"');
     expect(source).toContain("getShareableWebSystemInfoItems");
@@ -28,6 +28,23 @@ describe("system information diagnostic fields", () => {
     expect(feedbackSource.replaceAll("getShareableWebSystemInfoItems", "")).not.toContain("getWebSystemInfoItems");
     expect(syncIssueSource).toContain("getShareableWebSystemInfoItems");
     expect(syncIssueSource.replaceAll("getShareableWebSystemInfoItems", "")).not.toContain("getWebSystemInfoItems");
+  });
+
+  test("includes current device model from client runtime diagnostics", () => {
+    expect(source).toContain('t("systemInfo.deviceModel")');
+    expect(source).toContain("diagnostics.clientRuntime?.deviceModel");
+    expect(feedbackSource).toContain("getClientRuntimeDiagnostics");
+    expect(feedbackSource).toContain("clientRuntime: clientRuntimeQuery.data");
+  });
+
+  test("includes current screen resolution", () => {
+    expect(source).toContain('t("systemInfo.screenResolution")');
+    expect(source).toContain('t("systemInfo.screenResolutionValue", parts)');
+    expect(source).toMatch(/systemInfo\.screenResolution[\s\S]{0,220}colSpan: "full"/);
+    expect(source).toContain("readBrowserClientDisplaySize");
+    expect(source).toContain("getClientDisplaySizeParts");
+    expect(source).toContain('window.addEventListener("resize", onResize)');
+    expect(readFileSync(new URL("../../lib/system-diagnostics.ts", import.meta.url), "utf8")).toContain("toDevicePixelScreenSize");
   });
 
   test("distinguishes empty sync from never synced", () => {

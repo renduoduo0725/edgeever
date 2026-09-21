@@ -1,14 +1,28 @@
-<h1><img src="assets/brand/edgeever-icon.svg" alt="EdgeEver Logo" width="40" align="absmiddle" /> EdgeEver</h1>
+<div align="center">
+  <h1>
+    <img src="assets/brand/edgeever-icon.svg" alt="EdgeEver Logo" width="40" align="absmiddle" /> EdgeEver
+  </h1>
+  <p>
+    <b>開源、原生支援 AI、可自由部署的自行託管知識庫與 Evernote（印象筆記）替代方案</b>
+  </p>
+  <p>
+    <a href="https://github.com/tianma-if/edgeever/stargazers"><img src="https://img.shields.io/github/stars/tianma-if/edgeever?style=social" alt="GitHub Stars" /></a>
+    <a href="https://github.com/tianma-if/edgeever/network/members"><img src="https://img.shields.io/github/forks/tianma-if/edgeever?style=social" alt="GitHub Forks" /></a>
+    <a href="https://github.com/tianma-if/edgeever/pkgs/container/edgeever"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls" alt="Docker Pulls" /></a>
+    <a href="https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social"><img src="https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt" alt="Product Hunt" /></a>
+    <a href="https://afdian.com/a/tianma-if"><img src="https://img.shields.io/badge/愛發電-946ce6?style=social&logo=github-sponsors" alt="愛發電贊助" /></a>
+  </p>
+  <p>
+    <a href="README.zh-CN.md">简体中文</a> | <b>繁體中文</b> | <a href="README.md">English</a> | <a href="README.ja.md">日本語</a>
+  </p>
+  <p>
+    <a href="#wechat-group">💬 微信交流群</a> &nbsp;|&nbsp;
+    <a href="https://demo.edgeever.org">🌐 線上展示</a> &nbsp;|&nbsp;
+    <a href="#用戶端下載">📱 用戶端下載</a>
+  </p>
+</div>
 
-[![GitHub Stars](https://img.shields.io/github/stars/tianma-if/edgeever?style=social)](https://github.com/tianma-if/edgeever/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/tianma-if/edgeever?style=social)](https://github.com/tianma-if/edgeever/network/members)
-[![Docker Pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls)](https://github.com/tianma-if/edgeever/pkgs/container/edgeever)
-[![Product Hunt](https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt)](https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social)
-[![愛發電贊助](https://img.shields.io/badge/愛發電-946ce6?style=social&logo=github-sponsors)](https://afdian.com/a/tianma-if)
 
-[简体中文](README.zh-CN.md) | 繁體中文 | [English](README.md) | [日本語](README.ja.md)
-
-> **EdgeEver：開源、原生支援 AI、可自由部署的自行託管知識庫與 Evernote（印象筆記）替代方案。**
 
 EdgeEver 是一款現代化的開源筆記與個人知識庫工作區。它為你找回經典 Evernote 的三欄高效體驗，同時具備完全開放的資料架構與原生 AI Agent 聯動能力，讓個人知識沉澱更輕量、更自由。
 
@@ -22,10 +36,10 @@ EdgeEver 是一款現代化的開源筆記與個人知識庫工作區。它為�
 很多長期使用 **Evernote** 的使用者，核心需求只是一個**可靠、開放、回應迅速**的個人知識庫。然而，當下的主流方案都各有痛點：
 
 * **Evernote**：功能日益臃腫，商業廣告與繁雜附加功能充斥，效能與記憶體佔用居高不下；且資料相對封閉難以匯出，免費版限制重重，支援 AI/MCP 的方案訂閱成本高昂。
-* **Obsidian**：Markdown 開放，核心閉源；官方同步收費，第三方同步繁瑣；圖片與附件與文字混存，儲存庫體積極易膨脹導致行動端同步緩慢，且刪除筆記後殘留附件難清理；對於「隨時隨地隨手記」的輕量場景來說偏重。
-* **Memos 等輕量筆記**：雖然簡單好用，但時間軸卡片版面與習慣了經典「三欄工作流程」的使用者有著天然的互動習慣差異。
+* **Obsidian**：Markdown 開放，核心閉源；官方同步收費，第三方同步繁瑣；純本地檔案依賴遍歷掃描，當筆記累積到數千上萬條或載入複雜外掛後，冷啟動與全庫檢索明顯卡頓遲緩；圖片與附件與文字混存，儲存庫體積極易膨脹導致行動端同步緩慢，且刪除筆記後殘留附件難清理；對於「隨時隨地隨手記」的輕量場景來說偏重。
+* **Memos / Flomo 等輕量筆記**：雖然簡單好用，但時間軸卡片版面與習慣了經典「三欄工作流程」的使用者有著天然的互動習慣差異。
 
-**EdgeEver 恰好填補了這一空白**：全端開源，雲端同步與自行託管都可自行部署；同時保留經典三欄版面與流暢排版，原生支援接入 AI Agent，部署維護零門檻、零費用。
+**EdgeEver 恰好填補了這一空白**：全端開源，雲端同步與自行託管都可自行部署；同時保留經典三欄版面與流暢排版，萬條筆記常駐依然輕盈絲滑，原生支援接入 AI Agent，部署維護零門檻、零費用。
 
 > 💡 **建議做法：**
 > 全平台隨時捕捉靈感與素材，在經典三欄中深度整理沉澱；借助原生 MCP 協定，不僅能讓 AI Agent 隨時檢索與協同思考，還可輕鬆串接 Notion、飛書等外部常用工具鏈；對外一鍵排版發布，完整資料零成本自行託管，打造開放互聯、真正屬於你的智慧第二大腦。
@@ -58,12 +72,13 @@ EdgeEver 是一款現代化的開源筆記與個人知識庫工作區。它為�
 - **豐富的外掛 API**：可透過[外掛開發文件](docs/plugin-development.zh-CN.md)擴充 EdgeEver。
 - **多端無縫同步，無裝置限制**：自行託管資料無商業限制，擺脫免費帳號僅限 2 台裝置的束縛，在 PC、平板與手機上隨心同步。
 - **經典三欄版面與專注模式**：筆記本樹、筆記列表與編輯區一目了然；桌面版一鍵開啟專注模式，讓思緒盡情鋪滿螢幕。
+- **桌面版輕快省記憶體**：切換筆記不會堆積舊圖與舊文件，長時間掛在背景也保持流暢。
 - **無限層級筆記本**：輕鬆建構清晰的多層目錄結構。
 - **微信公眾號一鍵排版與複製**：專為中文創作者設計，支援將筆記一鍵轉換為帶行內樣式的公眾號美化格式，直接複製貼上至微信公眾號後台，告別複雜的第三方排版工具。
 - **優雅的雙檢視編輯**：桌面版支援在富文字與 Markdown 原始碼檢視之間自由切換。
 - **單篇筆記便捷匯出**：可將目前筆記直接匯出為 Markdown、HTML 或 PDF，方便獨立儲存、分享與發布。
 - **Mermaid 架構圖與流程圖繪製**：原生支援 Mermaid 程式碼區塊繪製，檢視切換時完整保留可編輯原始碼，讓繪製邏輯圖表更直觀。
-- **視覺化圖表筆記**：Web 與桌面版支援建立、編輯心智圖、流程圖和架構圖，提供語意元件、系統邊界、連線說明、自動版面、歷史版本及 PNG/SVG 匯出；Android 與 iOS App 保留同一份圖表資料，並提供語意化唯讀檢視。詳見[視覺化圖表筆記設計說明](docs/visual-diagram-notes.zh-CN.md)。
+- **視覺化圖表筆記**：告別外部繪圖軟體，在筆記內即可直觀繪製心智圖、流程圖與架構圖；基於結構化 IR，內建助手與外部 AI Agent 可一句話智慧產生與修改圖表，支援自動版面、全端同步及向量匯出。詳見[視覺化圖表筆記設計說明](docs/visual-diagram-notes.zh-CN.md)。
 - **筆記歷史版本回溯**：自動記錄修改歷史，隨時查閱與還原過往版本。
 - **公開筆記分享**：支援公開分享筆記，並可隨時取消分享；需要時可為分享連結開啟自動產生的存取密碼。
 - **行動 App 微信公眾號文章擷取**：在手機上將微信公眾號文章分享至 EdgeEver，即可擷取正文並儲存為可繼續編輯的筆記。
@@ -154,7 +169,9 @@ EdgeEver 官方容器映像託管於 GitHub Container Registry（GHCR）。部�
 - Bug、功能建議和部署問題請優先提交 [GitHub Issues](https://github.com/tianma-if/edgeever/issues)，方便後續使用者檢索和重用解決方案。
 - 貢獻程式碼前請閱讀[貢獻程式碼須知](CONTRIBUTING.zh-CN.md)。如果您的 Fork 同時用於部署 EdgeEver，請將 `main` 分支僅用於部署；從官方 `upstream/main` 新建獨立分支，在該分支中同步上游、開發並提交 Pull Request，不要在部署用的 `main` 上開發或執行 Sync fork。
 
-### 微信交流群
+<hr>
+
+<h3 id="wechat-group">微信交流群</h3>
 
 歡迎加入 EdgeEver AI 交流群，這裡聚集了大量 Vibe Coding 與 AI 玩家。一起交流 EdgeEver 體驗、AI Agent 實戰落地、高性價比／免費 AI 資源及自動化工作流程。
 

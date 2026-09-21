@@ -18,11 +18,13 @@ bun run release -- \
   --label enhancement \
   --change-en "Run required release checks in parallel." \
   --change-zh "并行执行发布所需检查。" \
+  --change-locale "ja:必要なリリースチェックを並列実行します。" \
   --change-commit "abcdef1"
 ```
 
-多项变化需要按组重复传入 `--change-en`、`--change-zh` 和
-`--change-commit`。一项变化可以关联多个以逗号分隔的提交：
+多项变化需要按组重复传入 `--change-en`、`--change-zh`、
+`--change-locale ja:` 和 `--change-commit`。App Store 列表含日文，因此必须提供
+日文 What’s New。一项变化可以关联多个以逗号分隔的提交：
 
 ```bash
 --change-commit "abcdef1,1234567"
@@ -62,11 +64,14 @@ bun run release -- \
 - 独立工作流会把同一个已验证 Git 提交发送到 CNB；正式 Release 发布后，CNB
   在腾讯云侧异步构建并审计 TCR 公共镜像。其耗时或失败不会阻塞 GitHub
   Release，也不会把已发布版本恢复为 Draft。
-- 此命令不会自行授权或执行移动端商店交付。Draft 原生资产准备完成后，发布
-  命令会强制核验 Android APK 是否使用 Google Play 应用签名证书；未通过时
-  保持 Draft 并停止。此时先针对同一 Draft 执行
+- Draft 原生资产准备完成后，发布命令会强制核验 Android APK 是否使用
+  Google Play 应用签名证书；未通过时保持 Draft 并停止。此时先针对同一 Draft
+  执行
   `bun run publish:stores -- --release vX.Y.Z --platform android --android-track production`，
-  再重新执行原发布命令续跑。详见
+  再重新执行原发布命令续跑。当审计范围内包含 iOS 运行时变化时，同一条命令
+  会在 GitHub 公开发布之后启动 Xcode Cloud 并提交 App Review。iOS 失败不会
+  把已经公开的 GitHub Release 恢复为 Draft；用
+  `bun run publish:stores -- --release vX.Y.Z --platform ios` 重试即可。详见
   [移动端商店交付](store-delivery.zh-CN.md)。
 - 重建后的桌面资产上传到 Draft 后，本地发布命令只签署
   `latest-windows.json`，私钥不会进入 GitHub Actions。第二次桌面工作流会重新

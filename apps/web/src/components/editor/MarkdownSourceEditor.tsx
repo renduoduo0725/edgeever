@@ -273,7 +273,10 @@ export const MarkdownSourceEditor = forwardRef<MarkdownSourceEditorRef, Markdown
             autocompletion: false,
             rectangularSelection: false,
             crosshairCursor: false,
-            highlightSelectionMatches: true,
+            // Occurrence highlighting paints other copies of the selected
+            // text with a selection-like color, so a short phrase also
+            // lights up later list items and looks like extra selection.
+            highlightSelectionMatches: false,
             closeBracketsKeymap: true,
             searchKeymap: true,
             foldKeymap: false,

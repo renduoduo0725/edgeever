@@ -54,6 +54,12 @@ describe("markdown theme contracts", () => {
     expect(editorSource).toContain("xcodeLightInit({ styles: lightMarkdownHighlightStyles })");
   });
 
+  test("markdown source mode does not highlight other occurrences of the current selection", () => {
+    const editorSource = readFileSync(new URL("../components/editor/MarkdownSourceEditor.tsx", import.meta.url), "utf8");
+    expect(editorSource).toContain("highlightSelectionMatches: false");
+    expect(editorSource).not.toContain("highlightSelectionMatches: true");
+  });
+
   test("the editor toolbar can switch Markdown source themes", () => {
     const toolbar = readFileSync(new URL("../components/EditorToolbar.tsx", import.meta.url), "utf8");
     expect(toolbar).toContain("useMarkdownTheme");

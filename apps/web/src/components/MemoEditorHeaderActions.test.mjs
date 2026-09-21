@@ -62,8 +62,11 @@ describe("shared memo editor header actions", () => {
     expect(editorToolbarSource).toContain("<MemoEditorToolbarDivider");
     expect(diagramToolbarSource).toContain("<MemoEditorToolbarDivider");
     expect(toolbarChromeSource).toContain("MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME");
+    expect(editorToolbarSource).toContain("MEMO_EDITOR_TOOLBAR_COLLAPSED_CLASS_NAME");
+    expect(editorToolbarSource).toContain('item.classList.toggle("invisible", wrapped)');
     expect(densitySource).toContain("sm:min-h-9 sm:px-4 sm:py-0.5");
     expect(densitySource).toContain("sm:px-4 sm:py-0.5");
+    expect(densitySource).toContain("max-h-12 overflow-hidden sm:max-h-9");
     expect(densitySource.match(/MEMO_EDITOR_TOP_ROW_CLASS_NAME =\s*"([^"]+)"/)?.[1]).not.toContain("sm:px-7");
     expect(densitySource.match(/MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME =\s*"([^"]+)"/)?.[1]).not.toContain("sm:px-7");
     expect(densitySource).toContain("lg:space-y-0 lg:px-10 lg:py-0");

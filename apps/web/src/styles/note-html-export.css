@@ -144,6 +144,22 @@ body {
   padding-left: 1.5rem;
 }
 
+.edgeever-html-content details {
+  margin: 0.2em 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.edgeever-html-content summary {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.edgeever-html-content details > :not(summary) {
+  margin-top: 0.15em;
+}
+
 .edgeever-html-content blockquote {
   margin: 1rem 0;
   border-left: 4px solid #10b981;

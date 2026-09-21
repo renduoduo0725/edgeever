@@ -270,6 +270,24 @@
   font-weight: 700;
 }
 
+.edgeever-print-content details {
+  break-inside: avoid-page;
+  margin: 2mm 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.edgeever-print-content summary {
+  font-weight: 500;
+}
+
+.edgeever-print-content details > :not(summary),
+.edgeever-print-content [data-type="detailsContent"],
+.edgeever-print-content [data-type="detailsContent"][hidden] {
+  display: block !important;
+}
+
 .edgeever-print-content [data-edgeever-theme-block] {
   break-inside: avoid-page;
   margin: 5mm 0;

@@ -1,15 +1,20 @@
 {
-  "version": "1.78.1",
+  "version": "1.80.0",
   "changes": {
     "en-US": [
-      "Collapse duplicate inbox notebooks left by an earlier migration so each workspace keeps one inbox, and desktop sync no longer revives a second empty inbox.",
-      "Keep desktop screenshot notes from losing their uploaded image after the staging file is deleted.",
-      "Recover same-device memo updates when the server already applied the change but the desktop lost the acknowledgement, instead of showing a false conflict."
+      "Add block drag handles and formula insertion in the editor, with caret-aware insertion and a clearer table icon.",
+      "Show the Mac product name and physical screen resolution more accurately in system information.",
+      "Make emptying the trash reliable when it is already empty."
     ],
     "zh-CN": [
-      "合并历史迁移留下的重复「等待分类」笔记本，每个工作区只保留一个收件箱；桌面同步也不会再把第二个空收件箱拉回来。",
-      "桌面端截图笔记在暂存文件被清掉后，会改用已上传的图片地址，不再变成文件名碎片。",
-      "同一台电脑上，服务端已经收下笔记但确认丢失时，桌面端会按本机最近保存内容自动对齐，不再误报冲突。"
+      "编辑器新增内容块拖拽手柄与公式插入，并支持在光标处插入公式及更清晰的表格图标。",
+      "系统信息现在能更准确地显示 Mac 产品名称和物理屏幕分辨率。",
+      "修复废纸篓已为空时再次清空可能失败的问题。"
+    ],
+    "ja": [
+      "エディターにブロックのドラッグハンドルと数式挿入を追加し、カーソル位置への挿入と分かりやすい表アイコンに対応しました。",
+      "システム情報でMacの製品名と物理画面解像度をより正確に表示するようになりました。",
+      "ゴミ箱がすでに空の場合でも、空にする操作が失敗しないよう修正しました。"
     ]
   }
 }

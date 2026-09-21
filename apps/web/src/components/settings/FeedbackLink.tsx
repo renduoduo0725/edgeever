@@ -1,24 +1,34 @@
 import { buildGitHubFeedbackUrl } from "@edgeever/shared";
+import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, MessageSquare } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { getClientRuntimeDiagnostics } from "@/lib/system-diagnostics";
 import { cn } from "@/lib/utils";
 import { getShareableWebSystemInfoItems } from "./SystemInfoCard";
 
 export const FeedbackLink = ({ className }: { className?: string }) => {
   const { t, i18n } = useTranslation();
+  const clientRuntimeQuery = useQuery({
+    queryKey: ["system-info-client-runtime"],
+    queryFn: getClientRuntimeDiagnostics,
+    staleTime: Number.POSITIVE_INFINITY,
+    retry: 1,
+  });
   const href = useMemo(
     () =>
       buildGitHubFeedbackUrl({
         contentHeading: t("feedback.issueContentHeading"),
         contentPrompt: t("feedback.issueContentPrompt"),
         privacyNotice: t("feedback.privacyNotice"),
-        systemInfo: getShareableWebSystemInfoItems(t, i18n.language),
+        systemInfo: getShareableWebSystemInfoItems(t, i18n.language, {
+          clientRuntime: clientRuntimeQuery.data,
+        }),
         systemInfoHeading: t("feedback.systemInfoHeading"),
         systemInfoNotice: t("feedback.systemInfoNotice"),
         titlePrefix: t("feedback.issueTitlePrefix"),
       }),
-    [i18n.language, t]
+    [clientRuntimeQuery.data, i18n.language, t]
   );
 
   return (

@@ -1,5 +1,5 @@
 import type { Editor } from "@tiptap/react";
-import { MEMO_CONTENT_STYLE } from "@edgeever/shared";
+import { flattenDetailsForLinearHtml, MEMO_CONTENT_STYLE } from "@edgeever/shared";
 import { marked } from "marked";
 import { MERMAID_THEME_PALETTES } from "@/components/ThemeProvider";
 import { copyHtmlToClipboard } from "@/lib/clipboard";
@@ -490,6 +490,7 @@ export const preparePublishArticle = (
     context.customColors,
     context.customCss,
   );
+  flattenDetailsForLinearHtml(root);
   convertImageGalleriesForWeChat(root);
   return root;
 };

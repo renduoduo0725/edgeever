@@ -4,6 +4,7 @@ import { TaskItem, TaskList } from "@tiptap/extension-list";
 import { TableKit } from "@tiptap/extension-table";
 import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
+import { createEdgeEverDetailsExtensions } from "./details";
 import { FileAttachment } from "./file-attachment";
 import { ImageGallery } from "./image-gallery";
 import { MergeDivider } from "./merge-divider";
@@ -44,6 +45,7 @@ export const createEdgeEverDocumentExtensions = (
   ...withOptional(options.pdf, PdfAttachment),
   ...withOptional(options.file, FileAttachment),
   MergeDivider,
+  ...createEdgeEverDetailsExtensions(),
   ...withOptional(options.pluginEmbed, PluginEmbed),
   ...options.mathematics,
   ...(options.markdown

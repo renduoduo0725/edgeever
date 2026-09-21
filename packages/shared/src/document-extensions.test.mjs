@@ -34,6 +34,9 @@ describe("shared document extensions", () => {
     expect(names).toContain("edgeeverPdfAttachment");
     expect(names).toContain("edgeeverFileAttachment");
     expect(names).toContain(MERGE_DIVIDER_NODE_TYPE);
+    expect(names).toContain("details");
+    expect(names).toContain("detailsSummary");
+    expect(names).toContain("detailsContent");
     expect(names).toContain("edgeeverPluginEmbed");
     expect(names).toContain("markdown");
   });

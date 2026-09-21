@@ -72,7 +72,23 @@ describe("store delivery command", () => {
     expect(workflow).not.toContain("--platform ios");
     expect(workflow).toContain("working-directory: apps/ios");
     expect(workflow).toContain(
-      "APP_STORE_BUILD_NUMBER: ${{ inputs.ios_build_number }}",
+      "group: edgeever-store-delivery-${{ inputs.release_tag }}-${{ inputs.platform }}",
+    );
+    expect(workflow).toContain(".edgeever-ci/scripts/xcode-cloud-control.py");
+    expect(workflow).toContain("--wait-valid");
+    expect(workflow).not.toContain("--require-sha");
+    expect(workflow).not.toContain("--git-ref");
+    expect(workflow).toContain("git show \"$source_sha:apps/ios/Config/Version.xcconfig\"");
+    expect(workflow).toContain("cloud_version");
+    expect(workflow).toContain("grep -E '^(build_number|app_store_build_id|build_run_id|source_sha|processing_state)='");
+    expect(workflow).toContain('refs/tags/${RELEASE_TAG}');
+    expect(workflow).toContain(
+      "APP_STORE_BUILD_NUMBER: ${{ steps.ios_build.outputs.build_number }}",
+    );
+    expect(workflow).toContain("APP_STORE_RELEASE_NOTES_EN:");
+    expect(workflow).toContain("missing Japanese What's New");
+    expect(workflow).not.toContain(
+      "Pass ios_build_number; do not build from apps/mobile or EAS.",
     );
     expect(workflow).toContain(
       "APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.EDGEEVER_APPLE_API_ISSUER }}",
@@ -96,6 +112,7 @@ describe("store delivery command", () => {
       "utf8",
     );
     expect(fastfile).toContain("precheck_include_in_app_purchases: false");
+    expect(fastfile).toContain("APP_STORE_RELEASE_NOTES_JA is required");
   });
 
   test("replaces the GitHub APK with the Play-signed universal APK", () => {

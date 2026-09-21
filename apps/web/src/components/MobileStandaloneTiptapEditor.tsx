@@ -7,7 +7,7 @@ import { FileAttachment } from "@/components/editor/FileAttachment";
 import Image from "@tiptap/extension-image";
 import { mergeAttributes } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
-import { createExcerpt, createEdgeEverDocumentExtensions, docToMarkdown, docToText, emptyDoc, getImageReferrerPolicy, isPdfAttachment, type MemoDetail, type MemoEditSession, type Notebook, type TagSummary, type TiptapDoc } from "@edgeever/shared";
+import { createExcerpt, createEdgeEverDocumentExtensions, docToMarkdown, docToText, emptyDoc, getImageReferrerPolicy, isPdfAttachment, wrapDetailsContentHtml, type MemoDetail, type MemoEditSession, type Notebook, type TagSummary, type TiptapDoc } from "@edgeever/shared";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import { getMobileEditorInputAttributes, getMobileEditorPlaceholder } from "@edgeever/shared/mobile-editor";
 import { EdgeEverLink } from "@edgeever/shared/editor-link";
@@ -217,6 +217,7 @@ export const MobileStandaloneTiptapEditor = ({
     content: emptyDoc(),
     editorProps: {
       attributes: getMobileEditorInputAttributes("edgeever-mobile-tiptap-content"),
+      transformPastedHTML: (html) => wrapDetailsContentHtml(html),
       handleKeyDown: (view, event) => {
         if (event.key !== "Backspace" || !preserveEmptyListIndentOnBackspace(view.state, view.dispatch)) {
           return false;

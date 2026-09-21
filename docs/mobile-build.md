@@ -141,7 +141,9 @@ repository.
 
 iOS is a SwiftUI app in `apps/ios`, using the same bundle identifier
 `org.edgeever.mobile`. Do not build or submit iOS from `apps/mobile` or EAS.
-On macOS beta hosts, archives must go through Xcode Cloud. See
+On macOS beta hosts, archives must go through Xcode Cloud. Formal Releases
+start that Archive and submit App Review automatically when iOS runtime
+changes are in the audited range. See
 [iOS Xcode Cloud](ios-xcode-cloud.md) and [Mobile Store Delivery](store-delivery.md).
 
 ## EAS

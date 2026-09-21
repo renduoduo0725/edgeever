@@ -481,6 +481,9 @@ input {
   user-select: text;
   caret-color: auto;
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  font-feature-settings: "chws" 1;
 }
 
 /* Keep semantic emphasis visible even though the standalone shell disables

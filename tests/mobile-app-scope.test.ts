@@ -25,6 +25,14 @@ const iosWorkspaceViewSource = readFileSync(
   new URL("../apps/ios/EdgeEver/Features/Workspace/WorkspaceView.swift", import.meta.url),
   "utf8"
 );
+const iosMemoDetailSource = readFileSync(
+  new URL("../apps/ios/EdgeEver/Features/Workspace/MemoDetailView.swift", import.meta.url),
+  "utf8"
+);
+const mobilePickersSource = readFileSync(
+  new URL("../apps/mobile/src/screens/WorkspacePickers.tsx", import.meta.url),
+  "utf8"
+);
 const mobileTagsSource = readFileSync(
   new URL("../apps/mobile/src/lib/mobile-tags.ts", import.meta.url),
   "utf8"
@@ -194,6 +202,19 @@ describe("mobile app scope", () => {
     expect(localTiptapEditorSource).toContain('import("beautiful-mermaid")');
     expect(localTiptapEditorSource).toContain('import("html-to-image")');
     expect(localTiptapEditorSource).not.toContain('import "mermaid/dist/mermaid.min.js"');
+  });
+
+  test("lets view-mode change the note notebook without entering the editor", () => {
+    expect(memoDetailSource).toContain('setViewerNotebookPickerOpen(true)');
+    expect(memoDetailSource).toContain("payload: { notebookId: nextNotebookId }");
+    expect(memoDetailSource).toContain("includeAllNotes={false}");
+    expect(memoDetailSource).toContain('accessibilityLabel="所在笔记本"');
+    expect(memoDetailSource).toContain("handleViewerNotebookSelect");
+    expect(mobilePickersSource).toContain("includeAllNotes = true");
+    expect(iosMemoDetailSource).toContain("showNotebookPicker = true");
+    expect(iosMemoDetailSource).toContain("moveMemoToNotebook");
+    expect(iosMemoDetailSource).toContain("EditNotebookPickerSheet");
+    expect(iosMemoDetailSource).toContain("notebookAffiliationControl");
   });
 
   test("declares iOS privacy strings and full-screen phone-on-iPad presentation", () => {

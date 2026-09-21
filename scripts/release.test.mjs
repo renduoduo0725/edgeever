@@ -10,6 +10,8 @@ import {
   draftRunResumeAction,
   nextVersion,
   parseReleaseCheckpoint,
+  updateIosMarketingVersion,
+  updateIosProjectMarketingVersion,
   parseReleaseArgs,
   playDeliveryResumeAction,
   playDeliveryFailureStrategy,
@@ -93,6 +95,46 @@ describe("release automation", () => {
     expect(mobileWait).toBeGreaterThan(androidReady);
     expect(playDelivery).toBeGreaterThan(mobileWait);
     expect(playDelivery).toBeLessThan(allDraftGates);
+  });
+
+  test("starts App Store delivery from the native iOS tree without blocking GitHub publication", () => {
+    const releaseSource = readFileSync(new URL("./release.mjs", import.meta.url), "utf8");
+    const iosPlan = releaseSource.indexOf('planNativeRelease("ios"');
+    const iosDispatch = releaseSource.indexOf("startIosStoreDelivery(");
+    const publication = releaseSource.indexOf('"--draft=false"');
+    const iosWait = releaseSource.indexOf('label: "App Store delivery"');
+    const restoreDraft = releaseSource.lastIndexOf('"--draft=true"');
+
+    expect(iosPlan).toBeGreaterThan(0);
+    expect(iosDispatch).toBeGreaterThan(iosPlan);
+    expect(iosDispatch).toBeLessThan(publication);
+    expect(iosWait).toBeGreaterThan(publication);
+    expect(iosWait).toBeGreaterThan(restoreDraft);
+    expect(releaseSource).toContain('platform: "ios"');
+    expect(releaseSource).toContain("iosRebuild: iosPlan.rebuild");
+    expect(releaseSource).toContain("updateIosMarketingVersion");
+  });
+
+  test("rewrites the iOS marketing version onto the Release tag", () => {
+    expect(
+      updateIosMarketingVersion(
+        "// comment\nMARKETING_VERSION = 1.74.0\nCURRENT_PROJECT_VERSION = 49\n",
+        "1.79.0",
+      ),
+    ).toContain("MARKETING_VERSION = 1.79.0");
+  });
+
+  test("keeps the generated iOS project aligned with the Release tag", () => {
+    const updated = updateIosProjectMarketingVersion(
+      [
+        "MARKETING_VERSION = 1.79.0;",
+        "MARKETING_VERSION = 1.79.0;",
+      ].join("\n"),
+      "1.80.0",
+    );
+
+    expect(updated.match(/MARKETING_VERSION = 1\.80\.0;/g)).toHaveLength(2);
+    expect(updated).not.toContain("MARKETING_VERSION = 1.79.0;");
   });
 
   test("restores an exact Draft checkpoint without exposing it in Issue text", () => {
@@ -262,6 +304,7 @@ describe("release automation", () => {
       "--label", "maintenance",
       "--change-en", "Update the release flow.",
       "--change-zh", "更新发布流程。",
+      "--change-locale", "ja:リリースフローを更新します。",
       "--change-commit", "abc1234",
     ])).toMatchObject({ installDesktop: false });
     expect(parseReleaseArgs([
@@ -270,9 +313,29 @@ describe("release automation", () => {
       "--label", "maintenance",
       "--change-en", "Update the release flow.",
       "--change-zh", "更新发布流程。",
+      "--change-locale", "ja:リリースフローを更新します。",
       "--change-commit", "abc1234",
       "--install-desktop",
     ])).toMatchObject({ installDesktop: true });
+  });
+
+  test("requires Japanese App Store What's New", () => {
+    expect(() =>
+      parseReleaseArgs([
+        "--issue-title",
+        "Missing Japanese notes",
+        "--bump",
+        "patch",
+        "--label",
+        "bug",
+        "--change-en",
+        "Fix a bug.",
+        "--change-zh",
+        "修复问题。",
+        "--change-commit",
+        "abc1234",
+      ]),
+    ).toThrow("--change-locale ja is required");
   });
 
   test("rejects mismatched bilingual changes", () => {

@@ -508,6 +508,7 @@ export const generateCardCss = ({
       color: var(--ee-text-color);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      font-feature-settings: "chws" 1;
     }
 
     .edgeever-image-card {

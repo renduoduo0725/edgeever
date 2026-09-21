@@ -568,6 +568,43 @@ struct SettingsView: View {
         var localOnly = false
     }
 
+    private var currentClientDisplaySize: String {
+        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+        let screen = scene?.screen ?? UIScreen.main
+        let screenWidth = Int(screen.bounds.width.rounded())
+        let screenHeight = Int(screen.bounds.height.rounded())
+        guard screenWidth > 0, screenHeight > 0, screen.scale > 0 else {
+            return env.preferences.t("未知", en: "Unknown")
+        }
+        let screenText = "\(screenWidth)×\(screenHeight)"
+        let dpr = Self.formatDevicePixelRatio(screen.scale)
+        return env.preferences.t(
+            "\(screenText) @\(dpr)x",
+            en: "\(screenText) @\(dpr)x",
+            ja: "\(screenText) @\(dpr)x"
+        )
+    }
+
+    private static func formatDevicePixelRatio(_ value: CGFloat) -> String {
+        let rounded = (value * 100).rounded() / 100
+        if rounded == CGFloat(Int(rounded)) {
+            return String(Int(rounded))
+        }
+        return String(format: "%g", Double(rounded))
+    }
+
+    private var currentDeviceModel: String {
+        var info = utsname()
+        uname(&info)
+        let machine = withUnsafePointer(to: &info.machine) { pointer in
+            pointer.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) {
+                String(cString: $0)
+            }
+        }
+        let trimmed = machine.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? env.preferences.t("未知", en: "Unknown") : trimmed
+    }
+
     private var clientSystemInfoItems: [SystemInfoItem] {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
@@ -580,6 +617,14 @@ struct SettingsView: View {
             SystemInfoItem(label: env.preferences.t("客户端", en: "Client"), value: env.preferences.t("移动应用", en: "Mobile app")),
             SystemInfoItem(label: env.preferences.t("系统", en: "System"), value: "iOS"),
             SystemInfoItem(label: env.preferences.t("系统版本", en: "System version"), value: UIDevice.current.systemVersion),
+            SystemInfoItem(
+                label: env.preferences.t("设备型号", en: "Device model", ja: "機種"),
+                value: currentDeviceModel
+            ),
+            SystemInfoItem(
+                label: env.preferences.t("屏幕分辨率", en: "Screen resolution", ja: "画面解像度"),
+                value: currentClientDisplaySize
+            ),
             SystemInfoItem(label: env.preferences.t("语言", en: "Language"), value: language),
             SystemInfoItem(label: env.preferences.t("时区", en: "Time zone"), value: TimeZone.current.identifier),
             SystemInfoItem(label: env.preferences.t("安装形态", en: "Mode"), value: env.preferences.t("原生 SwiftUI 应用", en: "Native SwiftUI app")),

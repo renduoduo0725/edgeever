@@ -169,6 +169,7 @@ export const resolveMemoContentDoc = (
     docContainsNodeType(currentDoc, INLINE_MATH_NODE_TYPE)
     || docContainsNodeType(currentDoc, PDF_ATTACHMENT_NODE_TYPE)
     || docContainsNodeType(currentDoc, FILE_ATTACHMENT_NODE_TYPE)
+    || docContainsNodeType(currentDoc, "details")
   ) {
     return currentDoc;
   }
@@ -184,6 +185,7 @@ export const resolveMemoContentDoc = (
     || docContainsNodeType(markdownDoc, MERGE_DIVIDER_NODE_TYPE)
     || docContainsNodeType(markdownDoc, BLOCK_MATH_NODE_TYPE)
     || docContainsNodeType(markdownDoc, INLINE_MATH_NODE_TYPE)
+    || docContainsNodeType(markdownDoc, "details")
     || !docToText(currentDoc)
     ? markdownDoc
     : currentDoc;

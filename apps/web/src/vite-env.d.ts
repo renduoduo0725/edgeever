@@ -52,6 +52,7 @@ interface EdgeEverDesktopBridge {
     autoUpdateSupported: boolean;
     platform: string;
     architecture: string;
+    deviceModel: string;
     osVersion: string;
     osRelease: string;
     electron: string;

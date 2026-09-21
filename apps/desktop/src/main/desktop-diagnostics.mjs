@@ -36,6 +36,7 @@ export const buildDesktopDiagnosticIssueUrl = ({ diagnostic, systemInfo }) => {
     appVersion: sanitizeDesktopDiagnosticText(systemInfo.appVersion),
     platform: sanitizeDesktopDiagnosticText(systemInfo.platform),
     architecture: sanitizeDesktopDiagnosticText(systemInfo.architecture),
+    deviceModel: sanitizeDesktopDiagnosticText(systemInfo.deviceModel),
     osVersion: sanitizeDesktopDiagnosticText(systemInfo.osVersion),
     osRelease: sanitizeDesktopDiagnosticText(systemInfo.osRelease),
     electron: sanitizeDesktopDiagnosticText(systemInfo.electron),

@@ -411,6 +411,91 @@ describe("Theme block compatibility", () => {
   });
 });
 
+describe("details fold blocks", () => {
+  test("parses GitHub details HTML and round-trips through Markdown", () => {
+    const markdown = `<details>
+<summary>展开看图</summary>
+
+hello **world**
+
+</details>`;
+    const doc = markdownToDoc(markdown);
+
+    expect(doc.content[0]).toMatchObject({
+      type: "details",
+      content: [
+        {
+          type: "detailsSummary",
+          content: [{ type: "text", text: "展开看图" }],
+        },
+        {
+          type: "detailsContent",
+          content: [{
+            type: "paragraph",
+            content: [
+              { type: "text", text: "hello " },
+              { type: "text", text: "world", marks: [{ type: "bold" }] },
+            ],
+          }],
+        },
+      ],
+    });
+
+    const serialized = docToMarkdown(doc);
+    expect(serialized).toContain("<details>");
+    expect(serialized).toContain("<summary>展开看图</summary>");
+    expect(serialized).toContain("hello **world**");
+    expect(markdownToDoc(serialized)).toEqual(doc);
+  });
+
+  test("converts an HTML image inside details into an image node", () => {
+    const markdown = `<details>
+<summary> </summary>
+<img src="https://example.com/a.png" alt="pic" title="t" />
+</details>`;
+    const doc = markdownToDoc(markdown);
+    expect(doc.content[0]?.content?.[1]?.content?.[0]).toMatchObject({
+      type: "image",
+      attrs: { src: "https://example.com/a.png", alt: "pic", title: "t" },
+    });
+    expect(docToMarkdown(doc)).toContain("![pic](https://example.com/a.png \"t\")");
+  });
+
+  test("keeps an image inside a details block", () => {
+    const markdown = `<details>
+<summary>图</summary>
+
+![pic](https://example.com/a.png)
+
+</details>`;
+    const doc = markdownToDoc(markdown);
+    expect(doc.content[0]?.type).toBe("details");
+    expect(doc.content[0]?.content?.[1]?.content?.[0]).toMatchObject({
+      type: "image",
+      attrs: { src: "https://example.com/a.png", alt: "pic" },
+    });
+    expect(docToMarkdown(doc)).toContain("![pic](https://example.com/a.png)");
+  });
+
+  test("recovers details from Markdown when JSON only kept the tags as text", () => {
+    const markdown = `<details>
+<summary>提示</summary>
+
+hidden
+
+</details>`;
+    const legacyDoc = {
+      type: "doc",
+      content: [{
+        type: "paragraph",
+        content: [{ type: "text", text: markdown }],
+      }],
+    };
+
+    expect(resolveMemoContentDoc(legacyDoc, markdown).content[0]?.type).toBe("details");
+  });
+});
+
 describe("extra blank lines", () => {
   test("keeps two visual blank lines as an empty paragraph", () => {
     const doc = markdownToDoc("A\n\n\nB");

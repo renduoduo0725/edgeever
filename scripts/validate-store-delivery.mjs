@@ -8,10 +8,19 @@ const STABLE_RELEASE_TAG = /^v(\d+\.\d+\.\d+)$/;
 const PLATFORMS = new Set(["android", "ios", "both"]);
 const ANDROID_TRACKS = new Set(["internal", "alpha", "beta", "production"]);
 
+export const readIosMarketingVersion = (text) => {
+  const match = String(text).match(/^MARKETING_VERSION\s*=\s*(\S+)/m);
+  if (!match) {
+    throw new Error("apps/ios/Config/Version.xcconfig is missing MARKETING_VERSION.");
+  }
+  return match[1];
+};
+
 export const validateStoreDelivery = ({
   releaseTag,
   rootVersion,
   mobileVersion,
+  iosVersion,
   currentVersionCode,
   previousVersionCode,
   changedFiles,
@@ -28,31 +37,57 @@ export const validateStoreDelivery = ({
   if (!PLATFORMS.has(platform)) {
     throw new Error(`Unsupported store platform: ${platform}`);
   }
+  if (rootVersion !== version) {
+    throw new Error(`${releaseTag} requires package.json version to equal ${version}.`);
+  }
 
-  const mobilePlan = planNativeRelease("mobile", changedFiles);
-  if (!mobilePlan.rebuild) {
-    throw new Error(
-      `${releaseTag} contains no mobile runtime changes; keep the existing store binary.`,
-    );
+  const relevantChanges = [];
+  const deliverAndroid = platform === "android" || platform === "both";
+  const deliverIos = platform === "ios" || platform === "both";
+
+  if (deliverAndroid) {
+    const mobilePlan = planNativeRelease("mobile", changedFiles);
+    if (!mobilePlan.rebuild) {
+      throw new Error(
+        `${releaseTag} contains no Android runtime changes; keep the existing store binary.`,
+      );
+    }
+    if (mobileVersion !== version) {
+      throw new Error(
+        `${releaseTag} requires apps/mobile/app.json version to equal ${version}.`,
+      );
+    }
+    if (
+      !Number.isInteger(currentVersionCode) ||
+      !Number.isInteger(previousVersionCode) ||
+      currentVersionCode <= previousVersionCode
+    ) {
+      throw new Error(
+        `Android versionCode must increase beyond ${previousVersionCode}; received ${currentVersionCode}.`,
+      );
+    }
+    relevantChanges.push(...mobilePlan.relevantChanges);
   }
-  if (rootVersion !== version || mobileVersion !== version) {
-    throw new Error(
-      `${releaseTag} requires package.json and apps/mobile/app.json versions to both equal ${version}.`,
-    );
+
+  if (deliverIos) {
+    const iosPlan = planNativeRelease("ios", changedFiles);
+    if (!iosPlan.rebuild) {
+      throw new Error(
+        `${releaseTag} contains no iOS runtime changes; keep the existing App Store binary.`,
+      );
+    }
+    if (iosVersion !== version) {
+      throw new Error(
+        `${releaseTag} requires apps/ios/Config/Version.xcconfig MARKETING_VERSION to equal ${version}.`,
+      );
+    }
+    relevantChanges.push(...iosPlan.relevantChanges);
   }
-  if (
-    !Number.isInteger(currentVersionCode) ||
-    !Number.isInteger(previousVersionCode) ||
-    currentVersionCode <= previousVersionCode
-  ) {
-    throw new Error(
-      `Android versionCode must increase beyond ${previousVersionCode}; received ${currentVersionCode}.`,
-    );
-  }
+
   return {
     version,
-    versionCode: currentVersionCode,
-    relevantChanges: mobilePlan.relevantChanges,
+    versionCode: deliverAndroid ? currentVersionCode : previousVersionCode,
+    relevantChanges,
   };
 };
 
@@ -84,10 +119,14 @@ const run = () => {
   const previousMobileConfig = JSON.parse(
     git("show", `${previousTag}:apps/mobile/app.json`),
   );
+  const iosVersion = readIosMarketingVersion(
+    readFileSync("apps/ios/Config/Version.xcconfig", "utf8"),
+  );
   const result = validateStoreDelivery({
     releaseTag,
     rootVersion: rootPackage.version,
     mobileVersion: mobileConfig.expo.version,
+    iosVersion,
     currentVersionCode: mobileConfig.expo.android.versionCode,
     previousVersionCode: previousMobileConfig.expo.android.versionCode,
     changedFiles,

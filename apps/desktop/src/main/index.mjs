@@ -32,6 +32,7 @@ import { writeRichClipboard } from "./clipboard-write.mjs";
 import { captureScreenToNote, createScreenshotCaptureGuard, screenshotImportIpcPayload, writeScreenshotTempPath } from "./screenshot-capture.mjs";
 import { LocalDataResetError, scheduleMacLocalDataReset } from "./local-data-reset.mjs";
 import { buildDesktopDiagnosticIssueUrl, normalizeDesktopDiagnostic } from "./desktop-diagnostics.mjs";
+import { readDesktopDeviceModel } from "./desktop-device-model.mjs";
 import { createRendererStartupGuard } from "./renderer-startup-guard.mjs";
 import { waitForChildProcessSpawn } from "./child-process-start.mjs";
 import { ScheduledTaskScheduler } from "./scheduled-task-scheduler.mjs";
@@ -215,11 +216,21 @@ const writeDiagnostic = async (event, details = {}) => {
   }
 };
 
+let cachedDesktopDeviceModel;
+
+const desktopDeviceModel = () => {
+  if (cachedDesktopDeviceModel === undefined) {
+    cachedDesktopDeviceModel = readDesktopDeviceModel() || "unknown";
+  }
+  return cachedDesktopDeviceModel;
+};
+
 const desktopRuntimeSystemInfo = () => ({
   appVersion: app.getVersion(),
   autoUpdateSupported: true,
   platform: process.platform,
   architecture: process.arch,
+  deviceModel: desktopDeviceModel(),
   osVersion: process.getSystemVersion?.() || "unknown",
   osRelease: operatingSystemRelease(),
   electron: process.versions.electron || "unknown",

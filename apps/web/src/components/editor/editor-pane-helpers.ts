@@ -188,6 +188,15 @@ export const getResourceFilesFromDataTransfer = (dataTransfer: DataTransfer | nu
   return files.filter((file) => file.size > 0);
 };
 
+/** Block-handle drags set view.dragging; Chrome may also attach a preview image as a file. */
+export const shouldInsertDroppedResourceFiles = ({
+  dataTransfer,
+  isInternalNodeDrag,
+}: {
+  dataTransfer: DataTransfer | null;
+  isInternalNodeDrag: boolean;
+}) => !isInternalNodeDrag && getResourceFilesFromDataTransfer(dataTransfer).length > 0;
+
 export const syncStatusToSaveState = (status: "pending" | "syncing" | "conflict" | "error") => {
   if (status === "conflict") {
     return "conflict";

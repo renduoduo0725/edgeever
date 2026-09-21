@@ -759,9 +759,14 @@ export const CreateMemoModal = ({
       </View>
       <NotebookPickerModal
         activeNotebookId={targetNotebookId}
+        includeAllNotes={false}
         notebooks={notebooks}
         onClose={() => setNotebookPickerOpen(false)}
         onSelect={(nextNotebookId) => {
+          if (!nextNotebookId || nextNotebookId === "all") {
+            setNotebookPickerOpen(false);
+            return;
+          }
           setNotebookId(nextNotebookId);
           setNotebookPickerOpen(false);
           markDirty();
@@ -1214,9 +1219,14 @@ export const RichEditorModal = ({
         )}
         <NotebookPickerModal
           activeNotebookId={notebookId}
+          includeAllNotes={false}
           notebooks={notebooks}
           onClose={() => setNotebookPickerOpen(false)}
           onSelect={(nextNotebookId) => {
+            if (!nextNotebookId || nextNotebookId === "all") {
+              setNotebookPickerOpen(false);
+              return;
+            }
             setNotebookId(nextNotebookId);
             setNotebookPickerOpen(false);
             dirtyRef.current = true;

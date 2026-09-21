@@ -499,6 +499,7 @@ export const MemoDetailModal = ({
   const [imageShareTags, setImageShareTags] = useState(false);
   const [imageShareUpdatedAt, setImageShareUpdatedAt] = useState(true);
   const [imageShareBranding, setImageShareBranding] = useState(true);
+  const [viewerNotebookPickerOpen, setViewerNotebookPickerOpen] = useState(false);
   const [preparedNoteImage, setPreparedNoteImage] = useState<MobilePreparedNoteImage | null>(null);
   const viewerRef = useRef<LocalTiptapEditorRef>(null);
   const imageExportIntentRef = useRef<"preview" | "share">("share");
@@ -566,6 +567,20 @@ export const MemoDetailModal = ({
       throw error;
     }
   }, [baseUrl, client, resolvedLocale, session?.token]);
+  const handleViewerNotebookSelect = useCallback((nextNotebookId: string) => {
+    setViewerNotebookPickerOpen(false);
+    if (
+      !memo
+      || memo.isDeleted
+      || !nextNotebookId
+      || nextNotebookId === "all"
+      || nextNotebookId === memo.notebookId
+    ) {
+      return;
+    }
+    updateMutation.mutate({ memo, payload: { notebookId: nextNotebookId } });
+  }, [memo, updateMutation]);
+
   const saveResourceAs = useCallback(async (target: MobileResourceTarget) => {
     if (!client) throw new Error(resolvedLocale !== "zh-CN" ? "The resource client is unavailable." : "当前无法读取资源。");
     const result = await saveMobileResourceAs(client, target, { baseUrl, token: session?.token });
@@ -668,6 +683,7 @@ export const MemoDetailModal = ({
     setActiveMatchIndex(0);
     setImagePreview(null);
     setAiAssistantOpen(false);
+    setViewerNotebookPickerOpen(false);
     safeDomCall(() => viewerRef.current?.search("", -1));
   }, [isEditing]);
 
@@ -680,6 +696,7 @@ export const MemoDetailModal = ({
     setActiveMatchIndex(0);
     setImagePreview(null);
     setResourceTarget(null);
+    setViewerNotebookPickerOpen(false);
     resourceDataUrlCacheRef.current.clear();
   }, [initialSearchQuery, memo?.id]);
 
@@ -1124,10 +1141,24 @@ export const MemoDetailModal = ({
                 />
               )}
               <View style={styles.detailMetaRow}>
+                {memo.isDeleted ? (
                 <View style={styles.detailNotebookButton}>
                   <Text numberOfLines={1} selectable style={styles.detailNotebookName}>{notebookName}</Text>
                   <ChevronDown color="#94a3b8" size={14} />
                 </View>
+                ) : (
+                <Pressable
+                  accessibilityHint="更改笔记所属笔记本"
+                  accessibilityLabel="所在笔记本"
+                  accessibilityRole="button"
+                  disabled={isSaving}
+                  onPress={() => setViewerNotebookPickerOpen(true)}
+                  style={styles.detailNotebookButton}
+                >
+                  <Text numberOfLines={1} style={styles.detailNotebookName}>{notebookName}</Text>
+                  <ChevronDown color="#94a3b8" size={14} />
+                </Pressable>
+                )}
                 <View style={styles.detailTagsGroup}>
                   <Tag color="#64748b" size={16} />
                   <HighlightedMetadataText
@@ -1570,9 +1601,14 @@ export const MemoDetailModal = ({
           <>
             <NotebookPickerModal
               activeNotebookId={editor.notebookId}
+              includeAllNotes={false}
               notebooks={notebooks}
               onClose={() => editor.setNotebookPickerOpen(false)}
               onSelect={(nextNotebookId) => {
+                if (!nextNotebookId || nextNotebookId === "all") {
+                  editor.setNotebookPickerOpen(false);
+                  return;
+                }
                 editor.setNotebookId(nextNotebookId);
                 editor.setNotebookPickerOpen(false);
                 editor.markDirty();
@@ -1591,7 +1627,16 @@ export const MemoDetailModal = ({
             />
             {editor.uploadSourcePicker}
           </>
-        ) : null}
+        ) : (
+          <NotebookPickerModal
+            activeNotebookId={memo?.notebookId ?? ""}
+            includeAllNotes={false}
+            notebooks={notebooks}
+            onClose={() => setViewerNotebookPickerOpen(false)}
+            onSelect={handleViewerNotebookSelect}
+            visible={viewerNotebookPickerOpen}
+          />
+        )}
       </SafeAreaView>
       ) : null}
     </Modal>

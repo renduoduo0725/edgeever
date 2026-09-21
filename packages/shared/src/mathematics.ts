@@ -1,4 +1,5 @@
 import { BlockMath, InlineMath } from "@tiptap/extension-mathematics";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import {
   BLOCK_MATH_NODE_TYPE,
   edgeEverBlockMathMarkdownTokenizer,
@@ -10,6 +11,13 @@ export {
   BLOCK_MATH_NODE_TYPE,
   INLINE_MATH_NODE_TYPE,
 } from "./mathematics-markdown";
+
+export type EdgeEverMathematicsClickHandler = (node: ProseMirrorNode, pos: number) => void;
+
+export type CreateEdgeEverMathematicsOptions = {
+  onInlineClick?: EdgeEverMathematicsClickHandler;
+  onBlockClick?: EdgeEverMathematicsClickHandler;
+};
 
 const EdgeEverInlineMath = InlineMath.extend({
   markdownTokenizer: edgeEverInlineMathMarkdownTokenizer,
@@ -26,7 +34,7 @@ const katexOptions = {
 };
 
 /** Fresh extension instances for each TipTap editor or Markdown manager. */
-export const createEdgeEverMathematics = () => [
-  EdgeEverBlockMath.configure({ katexOptions }),
-  EdgeEverInlineMath.configure({ katexOptions }),
+export const createEdgeEverMathematics = (options: CreateEdgeEverMathematicsOptions = {}) => [
+  EdgeEverBlockMath.configure({ katexOptions, onClick: options.onBlockClick }),
+  EdgeEverInlineMath.configure({ katexOptions, onClick: options.onInlineClick }),
 ];

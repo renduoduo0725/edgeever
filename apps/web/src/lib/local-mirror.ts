@@ -644,11 +644,13 @@ export const listLocalTags = async (scope: string): Promise<{ tags: TagSummary[]
 
 const updateLocalMemos = async (scope: string, memoIds: string[], update: (memo: MemoDetail) => MemoDetail | null) => {
   const wanted = new Set(memoIds);
+  if (wanted.size === 0) return 0;
+
   let updated = 0;
   await localDb.transaction("rw", localDb.memos, async () => {
     const memos = await localDb.memos.where("scope").equals(scope).toArray();
     for (const stored of memos) {
-      if (wanted.size > 0 && !wanted.has(stored.id)) continue;
+      if (!wanted.has(stored.id)) continue;
       const { scope: _scope, ...memo } = stored;
       const next = update(memo);
       if (!next) {

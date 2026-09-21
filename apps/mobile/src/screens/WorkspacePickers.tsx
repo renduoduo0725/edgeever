@@ -86,12 +86,14 @@ const useAutoCenterSelectedScrollRow = (visible: boolean, selectedKey: string) =
 
 export const NotebookPickerModal = ({
   activeNotebookId,
+  includeAllNotes = true,
   notebooks,
   onClose,
   onSelect,
   visible,
 }: {
   activeNotebookId: string;
+  includeAllNotes?: boolean;
   notebooks: Notebook[];
   onClose: () => void;
   onSelect: (notebookId: string) => void;
@@ -179,6 +181,7 @@ export const NotebookPickerModal = ({
             ) : null}
           </View>
 
+          {includeAllNotes ? (
           <Pressable
             accessibilityLabel={activeNotebookId === ALL_NOTES_ID ? "当前：全部笔记" : "切换到全部笔记"}
             accessibilityRole="button"
@@ -194,6 +197,7 @@ export const NotebookPickerModal = ({
             </View>
             {activeNotebookId === ALL_NOTES_ID ? <Check color="#0f172a" size={18} /> : null}
           </Pressable>
+          ) : null}
 
           <View style={styles.notebookPickerSectionHeader}>
             <Text style={styles.label}>{searchQuery ? "匹配的笔记本" : "笔记本"}</Text>

@@ -2,11 +2,14 @@
 
 GitHub Release 与移动端商店交付是两个独立操作：
 
-- `bun run release` 创建并审计 GitHub Release，但不会自行授权访问 Google Play
-  或 App Store Connect。Android 资产只有通过 Play 应用签名门禁后才能正式发布。
+- `bun run release` 创建并审计 GitHub Release。Android 资产只有通过 Play
+  应用签名门禁后才能正式发布。当审计范围内包含 iOS 运行时变化时，同一条命令
+  还会启动 Xcode Cloud，并把得到的构建提交 App Review。iOS 失败不会把已经
+  公开的 GitHub Release 恢复为 Draft；用 `bun run publish:stores` 重试即可。
 - `bun run publish:stores` 针对一个匹配的 Draft 或已经存在的正式 Release tag，
-  触发手动商店交付工作流。Android 重建时应在 Draft 阶段执行，以便正式发布前
-  用 Play 签名 APK 替换临时的本地签名 APK。
+  触发商店交付工作流。Android 重建时应在 Draft 阶段执行，以便正式发布前用
+  Play 签名 APK 替换临时的本地签名 APK。省略 `--ios-build-number` 会启动
+  Xcode Cloud；只有提交已经上传到 App Store Connect 的构建时才传入该参数。
 - 触发商店交付就代表已经授权正式提交。默认情况下，Google Play 使用
   Production 轨道；iOS 在上传 App Store Connect 后继续提交 App Review。审核
   通过后自动发布。
@@ -21,8 +24,10 @@ GitHub Release 与移动端商店交付是两个独立操作：
 - 根版本和移动端 App 版本都与 Release tag 一致；
 - Android `versionCode` 已递增。
 
-如果某个 Release 复用了上一版移动端二进制，工作流会主动拒绝。它不代表新的
-商店二进制，不应重复上传。
+如果某个 Release 对所选平台复用了上一版商店二进制，工作流会主动拒绝。它不
+代表新的商店二进制，不应重复上传。Android 交付要求 `apps/mobile` 运行时变化
+且 `versionCode` 递增；iOS 交付要求 `apps/ios` 或共享编辑器运行时变化，且
+`MARKETING_VERSION` 与 Release tag 一致。
 
 正式发布门禁只接受 `ANDROID_PLAY_APP_SIGNER_SHA256`。本地上传证书签名的 APK
 可以暂存在 Draft 中供商店处理，但不能成为正式 Release 的最终 Android 资产；
@@ -62,10 +67,16 @@ EAS Submit 要求应用已经在对应商店中创建；Google Play API 提交�
 
 ## 命令
 
-同时提交 Google Play Production 和 Apple App Review：
+当两个运行时都有变化时，同时提交 Google Play Production 和 Apple App Review：
 
 ```sh
 bun run publish:stores -- --release v1.7.0
+```
+
+只交付 iOS，并启动手动触发的 Xcode Cloud Archive：
+
+```sh
+bun run publish:stores -- --release v1.7.0 --platform ios
 ```
 
 在正式发布前为 Draft 准备 Android Play 签名资产：
@@ -111,14 +122,14 @@ Release。默认命令直接使用 Production；只有明确要求测试交付�
 ### App Store Connect
 
 原生 iOS 商店二进制来自 **`apps/ios`**（SwiftUI），不再走 Expo EAS。
-在 macOS beta 本机上，Archive 必须通过 **Xcode Cloud**（仅手动触发的 Archive
-工作流），保证 `BuildMachineOSBuild` 来自正式系统镜像——见
-[iOS Xcode Cloud](ios-xcode-cloud.md)。Cloud 用产品「下一个构建版本编号」写入
-`CFBundleVersion`；配置共享环境变量后，`ci_post_xcodebuild.sh` 会用
-App Store Connect API Key 上传 App Store IPA。随后 Fastlane（`apps/ios` 的
-`submit_review`）精确选择相同的 App Version 与 Build Number，提交 App Review，
-并设置为审核通过后自动发布。元数据、协议、审核信息或凭据不完整时工作流会失败，
-不会改为提交其他构建。
+在 macOS beta 本机上，Archive 必须通过 **Xcode Cloud**，保证
+`BuildMachineOSBuild` 来自正式系统镜像——见
+[iOS Xcode Cloud](ios-xcode-cloud.md)。商店交付工作流会按 Archive 工作流配置的
+默认分支启动这次手动构建，并要求 Cloud 源码的 MARKETING_VERSION 与 Release tag 一致，等到 App Store
+Connect 将构建标为 Valid，再用 Fastlane（`apps/ios` 的 `submit_review`）提交
+App Review，并设置为审核通过后自动发布。只有复用已经上传的构建时才传入
+`--ios-build-number`。元数据、协议、审核信息或凭据不完整时
+工作流会失败，不会改为提交其他构建。
 
 商店列表本地化（含日文）存放在 `apps/mobile/store-assets/`，需在 App Store
 Connect 和 Play Console 中粘贴发布。在控制台补齐该语言的必填字段之前，不要把

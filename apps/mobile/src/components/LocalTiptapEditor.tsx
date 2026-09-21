@@ -28,6 +28,8 @@ import {
   markdownToDoc,
   MEMO_CONTENT_STYLE,
   createEdgeEverDocumentExtensions,
+  DETAILS_EDITOR_CSS,
+  wrapDetailsContentHtml,
   NativeAttachmentMetadata,
   normalizeAiSelectionReplacement,
   prepareNativeEditorContent,
@@ -795,6 +797,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
       attributes: getMobileEditorInputAttributes(
         isViewer ? "edgeever-editor-content edgeever-viewer-content" : "edgeever-editor-content"
       ),
+      transformPastedHTML: (html) => wrapDetailsContentHtml(html),
       handleDOMEvents: {
         // Intercept attachment anchors before ProseMirror's later click phase so
         // the embedded file:// WebView never follows relative resource URLs.
@@ -2967,6 +2970,7 @@ const getEditorStyles = (theme: "light" | "dark", options?: { viewer?: boolean }
   :root {
     color-scheme: ${theme};
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-feature-settings: "chws" 1;
     /* Match PC/Web memo body (MEMO_CONTENT_STYLE) so notes don't feel oversized on phone. */
     --editor-body-font-size: ${bodyFontSize}px;
     --editor-body-line-height: ${bodyLineHeight};
@@ -3081,6 +3085,7 @@ const getEditorStyles = (theme: "light" | "dark", options?: { viewer?: boolean }
     line-height: var(--editor-body-line-height);
     overflow-wrap: anywhere;
     word-break: break-word;
+    font-feature-settings: "chws" 1;
     caret-color: ${options?.viewer ? "transparent" : "#0f766e"};
   }
   .edgeever-viewer-content { -webkit-user-select: text; user-select: text; cursor: text; }
@@ -3199,6 +3204,7 @@ const getEditorStyles = (theme: "light" | "dark", options?: { viewer?: boolean }
     font-size: 12px;
     font-weight: 600;
   }
+  ${DETAILS_EDITOR_CSS}
   .edgeever-editor-content .edgeever-unsupported-content--block { display: block; margin: 8px 0; padding: 12px; }
   .edgeever-editor-content .edgeever-unsupported-content--inline { display: inline-block; margin: 0 2px; padding: 2px 6px; }
   .edgeever-editor-content .edgeever-unsupported-mark { border-bottom: 1px dashed ${theme === "dark" ? "#94a3b8" : "#64748b"}; }

@@ -2,13 +2,16 @@
 
 GitHub Releases and mobile store delivery are separate operations:
 
-- `bun run release` creates and audits the GitHub Release, but does not itself
-  authorize access to Google Play or App Store Connect. Android assets cannot
-  be published until they pass the Play app-signing gate.
-- `bun run publish:stores` dispatches a manual store-delivery workflow for a
-  matching Draft or an existing formal Release tag. When Android is rebuilt,
-  run it against the Draft so the Play-signed APK replaces the temporary
-  locally signed APK before publication.
+- `bun run release` creates and audits the GitHub Release. Android assets cannot
+  be published until they pass the Play app-signing gate. When the audited
+  range includes iOS runtime changes, the same command also starts Xcode Cloud
+  and submits the resulting build to App Review. An iOS failure leaves the
+  GitHub Release published; retry with `bun run publish:stores`.
+- `bun run publish:stores` dispatches a store-delivery workflow for a matching
+  Draft or an existing formal Release tag. When Android is rebuilt, run it
+  against the Draft so the Play-signed APK replaces the temporary locally
+  signed APK before publication. Omit `--ios-build-number` to start Xcode Cloud;
+  pass it only to submit an already uploaded App Store Connect build.
 - Store delivery is the authorization to submit. By default, Google Play uses
   the Production track, while iOS continues from App Store Connect upload into
   App Review. Approved builds are released automatically.
@@ -25,8 +28,11 @@ store build starts, it verifies that:
 - root and mobile app versions both match the Release tag;
 - Android `versionCode` increased.
 
-A Release that reused the previous mobile binary is intentionally rejected. It
-does not represent a new store binary and should not be uploaded again.
+A Release that reused the previous store binary for the selected platform is
+intentionally rejected. It does not represent a new store binary and should not
+be uploaded again. Android delivery requires `apps/mobile` runtime changes and
+an increased `versionCode`. iOS delivery requires `apps/ios` or shared editor
+runtime changes and `MARKETING_VERSION` equal to the Release tag.
 
 The publication gate accepts only `ANDROID_PLAY_APP_SIGNER_SHA256`. An APK
 signed by the local upload certificate may temporarily exist in a Draft for
@@ -71,10 +77,17 @@ Follow the official
 
 ## Commands
 
-Submit both platforms to Google Play Production and Apple App Review:
+Submit both platforms to Google Play Production and Apple App Review when
+both runtimes changed:
 
 ```sh
 bun run publish:stores -- --release v1.7.0
+```
+
+Deliver only iOS, starting the Manual Xcode Cloud Archive workflow:
+
+```sh
+bun run publish:stores -- --release v1.7.0 --platform ios
 ```
 
 Prepare the Android Play-signed asset for a Draft before formal publication:
@@ -124,15 +137,16 @@ explicitly requested.
 ### App Store Connect
 
 Native iOS store binaries come from **`apps/ios`** (SwiftUI), not Expo EAS.
-On macOS beta hosts, archives must go through **Xcode Cloud** (manual Archive
-workflow) so `BuildMachineOSBuild` is a release OS image — see
-[iOS Xcode Cloud](ios-xcode-cloud.md). Cloud stamps `CFBundleVersion` from the
-product’s next build number; `ci_post_xcodebuild.sh` uploads the App Store IPA
-with an App Store Connect API key when shared environment secrets are set.
-Fastlane (`apps/ios` `submit_review`) then selects the exact app version and
-build number, submits App Review, and configures automatic release after
-approval. Missing metadata, agreements, review information, or credentials
-cause the workflow to fail without submitting a different build.
+On macOS beta hosts, archives must go through **Xcode Cloud** so
+`BuildMachineOSBuild` is a release OS image — see
+[iOS Xcode Cloud](ios-xcode-cloud.md). The store-delivery workflow starts that
+Manual Archive workflow on its configured default branch, requires the Cloud
+source's `MARKETING_VERSION` to match the Release tag, waits until App Store Connect marks the
+build Valid, then Fastlane (`apps/ios` `submit_review`) submits App Review and
+configures automatic release after approval. Pass `--ios-build-number` only to
+reuse an already uploaded build. Missing metadata, agreements, review
+information, or credentials cause the workflow to fail without submitting a
+different build.
 
 Store listing localizations (including Japanese) live in
 `apps/mobile/store-assets/` and are pasted in App Store Connect and Play

@@ -95,6 +95,32 @@ describe("native release planning", () => {
     ).toEqual({ rebuild: false, relevantChanges: [] });
   });
 
+  test("rebuilds iOS for the native client or shared editor runtime", () => {
+    expect(
+      planNativeRelease("ios", [
+        "apps/ios/EdgeEver/App/RootView.swift",
+        "packages/shared/src/index.ts",
+        "apps/mobile/src/screens/LoginScreen.tsx",
+      ]),
+    ).toEqual({
+      rebuild: true,
+      relevantChanges: [
+        "apps/ios/EdgeEver/App/RootView.swift",
+        "packages/shared/src/index.ts",
+      ],
+    });
+  });
+
+  test("does not rebuild iOS for Android-only or documentation changes", () => {
+    expect(
+      planNativeRelease("ios", [
+        "apps/mobile/src/screens/LoginScreen.tsx",
+        "apps/ios/README.md",
+        "package.json",
+      ]),
+    ).toEqual({ rebuild: false, relevantChanges: [] });
+  });
+
   test("rebuilds desktop when bundled sidecar migrations change", () => {
     expect(
       planNativeRelease("desktop", [

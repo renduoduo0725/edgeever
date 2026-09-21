@@ -48,8 +48,10 @@ describe("desktop update flow", () => {
     expect(preloadSource).toContain('systemInfo: () => ipcRenderer.invoke("desktop:system-info")');
     expect(systemInfoSource).toContain("getClientRuntimeDiagnostics");
     expect(systemInfoSource).toContain('t("systemInfo.runtimeEngine")');
+    expect(systemInfoSource).toContain('t("systemInfo.deviceModel")');
     expect(systemInfoSource).toContain('t("systemInfo.connectionSection")');
-    expect(systemInfoSource).toContain('t("systemInfo.dataDirectory")');
+    expect(mainSource).toContain("deviceModel: desktopDeviceModel()");
+    expect(systemInfoSource).not.toContain('t("systemInfo.dataDirectory")');
     expect(mainSource).toContain("dataDir: sidecarDataDirectory(activeAccountId)");
   });
 

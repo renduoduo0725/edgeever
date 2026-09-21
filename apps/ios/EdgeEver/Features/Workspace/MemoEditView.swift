@@ -1536,7 +1536,7 @@ struct MemoTagPickerSheet: View {
 
 // MARK: - Compact notebook picker for create/edit
 
-private struct EditNotebookPickerSheet: View {
+struct EditNotebookPickerSheet: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
     let notebooks: [Notebook]

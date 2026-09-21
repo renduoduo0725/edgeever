@@ -1,14 +1,28 @@
-<h1><img src="assets/brand/edgeever-icon.svg" alt="EdgeEver logo" width="40" align="absmiddle" /> EdgeEver</h1>
+<div align="center">
+  <h1>
+    <img src="assets/brand/edgeever-icon.svg" alt="EdgeEver logo" width="40" align="absmiddle" /> EdgeEver
+  </h1>
+  <p>
+    <b>An open-source, AI-native knowledge base & portable Evernote alternative</b>
+  </p>
+  <p>
+    <a href="https://github.com/tianma-if/edgeever/stargazers"><img src="https://img.shields.io/github/stars/tianma-if/edgeever?style=social" alt="GitHub Stars" /></a>
+    <a href="https://github.com/tianma-if/edgeever/network/members"><img src="https://img.shields.io/github/forks/tianma-if/edgeever?style=social" alt="GitHub Forks" /></a>
+    <a href="https://github.com/tianma-if/edgeever/pkgs/container/edgeever"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls" alt="Docker Pulls" /></a>
+    <a href="https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social"><img src="https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt" alt="Product Hunt" /></a>
+    <a href="https://afdian.com/a/tianma-if"><img src="https://img.shields.io/badge/Afdian-946ce6?style=social&logo=github-sponsors" alt="Sponsor on Afdian" /></a>
+  </p>
+  <p>
+    <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <b>English</b> | <a href="README.ja.md">日本語</a>
+  </p>
+  <p>
+    <a href="https://t.me/+wwUx1BYLrIdiZjY1">💬 Telegram Group</a> &nbsp;|&nbsp;
+    <a href="https://demo.edgeever.org">🌐 Live Demo</a> &nbsp;|&nbsp;
+    <a href="#client-downloads">📱 Client Downloads</a>
+  </p>
+</div>
 
-[![GitHub Stars](https://img.shields.io/github/stars/tianma-if/edgeever?style=social)](https://github.com/tianma-if/edgeever/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/tianma-if/edgeever?style=social)](https://github.com/tianma-if/edgeever/network/members)
-[![Docker Pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls)](https://github.com/tianma-if/edgeever/pkgs/container/edgeever)
-[![Product Hunt](https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt)](https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social)
-[![Sponsor on Afdian](https://img.shields.io/badge/Afdian-946ce6?style=social&logo=github-sponsors)](https://afdian.com/a/tianma-if)
 
-[简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | English | [日本語](README.ja.md)
-
-> **EdgeEver: An open-source, AI-native knowledge base & portable Evernote alternative.**
 
 EdgeEver is a modern, open-source notes and knowledge base workspace. It revives the beloved Evernote-style three-pane layout while offering an open data architecture and seamless AI Agent integration for complete ownership and smart productivity.
 
@@ -22,10 +36,10 @@ EdgeEver is a modern, open-source notes and knowledge base workspace. It revives
 Many long-time **Evernote** users simply want a **reliable, open, and fast** personal knowledge base. However, existing mainstream solutions all present tradeoffs:
 
 * **Evernote**: It has grown increasingly bloated with commercial ads and unnecessary features, degrading performance. Data export is cumbersome, free tiers are heavily restricted, and AI/MCP features require costly subscriptions.
-* **Obsidian**: Open files, closed-source core. Official Sync is paid and third-party sync is tedious; storing images and attachments alongside notes quickly bloats vaults, making mobile sync sluggish and leaving orphaned files behind; and it is overly heavy for lightweight, capture-anywhere use.
+* **Obsidian**: Open files, closed-source core. Official Sync is paid and third-party sync is tedious; relying entirely on flat local file scanning causes noticeable cold-start and search lag once notes reach thousands or heavy plugins are loaded; storing images and attachments alongside notes quickly bloats vaults, making mobile sync sluggish and leaving orphaned files behind; and it is overly heavy for lightweight, capture-anywhere use.
 * **Memos & Stream Notes**: Clean and simple, but their social-timeline layouts differ fundamentally from the structured productivity of a classic three-pane workflow.
 
-**EdgeEver fills this gap**: The entire stack is open source, including sync and self-hosting. It keeps the three-pane layout you know, with native AI agents and zero-cost deployment.
+**EdgeEver fills this gap**: The entire stack is open source, including sync and self-hosting. It keeps the three-pane layout you know, stays silky-smooth and lightweight even with 10,000+ notes, and ships native AI agents with zero-cost deployment.
 
 > 💡 **Recommended Workflow:**
 > Capture inspiration seamlessly across all devices and organize deeply in the classic three-pane view. Powered by native MCP, it not only lets AI agents retrieve and synthesize your knowledge, but also connects with your favorite productivity tools like Notion and Feishu. Publish anywhere with one-click formatting—100% self-hosted at zero cost, building an open and truly owned second brain.
@@ -58,12 +72,13 @@ The public demo resets every day at 3:00 AM (China Standard Time) and restores s
 - **Rich Plugin API**: Extend EdgeEver with the [Plugin API](docs/plugin-development.md).
 - **Unlimited Multi-Device Sync**: No commercial device caps or paywalls. Enjoy seamless synchronization across PC, tablet, and mobile via web, PWA, or browser.
 - **Classic Three-Pane Layout & Focus Mode**: Clean navigation featuring notebook trees, note lists, and an expansive editor, with a desktop focus mode to eliminate distractions.
+- **Light, Lasting Desktop Performance**: Switching notes does not keep old images and documents in memory, and the desktop app stays responsive after sitting in the background.
 - **Unlimited Nested Notebooks**: Organize your knowledge with arbitrary folder depth.
 - **One-Click Rich Copy for Newsletters & Blogs**: Designed for creators to convert notes into beautifully formatted rich text with inline CSS, ready to paste directly into Substack, Medium, WordPress, or newsletter editors without extra tools.
 - **Seamless Dual-View Editor**: Switch effortlessly between intuitive rich text editing and Markdown source code on desktop.
 - **Convenient Single-Note Export**: Export the current note directly as Markdown, HTML, or PDF for standalone storage, sharing, or publishing.
 - **Native Mermaid Diagram Rendering**: Render clear flowcharts, sequence diagrams, and mind maps directly in notes, preserving clean, editable source code across Markdown and rich text views.
-- **Visual Diagram Notes**: Create and edit mind maps, flowcharts, and architecture diagrams on Web and desktop with semantic components, system boundaries, labeled connections, automatic layout, revision history, and PNG/SVG export. The Android and iOS apps preserve the same diagram data and render a semantic read-only view. See the [visual diagram notes design](docs/visual-diagram-notes.md).
+- **Visual Diagram Notes**: Ditch external drawing tools and sketch mind maps, flowcharts, and architecture diagrams directly in notes. Backed by a structured IR, the built-in assistant and external AI agents can generate and refine diagrams from a single prompt, complete with smart auto-layout, cross-device sync, and vector export. See the [visual diagram notes design](docs/visual-diagram-notes.md).
 - **Revision History**: Inspect and restore previous iterations of your notes with built-in version tracking.
 - **Public Note Sharing**: Share a note publicly and stop sharing it at any time. Optionally protect the link with an auto-generated access password.
 - **WeChat Article Clipping on Mobile**: Share a WeChat Official Account article to EdgeEver on your phone to extract its content and save it as an editable note.

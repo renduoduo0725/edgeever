@@ -23,6 +23,17 @@ describe("editor typography contract", () => {
     expect(MEMO_CONTENT_STYLE.body.paragraphSpacing).toBe(6);
   });
 
+  test("configures punctuation squeezing and overflow wrapping for body text", () => {
+    const globals = readStyle("./globals.css");
+    const editorRules = declarationsForSelector(globals, ".ProseMirror");
+    const markdownRules = declarationsForSelector(globals, ".markdown-content");
+
+    expect(editorRules).toMatch(/overflow-wrap\s*:\s*break-word/);
+    expect(editorRules).toMatch(/font-feature-settings\s*:\s*["']chws["']\s*1/);
+    expect(markdownRules).toMatch(/overflow-wrap\s*:\s*break-word/);
+    expect(markdownRules).toMatch(/font-feature-settings\s*:\s*["']chws["']\s*1/);
+  });
+
   test("keeps compact rhythm unless a paper editor theme is selected", () => {
     const editorPane = readStyle("../components/EditorPane.tsx");
     const publishLayout = readStyle("./publish-layout.css");

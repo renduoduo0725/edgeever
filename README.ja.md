@@ -1,14 +1,28 @@
-<h1><img src="assets/brand/edgeever-icon.svg" alt="EdgeEver のロゴ" width="40" align="absmiddle" /> EdgeEver</h1>
+<div align="center">
+  <h1>
+    <img src="assets/brand/edgeever-icon.svg" alt="EdgeEver のロゴ" width="40" align="absmiddle" /> EdgeEver
+  </h1>
+  <p>
+    <b>オープンソース、AI ネイティブ、Cloudflare 無料枠 / Docker で自前運用できる Evernote 代替ノート</b>
+  </p>
+  <p>
+    <a href="https://github.com/tianma-if/edgeever/stargazers"><img src="https://img.shields.io/github/stars/tianma-if/edgeever?style=social" alt="GitHub Stars" /></a>
+    <a href="https://github.com/tianma-if/edgeever/network/members"><img src="https://img.shields.io/github/forks/tianma-if/edgeever?style=social" alt="GitHub Forks" /></a>
+    <a href="https://github.com/tianma-if/edgeever/pkgs/container/edgeever"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls" alt="Docker Pulls" /></a>
+    <a href="https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social"><img src="https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt" alt="Product Hunt" /></a>
+    <a href="https://afdian.com/a/tianma-if"><img src="https://img.shields.io/badge/Afdian-946ce6?style=social&logo=github-sponsors" alt="Sponsor on Afdian" /></a>
+  </p>
+  <p>
+    <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.md">English</a> | <b>日本語</b>
+  </p>
+  <p>
+    <a href="https://t.me/+wwUx1BYLrIdiZjY1">💬 Telegram グループ</a> &nbsp;|&nbsp;
+    <a href="https://demo.edgeever.org">🌐 オンラインデモ</a> &nbsp;|&nbsp;
+    <a href="#クライアントのダウンロード">📱 ダウンロード</a>
+  </p>
+</div>
 
-[![GitHub Stars](https://img.shields.io/github/stars/tianma-if/edgeever?style=social)](https://github.com/tianma-if/edgeever/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/tianma-if/edgeever?style=social)](https://github.com/tianma-if/edgeever/network/members)
-[![Docker Pulls](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls)](https://github.com/tianma-if/edgeever/pkgs/container/edgeever)
-[![Product Hunt](https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt)](https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social)
-[![Sponsor on Afdian](https://img.shields.io/badge/Afdian-946ce6?style=social&logo=github-sponsors)](https://afdian.com/a/tianma-if)
 
-[简体中文](README.zh-CN.md) | [繁體中文](README.zh-TW.md) | [English](README.md) | 日本語
-
-> **EdgeEver：オープンソース、AI ネイティブ、Cloudflare 無料枠 / Docker で自前運用できる Evernote 代替ノート。**
 
 EdgeEver は、オープンソースのノートと知識ベースの作業領域です。Evernote の三ペインを残しつつ、データを自分で持ち、AI Agent と連携できます。
 
@@ -22,10 +36,10 @@ EdgeEver は、オープンソースのノートと知識ベースの作業領�
 長年 **Evernote** を使ってきた人が欲しいのは、**信頼でき、開かれていて、速い**個人知識ベースです。よくある代替には、それぞれ代償があります。
 
 * **Evernote**：広告と余分な機能で重くなり、書き出しが煩雑で、無料枠は狭く、AI / MCP は有料プランです。
-* **Obsidian**：ファイルは開いていますが、コアはクローズドです。公式同期は有料、第三者同期は手間がかかります。画像と添付をノートと一緒に置くと保管庫が膨らみ、モバイル同期が遅く、削除後に添付が残りやすいです。気軽な取り込みには重いことがあります。
+* **Obsidian**：ファイルは開いていますが、コアはクローズドです。公式同期は有料、第三者同期は手間がかかります。フラットなローカルファイル走査に依存するため、ノートが数千・数万件に増えたりプラグインを重ねると起動や検索がもたつきます。画像と添付をノートと一緒に置くと保管庫が膨らみ、モバイル同期が遅く、削除後に添付が残りやすいです。気軽な取り込みには重いことがあります。
 * **Memos などのタイムライン型**：簡潔ですが、三ペインの整理作業とはレイアウトが違います。
 
-**EdgeEver はその隙間を埋めます。** 同期と自前運用を含めてスタック全体がオープンソースです。使い慣れた三ペイン、ネイティブな AI Agent、無料で始められる導入を残しています。
+**EdgeEver はその隙間を埋めます。** 同期と自前運用を含めてスタック全体がオープンソースです。使い慣れた三ペインを残し、1万件のノートを抱えて常駐しても軽快でなめらか、ネイティブな AI Agent と無料で始められる導入もあります。
 
 > 💡 **おすすめの使い方：**
 > どの端末でも着想を取り込み、三ペインで深く整理します。ネイティブ MCP で AI Agent が知識を読み、まとめ、Notion や Feishu などの道具ともつなぎます。体裁付きコピーでどこへでも出せます。データは自分のインスタンスに置き、本当に自分の第二の脳を持てます。
@@ -58,12 +72,13 @@ EdgeEver は、オープンソースのノートと知識ベースの作業領�
 - **プラグイン API**： [Plugin API](docs/plugin-development.md) で拡張できます。
 - **台数制限のない同期**：商用の端末数上限はありません。Web、PWA、ブラウザ経由で PC、タブレット、モバイルを同期します。
 - **クラシックな三ペインとフォーカスモード**：ノートブックツリー、ノート一覧、広い編集領域。デスクトップではフォーカスモードもあります。
+- **軽く、長く使えるデスクトップ**：ノートを切り替えても古い画像や本文をメモリに残さず、バックグラウンドに置いたあとも応答を保ちます。
 - **入れ子ノートブック**：階層の深さに上限はありません。
 - **ニュースレターとブログ向けの体裁付きコピー**：Markdown をインライン CSS のリッチテキストへ変換し、Substack、Medium、WordPress、ニュースレターへそのまま貼れます。
 - **双方向エディタ**：デスクトップではリッチテキストと Markdown ソースを切り替えられます。
 - **1 件のノート書き出し**：Markdown、HTML、PDF に書き出せます。
 - **Mermaid の描画**：フローチャート、シーケンス、マインドマップをノート内で描画し、Markdown とリッチテキストの両方で編集可能なソースを残します。
-- **視覚的な図のノート**：Web とデスクトップでマインドマップ、フローチャート、アーキテクチャ図を作れます。意味のある部品、システム境界、ラベル付き接続、自動レイアウト、版履歴、PNG / SVG 書き出し。Android と iOS は同じデータを保持し、意味のある読み取り専用表示をします。詳しくは [visual diagram notes design](docs/visual-diagram-notes.md) を見てください。
+- **視覚的な図のノート**：外部ツールを使わずに、ノート内でマインドマップ、フローチャート、アーキテクチャ図を直感的に作成・編集。構造化 IR により、内蔵アシスタントや外部 AI Agent が一言の指示で図を生成・編集でき、スマート自動レイアウト、マルチデバイス同期、ベクター書き出しにも対応。詳しくは [visual diagram notes design](docs/visual-diagram-notes.md) を参照。
 - **版履歴**：過去の版を見て、戻せます。
 - **公開共有**：ノートを公開し、いつでも止められます。必要なら共有リンクに自動生成のアクセスパスワードを付けられます。
 - **モバイルでの微信公式アカウント記事の取り込み**：スマホから微信公式アカウントの記事を EdgeEver に共有すると、本文を取り出して編集できるノートにします。

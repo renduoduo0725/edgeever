@@ -1,5 +1,5 @@
 import { useEditorState, type Editor } from "@tiptap/react";
-import { Table2 } from "lucide-react";
+import { Table } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
@@ -54,7 +54,7 @@ export const EditorTableMenu = ({ editor, readOnly }: EditorTableMenuProps) => {
               aria-pressed={inTable || undefined}
               disabled={disabled}
             >
-              <Table2 aria-hidden="true" className="h-4 w-4" />
+              <Table aria-hidden="true" className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
         </TooltipTrigger>

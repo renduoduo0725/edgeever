@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const planNativeRelease = (platform, changedFiles) => {
-  if (!["mobile", "desktop"].includes(platform)) {
+  if (!["mobile", "desktop", "ios"].includes(platform)) {
     throw new Error(`Unsupported native release platform: ${platform}`);
   }
 
@@ -27,14 +27,16 @@ export const planNativeRelease = (platform, changedFiles) => {
   const relevantPrefixes =
     platform === "mobile"
       ? ["apps/mobile/", "packages/client/", "packages/shared/"]
-      : [
-          "apps/desktop/",
-          "apps/web/",
-          "crates/desktop-sidecar/",
-          "migrations/",
-          "packages/client/",
-          "packages/shared/",
-        ];
+      : platform === "ios"
+        ? ["apps/ios/", "packages/shared/"]
+        : [
+            "apps/desktop/",
+            "apps/web/",
+            "crates/desktop-sidecar/",
+            "migrations/",
+            "packages/client/",
+            "packages/shared/",
+          ];
 
   const relevantFiles =
     platform === "mobile"
@@ -48,6 +50,8 @@ export const planNativeRelease = (platform, changedFiles) => {
           "scripts/verify-android-apk-signature.mjs",
           ...mobileOnlyDependencyPatches,
         ])
+      : platform === "ios"
+        ? new Set()
       : new Set([
           ".cargo/config.toml",
           ".github/workflows/desktop-build.yml",
@@ -85,9 +89,9 @@ export const planNativeRelease = (platform, changedFiles) => {
 const run = () => {
   const [platform, baseRef, headRef] = process.argv.slice(2);
 
-  if (!["mobile", "desktop"].includes(platform) || !baseRef || !headRef) {
+  if (!["mobile", "desktop", "ios"].includes(platform) || !baseRef || !headRef) {
     console.error(
-      "Usage: node scripts/plan-native-release.mjs <mobile|desktop> <base-ref> <head-ref>",
+      "Usage: node scripts/plan-native-release.mjs <mobile|desktop|ios> <base-ref> <head-ref>",
     );
     process.exit(1);
   }

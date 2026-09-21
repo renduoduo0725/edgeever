@@ -294,11 +294,32 @@ describe("local mirror", () => {
 
   test("deletes and empties trash locally without waiting for the API", async () => {
     const scope = createLocalDataScope("https://demo.edgeever.org", "user-1");
-    const memo = await createLocalMemo(scope, { notebookId: "inbox" });
-    expect(await applyLocalMemoDeleteBatch(scope, [memo.id])).toBe(1);
-    expect((await getLocalMemo(scope, memo.id))?.isDeleted).toBe(true);
+    const activeMemo = await createLocalMemo(scope, { notebookId: "inbox", title: "Keep me" });
+    const trashedMemo = await createLocalMemo(scope, { notebookId: "inbox", title: "Delete me" });
+    expect(await applyLocalMemoDeleteBatch(scope, [trashedMemo.id])).toBe(1);
+    expect((await getLocalMemo(scope, trashedMemo.id))?.isDeleted).toBe(true);
     expect(await applyLocalEmptyTrash(scope)).toBe(1);
-    expect(await getLocalMemo(scope, memo.id)).toBeNull();
+    expect(await getLocalMemo(scope, trashedMemo.id)).toBeNull();
+    expect(await applyLocalEmptyTrash(scope)).toBe(0);
+    expect((await getLocalMemo(scope, activeMemo.id))?.title).toBe("Keep me");
+  });
+
+  test("treats empty batch selections as no-ops", async () => {
+    const scope = createLocalDataScope("https://demo.edgeever.org", "user-1");
+    const memo = await createLocalMemo(scope, { notebookId: "inbox", title: "Keep me", tags: ["old"] });
+
+    expect(await applyLocalMemoMove(scope, [], "archive")).toBe(0);
+    expect(await applyLocalMemoPin(scope, [], true)).toBe(0);
+    expect(await applyLocalMemoDeleteBatch(scope, [])).toBe(0);
+    expect(await applyLocalMemoDeleteBatch(scope, [], true)).toBe(0);
+    expect(await applyLocalTagRename(scope, "missing", "new")).toBe(0);
+
+    expect(await getLocalMemo(scope, memo.id)).toMatchObject({
+      notebookId: "inbox",
+      isPinned: false,
+      isDeleted: false,
+      tags: ["old"],
+    });
   });
 
   test("updates and removes notebooks in the local mirror immediately", async () => {

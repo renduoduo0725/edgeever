@@ -18,10 +18,12 @@ bun run release -- \
   --label enhancement \
   --change-en "Run required release checks in parallel." \
   --change-zh "并行执行发布所需检查。" \
+  --change-locale "ja:必要なリリースチェックを並列実行します。" \
   --change-commit "abcdef1"
 ```
 
-Repeat `--change-en`, `--change-zh`, and `--change-commit` as matching groups.
+Repeat `--change-en`, `--change-zh`, `--change-locale ja:`, and `--change-commit` as matching groups.
+Japanese What's New is required because the App Store listing includes Japanese.
 One change may cover multiple comma-separated commits:
 
 ```bash
@@ -73,12 +75,15 @@ actually needed.
   audits the public Tencent TCR image inside Tencent Cloud after the formal
   Release is published. Its duration or failure does not block the GitHub
   Release or return a published version to Draft.
-- This command does not authorize or run mobile store delivery itself. After
-  Draft native assets are prepared, publication is blocked unless the Android
-  APK uses the Google Play app-signing certificate. If that gate fails, the
-  Release remains a Draft. Run
+- After Draft native assets are prepared, publication is blocked unless the
+  Android APK uses the Google Play app-signing certificate. If that gate fails,
+  the Release remains a Draft. Run
   `bun run publish:stores -- --release vX.Y.Z --platform android --android-track production`
-  for that Draft, then rerun the original release command to resume. See
+  for that Draft, then rerun the original release command to resume. When the
+  audited range includes iOS runtime changes, the same command starts Xcode
+  Cloud and submits App Review after GitHub publication. An iOS failure leaves
+  the GitHub Release published; retry with
+  `bun run publish:stores -- --release vX.Y.Z --platform ios`. See
   [Mobile Store Delivery](store-delivery.md).
 - After rebuilt desktop assets are uploaded to the Draft, the local release
   command signs only `latest-windows.json`; the private key never enters GitHub

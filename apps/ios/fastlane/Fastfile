@@ -11,8 +11,14 @@ platform :ios do
     notes_en = ENV["APP_STORE_RELEASE_NOTES_EN"].to_s.strip
     has_notes = notes_zh != "" && notes_en != ""
     release_notes = has_notes ? { "zh-Hans" => notes_zh, "en-US" => notes_en } : nil
-    if has_notes && ENV["APP_STORE_RELEASE_NOTES_JA"].to_s.strip != ""
-      release_notes["ja"] = ENV.fetch("APP_STORE_RELEASE_NOTES_JA")
+    if has_notes
+      notes_ja = ENV["APP_STORE_RELEASE_NOTES_JA"].to_s.strip
+      if notes_ja == ""
+        UI.user_error!(
+          "APP_STORE_RELEASE_NOTES_JA is required because the App Store listing includes Japanese What's New.",
+        )
+      end
+      release_notes["ja"] = notes_ja
     end
 
     api_key = app_store_connect_api_key(

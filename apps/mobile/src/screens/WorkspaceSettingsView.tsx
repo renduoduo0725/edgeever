@@ -2,9 +2,9 @@ import { useEffect, useRef, useState, type ComponentRef, type ReactNode } from "
 import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
 import type { InstanceHealth } from "@edgeever/client";
-import { buildGitHubFeedbackUrl, isClientAheadOfInstance, type AuthUser } from "@edgeever/shared";
+import { buildGitHubFeedbackUrl, formatClientDisplaySize, isClientAheadOfInstance, type AuthUser } from "@edgeever/shared";
 import { useQuery } from "@tanstack/react-query";
-import { BackHandler, Linking, Modal, Platform, ScrollView, Switch, View } from "react-native";
+import { BackHandler, Dimensions, Linking, Modal, PixelRatio, Platform, ScrollView, Switch, View } from "react-native";
 import { Activity, ActivityIndicator, Check, ChevronDown, ChevronLeft, ChevronRight, Cloud, Copy, ExternalLink, Image as ImageIcon, Info, LogOut, MessageSquare, MonitorSmartphone, Moon, RefreshCw, ShieldCheck, SlidersHorizontal, Sun, UserRound } from "../components/icons";
 import { Pressable, Text } from "../components/LocalizedText";
 import { useMobileLocale } from "../lib/mobile-locale";
@@ -20,6 +20,18 @@ import { styles } from "./workspace-styles";
 const useMobileLocalePreference = () => useMobileLocale().preference;
 
 const MOBILE_APP_VERSION = Constants.expoConfig?.version ?? "0.1.2";
+
+const readMobileDeviceModel = () => {
+  if (Platform.OS !== "android") return null;
+  const { Brand, Manufacturer, Model } = Platform.constants;
+  const model = typeof Model === "string" ? Model.trim() : "";
+  const manufacturer = typeof Manufacturer === "string" && Manufacturer.trim()
+    ? Manufacturer.trim()
+    : typeof Brand === "string" ? Brand.trim() : "";
+  if (!model) return manufacturer || null;
+  if (!manufacturer || model.toLowerCase().startsWith(manufacturer.toLowerCase())) return model;
+  return `${manufacturer} ${model}`;
+};
 
 const formatExecutionEnvironment = (environment: string | null | undefined, localePreference: MobileLocaleMode = "system") => {
   const english = isEnglishMobileLocale(localePreference);
@@ -527,6 +539,9 @@ const getMobileSystemInfoText = (localePreference: MobileLocaleMode) =>
         mobileApp: "Mobile app",
         platformVersion: "System version",
         requestLatency: "Health check time",
+        deviceModel: "Device model",
+        screenResolution: "Screen resolution",
+        screenResolutionValue: "{{screen}} @{{dpr}}x",
         timeZone: "Time zone",
         openUpdate: "Get update",
         title: "System info",
@@ -571,6 +586,9 @@ const getMobileSystemInfoText = (localePreference: MobileLocaleMode) =>
         mobileApp: "移动应用",
         platformVersion: "系统版本",
         requestLatency: "健康检查耗时",
+        deviceModel: "设备型号",
+        screenResolution: "屏幕分辨率",
+        screenResolutionValue: "{{screen}} @{{dpr}}x",
         timeZone: "时区",
         openUpdate: "前往更新",
         title: "系统信息",
@@ -714,6 +732,16 @@ const getMobileSystemInfoGroups = (
         { label: copy.client, value: copy.mobileApp },
         { label: copy.platform, value: platformName },
         { label: copy.platformVersion, value: String(Platform.Version) },
+        { label: copy.deviceModel, value: readMobileDeviceModel() || copy.unknown },
+        {
+          fullWidth: true,
+          label: copy.screenResolution,
+          value: formatClientDisplaySize({
+            devicePixelRatio: PixelRatio.get(),
+            screenHeight: Dimensions.get("screen").height,
+            screenWidth: Dimensions.get("screen").width,
+          }, copy.screenResolutionValue) || copy.unknown,
+        },
         { label: copy.language, value: localePreference === "system" ? `${resolvedLocale} (${copy.followSystem})` : resolvedLocale },
         { label: copy.timeZone, value: Intl.DateTimeFormat().resolvedOptions().timeZone || copy.unknown },
         { label: copy.installMode, value: formatExecutionEnvironment(Constants.executionEnvironment, localePreference) },

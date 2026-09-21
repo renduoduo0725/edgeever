@@ -14,7 +14,7 @@ Options:
   --platform <target>         android, ios, or both (default: both)
   --android-track <track>     production, alpha, beta, or internal (default: production)
   --recover-play-apk          Skip Play upload and recover its already signed APK
-  --ios-build-number <number> Submit an existing App Store Connect build without rebuilding
+  --ios-build-number <number> Submit an existing App Store Connect build; omit to start Xcode Cloud
   --repository <owner/name>   GitHub repository (default: ${DEFAULT_REPOSITORY})
   --dry-run                   Print the workflow dispatch plan
   --help                      Show this help

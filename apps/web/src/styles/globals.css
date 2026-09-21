@@ -88,7 +88,12 @@ html.dark[data-edgeever-environment="demo"] body::after {
 }
 
 .ProseMirror .tiptap-mathematics-render--editable {
-  cursor: text;
+  cursor: pointer;
+  border-radius: 0.2rem;
+}
+
+.ProseMirror .tiptap-mathematics-render--editable:hover {
+  background: rgb(22 160 110 / 0.08);
 }
 
 .ProseMirror .inline-math-error,
@@ -692,6 +697,137 @@ textarea {
   padding: 8px 0 56px;
   tab-size: 4;
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  font-feature-settings: "chws" 1;
+}
+
+.edgeever-block-drag-handle {
+  z-index: 20;
+  display: none;
+  width: 1.25rem;
+  height: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  border-radius: 0.25rem;
+  color: #94a3b8;
+}
+
+.edgeever-block-drag-handle:hover {
+  background: #f1f5f9;
+  color: #16a06e;
+}
+
+.edgeever-block-drag-handle:active,
+.edgeever-block-drag-handle[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+@media (min-width: 1024px) {
+  .edgeever-block-drag-handle {
+    display: flex;
+  }
+}
+
+.ProseMirror-selectednoderange {
+  border-radius: 0.25rem;
+  background: rgb(22 160 110 / 0.06);
+  outline: 2px solid rgb(22 160 110 / 0.28);
+}
+
+:root.dark .edgeever-block-drag-handle {
+  color: #64748b;
+}
+
+:root.dark .edgeever-block-drag-handle:hover {
+  background: #1e293b;
+  color: #34d399;
+}
+
+:root.dark .ProseMirror-selectednoderange {
+  background: rgb(52 211 153 / 0.1);
+  outline-color: rgb(52 211 153 / 0.35);
+}
+
+.ProseMirror [data-type="details"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.1em;
+  margin: 0.15em 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.ProseMirror [data-type="details"] > button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1.6em;
+  height: 1.6em;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #16a06e;
+  font: inherit;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.ProseMirror [data-type="details"] > button:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.ProseMirror [data-type="details"] > button:focus-visible {
+  outline: 2px solid color-mix(in srgb, #16a06e 55%, transparent);
+  outline-offset: 1px;
+}
+
+.ProseMirror [data-type="details"] > button::before {
+  content: "";
+  width: 0.32em;
+  height: 0.32em;
+  margin: 0;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.ProseMirror [data-type="details"].is-open > button::before {
+  transform: rotate(45deg);
+}
+
+.ProseMirror [data-type="details"] > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.ProseMirror summary {
+  display: block;
+  margin: 0;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 500;
+  line-height: inherit;
+  list-style: none;
+  cursor: text;
+}
+
+.ProseMirror summary::-webkit-details-marker {
+  display: none;
+}
+
+.ProseMirror [data-type="details"]:not(.is-open) [data-type="detailsContent"] {
+  display: none !important;
+}
+
+.ProseMirror [data-type="details"].is-open [data-type="detailsContent"] {
+  margin-top: 0.15em;
 }
 
 .edgeever-public-share .ProseMirror {
@@ -1892,6 +2028,9 @@ textarea {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #1e293b;
   line-height: 1.7;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  font-feature-settings: "chws" 1;
 }
 .companion-markdown.markdown-content > :first-child {
   margin-top: 0;

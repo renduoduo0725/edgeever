@@ -24,6 +24,7 @@
   "dependencies": {
     "@dagrejs/dagre": "3.1.1",
     "@tiptap/core": "3.31.0",
+    "@tiptap/extension-details": "3.31.0",
     "@tiptap/extension-image": "3.31.0",
     "@tiptap/extension-link": "3.31.0",
     "@tiptap/extension-list": "3.31.0",

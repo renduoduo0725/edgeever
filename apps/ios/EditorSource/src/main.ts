@@ -13,6 +13,7 @@ import { toCanvas } from "html-to-image";
 import {
   createEdgeEverDocumentExtensions,
   createNativeUnsupportedContentExtensions,
+  DETAILS_EDITOR_CSS,
   diagramDocumentToX6Cells,
   attachDiagramReader,
   MIND_MAP_CONNECTOR_NAME,
@@ -25,6 +26,7 @@ import {
   resolveAttachmentKind,
   resolveNativeAttachmentContent,
   restoreNativeEditorContent,
+  wrapDetailsContentHtml,
   type TiptapDoc,
   type DiagramDocument,
 } from "@edgeever/shared";
@@ -48,6 +50,10 @@ import { createImageInsertTransaction, groupUploadedImages, NATIVE_IMAGE_GALLERY
 const galleryStyle = document.createElement("style");
 galleryStyle.textContent = NATIVE_IMAGE_GALLERY_CSS;
 document.head.append(galleryStyle);
+
+const detailsStyle = document.createElement("style");
+detailsStyle.textContent = DETAILS_EDITOR_CSS;
+document.head.append(detailsStyle);
 
 Graph.registerConnector(MIND_MAP_CONNECTOR_NAME, mindMapConnector, true);
 
@@ -784,6 +790,9 @@ const editor = new Editor({
     attributes: {
       class: "edgeever-prose",
       spellcheck: "true",
+    },
+    transformPastedHTML(html) {
+      return wrapDetailsContentHtml(html);
     },
     handleClick(_view, _pos, event) {
       return handleResourcePointer(event as MouseEvent, "click");

@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { shouldRetryCreatedMemoFocus } from "./editor-pane-helpers.ts";
+import {
+  shouldInsertDroppedResourceFiles,
+  shouldRetryCreatedMemoFocus,
+} from "./editor-pane-helpers.ts";
 
 describe("created memo focus retry", () => {
   test("keeps retrying until the editor is hydrated, editable, and focused", () => {
@@ -54,5 +57,34 @@ describe("editor document reset", () => {
     expect(source).toContain("editor.view.updateState(EditorState.create({");
     expect(source).toContain("doc: editor.schema.nodeFromJSON(content)");
     expect(source).toContain("plugins: editor.state.plugins");
+  });
+});
+
+describe("dropped resource files", () => {
+  const fileTransfer = {
+    items: [{ kind: "file", getAsFile: () => new File(["png"], "preview.png", { type: "image/png" }) }],
+    files: [],
+  };
+
+  test("inserts clipboard or OS files", () => {
+    expect(shouldInsertDroppedResourceFiles({
+      dataTransfer: fileTransfer,
+      isInternalNodeDrag: false,
+    })).toBe(true);
+  });
+
+  test("does not steal a block-handle drop that Chrome tagged with a preview file", () => {
+    expect(shouldInsertDroppedResourceFiles({
+      dataTransfer: fileTransfer,
+      isInternalNodeDrag: true,
+    })).toBe(false);
+  });
+});
+
+describe("block handle drop wiring", () => {
+  test("lets ProseMirror finish an internal node drag", () => {
+    const source = readFileSync(new URL("../EditorPane.tsx", import.meta.url), "utf8");
+    expect(source).toContain("shouldInsertDroppedResourceFiles");
+    expect(source).toContain("isInternalNodeDrag: Boolean(view.dragging)");
   });
 });
