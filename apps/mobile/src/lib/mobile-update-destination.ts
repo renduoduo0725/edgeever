@@ -2,8 +2,10 @@ import type { MobileInstallUpdateSource } from "./mobile-release";
 import type { GooglePlayOpenResult } from "../../modules/edgeever-app-store";
 
 type MobileUpdateDestinationDependencies = {
+  linking: {
+    openURL: (url: string) => Promise<unknown>;
+  };
   openGooglePlayDetails: (applicationId: string) => GooglePlayOpenResult | Promise<GooglePlayOpenResult>;
-  openUrl: (url: string) => Promise<unknown>;
 };
 
 type GooglePlayOpenFailure = Exclude<GooglePlayOpenResult, "opened">;
@@ -47,6 +49,6 @@ export const openMobileInstallUpdateSource = async (
     };
   }
 
-  await dependencies.openUrl(source.url);
+  await dependencies.linking.openURL(source.url);
   return { status: "opened" };
 };

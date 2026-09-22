@@ -14,6 +14,19 @@ const AUTO_APPLY_WRITES = new Set(
   COMPANION_MCP_TOOLS.filter(tool => !tool.annotations.readOnlyHint).map(tool => tool.name),
 );
 
+type ExplicitDiagramKind = "mind-map" | "flowchart" | "architecture";
+
+const EXPLICIT_DIAGRAM_KIND_PATTERNS: Array<[ExplicitDiagramKind, RegExp]> = [
+  ["mind-map", /(?:思维导图|思維導圖|心智图|心智圖|腦圖|mind[ -]?map|マインドマップ)/iu],
+  ["flowchart", /(?:流程图|流程圖|flow[ -]?chart|フローチャート)/iu],
+  ["architecture", /(?:架构图|架構圖|architectur(?:e|al)[ -]?diagram|アーキテクチャ図)/iu],
+];
+
+export const explicitDiagramKind = (message: string): ExplicitDiagramKind | undefined => {
+  const matches = EXPLICIT_DIAGRAM_KIND_PATTERNS.filter(([, pattern]) => pattern.test(message));
+  return matches.length === 1 ? matches[0][0] : undefined;
+};
+
 export type CompanionAgentSession = {
   calls: number;
   consecutiveErrors: number;
@@ -54,7 +67,7 @@ const TOOL_HINTS: Record<string, string> = {
   search_memos: " Searches note titles and bodies, not notebook names. query is optional. For recently created or added notes, pass createdAfter (YYYY-MM-DD or ISO date-time) and omit query; never put this week/最近/新增 in query. For recently edited notes, use updatedAfter. Do not pass notebookId unless find_notebooks or list_notebooks returned it. For notes in a named notebook, find_notebooks then list_memos. If hasMore is true, say the list is incomplete.",
   list_tags: " Use this when the user names a tag.",
   create_memo: " For prose Markdown notes only. Never use this for 思维导图/mind maps, 流程图/flowcharts, or 架构图; use create_diagram_memo.",
-  create_diagram_memo: " Create an editable visual diagram note. kind=mind-map for 思维导图/mind map, flowchart for 流程图, architecture for 架构图. For mind maps, give a root and children with parentId; omit node type. If the user did not name a notebook, use the open notebook id from Focus DATA. Build nodes from the open note body in Focus DATA when the user refers to this note.",
+  create_diagram_memo: " Create an editable visual diagram note. kind=mind-map for 思维导图/mind map, flowchart for 流程图, architecture for 架构图. Omit edge ids; EdgeEver generates them. For mind maps, give a root and children with parentId; omit node type. If the user did not name a notebook, use the open notebook id from Focus DATA. Build nodes from the open note body in Focus DATA when the user refers to this note.",
   get_diagram: " Read an existing editable diagram as a semantic graph. Call this before update_diagram. Do not use get_memo when you only need the diagram structure.",
   update_diagram: " Edit an existing diagram after get_diagram. Pass expectedRevision from get_diagram. Use add_node, update_node, remove_node, add_edge, update_edge, or remove_edge. Do not create a new diagram unless the user asked for a new note.",
   use_note_template: " Create a new memo from a template. If the user did not name a notebook, use the open notebook id from Focus DATA.",
@@ -131,12 +144,24 @@ const companionMcpDescription = (definition: (typeof COMPANION_MCP_TOOLS)[number
 
 export function companionToolDefinitions(input: CompanionTurnInput): CompanionToolDefinition[] {
   if (!input.allowNotes) return [];
+  const requestedDiagramKind = explicitDiagramKind(input.message);
   return [
-    ...companionMcpCatalog(input).map(definition => ({
-      name: definition.name,
-      description: companionMcpDescription(definition),
-      inputSchema: definition.inputSchema as Record<string, unknown>,
-    })),
+    ...companionMcpCatalog(input).map(definition => {
+      const inputSchema = definition.inputSchema as Record<string, unknown>;
+      if (definition.name !== "create_diagram_memo" || !requestedDiagramKind) {
+        return { name: definition.name, description: companionMcpDescription(definition), inputSchema };
+      }
+      const properties = inputSchema.properties as Record<string, unknown>;
+      const kind = properties.kind as Record<string, unknown>;
+      return {
+        name: definition.name,
+        description: `${companionMcpDescription(definition)} The user explicitly requested kind=${requestedDiagramKind}; use exactly that kind.`,
+        inputSchema: {
+          ...inputSchema,
+          properties: { ...properties, kind: { ...kind, enum: [requestedDiagramKind] } },
+        },
+      };
+    }),
     {
       name: "todo_write",
       description: "Replace the task list for this run. Use for multi-step work (≥3 steps). Keep at most one item in_progress.",
@@ -200,6 +225,11 @@ export function createCompanionTools(args: { db: DatabaseAdapter; scope: Compani
         try {
         const { _reason, ...parameters } = input;
         const { args: parameters_ } = validateCompanionTool(definition.name, parameters);
+        const requestedDiagramKind = explicitDiagramKind(args.input.message);
+        if (definition.name === "create_diagram_memo" && requestedDiagramKind && parameters_.kind !== requestedDiagramKind) {
+          throw new AppError("invalid_params",
+            `The user explicitly requested ${requestedDiagramKind}; create_diagram_memo.kind must be ${requestedDiagramKind}.`, 400);
+        }
         const previous = () => new Map([...inspected].map(([id, revision]) => [id, { revision, title: args.sources.find(source => source.id === id)?.title }]));
         const done = async (payload: unknown) => {
           if (call.status === "running") {

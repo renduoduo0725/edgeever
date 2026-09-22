@@ -175,7 +175,7 @@ EdgeEver の使い方、AI Agent の実例、費用対効果の高い / 無料�
 
 ## プラグインとテーマ
 
-EdgeEver の Web とデスクトップはプラグインと、コードなしテーマに対応します。プラグインマーケット、GitHub、Manifest URL から入れられます。インストール一覧は現在の作業領域に付き、ブラウザとデスクトップのあいだで共有されます。各クライアントはパッケージを手元でダウンロードし、検証します。ネイティブの Android と iOS はプラグインを実行しません。設定と秘密情報は今の端末に残ります。公式マーケットは無料かつオープンソースのプラグインだけを掲載します。GitHub や Manifest URL からの直接インストールには、この条件は適用しません。開発者は `@edgeever/plugin-api` を使えます。 [plugin development guide](docs/plugin-development.md) と [marketplace submission policy](docs/plugin-marketplace-policy.md) を見てください。
+Web とデスクトップは機能プラグインとカスタムテーマに対応し、公式マーケット、GitHub、Manifest URL から手軽に導入でき、作業領域を通じて同期されます。開発者は `@edgeever/plugin-api` で拡張できます。詳細は [plugin development guide](docs/plugin-development.md) と [marketplace submission policy](docs/plugin-marketplace-policy.md) を参照してください。
 
 ## 技術スタック
 

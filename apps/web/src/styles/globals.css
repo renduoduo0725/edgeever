@@ -620,6 +620,36 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   pointer-events: none !important;
 }
 
+/* Flowchart node modern card elevation */
+.edgeever-diagram-canvas[data-diagram-kind="flowchart"] .x6-node rect[selector="body"],
+.edgeever-diagram-canvas[data-diagram-kind="flowchart"] .x6-node polygon[selector="body"],
+.edgeever-x6-diagram[data-diagram-kind="flowchart"] .x6-node rect[selector="body"],
+.edgeever-x6-diagram[data-diagram-kind="flowchart"] .x6-node polygon[selector="body"] {
+  filter: drop-shadow(0 1px 2px rgb(15 23 42 / 0.06)) drop-shadow(0 2px 5px rgb(15 23 42 / 0.04));
+  transition: filter 160ms ease, stroke 160ms ease;
+}
+
+:root.dark .edgeever-diagram-canvas[data-diagram-kind="flowchart"] .x6-node rect[selector="body"],
+:root.dark .edgeever-diagram-canvas[data-diagram-kind="flowchart"] .x6-node polygon[selector="body"],
+:root.dark .edgeever-x6-diagram[data-diagram-kind="flowchart"] .x6-node rect[selector="body"],
+:root.dark .edgeever-x6-diagram[data-diagram-kind="flowchart"] .x6-node polygon[selector="body"] {
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.45)) drop-shadow(0 2px 6px rgb(0 0 0 / 0.3));
+}
+
+.edgeever-diagram-canvas[data-diagram-kind="flowchart"] .x6-node:hover rect[selector="body"],
+.edgeever-diagram-canvas[data-diagram-kind="flowchart"] .x6-node:hover polygon[selector="body"],
+.edgeever-x6-diagram[data-diagram-kind="flowchart"] .x6-node:hover rect[selector="body"],
+.edgeever-x6-diagram[data-diagram-kind="flowchart"] .x6-node:hover polygon[selector="body"] {
+  filter: drop-shadow(0 2px 5px rgb(15 23 42 / 0.1)) drop-shadow(0 4px 10px rgb(15 23 42 / 0.06));
+}
+
+:root.dark .edgeever-diagram-canvas[data-diagram-kind="flowchart"] .x6-node:hover rect[selector="body"],
+:root.dark .edgeever-diagram-canvas[data-diagram-kind="flowchart"] .x6-node:hover polygon[selector="body"],
+:root.dark .edgeever-x6-diagram[data-diagram-kind="flowchart"] .x6-node:hover rect[selector="body"],
+:root.dark .edgeever-x6-diagram[data-diagram-kind="flowchart"] .x6-node:hover polygon[selector="body"] {
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.6)) drop-shadow(0 4px 12px rgb(0 0 0 / 0.4));
+}
+
 .edgeever-diagram-canvas .x6-port-body {
   opacity: 0;
   transition: opacity 120ms ease, filter 120ms ease;

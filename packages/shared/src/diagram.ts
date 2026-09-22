@@ -89,7 +89,9 @@ export const resolveDiagramStructure = (structure?: DiagramStructure): DiagramSt
 
 export const ARCHITECTURE_RESOURCE_ICONS = [
   "client", "webApp", "mobileApp", "website", "apiClient",
-  "service", "virtualMachine", "container", "kubernetes", "serverless",
+  "service", "cpu", "gpu", "memory", "virtualMachine", "container", "kubernetes", "serverless",
+  "largeLanguageModel", "multimodalModel", "embeddingModel", "reranker", "modelInference",
+  "vectorDatabase", "ragPipeline", "aiAgent", "modelGateway", "mcpServer",
   "relationalDatabase", "noSqlDatabase", "cache", "dataWarehouse", "searchEngine",
   "objectStorage", "fileStorage", "blockStorage", "backup", "cdn",
   "messageQueue", "eventBus", "streamProcessing", "webhook", "serviceMesh",

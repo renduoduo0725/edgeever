@@ -39,7 +39,7 @@ export const flowchartEdgeIsStraight = (source: FlowchartBox, target: FlowchartB
   return (Math.abs(dx) <= 1 && Math.abs(dy) > 8) || (Math.abs(dy) <= 1 && Math.abs(dx) > 8);
 };
 
-export const FLOWCHART_LAYOUT_SPACING = { rank: 56, node: 36 };
+export const FLOWCHART_LAYOUT_SPACING = { rank: 76, node: 44 };
 
 // Auto-fit may shrink the whole graph down to this scale. Below it, keep 100%
 // and start from the origin — never compress a large note into a postage stamp.
@@ -107,14 +107,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   brand: {
     light: {
       canvas: "#F5F8F6",
-      edge: "#4A8A6C",
+      edge: "#5C7166",
       process: { fill: "#FFFFFF", stroke: "#6F9B88", text: "#1C3D31" },
       decision: { fill: "#FFF6E5", stroke: "#D4A24A", text: "#7A4A12" },
       terminator: { fill: "#E7F6EF", stroke: "#16A06E", text: "#145C40" },
     },
     dark: {
       canvas: "#101311",
-      edge: "#7BB89A",
+      edge: "#8CA397",
       process: { fill: "#1B2420", stroke: "#5B7569", text: "#E8F2ED" },
       decision: { fill: "#2A2316", stroke: "#E0B35C", text: "#F8E4B8" },
       terminator: { fill: "#1A3329", stroke: "#4DB58B", text: "#D8F3E6" },
@@ -123,14 +123,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   ink: {
     light: {
       canvas: "#F3F5F7",
-      edge: "#5C6774",
+      edge: "#64748B",
       process: { fill: "#FFFFFF", stroke: "#7D8794", text: "#1C232C" },
       decision: { fill: "#E8EDF3", stroke: "#6E7C8F", text: "#243044" },
       terminator: { fill: "#E6EAEF", stroke: "#3A4656", text: "#1A222C" },
     },
     dark: {
       canvas: "#101214",
-      edge: "#9AA3AE",
+      edge: "#94A3B8",
       process: { fill: "#1B1E23", stroke: "#6B7380", text: "#E8ECF1" },
       decision: { fill: "#222830", stroke: "#8B9BB0", text: "#D5DDE8" },
       terminator: { fill: "#1A2028", stroke: "#A8B4C4", text: "#E8EEF4" },
@@ -139,14 +139,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   paper: {
     light: {
       canvas: "#F6F1E8",
-      edge: "#8B7355",
+      edge: "#78716C",
       process: { fill: "#FFFCF6", stroke: "#C4B396", text: "#3A3126" },
       decision: { fill: "#F4E4CC", stroke: "#C08A48", text: "#6A3F14" },
       terminator: { fill: "#F0E4D0", stroke: "#7A5230", text: "#3F2A16" },
     },
     dark: {
       canvas: "#161310",
-      edge: "#C4A882",
+      edge: "#A8A29E",
       process: { fill: "#221E19", stroke: "#7A6A56", text: "#F3EBE0" },
       decision: { fill: "#2C2418", stroke: "#D4A06A", text: "#F6E2C4" },
       terminator: { fill: "#2A2118", stroke: "#C4A07A", text: "#F0E4D4" },
@@ -155,14 +155,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   island: {
     light: {
       canvas: "#F6EEE8",
-      edge: "#8A6550",
+      edge: "#7C6F68",
       process: { fill: "#FFF8F3", stroke: "#C4A090", text: "#3A2A22" },
       decision: { fill: "#F3D8C8", stroke: "#C46A48", text: "#6A3220" },
       terminator: { fill: "#EBD0C0", stroke: "#8B4A32", text: "#3F2418" },
     },
     dark: {
       canvas: "#161210",
-      edge: "#C4A082",
+      edge: "#ABA09A",
       process: { fill: "#231C18", stroke: "#8A6A56", text: "#F3E8E0" },
       decision: { fill: "#2C2018", stroke: "#D49070", text: "#F6D8C4" },
       terminator: { fill: "#281A16", stroke: "#C48868", text: "#F0D8CC" },
@@ -171,14 +171,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   tea: {
     light: {
       canvas: "#F4F6EE",
-      edge: "#6A7A52",
+      edge: "#657361",
       process: { fill: "#FFFFFF", stroke: "#8A9A72", text: "#2A3420" },
       decision: { fill: "#E8EED4", stroke: "#8A9A48", text: "#3F4A18" },
       terminator: { fill: "#DCE6C8", stroke: "#4F6A32", text: "#243018" },
     },
     dark: {
       canvas: "#121410",
-      edge: "#A0B07A",
+      edge: "#97A693",
       process: { fill: "#1C2018", stroke: "#6A7A56", text: "#E8F0DC" },
       decision: { fill: "#222618", stroke: "#B8C46A", text: "#E8F0C4" },
       terminator: { fill: "#1A2418", stroke: "#8AAA5A", text: "#D8E8C4" },
@@ -187,14 +187,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   cosmos: {
     light: {
       canvas: "#F2F5F8",
-      edge: "#4D6F8A",
+      edge: "#5C6D7E",
       process: { fill: "#FFFFFF", stroke: "#7A94A8", text: "#1C2A38" },
       decision: { fill: "#E4EEF5", stroke: "#5A82A0", text: "#1E3A52" },
       terminator: { fill: "#D8E6F0", stroke: "#2A5470", text: "#163044" },
     },
     dark: {
       canvas: "#101218",
-      edge: "#7AA0C0",
+      edge: "#8EA0B2",
       process: { fill: "#181E26", stroke: "#5A7088", text: "#E0E8F0" },
       decision: { fill: "#1C2834", stroke: "#7AA0C0", text: "#D0E4F4" },
       terminator: { fill: "#162028", stroke: "#8AB4D0", text: "#D8E8F4" },
@@ -203,14 +203,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   sun: {
     light: {
       canvas: "#F8F6EC",
-      edge: "#C4A030",
+      edge: "#736B5E",
       process: { fill: "#FFFEF6", stroke: "#D4C47A", text: "#3A3418" },
       decision: { fill: "#FFF0C4", stroke: "#E0B040", text: "#6A4A08" },
       terminator: { fill: "#F8E8B0", stroke: "#C09020", text: "#4A3808" },
     },
     dark: {
       canvas: "#16140C",
-      edge: "#E0C060",
+      edge: "#A8A092",
       process: { fill: "#242018", stroke: "#8A7A48", text: "#F6F0D8" },
       decision: { fill: "#2C2410", stroke: "#E0B848", text: "#F8E8B8" },
       terminator: { fill: "#28240C", stroke: "#D4B040", text: "#F4E8C0" },
@@ -219,14 +219,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   wa: {
     light: {
       canvas: "#F4F7F9",
-      edge: "#4A7AA0",
+      edge: "#5B6F7D",
       process: { fill: "#FFFFFF", stroke: "#8AA8C0", text: "#1C2C3A" },
       decision: { fill: "#FCE8DC", stroke: "#E09070", text: "#7A3A24" },
       terminator: { fill: "#DCE8F4", stroke: "#2A5A88", text: "#1A3858" },
     },
     dark: {
       canvas: "#101418",
-      edge: "#7AA8C8",
+      edge: "#8EA3B3",
       process: { fill: "#182028", stroke: "#5A7088", text: "#E0E8F0" },
       decision: { fill: "#2C2018", stroke: "#E0A080", text: "#F8DCC8" },
       terminator: { fill: "#162030", stroke: "#6A98C0", text: "#D4E4F4" },
@@ -235,14 +235,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   rose: {
     light: {
       canvas: "#F8F3F5",
-      edge: "#A06078",
+      edge: "#75646B",
       process: { fill: "#FFFFFF", stroke: "#C49AAC", text: "#3A2430" },
       decision: { fill: "#F8E4EC", stroke: "#D0809A", text: "#7A3048" },
       terminator: { fill: "#F0D8E2", stroke: "#A04060", text: "#4A2030" },
     },
     dark: {
       canvas: "#161014",
-      edge: "#D0809A",
+      edge: "#A8969D",
       process: { fill: "#24181C", stroke: "#8A5A6A", text: "#F4E4EA" },
       decision: { fill: "#2C1A22", stroke: "#E090A8", text: "#F8D8E4" },
       terminator: { fill: "#28141C", stroke: "#E07090", text: "#F4D0DC" },
@@ -251,14 +251,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   mint: {
     light: {
       canvas: "#F2F8F7",
-      edge: "#3A8A82",
+      edge: "#5A736F",
       process: { fill: "#FFFFFF", stroke: "#7AB0A8", text: "#1C3A38" },
       decision: { fill: "#E4F4F0", stroke: "#4AA89A", text: "#1A5A52" },
       terminator: { fill: "#D4EEE8", stroke: "#1A7A70", text: "#145048" },
     },
     dark: {
       canvas: "#101614",
-      edge: "#6AB8AC",
+      edge: "#8EA8A4",
       process: { fill: "#182422", stroke: "#4A786E", text: "#DCF0EC" },
       decision: { fill: "#1A2C28", stroke: "#6AC4B4", text: "#D0F0E8" },
       terminator: { fill: "#162824", stroke: "#5AB8A8", text: "#D0EEE6" },
@@ -319,6 +319,11 @@ export const flowchartNodeVisual = (
       rx: terminator ? Math.round(size.height / 2) : 10,
       ry: terminator ? Math.round(size.height / 2) : 10,
       ...(decision ? { refPoints: "0,10 10,0 20,10 10,20" } : {}),
+      style: {
+        filter: appearance === "dark"
+          ? "drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3))"
+          : "drop-shadow(0 1px 2px rgba(15, 23, 42, 0.06)) drop-shadow(0 2px 5px rgba(15, 23, 42, 0.04))",
+      },
     },
     label: {
       fill: paint.text,

@@ -33,17 +33,26 @@ const diagramNodeSchema = {
   properties: diagramNodeProperties,
 };
 
+const diagramEdgeProperties = {
+  source: { type: "string", minLength: 1, maxLength: 100 },
+  target: { type: "string", minLength: 1, maxLength: 100 },
+  label: { type: "string", maxLength: 500 },
+  type: { type: "string", enum: ["dependency", "request", "async", "data"] },
+  bidirectional: { type: "boolean" },
+};
+
 const diagramEdgeSchema = {
   type: "object",
   required: ["source", "target"],
   additionalProperties: false,
+  properties: diagramEdgeProperties,
+};
+
+const mutableDiagramEdgeSchema = {
+  ...diagramEdgeSchema,
   properties: {
     id: { type: "string", minLength: 1, maxLength: 100 },
-    source: { type: "string", minLength: 1, maxLength: 100 },
-    target: { type: "string", minLength: 1, maxLength: 100 },
-    label: { type: "string", maxLength: 500 },
-    type: { type: "string", enum: ["dependency", "request", "async", "data"] },
-    bidirectional: { type: "boolean" },
+    ...diagramEdgeProperties,
   },
 };
 
@@ -201,7 +210,7 @@ const MCP_TOOL_DEFINITIONS = [
               },
               node: diagramNodeSchema,
               nodeId: { type: "string", minLength: 1 },
-              edge: diagramEdgeSchema,
+              edge: mutableDiagramEdgeSchema,
               edgeId: { type: "string", minLength: 1 },
               changes: {
                 type: "object",

@@ -59,8 +59,8 @@ export const MobileUpdateProvider = ({ children }: { children: ReactNode }) => {
 
   const openManualUpdateSource = useCallback((source: MobileInstallUpdateSource) => {
     void openMobileInstallUpdateSource(source, {
+      linking: Linking,
       openGooglePlayDetails,
-      openUrl: Linking.openURL,
     }).then((result) => {
       if (result.status !== "google-play-unavailable") {
         return;

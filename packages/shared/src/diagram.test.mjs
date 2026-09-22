@@ -189,6 +189,29 @@ describe("diagram document", () => {
     expect(["normal", "manhattan"]).toContain(projected.edges[0].router.name);
   });
 
+  test("round-trips AI architecture resources", () => {
+    const document = createDefaultDiagramDocument("architecture");
+    const resourceIcons = [
+      "largeLanguageModel", "multimodalModel", "embeddingModel", "reranker", "modelInference",
+      "vectorDatabase", "ragPipeline", "aiAgent", "modelGateway", "mcpServer",
+    ];
+    document.nodes = resourceIcons.map((resourceIcon, index) => ({
+      id: `ai-${index}`,
+      label: resourceIcon,
+      x: index * 40,
+      y: index * 24,
+      width: 120,
+      height: 64,
+      shape: resourceIcon === "vectorDatabase" ? "database" : "service",
+      resourceIcon,
+    }));
+    document.edges = [];
+    expect(parseDiagramDocument(serializeDiagramDocument(document))).toEqual(document);
+    const projection = diagramDocumentToX6Cells(document, "light");
+    expect(projection.nodes).toHaveLength(resourceIcons.length);
+    expect(projection.nodes.every((node) => node.markup.some((item) => item.selector === "architectureIcon0"))).toBe(true);
+  });
+
   test("rejects malformed and dangling graph data", () => {
     expect(parseDiagramDocument("ordinary note")).toBeNull();
     const document = createDefaultDiagramDocument("flowchart");

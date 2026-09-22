@@ -66,6 +66,7 @@ describe("MCP tool catalog", () => {
     });
     expect(byName.get("create_diagram_memo")?.inputSchema.properties.nodes.items.properties.x).toBeUndefined();
     expect(byName.get("create_diagram_memo")?.inputSchema.properties.nodes.items.properties.width).toBeUndefined();
+    expect(byName.get("create_diagram_memo")?.inputSchema.properties.edges.items.properties.id).toBeUndefined();
     expect(byName.get("get_diagram")?.annotations).toMatchObject({
       readOnlyHint: true,
       destructiveHint: false,
@@ -98,6 +99,8 @@ describe("MCP tool catalog", () => {
     });
     expect(byName.get("update_diagram")?.inputSchema.properties.operations.items.oneOf).toBeUndefined();
     expect(byName.get("update_diagram")?.inputSchema.properties.operations.items.properties.op.const).toBeUndefined();
+    expect(byName.get("update_diagram")?.inputSchema.properties.operations.items.properties.edge.properties.id)
+      .toEqual({ type: "string", minLength: 1, maxLength: 100 });
     expect(byName.get("rename_notebook")?.annotations).toMatchObject({
       readOnlyHint: false,
       destructiveHint: false,

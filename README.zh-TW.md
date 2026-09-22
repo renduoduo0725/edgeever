@@ -183,7 +183,7 @@ EdgeEver 官方容器映像託管於 GitHub Container Registry（GHCR）。部�
 
 ## 外掛與主題
 
-EdgeEver 的 Web 與桌面版支援外掛和無程式碼主題，可從外掛市集、GitHub 或 Manifest 網址安裝。安裝清單會隨目前工作區在瀏覽器和桌面應用程式之間同步，每個用戶端會自行下載並校驗外掛套件；Android 和 iOS 原生應用程式不執行外掛。設定和金鑰仍只保存在目前裝置。官方外掛市集僅收錄自由及開源外掛，此要求不限制使用者直接透過 GitHub 或 Manifest 網址安裝其他外掛。開發者可使用 `@edgeever/plugin-api`，詳情參閱[外掛開發文件](docs/plugin-development.zh-CN.md)和[官方外掛市集上架政策](docs/plugin-marketplace-policy.zh-CN.md)。
+Web 與桌面版支援功能外掛與個人化主題，可從官方市集、GitHub 或 Manifest 網址一鍵安裝，並隨工作區跨端同步。開發者可使用 `@edgeever/plugin-api` 擴充功能，詳情參閱[外掛開發文件](docs/plugin-development.zh-CN.md)與[官方外掛市集上架政策](docs/plugin-marketplace-policy.zh-CN.md)。
 
 ## 技術棧
 

@@ -1,5 +1,6 @@
 import { flowchartNodePresentation } from "./diagram-node-presentation";
 import {
+  ARCHITECTURE_LABEL_FONT,
   architectureEdgeVisual,
   architectureNodeVisual,
   resolveArchitectureSurface,
@@ -201,24 +202,44 @@ export const diagramDocumentToX6Cells = (
         strokeDasharray: architectureEdge?.strokeDasharray,
         sourceMarker: architectureEdge
           ? architectureEdge.sourceMarker
-          : edge.bidirectional ? { name: "block", width: 8, height: 6 } : null,
-        targetMarker: document.kind === "mind-map" ? null : architectureEdge?.targetMarker ?? { name: "block", width: 8, height: 6 },
+          : edge.bidirectional ? { name: "block", width: 7, height: 5 } : null,
+        targetMarker: document.kind === "mind-map" ? null : architectureEdge?.targetMarker ?? { name: "block", width: 7, height: 5 },
         ...(mindEdge ? mindMapEdgeLineAttrs(document.structure, stroke) : { fill: "none" }),
       } },
       labels: edge.label ? [{ attrs: {
         label: {
           text: edge.label,
-          fill: flowchartSurface?.process.text ?? architectureSurface?.nodes.service.text ?? palette.nodeText,
-          fontSize: 12,
+          fill: document.kind === "architecture"
+            ? (appearance === "dark" ? "#E2E8F0" : "#334155")
+            : document.kind === "flowchart"
+              ? (appearance === "dark" ? "#E2E8F0" : "#475569")
+              : (flowchartSurface?.process.text ?? architectureSurface?.nodes.service.text ?? palette.nodeText),
+          fontSize: (document.kind === "architecture" || document.kind === "flowchart") ? 11 : 12,
+          fontWeight: (document.kind === "architecture" || document.kind === "flowchart") ? 500 : 400,
           lineHeight: 16,
-          fontFamily: FLOWCHART_LABEL_FONT,
+          fontFamily: document.kind === "architecture" ? ARCHITECTURE_LABEL_FONT : FLOWCHART_LABEL_FONT,
           textWrap: { width: 140, height: 512 },
         },
         body: {
-          ref: "label", refWidth: 1, refHeight: 1, refWidth2: 12, refHeight2: 8, refX: -6, refY: -4,
-          fill: flowchartSurface?.canvas ?? architectureSurface?.canvas ?? palette.canvas,
-          stroke: flowchartSurface?.process.stroke ?? architectureSurface?.nodes.service.stroke ?? palette.nodeStroke,
-          strokeWidth: 1, rx: 5, ry: 5,
+          ref: "label", refWidth: 1, refHeight: 1,
+          refWidth2: (document.kind === "architecture" || document.kind === "flowchart") ? 14 : 12,
+          refHeight2: 6,
+          refX: (document.kind === "architecture" || document.kind === "flowchart") ? -7 : -6,
+          refY: -3,
+          fill: document.kind === "architecture"
+            ? (appearance === "dark" ? "rgba(15, 23, 42, 0.92)" : "rgba(255, 255, 255, 0.96)")
+            : document.kind === "flowchart"
+              ? (appearance === "dark" ? "rgba(24, 28, 34, 0.94)" : "rgba(255, 255, 255, 0.95)")
+              : (flowchartSurface?.canvas ?? architectureSurface?.canvas ?? palette.canvas),
+          stroke: document.kind === "architecture"
+            ? (architectureEdge?.stroke ?? (appearance === "dark" ? "rgba(148, 163, 184, 0.3)" : "rgba(203, 213, 225, 0.8)"))
+            : document.kind === "flowchart"
+              ? (appearance === "dark" ? "rgba(148, 163, 184, 0.28)" : "rgba(100, 116, 139, 0.24)")
+              : (flowchartSurface?.process.stroke ?? architectureSurface?.nodes.service.stroke ?? palette.nodeStroke),
+          strokeWidth: 1,
+          rx: 6,
+          ry: 6,
+          ...((document.kind === "architecture" || document.kind === "flowchart") ? { style: { filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.06))" } } : {}),
         },
       } }] : undefined,
     };

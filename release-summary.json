@@ -1,20 +1,20 @@
 {
-  "version": "1.80.0",
+  "version": "1.81.0",
   "changes": {
     "en-US": [
-      "Add block drag handles and formula insertion in the editor, with caret-aware insertion and a clearer table icon.",
-      "Show the Mac product name and physical screen resolution more accurately in system information.",
-      "Make emptying the trash reliable when it is already empty."
+      "Create richer architecture diagrams with new AI components and hardware icons, more reliable insertion and diagram-kind handling, and refined architecture and flowchart visuals.",
+      "Explore improved public Demo examples for flowcharts, mind maps, and architecture diagrams, with corrected routing, nesting, and saved automatic layouts.",
+      "Open Android GitHub update downloads through a compatible external destination."
     ],
     "zh-CN": [
-      "编辑器新增内容块拖拽手柄与公式插入，并支持在光标处插入公式及更清晰的表格图标。",
-      "系统信息现在能更准确地显示 Mac 产品名称和物理屏幕分辨率。",
-      "修复废纸篓已为空时再次清空可能失败的问题。"
+      "架构图新增 AI 组件与硬件图标，节点插入和图表类型识别更可靠，并优化架构图与流程图的视觉表现。",
+      "公开 Demo 的流程图、思维导图和架构图示例全面更新，并修正连线路由、层级结构与自动布局保存。",
+      "Android 客户端的 GitHub 更新下载现可通过兼容的外部目标正常打开。"
     ],
     "ja": [
-      "エディターにブロックのドラッグハンドルと数式挿入を追加し、カーソル位置への挿入と分かりやすい表アイコンに対応しました。",
-      "システム情報でMacの製品名と物理画面解像度をより正確に表示するようになりました。",
-      "ゴミ箱がすでに空の場合でも、空にする操作が失敗しないよう修正しました。"
+      "アーキテクチャ図に AI コンポーネントとハードウェアアイコンを追加し、ノード挿入と図種別の処理を安定化して、アーキテクチャ図とフローチャートの表示を改善しました。",
+      "公開デモのフローチャート、マインドマップ、アーキテクチャ図の例を刷新し、配線、階層構造、自動レイアウトの保存を修正しました。",
+      "Android クライアントで GitHub の更新ダウンロードを互換性のある外部アプリから正しく開けるようになりました。"
     ]
   }
 }

@@ -11,7 +11,7 @@ import { companionWorkspaceCursor, proposeCompanionToolAction } from "./companio
 import { getCompanionAction, applyCompanionAction, dismissCompanionAction } from "./companion-actions.ts";
 import { COMPANION_MCP_TOOLS, validateCompanionTool } from "./companion-tool-catalog.ts";
 import { MCP_TOOLS } from "./mcp-tools.ts";
-import { createCompanionTools } from "./companion-agent-tools.ts";
+import { companionToolDefinitions, createCompanionTools, explicitDiagramKind } from "./companion-agent-tools.ts";
 import { companionExecutionReceipts } from "./companion-runtime.ts";
 
 const databases = [];
@@ -218,6 +218,54 @@ describe("shared companion MCP adapter", () => {
     expect(parseDiagramDocument((await getMemoDetail(f.db, scope.workspaceId, created.id)).contentMarkdown).nodes.map(node => node.id))
       .toContain("eval");
     expect(f.sqlite.query("SELECT COUNT(*) AS n FROM companion_actions").get().n).toBe(0);
+  });
+  test("create_diagram_memo keeps generated edge IDs out of Agent input", async () => {
+    const f = await setup();
+    const tools = createCompanionTools({ ...f, scope, signal: new AbortController().signal, assertActive: async () => {}, sources: [] });
+    const input = {
+      notebookId: "ideas",
+      title: "Service architecture",
+      kind: "architecture",
+      nodes: [
+        { id: "web", label: "Web", type: "frontend" },
+        { id: "api", label: "API", type: "service" },
+      ],
+      edges: [{ source: "web", target: "api", type: "request" }],
+    };
+    expect(() => validateCompanionTool("create_diagram_memo", {
+      ...input,
+      edges: [{ id: "edge-1", source: "web", target: "api", type: "request" }],
+    })).toThrow();
+    const created = await tools.create_diagram_memo.execute(input);
+    expect(created).toMatchObject({ applied: true, diagramKind: "architecture", nodeCount: 2 });
+    const diagram = parseDiagramDocument((await getMemoDetail(f.db, scope.workspaceId, created.id)).contentMarkdown);
+    expect(diagram.edges).toMatchObject([{ source: "web", target: "api", kind: "request" }]);
+    expect(diagram.edges[0].id).toBeTruthy();
+  });
+  test("an explicit diagram type narrows the Agent schema and rejects a mismatched write", async () => {
+    expect(explicitDiagramKind("帮我生成一个架构图笔记作为说明。")).toBe("architecture");
+    expect(explicitDiagramKind("Create a flow chart note.")).toBe("flowchart");
+    expect(explicitDiagramKind("マインドマップを作成して")).toBe("mind-map");
+    expect(explicitDiagramKind("比较思维导图和架构图")).toBeUndefined();
+
+    const f = await setup();
+    const agentInput = { ...f.input, message: "帮我生成一个架构图笔记作为说明。" };
+    const definition = companionToolDefinitions(agentInput).find(tool => tool.name === "create_diagram_memo");
+    expect(definition.inputSchema.properties.kind.enum).toEqual(["architecture"]);
+    expect(definition.description).toContain("use exactly that kind");
+
+    const tools = createCompanionTools({ ...f, input: agentInput, scope, signal: new AbortController().signal,
+      assertActive: async () => {}, sources: [] });
+    const graph = {
+      notebookId: "ideas",
+      title: "Requested architecture",
+      nodes: [{ id: "web", label: "Web", type: "frontend" }],
+    };
+    await expect(tools.create_diagram_memo.execute({ ...graph, kind: "mind-map" }))
+      .rejects.toMatchObject({ code: "invalid_params", message: expect.stringContaining("kind must be architecture") });
+    expect(f.sqlite.query("SELECT COUNT(*) AS n FROM memos WHERE title = ?").get(graph.title).n).toBe(0);
+    expect(await tools.create_diagram_memo.execute({ ...graph, kind: "architecture" }))
+      .toMatchObject({ applied: true, diagramKind: "architecture" });
   });
   test("note templates and AI instructions execute immediately including deletes", async () => {
     const f = await setup();

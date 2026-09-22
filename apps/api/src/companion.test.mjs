@@ -540,6 +540,7 @@ describe("actual AI SDK companion runtime", () => {
     expect(COMPANION_INSTRUCTIONS).toContain("after you have already searched");
     expect(COMPANION_INSTRUCTIONS).toContain("create_diagram_memo");
     expect(COMPANION_INSTRUCTIONS).toContain("思维导图");
+    expect(COMPANION_INSTRUCTIONS).toContain("架构图/architecture diagram means kind=architecture");
     expect(COMPANION_INSTRUCTIONS).toContain("update_diagram");
     expect(COMPANION_INSTRUCTIONS).toContain("这篇");
     expect(COMPANION_INSTRUCTIONS).not.toContain("You cannot create or edit diagrams");

@@ -76,6 +76,9 @@ describe("architecture semantic paint", () => {
     expect(service.body.rx).toBe(8);
     expect(service.body.strokeDasharray).toBeUndefined();
     expect(database.label.fontFamily).toContain("Inter");
+    expect(service.label.fontSize).toBe(12);
+    expect(service.label.fontWeight).toBe(550);
+    expect(service.label.lineHeight).toBe(17);
   });
 
   test("distinguishes request, data, async, and dependency edges", () => {

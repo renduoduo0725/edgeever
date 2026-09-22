@@ -14,12 +14,14 @@ test("opens the app listing directly in Google Play without invoking a generic U
   const openedUrls: string[] = [];
 
   const result = await openMobileInstallUpdateSource(googlePlay, {
+    linking: {
+      openURL: async (url) => {
+        openedUrls.push(url);
+      },
+    },
     openGooglePlayDetails: (applicationId) => {
       openedApplicationIds.push(applicationId);
       return "opened";
-    },
-    openUrl: async (url) => {
-      openedUrls.push(url);
     },
   });
 
@@ -32,10 +34,12 @@ test("reports that Google Play is not installed without opening a browser automa
   const openedUrls: string[] = [];
 
   const result = await openMobileInstallUpdateSource(googlePlay, {
-    openGooglePlayDetails: () => "not-installed",
-    openUrl: async (url) => {
-      openedUrls.push(url);
+    linking: {
+      openURL: async (url) => {
+        openedUrls.push(url);
+      },
     },
+    openGooglePlayDetails: () => "not-installed",
   });
 
   expect(result).toEqual({
@@ -47,8 +51,8 @@ test("reports that Google Play is not installed without opening a browser automa
 
 test("preserves the disabled Google Play reason", async () => {
   const result = await openMobileInstallUpdateSource(googlePlay, {
+    linking: { openURL: async () => undefined },
     openGooglePlayDetails: () => "disabled",
-    openUrl: async () => undefined,
   });
 
   expect(result).toEqual({
@@ -62,11 +66,13 @@ test("reports Google Play as unavailable when the native launch fails unexpected
   const openedUrls: string[] = [];
 
   const result = await openMobileInstallUpdateSource(googlePlay, {
+    linking: {
+      openURL: async (url) => {
+        openedUrls.push(url);
+      },
+    },
     openGooglePlayDetails: () => {
       throw new Error("native module unavailable");
-    },
-    openUrl: async (url) => {
-      openedUrls.push(url);
     },
   });
 
@@ -80,13 +86,17 @@ test("reports Google Play as unavailable when the native launch fails unexpected
 
 test("opens GitHub through the regular URL handler", async () => {
   const openedUrls: string[] = [];
+  const linking = {
+    async openURL(url: string) {
+      expect(this).toBe(linking);
+      openedUrls.push(url);
+    },
+  };
 
   const result = await openMobileInstallUpdateSource(github, {
+    linking,
     openGooglePlayDetails: () => {
       throw new Error("Google Play should not be called");
-    },
-    openUrl: async (url) => {
-      openedUrls.push(url);
     },
   });
 

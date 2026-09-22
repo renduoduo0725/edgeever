@@ -8,6 +8,9 @@ export type { ArchitectureIconElement };
 
 export const ARCHITECTURE_LABEL_FONT =
   'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+export const ARCHITECTURE_NODE_FONT_SIZE = 12;
+export const ARCHITECTURE_NODE_FONT_WEIGHT = 550;
+export const ARCHITECTURE_NODE_LINE_HEIGHT = 17;
 
 export const ARCHITECTURE_ICON_SIZE = 24;
 export const ARCHITECTURE_ICON_FRAME = 34;
@@ -28,8 +31,8 @@ export const isArchitectureNodeShape = (shape: DiagramNodeShape) =>
   shape === "boundary" || ARCHITECTURE_COMPONENT_SHAPES.includes(shape as ArchitectureComponentShape);
 
 export const ARCHITECTURE_ACCENTS: Record<ArchitectureComponentShape, string> = {
-  client: "#0891B2",
-  frontend: "#2563EB",
+  client: "#2B5A84",
+  frontend: "#4338CA",
   service: "#16A06E",
   database: "#7C3AED",
   storage: "#D97706",
@@ -38,7 +41,7 @@ export const ARCHITECTURE_ACCENTS: Record<ArchitectureComponentShape, string> = 
   external: "#64748B",
 };
 
-const ARCHITECTURE_SHAPE_RESOURCE: Record<ArchitectureComponentShape, ArchitectureResourceIcon> = {
+export const ARCHITECTURE_SHAPE_RESOURCE: Record<ArchitectureComponentShape, ArchitectureResourceIcon> = {
   client: "client",
   frontend: "webApp",
   service: "service",
@@ -69,6 +72,9 @@ export type ArchitectureSurface = {
   canvas: string;
   boundaryStroke: string;
   boundaryText: string;
+  boundaryFill: string;
+  boundaryBadgeFill: string;
+  boundaryBadgeStroke: string;
   nodes: Record<ArchitectureComponentShape, ArchitectureShapePaint>;
   edges: Record<Exclude<DiagramEdgeKind, never>, ArchitectureEdgePaint>;
 };
@@ -78,9 +84,12 @@ export const ARCHITECTURE_SURFACES: Record<ArchitectureAppearance, ArchitectureS
     canvas: "#F5F8F6",
     boundaryStroke: "#7B8F86",
     boundaryText: "#1C3D31",
+    boundaryFill: "rgba(123, 143, 134, 0.05)",
+    boundaryBadgeFill: "rgba(255, 255, 255, 0.95)",
+    boundaryBadgeStroke: "rgba(123, 143, 134, 0.4)",
     nodes: {
-      client: { fill: "#E1F2F6", stroke: "#0A87A6", text: "#134F5D", accent: "#0891B2", iconFrame: "#CEE9F0" },
-      frontend: { fill: "#E5ECFD", stroke: "#245DDA", text: "#203A76", accent: "#2563EB", iconFrame: "#D3E0FB" },
+      client: { fill: "#E9EFF5", stroke: "#3B6285", text: "#1A3B5C", accent: "#2B5A84", iconFrame: "#D4E2EE" },
+      frontend: { fill: "#EEF2FF", stroke: "#4338CA", text: "#312E81", accent: "#4F46E5", iconFrame: "#E0E7FF" },
       service: { fill: "#E3F4EE", stroke: "#169567", text: "#19563E", accent: "#16A06E", iconFrame: "#D0ECE2" },
       database: { fill: "#EFE7FD", stroke: "#7437DC", text: "#472877", accent: "#7C3AED", iconFrame: "#E5D8FB" },
       storage: { fill: "#FAEFE1", stroke: "#CA6F07", text: "#71430F", accent: "#D97706", iconFrame: "#F7E4CD" },
@@ -99,9 +108,12 @@ export const ARCHITECTURE_SURFACES: Record<ArchitectureAppearance, ArchitectureS
     canvas: "#101311",
     boundaryStroke: "#5B6F66",
     boundaryText: "#D7F4E8",
+    boundaryFill: "rgba(91, 111, 102, 0.12)",
+    boundaryBadgeFill: "rgba(16, 19, 17, 0.95)",
+    boundaryBadgeStroke: "rgba(91, 111, 102, 0.5)",
     nodes: {
-      client: { fill: "#0E363E", stroke: "#3EA9C3", text: "#D3EBF1", accent: "#3EA9C3", iconFrame: "#0C4F5E" },
-      frontend: { fill: "#16294E", stroke: "#5585EF", text: "#D8E3FB", accent: "#5585EF", iconFrame: "#1A397A" },
+      client: { fill: "#132537", stroke: "#5A8EB9", text: "#DCE8F2", accent: "#5A8EB9", iconFrame: "#1C3752" },
+      frontend: { fill: "#18214D", stroke: "#6366F1", text: "#E0E7FF", accent: "#6366F1", iconFrame: "#232F6B" },
       service: { fill: "#123A2B", stroke: "#49B58E", text: "#D5EEE5", accent: "#49B58E", iconFrame: "#13573E" },
       database: { fill: "#2E1E4F", stroke: "#9965F1", text: "#E7DCFC", accent: "#9965F1", iconFrame: "#44267B" },
       storage: { fill: "#482F0E", stroke: "#E1953D", text: "#F8E7D2", accent: "#E1953D", iconFrame: "#70430C" },
@@ -125,7 +137,7 @@ export const architectureShapePaint = (shape: DiagramNodeShape, appearance: Arch
   const surface = resolveArchitectureSurface(appearance);
   if (shape === "boundary") {
     return {
-      fill: "transparent",
+      fill: surface.boundaryFill,
       stroke: surface.boundaryStroke,
       text: surface.boundaryText,
       accent: surface.boundaryStroke,
@@ -175,6 +187,7 @@ export const architectureNodeMarkup = (
   if (shape === "boundary") {
     return [
       { tagName: "rect", selector: "body" },
+      { tagName: "rect", selector: "headerBadge" },
       { tagName: "text", selector: "label" },
     ];
   }
@@ -193,6 +206,7 @@ export const architectureNodeVisual = (
   size: { width: number; height: number },
   resourceIcon?: ArchitectureResourceIcon,
 ) => {
+  const surface = resolveArchitectureSurface(appearance);
   const paint = architectureShapePaint(shape, appearance);
   const boundary = shape === "boundary";
   const radius = architectureBodyRadius(shape, size.height);
@@ -220,15 +234,31 @@ export const architectureNodeVisual = (
     },
     label: {
       fill: paint.text,
-      fontSize: boundary ? 12 : 13,
-      fontWeight: boundary ? 650 : 600,
+      fontSize: boundary ? 12 : ARCHITECTURE_NODE_FONT_SIZE,
+      fontWeight: boundary ? 650 : ARCHITECTURE_NODE_FONT_WEIGHT,
       fontFamily: ARCHITECTURE_LABEL_FONT,
-      lineHeight: 18,
+      lineHeight: boundary ? 18 : ARCHITECTURE_NODE_LINE_HEIGHT,
       ...(boundary
-        ? { refX: 18, refY: 22, textAnchor: "start" as const, textVerticalAnchor: "middle" as const }
+        ? { refX: 20, refY: 20, textAnchor: "start" as const, textVerticalAnchor: "middle" as const }
         : { refX: 54, refY: "50%", textAnchor: "start" as const, textVerticalAnchor: "middle" as const }),
     },
-    attrs: boundary ? {} : {
+    attrs: (boundary ? {
+      headerBadge: {
+        ref: "label",
+        refWidth: 1,
+        refHeight: 1,
+        refWidth2: 16,
+        refHeight2: 6,
+        refX: -8,
+        refY: -3,
+        fill: surface.boundaryBadgeFill,
+        stroke: surface.boundaryBadgeStroke,
+        strokeWidth: 1,
+        rx: 4,
+        ry: 4,
+        pointerEvents: "none",
+      },
+    } : {
       iconFrame: {
         x: ARCHITECTURE_ICON_INSET,
         y: iconY,
@@ -241,7 +271,7 @@ export const architectureNodeVisual = (
         pointerEvents: "none",
       },
       ...iconAttrs,
-    },
+    }) as Record<string, Record<string, string | number | undefined>>,
   };
 };
 
