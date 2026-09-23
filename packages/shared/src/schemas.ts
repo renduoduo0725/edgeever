@@ -386,6 +386,10 @@ export const MemoShareUpdateSchema = z.object({
   passwordProtected: z.boolean(),
 });
 
+export const NoteBodyFontUpdateSchema = z.object({
+  bodyFont: z.enum(["wenkai", "wenkai-screen", "source-han-serif", "source-han-sans", "source-serif"]).nullable(),
+});
+
 export const PublicShareUnlockSchema = z.object({
   password: z.string().min(1).max(64),
 });

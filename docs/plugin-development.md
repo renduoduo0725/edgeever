@@ -23,6 +23,12 @@ Plugins never receive EdgeEver's repository, IndexedDB database, Cloudflare bind
   "apiVersion": "2",
   "settingsUi": "host",
   "description": "Adds a command for recent notes.",
+  "locales": {
+    "zh-CN": {
+      "name": "最近笔记",
+      "description": "添加一个查看最近笔记的命令。"
+    }
+  },
   "entry": "./main.js",
   "platforms": ["web", "desktop"],
   "permissions": ["notes:read", "editor:read", "ui:commands", "ui:notices", "ui:panels"]
@@ -30,6 +36,8 @@ Plugins never receive EdgeEver's repository, IndexedDB database, Cloudflare bind
 ```
 
 The manifest and JavaScript module must be served with CORS headers that permit the EdgeEver origin. Relative `entry` paths resolve against the manifest URL.
+
+The top-level `name` and optional `description` remain the fallback copy. Plugins and themes can add a `locales` object keyed by BCP 47 language tags, such as `zh-CN`, `en-US`, or `ja`. Each locale can override `name`, `description`, or both. EdgeEver first matches the current interface locale, then the same base language, and finally falls back to the top-level fields. This localizes marketplace and plugin-manager metadata; runtime commands, panels, notices, and host-rendered setting labels remain the plugin's responsibility.
 
 ## GitHub distribution
 
@@ -73,6 +81,12 @@ Registry format:
     "id": "com.example.recent-notes",
     "name": "Recent Notes",
     "description": "Shows recently updated notes.",
+    "locales": {
+      "zh-CN": {
+        "name": "最近笔记",
+        "description": "显示最近更新的笔记。"
+      }
+    },
     "author": "EdgeEver",
     "publisher": "edgeever",
     "category": "Productivity",

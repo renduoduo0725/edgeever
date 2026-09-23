@@ -37,6 +37,8 @@ export const NotebookTreeItem = ({
   onMoveNotebook,
   onMoveMemos,
   onDragScroll,
+  collapsedNotebookIds,
+  onOpenChange,
   expandSiblingsRequest,
   onExpandSiblings,
 }: {
@@ -50,11 +52,13 @@ export const NotebookTreeItem = ({
   onMoveNotebook: (notebookId: string, targetNotebookId: string, position: NotebookDropPosition) => void;
   onMoveMemos: (memoIds: string[], targetNotebookId: string) => void;
   onDragScroll: (event: DragEvent<HTMLDivElement>) => void;
+  collapsedNotebookIds: ReadonlySet<string>;
+  onOpenChange: (notebookId: string, open: boolean) => void;
   expandSiblingsRequest: { parentId: string | null; token: number } | null;
   onExpandSiblings: (parentId: string | null) => void;
 }) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(true);
+  const open = !collapsedNotebookIds.has(node.id);
   const hasChildren = node.children.length > 0;
   const selected = node.id === selectedNotebookId;
   const isInbox = node.slug === "inbox";
@@ -91,18 +95,12 @@ export const NotebookTreeItem = ({
   }, [actionsOpen]);
 
   useEffect(() => {
-    if (hasSelectedDescendant) {
-      setOpen(true);
-    }
-  }, [hasSelectedDescendant]);
-
-  useEffect(() => {
     if (!expandSiblingsRequest || expandSiblingsRequest.parentId !== node.parentId || !hasChildren) {
       return;
     }
 
-    setOpen(true);
-  }, [expandSiblingsRequest, hasChildren, node.parentId]);
+    onOpenChange(node.id, true);
+  }, [expandSiblingsRequest, hasChildren, node.id, node.parentId, onOpenChange]);
 
   const scheduleDragExpand = (position: NotebookDropPosition) => {
     if (!hasChildren || open || position !== "inside") {
@@ -116,7 +114,7 @@ export const NotebookTreeItem = ({
 
     expandTimerRef.current = window.setTimeout(() => {
       expandTimerRef.current = null;
-      setOpen(true);
+      onOpenChange(node.id, true);
     }, NOTEBOOK_DRAG_EXPAND_DELAY_MS);
   };
 
@@ -155,7 +153,7 @@ export const NotebookTreeItem = ({
 
     if (memoIds.length > 0) {
       onMoveMemos(memoIds, node.id);
-      setOpen(true);
+      onOpenChange(node.id, true);
       return;
     }
 
@@ -164,7 +162,7 @@ export const NotebookTreeItem = ({
     }
 
     onMoveNotebook(notebookId, node.id, position);
-    setOpen(true);
+    onOpenChange(node.id, true);
   };
 
   return (
@@ -203,7 +201,7 @@ export const NotebookTreeItem = ({
               <button
                 className="flex h-6 w-5 items-center justify-center rounded hover:bg-slate-100/50 transition-colors"
                 type="button"
-                onClick={() => setOpen((value) => !value)}
+                onClick={() => onOpenChange(node.id, !open)}
                 title={t("notebookTree.expandCollapse")}
                 aria-label={open ? t("notebookTree.collapse", { name: node.name }) : t("notebookTree.expand", { name: node.name })}
                 aria-expanded={open}
@@ -250,14 +248,14 @@ export const NotebookTreeItem = ({
                 if (event.key === "ArrowRight" && hasChildren && !open) {
                   event.preventDefault();
                   event.stopPropagation();
-                  setOpen(true);
+                  onOpenChange(node.id, true);
                   return;
                 }
 
                 if (event.key === "ArrowLeft" && hasChildren && open) {
                   event.preventDefault();
                   event.stopPropagation();
-                  setOpen(false);
+                  onOpenChange(node.id, false);
                   return;
                 }
               }}
@@ -397,6 +395,8 @@ export const NotebookTreeItem = ({
               onMoveNotebook={onMoveNotebook}
               onMoveMemos={onMoveMemos}
               onDragScroll={onDragScroll}
+              collapsedNotebookIds={collapsedNotebookIds}
+              onOpenChange={onOpenChange}
               expandSiblingsRequest={expandSiblingsRequest}
               onExpandSiblings={onExpandSiblings}
             />

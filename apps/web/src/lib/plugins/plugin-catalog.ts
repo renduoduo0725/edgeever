@@ -1,4 +1,4 @@
-import type { MarketplaceEntry } from "@edgeever/plugin-api";
+import type { ExtensionLocales, LocalizedExtensionMetadata, MarketplaceEntry } from "@edgeever/plugin-api";
 import type { InstalledExtension } from "./plugin-host";
 
 export interface PluginCatalogItem {
@@ -34,11 +34,31 @@ export const getPluginCatalogSourceKey = (item: PluginCatalogItem): PluginCatalo
   return item.extension?.source.kind ?? null;
 };
 
-export const getPluginCatalogName = (item: PluginCatalogItem) =>
-  item.extension?.manifest.name ?? item.marketplaceEntry?.name ?? item.id;
+const normalizeLocale = (locale: string) => locale.trim().replaceAll("_", "-").toLocaleLowerCase();
 
-export const getPluginCatalogDescription = (item: PluginCatalogItem) =>
-  item.extension?.manifest.description ?? item.marketplaceEntry?.description ?? "";
+const getLocalizedMetadata = (locales: ExtensionLocales | undefined, locale: string | undefined): LocalizedExtensionMetadata | undefined => {
+  if (!locales || !locale) return undefined;
+  const normalizedLocale = normalizeLocale(locale);
+  const entries = Object.entries(locales);
+  const exact = entries.find(([candidate]) => normalizeLocale(candidate) === normalizedLocale)?.[1];
+  if (exact) return exact;
+  const language = normalizedLocale.split("-")[0];
+  return entries.find(([candidate]) => normalizeLocale(candidate).split("-")[0] === language)?.[1];
+};
+
+export const getPluginCatalogName = (item: PluginCatalogItem, locale?: string) =>
+  getLocalizedMetadata(item.extension?.manifest.locales, locale)?.name
+  ?? getLocalizedMetadata(item.marketplaceEntry?.locales, locale)?.name
+  ?? item.extension?.manifest.name
+  ?? item.marketplaceEntry?.name
+  ?? item.id;
+
+export const getPluginCatalogDescription = (item: PluginCatalogItem, locale?: string) =>
+  getLocalizedMetadata(item.extension?.manifest.locales, locale)?.description
+  ?? getLocalizedMetadata(item.marketplaceEntry?.locales, locale)?.description
+  ?? item.extension?.manifest.description
+  ?? item.marketplaceEntry?.description
+  ?? "";
 
 export const getPluginCatalogRepositoryUrl = (item: PluginCatalogItem) =>
   item.extension?.source.repositoryUrl ?? item.marketplaceEntry?.repositoryUrl;

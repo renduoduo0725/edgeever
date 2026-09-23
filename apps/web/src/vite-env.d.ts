@@ -85,6 +85,16 @@ interface EdgeEverDesktopBridge {
   }) => void | Promise<void>): () => void;
   onImportMarkdown(callback: (payload: { name: string; content: string }) => void): () => void;
   onImportScreenshot?(callback: (payload: { captureId?: string; name: string; type: string; title?: string; bytes: Uint8Array }) => void): () => void;
+  readWeChatImportMedia?(importId: string, mediaId: string): Promise<{ filename: string; mimeType: string; bytes: Uint8Array }>;
+  finishWeChatImport?(importId: string): Promise<void>;
+  onImportWeChatChat?(callback: (payload: {
+    ok: boolean;
+    reason?: string;
+    importId?: string;
+    title?: string;
+    markdown?: string;
+    media?: Array<{ id: string; filename: string; mimeType: string; byteSize: number }>;
+  }) => void): () => void;
 }
 
 interface DesktopUpdateStatus {

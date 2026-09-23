@@ -54,3 +54,15 @@ describe("system information diagnostic fields", () => {
     expect(source).toContain("formatLastSuccessfulSync");
   });
 });
+
+describe("system information copy feedback", () => {
+  test("shows visible success and failure feedback", () => {
+    expect(source).toContain('useState<"idle" | "copied" | "error">');
+    expect(source).toContain("<ClipboardCopyNotice");
+    expect(source).toContain("systemInfo.copySucceeded");
+    expect(source).toContain("systemInfo.copyFailed");
+    expect(source).toContain('copyState === "error"');
+    expect(source).toContain("formatSystemInfoClipboard");
+    expect(source).toContain("copyHtmlToClipboard");
+  });
+});

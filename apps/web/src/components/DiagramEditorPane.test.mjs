@@ -187,7 +187,13 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('{ fill: "none" }');
     expect(source).toContain('if (kind !== "mind-map") edge.attr("line/fill", "none")');
     expect(source).toContain("FLOWCHART_EDGE_ROUTER");
-    expect(source).toContain("applyFlowchartEdgePorts(graph)");
+    expect(source).toContain("fontSize: ARCHITECTURE_EDGE_LABEL_FONT_SIZE");
+    expect(source).toContain("lineHeight: ARCHITECTURE_EDGE_LABEL_LINE_HEIGHT");
+    expect(source).toContain("fontSize: FLOWCHART_EDGE_LABEL_FONT_SIZE");
+    expect(source).toContain("lineHeight: FLOWCHART_EDGE_LABEL_LINE_HEIGHT");
+    expect(source).toContain("fontSize: MIND_MAP_EDGE_LABEL_FONT_SIZE");
+    expect(source).toContain("lineHeight: MIND_MAP_EDGE_LABEL_LINE_HEIGHT");
+    expect(source).toContain("applyOrthogonalEdgePorts(graph, document.kind)");
     expect(source).toContain("flowchartEdgeIsStraight");
     expect(source).toContain('showTheme={document.kind !== "architecture"}');
     expect(source).toContain('themeCatalog={document.kind === "flowchart" ? "flowchart" : "mind-map"}');

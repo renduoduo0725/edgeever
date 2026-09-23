@@ -17,8 +17,10 @@ import {
   applyLocalEmptyTrash,
   applyLocalMemoPin,
   updateLocalNotebook,
-  deleteLocalNotebook,
+  deleteLocalNotebookTree,
   createLocalNotebook,
+  readNotebookSyncGuards,
+  reconcileLocalNotebooks,
   createLocalTemplate,
   updateLocalTemplate,
   mergeLocalMemos,
@@ -178,6 +180,21 @@ const acceptRemoteMemoDetail = async (
   return true;
 };
 
+const notebookListGeneration = new Map<string, number>();
+
+const beginNotebookListRefresh = (scope: string) => {
+  const generation = (notebookListGeneration.get(scope) ?? 0) + 1;
+  notebookListGeneration.set(scope, generation);
+  return generation;
+};
+
+const applyRemoteNotebookList = async (scope: string, notebooks: Notebook[], generation: number) => {
+  if (notebookListGeneration.get(scope) !== generation) return;
+  const guards = await readNotebookSyncGuards(scope);
+  if (notebookListGeneration.get(scope) !== generation) return;
+  await reconcileLocalNotebooks(scope, notebooks, guards.pendingDeleteIds, guards.pendingCreateIds);
+};
+
 export const createWebRepository = (scope: string): EdgeEverRepository => {
   const isOffline = isBrowserOffline;
 
@@ -185,12 +202,18 @@ export const createWebRepository = (scope: string): EdgeEverRepository => {
   async listNotebooks() {
     const local = await listLocalNotebooks(scope);
     if (local.notebooks.length > 0 || isOffline()) {
-      if (!isOffline()) void api.listNotebooks().then((remote) => Promise.all(remote.notebooks.map((notebook) => putLocalNotebook(scope, notebook)))).catch(() => {});
+      if (!isOffline()) {
+        const generation = beginNotebookListRefresh(scope);
+        void api.listNotebooks()
+          .then((remote) => applyRemoteNotebookList(scope, remote.notebooks, generation))
+          .catch(() => {});
+      }
       return local;
     }
 
+    const generation = beginNotebookListRefresh(scope);
     const remote = await api.listNotebooks();
-    await Promise.all(remote.notebooks.map((notebook) => putLocalNotebook(scope, notebook)));
+    await applyRemoteNotebookList(scope, remote.notebooks, generation);
     return remote;
   },
 
@@ -215,8 +238,8 @@ export const createWebRepository = (scope: string): EdgeEverRepository => {
   },
 
   async deleteNotebook(notebookId) {
-    await deleteLocalNotebook(scope, notebookId);
-    await queueLocalAction(scope, "notebook.delete", notebookId, { notebookId });
+    const notebookIds = await deleteLocalNotebookTree(scope, notebookId);
+    await queueLocalAction(scope, "notebook.delete", notebookId, { notebookId, notebookIds });
     window.dispatchEvent(new CustomEvent("edgeever:sync-queue-changed"));
     return { ok: true as const };
   },

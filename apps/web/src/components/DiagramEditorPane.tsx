@@ -84,10 +84,14 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   ARCHITECTURE_DIAGRAM_SCHEMA_VERSION,
+  ARCHITECTURE_EDGE_LABEL_FONT_SIZE,
+  ARCHITECTURE_EDGE_LABEL_LINE_HEIGHT,
   DIAGRAM_SCHEMA_VERSION,
   diagramFallbackMarkdown,
   markdownToDoc,
   MIND_MAP_CONNECTOR_NAME,
+  MIND_MAP_EDGE_LABEL_FONT_SIZE,
+  MIND_MAP_EDGE_LABEL_LINE_HEIGHT,
   MIND_MAP_HORIZONTAL_GAP,
   mindMapTopicMarkup,
   MIND_MAP_VERTICAL_GAP,
@@ -111,12 +115,15 @@ import {
   ARCHITECTURE_NODE_FONT_WEIGHT,
   ARCHITECTURE_NODE_LINE_HEIGHT,
   ARCHITECTURE_SHAPE_RESOURCE,
+  architectureEdgePorts,
   architectureEdgeVisual,
   architectureIconOffset,
   architectureNodeVisual,
   isArchitectureNodeShape,
   resolveArchitectureSurface,
   diagramReaderFocusNode,
+  FLOWCHART_EDGE_LABEL_FONT_SIZE,
+  FLOWCHART_EDGE_LABEL_LINE_HEIGHT,
   FLOWCHART_EDGE_ROUTER,
   FLOWCHART_LABEL_FONT,
   flowchartEdgeIsStraight,
@@ -1235,10 +1242,10 @@ const diagramEdgeLabel = (
         label: {
           text,
           fill: appearance === "dark" ? "#E2E8F0" : "#334155",
-          fontSize: 11,
+          fontSize: ARCHITECTURE_EDGE_LABEL_FONT_SIZE,
           fontWeight: 500,
           fontFamily: ARCHITECTURE_LABEL_FONT,
-          lineHeight: 16,
+          lineHeight: ARCHITECTURE_EDGE_LABEL_LINE_HEIGHT,
           textWrap: { width: 140, height: 512 },
         },
         body: {
@@ -1266,10 +1273,10 @@ const diagramEdgeLabel = (
         label: {
           text,
           fill: appearance === "dark" ? "#E2E8F0" : "#475569",
-          fontSize: 11,
+          fontSize: FLOWCHART_EDGE_LABEL_FONT_SIZE,
           fontWeight: 500,
           fontFamily: FLOWCHART_LABEL_FONT,
-          lineHeight: 16,
+          lineHeight: FLOWCHART_EDGE_LABEL_LINE_HEIGHT,
           textWrap: { width: 140, height: 512 },
         },
         body: {
@@ -1294,7 +1301,13 @@ const diagramEdgeLabel = (
   return {
     position: { distance: 0.5, offset: 0 },
     attrs: {
-      label: { text, fill: palette.nodeText, fontSize: 12, lineHeight: 16, textWrap: { width: 140, height: 512 } },
+      label: {
+        text,
+        fill: palette.nodeText,
+        fontSize: MIND_MAP_EDGE_LABEL_FONT_SIZE,
+        lineHeight: MIND_MAP_EDGE_LABEL_LINE_HEIGHT,
+        textWrap: { width: 140, height: 512 },
+      },
       body: { ref: "label", refWidth: 1, refHeight: 1, refWidth2: 12, refHeight2: 8, refX: -6, refY: -4,
         fill: palette.canvas,
         stroke: palette.nodeStroke, strokeWidth: 1, rx: 4, ry: 4 },
@@ -1343,14 +1356,16 @@ const edgeMetadata = (
   };
 };
 
-const applyFlowchartEdgePorts = (graph: Graph) => {
+const applyOrthogonalEdgePorts = (graph: Graph, kind: DiagramDocument["kind"]) => {
   for (const edge of graph.getEdges()) {
     const source = edge.getSourceNode();
     const target = edge.getTargetNode();
     if (!source || !target) continue;
     const sourceBox = { ...source.getPosition(), ...source.getSize() };
     const targetBox = { ...target.getPosition(), ...target.getSize() };
-    const ports = flowchartEdgePorts(sourceBox, targetBox);
+    const ports = kind === "architecture"
+      ? architectureEdgePorts(sourceBox, targetBox)
+      : flowchartEdgePorts(sourceBox, targetBox);
     edge.setSource({ cell: source.id, port: ports.source });
     edge.setTarget({ cell: target.id, port: ports.target });
     edge.setRouter(flowchartEdgeIsStraight(sourceBox, targetBox) ? { name: "normal" } : FLOWCHART_EDGE_ROUTER);
@@ -1965,7 +1980,7 @@ export const DiagramEditorPane = ({
       }
     }
     graph.addEdges(document.edges.map((edge) => edgeMetadata(edge, document.kind, documentTheme, appearance, documentStructure)));
-    if (usesOrthogonalDiagramEdges(document.kind)) applyFlowchartEdgePorts(graph);
+    if (usesOrthogonalDiagramEdges(document.kind)) applyOrthogonalEdgePorts(graph, document.kind);
     applyGraphPalette(graph, documentTheme, document.kind, appearance, documentStructure);
     graph.on("scale", () => setZoomPercent(Math.round(graph.scale().sx * 100)));
     graph.cleanHistory();
@@ -2157,7 +2172,7 @@ export const DiagramEditorPane = ({
           target: { cell: currentCell.id, ...(currentPort ? { port: currentPort } : {}) },
         });
         graph.stopBatch("connect");
-        if (usesOrthogonalDiagramEdges(document.kind)) applyFlowchartEdgePorts(graph);
+        if (usesOrthogonalDiagramEdges(document.kind)) applyOrthogonalEdgePorts(graph, document.kind);
         return;
       }
       if (!currentPoint || !containerRef.current) {
@@ -2698,7 +2713,7 @@ export const DiagramEditorPane = ({
       target: { cell: id, ...(oppositeFlowPort(pending.sourcePort) ? { port: oppositeFlowPort(pending.sourcePort) } : {}) },
     });
     graph.stopBatch("quick-create");
-    applyFlowchartEdgePorts(graph);
+    applyOrthogonalEdgePorts(graph, document.kind);
     settleScroller();
     graph.cleanSelection();
     graph.select(node);
@@ -2777,7 +2792,7 @@ export const DiagramEditorPane = ({
         node.resize(geometry.width, geometry.height);
       }
     }
-    if (usesOrthogonalDiagramEdges(document.kind)) applyFlowchartEdgePorts(graph);
+    if (usesOrthogonalDiagramEdges(document.kind)) applyOrthogonalEdgePorts(graph, document.kind);
     if (document.kind === "mind-map") applyMindMapHierarchy(graph, themeRef.current, appearanceRef.current, structureRef.current);
     graph.stopBatch("layout");
     ensureDiagramPaperContainsNodes(graph);

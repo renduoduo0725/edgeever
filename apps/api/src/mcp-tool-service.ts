@@ -6,9 +6,13 @@ import {
   TemplateUpdateSchema,
   docToText,
   markdownToDoc,
+  getTableSummary,
+  hasTableDocumentMarker,
   parseDiagramDocument,
+  parseTableDocument,
   serializeDiagramDocument,
   stripDiagramDocumentMarker,
+  stripTableDocumentMarker,
   type DiagramDocument,
   type DiagramNodeShape,
   type MemoDetail,
@@ -383,6 +387,12 @@ const memoWithoutDiagramPayload = (memo: MemoDetail) => {
   return { ...memo, contentMarkdown, contentJson, contentText: docToText(contentJson) };
 };
 
+const memoWithoutTablePayload = (memo: MemoDetail) => {
+  const contentMarkdown = stripTableDocumentMarker(memo.contentMarkdown);
+  const contentJson = markdownToDoc(contentMarkdown);
+  return { ...memo, contentMarkdown, contentJson, contentText: docToText(contentJson) };
+};
+
 type MutableDiagramEdge = ReturnType<typeof diagramSemanticGraph>["edges"][number];
 
 const applyDiagramOperations = async (
@@ -683,9 +693,10 @@ export const callMcpTool = async (
       }
 
       const diagram = parseDiagramDocument(memo.contentMarkdown);
-      return diagram
-        ? { memo: memoWithoutDiagramPayload(memo), diagram: diagramSemanticGraph(diagram) }
-        : { memo };
+      if (diagram) return { memo: memoWithoutDiagramPayload(memo), diagram: diagramSemanticGraph(diagram) };
+      const table = parseTableDocument(memo.contentMarkdown);
+      if (table) return { memo: memoWithoutTablePayload(memo), structuredTable: getTableSummary(memo.contentMarkdown).tablePreview };
+      return { memo };
     }
     case "create_memo": {
       assertScope(auth, "write:memos");
@@ -793,6 +804,13 @@ export const callMcpTool = async (
           throw new AppError(
             "diagram_update_required",
             "Diagram content cannot be replaced through update_memo. Use update_diagram for semantic changes.",
+            400,
+          );
+        }
+        if (existing && hasTableDocumentMarker(existing.contentMarkdown)) {
+          throw new AppError(
+            "table_update_required",
+            "Structured table content cannot be replaced through update_memo.",
             400,
           );
         }

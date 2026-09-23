@@ -13,6 +13,19 @@ describe("details HTML helpers", () => {
     expect(wrapped).toContain('src="https://example.com/a.png"');
   });
 
+  test("pastes a remote video inside details as an attachment the player already knows", () => {
+    if (typeof DOMParser === "undefined") return;
+
+    const wrapped = wrapDetailsContentHtml(
+      `<details><summary>片段</summary><video src="https://cdn.example.com/clip.mp4" controls width="45%"></video></details>`,
+    );
+    expect(wrapped).toContain('data-type="edgeever-file-attachment"');
+    expect(wrapped).toContain('data-file-url="https://cdn.example.com/clip.mp4"');
+    expect(wrapped).toContain('data-file-mime-type="video/mp4"');
+    expect(wrapped).not.toContain("<video");
+    expect(wrapped).not.toContain("width=\"45%\"");
+  });
+
   test("unwraps details to a visible title for linear HTML sinks", () => {
     if (typeof DOMParser === "undefined") return;
 

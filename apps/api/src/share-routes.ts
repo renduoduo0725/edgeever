@@ -1,4 +1,4 @@
-import { collectMemoLinkIds, isPdfAttachment, MemoShareUpdateSchema, PublicShareUnlockSchema, resolveMemoContentDoc, resolvePlayableMediaMimeType, type MemoShare, type PublicMemoShare, type TiptapDoc } from "@edgeever/shared";
+import { collectMemoLinkIds, isPdfAttachment, MemoShareUpdateSchema, NoteBodyFontUpdateSchema, parsePublishedNoteBodyFont, PublicShareUnlockSchema, resolveMemoContentDoc, resolvePlayableMediaMimeType, type MemoShare, type PublicMemoShare, type TiptapDoc } from "@edgeever/shared";
 import { zValidator } from "@hono/zod-validator";
 import type { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
@@ -40,6 +40,7 @@ type PublicMemoShareRow = {
   tags_json: string;
   updated_at: string;
   password_hash: string | null;
+  note_body_font: string | null;
 };
 type ShareGateRow = {
   workspace_id: string;
@@ -134,10 +135,12 @@ export const registerPublicShareRoutes = (app: Hono<AppEnv>) => {
     if (!token) return notFound(c, "Shared note not found");
 
     const row = await c.env.storage.db.prepare(
-      `SELECT ms.workspace_id, m.title, mc.content_json, mc.content_markdown, m.tags_json, m.updated_at, ms.password_hash
+      `SELECT ms.workspace_id, m.title, mc.content_json, mc.content_markdown, m.tags_json, m.updated_at, ms.password_hash,
+              u.note_body_font
        FROM memo_shares ms
        INNER JOIN memos m ON m.id = ms.memo_id AND m.workspace_id = ms.workspace_id
        INNER JOIN memo_contents mc ON mc.memo_id = m.id
+       LEFT JOIN users u ON u.id = ms.created_by
        WHERE ms.token = ? AND m.is_deleted = 0
        LIMIT 1`
     ).bind(token).first<PublicMemoShareRow>();
@@ -170,6 +173,7 @@ export const registerPublicShareRoutes = (app: Hono<AppEnv>) => {
       tags: parseJsonArray(row.tags_json),
       updatedAt: row.updated_at,
       memoShareTokens,
+      bodyFont: parsePublishedNoteBodyFont(row.note_body_font),
     };
     c.header("Cache-Control", "private, no-store");
     c.header("X-Robots-Tag", "noindex, nofollow, noarchive");
@@ -273,6 +277,18 @@ export const registerPublicShareRoutes = (app: Hono<AppEnv>) => {
 };
 
 export const registerMemoShareRoutes = (app: Hono<AppEnv>) => {
+  app.put("/api/v1/me/note-body-font", zValidator("json", NoteBodyFontUpdateSchema), async (c) => {
+    const denied = requireUser(c);
+    if (denied) return denied;
+    const actorId = c.get("auth").actorId;
+    if (!actorId) return apiError(c, "note_body_font_unavailable", "This session cannot publish a note font", 403);
+    const bodyFont = c.req.valid("json").bodyFont;
+    await c.env.storage.db.prepare(
+      `UPDATE users SET note_body_font = ?, updated_at = ? WHERE id = ?`
+    ).bind(bodyFont, isoNow(), actorId).run();
+    return c.json({ bodyFont });
+  });
+
   app.get("/api/v1/memos/:id/share", async (c) => {
     const denied = requireUser(c);
     if (denied) return denied;

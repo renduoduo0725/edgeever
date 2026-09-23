@@ -3,6 +3,11 @@ export declare const THEME_API_VERSION: "1";
 export declare const PLUGIN_PERMISSIONS: readonly ["notes:read", "notes:write", "notes:delete", "metadata:read", "metadata:write", "resources:read", "resources:write", "templates:read", "templates:write", "network", "network:public", "ai:generate", "storage", "secrets", "schedules", "editor:read", "editor:write", "ui:commands", "ui:navigation", "ui:notices", "ui:panels", "ui:embeds"];
 export type PluginPermission = (typeof PLUGIN_PERMISSIONS)[number];
 export type ExtensionPlatform = "web" | "desktop" | "android" | "ios";
+export interface LocalizedExtensionMetadata {
+    name?: string;
+    description?: string;
+}
+export type ExtensionLocales = Record<string, LocalizedExtensionMetadata>;
 export interface PluginManifest {
     type: "plugin";
     id: string;
@@ -12,6 +17,8 @@ export interface PluginManifest {
     /** Plugins must delegate ordinary persistent configuration to EdgeEver. */
     settingsUi: "host";
     description?: string;
+    /** Localized marketplace and manager copy keyed by a BCP 47 language tag. */
+    locales?: ExtensionLocales;
     author?: string;
     entry: string;
     platforms?: ExtensionPlatform[];
@@ -84,6 +91,8 @@ export interface ThemeManifest {
     version: string;
     themeApiVersion: typeof THEME_API_VERSION;
     description?: string;
+    /** Localized marketplace and manager copy keyed by a BCP 47 language tag. */
+    locales?: ExtensionLocales;
     author?: string;
     modes: Array<"light" | "dark">;
     light: ThemeTokens;
@@ -95,6 +104,7 @@ export interface MarketplaceEntry {
     id: string;
     name: string;
     description: string;
+    locales?: ExtensionLocales;
     author: string;
     publisher?: "edgeever";
     category: string;

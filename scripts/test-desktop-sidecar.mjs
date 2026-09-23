@@ -465,6 +465,22 @@ assert.ok((await request("sync.outbox.list", { limit: 200, includeConflicts: tru
 await request("sync.outbox.discard", { id: conflictCandidate.id });
 assert.equal((await request("sync.status")).conflict, 0);
 
+const examNotebook = (await request("notebook.create", { name: "注册考试" })).notebook;
+const lawNotebook = (await request("notebook.create", { name: "法律法规", parentId: examNotebook.id })).notebook;
+const historyNotebook = (await request("notebook.create", { name: "建筑史", parentId: examNotebook.id })).notebook;
+await request("notebook.delete", { notebookId: examNotebook.id });
+const remainingNotebookIds = new Set((await request("notebook.list")).notebooks.map((notebook) => notebook.id));
+assert.equal(remainingNotebookIds.has(examNotebook.id), false, "an empty parent notebook should be deleted with its children");
+assert.equal(remainingNotebookIds.has(lawNotebook.id), false, "an empty child notebook should be deleted with its parent");
+assert.equal(remainingNotebookIds.has(historyNotebook.id), false, "every empty descendant should be deleted with the parent");
+const blockedNotebook = (await request("notebook.create", { name: "仍有笔记" })).notebook;
+const blockedChild = (await request("notebook.create", { name: "子笔记本", parentId: blockedNotebook.id })).notebook;
+await request("memo.create", { notebookId: blockedChild.id, title: "还在", contentMarkdown: "keep", tags: [] });
+await assert.rejects(request("notebook.delete", { notebookId: blockedNotebook.id }), /notebook_not_empty/);
+const blockedNotebookIds = new Set((await request("notebook.list")).notebooks.map((notebook) => notebook.id));
+assert.equal(blockedNotebookIds.has(blockedNotebook.id), true, "a notebook with notes in a child should stay");
+assert.equal(blockedNotebookIds.has(blockedChild.id), true, "a child notebook that still has notes should stay");
+
 child.stdin.end();
 await new Promise((resolve) => child.once("close", resolve));
-console.log(JSON.stringify({ ok: true, checked: ["memo.create", "memo.list.search", "memo.list.tag", "memo.list.subtree", "memo.update", "memo.update.coalesce", "memo.revisions", "memo.restoreRevision", "memo.revision.cache", "tag.rename", "memo.moveBatch", "memo.pinBatch", "memo.deleteBatch", "memo.restore", "memo.emptyTrash", "memo.merge", "template.cache", "template.create.payload", "template.delete", "storage.backup", "storage.backups", "storage.restore", "sync.apply.merge-page-order", "sync.apply.deleted-notebook", "sync.apply.renamed-inbox", "sync.outbox", "sync.outbox.retry", "sync.outbox.recoverMemoUpdate", "sync.outbox.discard"] }));
+console.log(JSON.stringify({ ok: true, checked: ["memo.create", "memo.list.search", "memo.list.tag", "memo.list.subtree", "memo.update", "memo.update.coalesce", "memo.revisions", "memo.restoreRevision", "memo.revision.cache", "tag.rename", "memo.moveBatch", "memo.pinBatch", "memo.deleteBatch", "memo.restore", "memo.emptyTrash", "memo.merge", "template.cache", "template.create.payload", "template.delete", "storage.backup", "storage.backups", "storage.restore", "sync.apply.merge-page-order", "sync.apply.deleted-notebook", "sync.apply.renamed-inbox", "sync.outbox", "sync.outbox.retry", "sync.outbox.recoverMemoUpdate", "sync.outbox.discard", "notebook.delete.empty-tree", "notebook.delete.not-empty"] }));

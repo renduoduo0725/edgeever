@@ -17,6 +17,7 @@ import {
 } from "@edgeever/shared";
 import { api, ApiRequestError } from "@/lib/api";
 import { isDesktopResourceRuntime, mapMarkdownResourceUrls, mapTiptapResourceUrls, toApiResourceUrl } from "@/lib/desktop-resources";
+import { notebookDeleteIdsFromPayload } from "@/lib/notebook-delete";
 import { notifyMemoIdRemapped, notifyMemoSyncAcknowledged } from "@/lib/sync-events";
 
 type StagedResourceRewrite = { memoId: string; placeholder: string; url: string };
@@ -433,7 +434,9 @@ const syncOutboxItem = async (item: DesktopOutboxItem, stagedRewrites: StagedRes
   }
 
   if (item.kind === "notebook.delete") {
-    await api.deleteNotebook(String(payload.notebookId ?? item.entityId));
+    for (const notebookId of notebookDeleteIdsFromPayload(payload, String(payload.notebookId ?? item.entityId))) {
+      await api.deleteNotebook(notebookId);
+    }
     await acknowledge(item);
     return null;
   }

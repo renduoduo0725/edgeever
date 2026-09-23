@@ -31,6 +31,15 @@ for (const key of [
 }
 environment.CSC_IDENTITY_AUTO_DISCOVERY ||= "false";
 
+if (requestedTarget === "mac") {
+  const shareExtension = spawnSync("bash", ["scripts/build-macos-share-extension.sh"], {
+    env: environment,
+    stdio: "inherit",
+  });
+  if (shareExtension.error) throw shareExtension.error;
+  if ((shareExtension.status ?? 1) !== 0) process.exit(shareExtension.status ?? 1);
+}
+
 const builderArgs = [
   "run",
   "--cwd",

@@ -18,6 +18,7 @@ import {
 import { classifyLoginError, getLoginProblemMessageKey } from "@/lib/login-error";
 import { EVERNOTE_MIGRATION_PATH } from "@/lib/routes";
 import { isBrowserOffline } from "@/lib/network-status";
+import { syncPublishedNoteBodyFont } from "@/lib/published-note-body-font";
 import type { AuthSession } from "@edgeever/shared";
 
 const EvernoteImportGuidePane = lazy(() =>
@@ -82,6 +83,11 @@ const AuthenticatedWorkspace = () => {
   });
 
   const desktopAccountId = sessionQuery.data?.authenticated ? sessionQuery.data.user?.id ?? null : null;
+
+  useEffect(() => {
+    if (!desktopAccountId) return;
+    void syncPublishedNoteBodyFont();
+  }, [desktopAccountId]);
 
   useEffect(() => {
     if (!desktopBridge?.isAvailable || sessionQuery.isLoading) return;

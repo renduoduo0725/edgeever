@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getClientDisplaySizeParts } from "@edgeever/shared";
 import type { DeploymentMetadata } from "@edgeever/shared/deployment-metadata";
-import { Activity, CircleCheck, Cloud, Copy, ExternalLink, Info, LoaderCircle, MonitorSmartphone, RefreshCw, RotateCcw } from "lucide-react";
+import { Activity, CircleCheck, CircleX, Cloud, Copy, ExternalLink, Info, LoaderCircle, MonitorSmartphone, RefreshCw, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { Button } from "@/components/ui/button";
 import { useDeployedUpdateNotice } from "@/hooks/useDeployedUpdateNotice";
 import { detectWebClientKind } from "@/lib/client-environment";
 import { api, getConfiguredDesktopApiBaseUrl, type InstanceHealth } from "@/lib/api";
+import { copyHtmlToClipboard } from "@/lib/clipboard";
 import { resolveSystemInfoDeploymentMetadata } from "@/lib/deployment-metadata";
 import { resolveDeploymentPlatform } from "@/lib/instance-runtime";
 import {
@@ -17,9 +19,9 @@ import {
   type ClientRuntimeDiagnostics,
   type ClientSyncDiagnostics,
 } from "@/lib/system-diagnostics";
+import { formatSystemInfoClipboard } from "@/lib/system-info-clipboard";
 import { cn } from "@/lib/utils";
 import { getReleaseTagForVersion, isClientAheadOfInstance } from "@/lib/version-check";
-import { copyTextToClipboard } from "./settings-utils";
 
 export type SystemInfoItem = {
   label: string;
@@ -262,7 +264,8 @@ export const getShareableWebSystemInfoItems = (
 
 export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
   const { t, i18n } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const copyResetTimeoutRef = useRef<number | null>(null);
   const [desktopUpdateChecked, setDesktopUpdateChecked] = useState(false);
   const [viewportRevision, setViewportRevision] = useState(0);
   const queryClient = useQueryClient();
@@ -308,6 +311,9 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [active]);
+  useEffect(() => () => {
+    if (copyResetTimeoutRef.current !== null) window.clearTimeout(copyResetTimeoutRef.current);
+  }, []);
   const desktopUpdateCheckMutation = useMutation({
     mutationFn: () => desktopBridge!.checkUpdate(),
     onSuccess: (status) => {
@@ -388,12 +394,25 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
     : "https://github.com/tianma-if/edgeever/releases/latest";
 
   const handleCopy = async () => {
-    const text = infoGroups
-      .map((group) => [group.title, ...group.items.map((item) => `${item.label}: ${item.value}`)].join("\n"))
-      .join("\n\n");
-    if (!(await copyTextToClipboard(text))) return;
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
+    const clipboard = formatSystemInfoClipboard({
+      title: t("systemInfo.title"),
+      fieldLabel: t("systemInfo.copyFieldLabel"),
+      valueLabel: t("systemInfo.copyValueLabel"),
+      groups: infoGroups,
+    });
+    let copied = false;
+    try {
+      await copyHtmlToClipboard(clipboard.html, clipboard.plainText);
+      copied = true;
+    } catch {
+      copied = false;
+    }
+    setCopyState(copied ? "copied" : "error");
+    if (copyResetTimeoutRef.current !== null) window.clearTimeout(copyResetTimeoutRef.current);
+    copyResetTimeoutRef.current = window.setTimeout(() => {
+      setCopyState("idle");
+      copyResetTimeoutRef.current = null;
+    }, copied ? 2200 : 3000);
   };
 
   const clientAheadOfInstance = isClientAheadOfInstance(
@@ -431,13 +450,25 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
         <Button
           size="sm"
           variant="outline"
-          className="h-7 gap-1.5 bg-card px-2.5 text-xs text-slate-700 shadow-xs hover:bg-slate-50"
+          className={cn(
+            "h-7 gap-1.5 bg-card px-2.5 text-xs text-slate-700 shadow-xs hover:bg-slate-50",
+            copyState === "copied" && "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50",
+            copyState === "error" && "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-50",
+          )}
           type="button"
           onClick={() => void handleCopy()}
         >
-          {copied ? <CircleCheck className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-slate-500" />}
-          <span className={copied ? "font-medium text-emerald-700" : ""}>
-            {copied ? t("common.copied") : t("systemInfo.copy")}
+          {copyState === "copied"
+            ? <CircleCheck className="h-3.5 w-3.5" />
+            : copyState === "error"
+              ? <CircleX className="h-3.5 w-3.5" />
+              : <Copy className="h-3.5 w-3.5 text-slate-500" />}
+          <span className={copyState === "idle" ? "" : "font-medium"}>
+            {copyState === "copied"
+              ? t("common.copied")
+              : copyState === "error"
+                ? t("systemInfo.copyFailed")
+                : t("systemInfo.copy")}
           </span>
         </Button>
       </div>
@@ -563,6 +594,11 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
           </section>
         );
       })}
+      {copyState !== "idle" ? (
+        <ClipboardCopyNotice status={copyState}>
+          {t(copyState === "copied" ? "systemInfo.copySucceeded" : "systemInfo.copyFailed")}
+        </ClipboardCopyNotice>
+      ) : null}
     </div>
   );
 };

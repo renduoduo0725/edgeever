@@ -140,6 +140,7 @@ export const EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY = "edgeever.editor.phonePre
 export const MEMO_LIST_DENSITY_STORAGE_KEY = "edgeever.memoListDensity";
 export const MEMO_LIST_WIDTH_STORAGE_KEY = "edgeever.memoListWidth";
 export const NOTEBOOK_SORT_STORAGE_KEY = "edgeever.notebookSort";
+export const NOTEBOOK_TREE_COLLAPSED_IDS_STORAGE_KEY = "edgeever.notebookTreeCollapsedIds:v1";
 export const SHORTCUT_SETTINGS_STORAGE_KEY = "edgeever.shortcutSettings";
 export const DEFAULT_MEMO_LIST_WIDTH_PX = 360;
 export const MIN_MEMO_LIST_WIDTH_PX = 300;
@@ -511,6 +512,28 @@ export const readNotebookSortPreference = (): NotebookSortMode => {
 export const writeNotebookSortPreference = (sortMode: NotebookSortMode) => {
   try {
     window.localStorage.setItem(NOTEBOOK_SORT_STORAGE_KEY, sortMode);
+  } catch {
+    // Local storage can be unavailable in private or restricted browser contexts.
+  }
+};
+
+export const readNotebookTreeCollapsedIdsPreference = () => {
+  try {
+    const value: unknown = JSON.parse(window.localStorage.getItem(NOTEBOOK_TREE_COLLAPSED_IDS_STORAGE_KEY) ?? "[]");
+
+    if (!Array.isArray(value)) {
+      return new Set<string>();
+    }
+
+    return new Set(value.filter((notebookId): notebookId is string => typeof notebookId === "string" && notebookId.length > 0));
+  } catch {
+    return new Set<string>();
+  }
+};
+
+export const writeNotebookTreeCollapsedIdsPreference = (notebookIds: Iterable<string>) => {
+  try {
+    window.localStorage.setItem(NOTEBOOK_TREE_COLLAPSED_IDS_STORAGE_KEY, JSON.stringify(Array.from(new Set(notebookIds))));
   } catch {
     // Local storage can be unavailable in private or restricted browser contexts.
   }

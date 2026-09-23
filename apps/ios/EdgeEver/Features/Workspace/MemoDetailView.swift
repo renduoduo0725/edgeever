@@ -76,7 +76,7 @@ struct MemoDetailView: View {
         .background(AppTheme.card)
         // UIKit FAB in overlay — SwiftUI Button over WKWebView often receives zero taps.
         .overlay(alignment: .bottomTrailing) {
-            if let memo, !memo.isDeleted, !isVisualDiagram(memo) {
+            if let memo, !memo.isDeleted, !blocksRichTextEdit(memo) {
                 EditFabButton(
                     accessibilityLabel: env.preferences.t("编辑笔记", en: "Edit note")
                 ) {
@@ -316,10 +316,10 @@ struct MemoDetailView: View {
             titleVisibility: .visible
         ) {
             if let memo {
-                if !isVisualDiagram(memo) {
+                if !blocksRichTextEdit(memo) {
                     Button(env.preferences.t("编辑", en: "Edit")) { onEdit(memo.id, .body) }
                 }
-                if !memo.isDeleted && !isTemporaryMemoId(memo.id) && !isVisualDiagram(memo) {
+                if !memo.isDeleted && !isTemporaryMemoId(memo.id) && !blocksRichTextEdit(memo) {
                     Button(env.preferences.t("AI 笔记助手", en: "AI note assistant")) {
                         showAiAssistant = true
                     }
@@ -778,7 +778,7 @@ struct MemoDetailView: View {
                     onImagePreview: { source, alt in
                         imagePreview = (source, alt)
                     },
-                    onDoubleTap: isVisualDiagram(memo) ? nil : {
+                    onDoubleTap: blocksRichTextEdit(memo) ? nil : {
                         onEdit(memo.id, .body)
                     },
                     onPickImage: nil,
@@ -898,11 +898,15 @@ struct MemoDetailView: View {
                     .multilineTextAlignment(.leading)
             }
             .buttonStyle(.plain)
-            .disabled(memo.isDeleted || isVisualDiagram(memo))
-            .accessibilityLabel(isVisualDiagram(memo)
+            .disabled(memo.isDeleted || blocksRichTextEdit(memo))
+            .accessibilityLabel(isStructuredTable(memo)
+                ? env.preferences.t("表格标题", en: "Database title")
+                : isVisualDiagram(memo)
                 ? env.preferences.t("图表标题", en: "Diagram title")
                 : env.preferences.t("编辑笔记标题", en: "Edit note title"))
-            .accessibilityHint(isVisualDiagram(memo)
+            .accessibilityHint(isStructuredTable(memo)
+                ? env.preferences.t("多维表格请在 Web 或桌面端编辑", en: "Edit databases on Web or desktop")
+                : isVisualDiagram(memo)
                 ? env.preferences.t("可视化图表请在 Web 或桌面端编辑", en: "Edit visual diagrams on Web or desktop")
                 : env.preferences.t("进入编辑并聚焦标题", en: "Opens editing with the title focused"))
             .accessibilityIdentifier(DetailMemoChrome.title)
@@ -923,6 +927,14 @@ struct MemoDetailView: View {
 
     private func isVisualDiagram(_ memo: MemoDetail) -> Bool {
         memo.contentMarkdown.contains("<!-- edgeever-diagram-v1:")
+    }
+
+    private func isStructuredTable(_ memo: MemoDetail) -> Bool {
+        memo.contentMarkdown.contains("<!-- edgeever-table-v1:")
+    }
+
+    private func blocksRichTextEdit(_ memo: MemoDetail) -> Bool {
+        isVisualDiagram(memo) || isStructuredTable(memo)
     }
 
     private func refreshSyncStatus() {

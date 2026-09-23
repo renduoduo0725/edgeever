@@ -234,4 +234,50 @@ describe("notebook identity", () => {
       fixture.sqlite.close();
     }
   });
+
+  test("deletes an empty notebook together with its empty descendants", async () => {
+    const fixture = createFixture();
+    try {
+      fixture.sqlite.exec(`
+        UPDATE notebooks SET name = '注册考试' WHERE id = 'nb_notes';
+        INSERT INTO notebooks (id, workspace_id, parent_id, name, slug, is_deleted, created_at, updated_at) VALUES
+          ('nb_law', 'ws_1', 'nb_notes', '法律法规', 'law', 0, '2026-09-10T00:00:00.000Z', '2026-09-10T00:00:00.000Z'),
+          ('nb_history', 'ws_1', 'nb_notes', '建筑史', 'history', 0, '2026-09-10T00:00:00.000Z', '2026-09-10T00:00:00.000Z'),
+          ('nb_outline', 'ws_1', 'nb_history', '大纲', 'outline', 0, '2026-09-10T00:00:00.000Z', '2026-09-10T00:00:00.000Z');
+        INSERT INTO memos (id, workspace_id, notebook_id, title, is_deleted, updated_at)
+        VALUES ('memo_trashed', 'ws_1', 'nb_law', '已删除', 1, '2026-09-10T00:00:00.000Z');
+      `);
+
+      await deleteNotebookRecord(fixture.db, "ws_1", "nb_notes", actor);
+
+      expect(
+        fixture.sqlite.query("SELECT id FROM notebooks WHERE workspace_id = 'ws_1' AND is_deleted = 0 ORDER BY id").all(),
+      ).toEqual([{ id: "ws_1_inbox" }]);
+      await expect(deleteNotebookRecord(fixture.db, "ws_1", "nb_notes", actor)).resolves.toBeUndefined();
+    } finally {
+      fixture.sqlite.close();
+    }
+  });
+
+  test("keeps the whole notebook tree when any descendant still has a note", async () => {
+    const fixture = createFixture();
+    try {
+      fixture.sqlite.exec(`
+        INSERT INTO notebooks (id, workspace_id, parent_id, name, slug, is_deleted, created_at, updated_at) VALUES
+          ('nb_child', 'ws_1', 'nb_notes', '子笔记本', 'child', 0, '2026-09-10T00:00:00.000Z', '2026-09-10T00:00:00.000Z');
+        INSERT INTO memos (id, workspace_id, notebook_id, title, is_deleted, updated_at)
+        VALUES ('memo_keep', 'ws_1', 'nb_child', '还在', 0, '2026-09-10T00:00:00.000Z');
+      `);
+
+      await expect(deleteNotebookRecord(fixture.db, "ws_1", "nb_notes", actor)).rejects.toMatchObject({
+        code: "notebook_not_empty",
+        status: 409,
+      });
+      expect(
+        fixture.sqlite.query("SELECT id FROM notebooks WHERE workspace_id = 'ws_1' AND is_deleted = 1").all(),
+      ).toEqual([]);
+    } finally {
+      fixture.sqlite.close();
+    }
+  });
 });

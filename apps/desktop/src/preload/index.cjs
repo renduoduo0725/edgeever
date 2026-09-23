@@ -102,6 +102,17 @@ contextBridge.exposeInMainWorld("edgeeverDesktop", Object.freeze({
     }
     return () => ipcRenderer.removeListener("desktop:import-markdown", listener);
   },
+  readWeChatImportMedia: (importId, mediaId) => ipcRenderer.invoke("desktop:read-wechat-import-media", importId, mediaId).then((file) => ({
+    filename: file.filename,
+    mimeType: file.mimeType,
+    bytes: normalizeIpcBytes(file.bytes),
+  })),
+  finishWeChatImport: (importId) => ipcRenderer.invoke("desktop:finish-wechat-import", importId),
+  onImportWeChatChat: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("desktop:import-wechat-chat", listener);
+    return () => ipcRenderer.removeListener("desktop:import-wechat-chat", listener);
+  },
   onImportScreenshot: (callback) => {
     if (screenshotImportListener) {
       ipcRenderer.removeListener("desktop:import-screenshot", screenshotImportListener);

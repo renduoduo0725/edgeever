@@ -32,6 +32,7 @@ import { getCachedLocalResourceBytes, removeCachedLocalResourceBytes } from "@/l
 import { isBrowserOffline } from "@/lib/network-status";
 import { parseTagsText } from "@/lib/utils";
 import { createClientUuid } from "@/lib/client-id";
+import { notebookDeleteIdsFromPayload } from "@/lib/notebook-delete";
 
 export type { SyncQueueSummary, SyncRunResult } from "@edgeever/shared";
 export type SyncQueueResult = MemoDetail | Notebook | MemoTemplate | Resource | null;
@@ -422,6 +423,15 @@ const runQueuedChanges = async (options: {
         result.synced += 1;
       }
     } catch (error) {
+      if (
+        item.kind === "notebook.delete"
+        && error instanceof ApiRequestError
+        && (error.code === "notebook_not_empty" || error.code === "bad_request")
+      ) {
+        await localDb.syncQueue.delete(item.id);
+        result.failed += 1;
+        continue;
+      }
       const conflictInfo = getMemoSaveConflictInfo(error);
       const status = conflictInfo ? "conflict" : "error";
       const attemptCount = item.attemptCount + 1;
@@ -721,7 +731,9 @@ const syncQueueItem = async (item: SyncQueueItem): Promise<SyncQueueResult> => {
   }
   if (item.kind === "notebook.delete") {
     const payload = item.payload as LocalActionPayload;
-    await api.deleteNotebook(String(payload.notebookId ?? item.memoId));
+    for (const notebookId of notebookDeleteIdsFromPayload(payload, String(payload.notebookId ?? item.memoId))) {
+      await api.deleteNotebook(notebookId);
+    }
     return null;
   }
   if (item.kind === "template.create") {

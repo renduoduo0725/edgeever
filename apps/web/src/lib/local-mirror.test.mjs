@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { NotebookNotEmptyError } from "./notebook-delete.ts";
 import { IDBKeyRange, indexedDB } from "fake-indexeddb";
 
 globalThis.indexedDB = indexedDB;
@@ -24,7 +25,9 @@ const {
   updateLocalNotebook,
   getLocalNotebook,
   deleteLocalNotebook,
+  deleteLocalNotebookTree,
   putLocalNotebook,
+  reconcileLocalNotebooks,
   mergeLocalMemos,
   putLocalMemoRevisions,
   listLocalMemoRevisions,
@@ -341,6 +344,74 @@ describe("local mirror", () => {
     expect((await getLocalNotebook(scope, "notebook-1"))?.name).toBe("Archive");
     expect(await deleteLocalNotebook(scope, "notebook-1")).toBe(true);
     expect(await getLocalNotebook(scope, "notebook-1")).toBeNull();
+  });
+
+  test("deletes an empty notebook subtree and refuses one that still has notes", async () => {
+    const scope = createLocalDataScope("https://demo.edgeever.org", "user-1");
+    const notebook = (id, parentId, name) => putLocalNotebook(scope, {
+      id,
+      parentId,
+      name,
+      slug: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+      memoCount: 0,
+      lastMemoUpdatedAt: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    await notebook("exam", null, "注册考试");
+    await notebook("law", "exam", "法律法规");
+    await notebook("history", "exam", "建筑史");
+    await notebook("games", null, "游戏");
+
+    const deletedIds = await deleteLocalNotebookTree(scope, "exam");
+    expect(new Set(deletedIds)).toEqual(new Set(["law", "history", "exam"]));
+    expect(deletedIds.at(-1)).toBe("exam");
+    expect(await getLocalNotebook(scope, "exam")).toBeNull();
+    expect(await getLocalNotebook(scope, "law")).toBeNull();
+    expect(await getLocalNotebook(scope, "history")).toBeNull();
+    expect(await getLocalNotebook(scope, "games")).not.toBeNull();
+
+    await notebook("blocked", null, "仍有笔记");
+    await notebook("blocked-child", "blocked", "子笔记本");
+    await createLocalMemo(scope, { notebookId: "blocked-child", title: "还在", tags: [] });
+    await expect(deleteLocalNotebookTree(scope, "blocked")).rejects.toBeInstanceOf(NotebookNotEmptyError);
+    expect(await getLocalNotebook(scope, "blocked")).not.toBeNull();
+    expect(await getLocalNotebook(scope, "blocked-child")).not.toBeNull();
+  });
+
+  test("does not restore a notebook that is waiting to be deleted", async () => {
+    const scope = createLocalDataScope("https://demo.edgeever.org", "user-1");
+    const notebook = (id, parentId, name) => ({
+      id,
+      parentId,
+      name,
+      slug: null,
+      icon: null,
+      color: null,
+      sortOrder: 0,
+      memoCount: 0,
+      lastMemoUpdatedAt: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    await putLocalNotebook(scope, notebook("exam", null, "注册考试"));
+    await putLocalNotebook(scope, notebook("law", "exam", "法律法规"));
+    await putLocalNotebook(scope, notebook("local_new", null, "未同步"));
+
+    await reconcileLocalNotebooks(
+      scope,
+      [notebook("exam", null, "注册考试"), notebook("law", "exam", "法律法规"), notebook("games", null, "游戏")],
+      new Set(["exam", "law"]),
+      new Set(["local_new"]),
+    );
+
+    expect(await getLocalNotebook(scope, "exam")).toBeNull();
+    expect(await getLocalNotebook(scope, "law")).toBeNull();
+    expect(await getLocalNotebook(scope, "local_new")).not.toBeNull();
+    expect((await getLocalNotebook(scope, "games"))?.name).toBe("游戏");
   });
 
   test("merges memos locally and marks source notes as deleted", async () => {

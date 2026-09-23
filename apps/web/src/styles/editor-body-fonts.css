@@ -1,0 +1,16 @@
+/* Font files are registered from editor-body-font-faces.ts so Vite emits
+ * desktop-safe asset URLs. These rules only apply the chosen stack.
+ * Missing glyphs fall through to the system CJK fonts in that stack.
+ * Code, pre, and formula faces keep their own monospace families.
+ */
+html[data-editor-body-font] .edgeever-editor .ProseMirror,
+html[data-editor-body-font] .edgeever-editor textarea[data-edgeever-mobile-editor="plain-textarea"],
+html[data-editor-body-font] .edgeever-mobile-tiptap-content {
+  font-family: var(--editor-body-font-family);
+  font-synthesis: weight style;
+}
+
+html[data-editor-body-font] .edgeever-editor[data-editor-theme] .ProseMirror :is(h1, h2, h3, h4, h5, h6, p, li, blockquote, th, td),
+html[data-editor-body-font] .edgeever-mobile-tiptap-content :is(h1, h2, h3, h4, h5, h6, p, li, blockquote, th, td) {
+  font-family: var(--editor-body-font-family);
+}

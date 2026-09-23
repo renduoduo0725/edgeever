@@ -2,6 +2,8 @@ import type { DiagramNodeShape, DiagramTheme } from "./diagram";
 
 export const FLOWCHART_LABEL_FONT =
   'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+export const FLOWCHART_EDGE_LABEL_FONT_SIZE = 10;
+export const FLOWCHART_EDGE_LABEL_LINE_HEIGHT = 14;
 
 export const FLOWCHART_EDGE_ROUTER = {
   name: "manhattan" as const,

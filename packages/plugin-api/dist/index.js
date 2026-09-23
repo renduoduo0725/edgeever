@@ -189,6 +189,47 @@ var assertCommonManifest = (value) => {
     throw new Error("Extension version must use SemVer.");
   }
 };
+var normalizeExtensionLocales = (value, label) => {
+  if (value === undefined)
+    return;
+  if (!isRecord(value))
+    throw new Error(`${label} locales must be an object.`);
+  const entries = Object.entries(value);
+  if (entries.length > 50)
+    throw new Error(`${label} cannot declare more than 50 locales.`);
+  const normalizedKeys = new Set;
+  const locales = {};
+  for (const [rawLocale, metadata] of entries) {
+    let locale;
+    try {
+      locale = Intl.getCanonicalLocales(rawLocale.trim().replaceAll("_", "-"))[0] ?? "";
+    } catch {
+      locale = "";
+    }
+    if (!locale)
+      throw new Error(`${label} locale ${rawLocale} must be a BCP 47 language tag.`);
+    const normalizedKey = locale.toLocaleLowerCase();
+    if (normalizedKeys.has(normalizedKey))
+      throw new Error(`${label} contains a duplicate locale: ${locale}.`);
+    normalizedKeys.add(normalizedKey);
+    if (!isRecord(metadata))
+      throw new Error(`${label} locale ${locale} must be an object.`);
+    if (metadata.name !== undefined && (typeof metadata.name !== "string" || !metadata.name.trim() || metadata.name.length > 200)) {
+      throw new Error(`${label} locale ${locale} name must be between 1 and 200 characters.`);
+    }
+    if (metadata.description !== undefined && (typeof metadata.description !== "string" || !metadata.description.trim() || metadata.description.length > 2000)) {
+      throw new Error(`${label} locale ${locale} description must be between 1 and 2000 characters.`);
+    }
+    if (metadata.name === undefined && metadata.description === undefined) {
+      throw new Error(`${label} locale ${locale} must declare a name or description.`);
+    }
+    locales[locale] = {
+      ...typeof metadata.name === "string" ? { name: metadata.name.trim() } : {},
+      ...typeof metadata.description === "string" ? { description: metadata.description.trim() } : {}
+    };
+  }
+  return locales;
+};
 var normalizeThemeTokens = (value) => {
   if (!isRecord(value))
     throw new Error("Theme tokens must be an object.");
@@ -320,6 +361,7 @@ var parseExtensionManifest = (value) => {
   if (!isRecord(value))
     throw new Error("Extension manifest must be an object.");
   assertCommonManifest(value);
+  const locales = normalizeExtensionLocales(value.locales, `Extension ${String(value.id)}`);
   if (value.type === "plugin") {
     if (value.apiVersion !== PLUGIN_API_VERSION)
       throw new Error(`Unsupported plugin API version: ${String(value.apiVersion)}`);
@@ -345,7 +387,15 @@ var parseExtensionManifest = (value) => {
       throw new Error("Plugin platforms contains an unsupported platform.");
     })();
     const settings = value.settings === undefined ? undefined : normalizePluginSettings(value.settings);
-    return { ...value, type: "plugin", permissions, networkHosts, platforms, settings };
+    return {
+      ...value,
+      type: "plugin",
+      permissions,
+      networkHosts,
+      platforms,
+      settings,
+      ...locales ? { locales } : {}
+    };
   }
   if (value.type === "theme") {
     if (value.themeApiVersion !== THEME_API_VERSION)
@@ -358,7 +408,8 @@ var parseExtensionManifest = (value) => {
       type: "theme",
       modes: [...new Set(value.modes)],
       light: normalizeThemeTokens(value.light),
-      dark: value.dark === undefined ? undefined : normalizeThemeTokens(value.dark)
+      dark: value.dark === undefined ? undefined : normalizeThemeTokens(value.dark),
+      ...locales ? { locales } : {}
     };
   }
   throw new Error("Extension type must be plugin or theme.");
@@ -390,6 +441,7 @@ var parseMarketplaceRegistry = (value) => {
     const name = item.name;
     const description = item.description;
     const author = item.author;
+    const locales = normalizeExtensionLocales(item.locales, `Marketplace entry ${item.id}`);
     if (item.publisher !== undefined && item.publisher !== "edgeever") {
       throw new Error(`Marketplace entry ${item.id} has an invalid publisher.`);
     }
@@ -421,6 +473,7 @@ var parseMarketplaceRegistry = (value) => {
       id: item.id,
       name: name.trim(),
       description: description.trim(),
+      ...locales ? { locales } : {},
       author: author.trim(),
       ...item.publisher === "edgeever" ? { publisher: "edgeever" } : {},
       category: category.trim(),

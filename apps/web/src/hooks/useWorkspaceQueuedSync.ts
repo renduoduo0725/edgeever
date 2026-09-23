@@ -161,6 +161,7 @@ export const useWorkspaceQueuedSync = ({
         },
       });
       window.dispatchEvent(new CustomEvent("edgeever:sync-completed", { detail: result }));
+      if (result.failed > 0) await invalidateSyncQueries();
     } finally {
       setIsSyncingQueuedChanges(false);
     }

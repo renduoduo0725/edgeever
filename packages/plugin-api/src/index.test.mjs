@@ -15,6 +15,44 @@ describe("extension manifests", () => {
     })).toMatchObject({ permissions: ["notes:read", "templates:read", "templates:write", "schedules", "ui:commands", "ui:navigation", "ui:embeds"] });
   });
 
+  test("normalizes localized plugin metadata", () => {
+    const manifest = parseExtensionManifest({
+      type: "plugin",
+      id: "org.edgeever.localized",
+      name: "Localized",
+      version: "1.0.0",
+      apiVersion: "2",
+      settingsUi: "host",
+      description: "English description",
+      locales: {
+        zh_CN: { name: "本地化插件", description: " 中文说明 " },
+        ja: { description: "日本語の説明", html: "<script>" },
+      },
+      entry: "./main.js",
+      permissions: [],
+    });
+
+    expect(manifest.locales).toEqual({
+      "zh-CN": { name: "本地化插件", description: "中文说明" },
+      ja: { description: "日本語の説明" },
+    });
+  });
+
+  test("rejects invalid localized plugin metadata", () => {
+    const base = {
+      type: "plugin",
+      id: "org.edgeever.localized",
+      name: "Localized",
+      version: "1.0.0",
+      apiVersion: "2",
+      settingsUi: "host",
+      entry: "./main.js",
+      permissions: [],
+    };
+    expect(() => parseExtensionManifest({ ...base, locales: { invalid_locale_tag: { description: "Bad" } } })).toThrow("BCP 47");
+    expect(() => parseExtensionManifest({ ...base, locales: { "zh-CN": {} } })).toThrow("name or description");
+  });
+
   test("rejects unsupported capability metadata", () => {
     expect(() => parseExtensionManifest({
       type: "plugin",
@@ -202,6 +240,7 @@ describe("marketplace registry", () => {
         id: "org.edgeever.example",
         name: "Example",
         description: "Example plugin",
+        locales: { "zh-CN": { description: "示例插件" } },
         author: "EdgeEver",
         publisher: "edgeever",
         category: "Productivity",
@@ -209,7 +248,12 @@ describe("marketplace registry", () => {
         distribution: { type: "github", repositoryUrl: "https://github.com/edgeever/example" },
         verification: { version: "1.0.0", checksums: { manifestJson: "a".repeat(64), mainJs: "b".repeat(64) } },
       }],
-    }).entries[0]).toMatchObject({ id: "org.edgeever.example", publisher: "edgeever", verification: { version: "1.0.0" } });
+    }).entries[0]).toMatchObject({
+      id: "org.edgeever.example",
+      publisher: "edgeever",
+      locales: { "zh-CN": { description: "示例插件" } },
+      verification: { version: "1.0.0" },
+    });
   });
 
   test("rejects unknown automatic-update publishers", () => {

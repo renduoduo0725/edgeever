@@ -1,5 +1,9 @@
 import type { JSONContent, MarkdownParseHelpers, MarkdownRendererHelpers, MarkdownToken } from "@tiptap/core";
 import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
+import { resolveAttachmentKind, resolveVideoMimeType } from "./attachment-kind";
+import { FILE_ATTACHMENT_NODE_TYPE } from "./file-attachment";
+import { parseImageWidth } from "./image-display";
+import { getResourceIdFromUrl } from "./resource-links";
 
 export const DETAILS_NODE_TYPE = "details" as const;
 export const DETAILS_SUMMARY_NODE_TYPE = "detailsSummary" as const;
@@ -74,17 +78,235 @@ const unwrapDetailsContent = (inner: string) => {
   return match ? match[1] : inner;
 };
 
-const htmlImagesToMarkdown = (source: string) =>
-  source.replace(/<img\b([^>]*)\/?>/gi, (tag, attrs: string) => {
-    const src = /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
-    const alt = /\balt\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
-    const title = /\btitle\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
-    const url = (src?.[1] ?? src?.[2] ?? src?.[3] ?? "").trim();
-    if (!url) return tag;
-    const altText = (alt?.[1] ?? alt?.[2] ?? alt?.[3] ?? "").trim();
-    const titleText = (title?.[1] ?? title?.[2] ?? title?.[3] ?? "").trim();
-    return titleText ? `![${altText}](${url} "${titleText}")` : `![${altText}](${url})`;
-  });
+const HTML_ATTR_PATTERN = (name: string) =>
+  new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");
+
+const readHtmlAttr = (attrs: string, name: string) => {
+  const match = HTML_ATTR_PATTERN(name).exec(attrs);
+  return decodeHtmlEntities((match?.[1] ?? match?.[2] ?? match?.[3] ?? "").trim());
+};
+
+const escapeMarkdownLabel = (value: string) =>
+  value.replace(/\\/g, "\\\\").replace(/\[/g, "\\[").replace(/\]/g, "\\]");
+
+/** http(s) URLs that are not already stored EdgeEver resources. */
+const isRemoteHttpUrl = (value: string) => {
+  if (!value || /[\u0000-\u0020"'<>`]/.test(value)) return false;
+  if (getResourceIdFromUrl(value)) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const isDetailsImageSrc = (value: string) => {
+  if (!value || /[\u0000-\u0020"'<>`]/.test(value)) return false;
+  if (value.startsWith("edgeever-resource://") || value.startsWith("edgeever-staged://")) return true;
+  if (value.startsWith("/") && !value.startsWith("//")) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const readPercentWidth = (raw: string) => {
+  const trimmed = raw.trim();
+  if (!/^\d+(?:\.\d+)?%$/.test(trimmed)) return null;
+  return parseImageWidth(trimmed);
+};
+
+type RemoteVideo = {
+  src: string;
+  label: string;
+  filename: string;
+  mimeType: string;
+};
+
+const remoteVideoFromSrc = (src: string): RemoteVideo | null => {
+  const url = src.trim();
+  if (!isRemoteHttpUrl(url)) return null;
+  let segment = "";
+  try {
+    segment = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).pop() || "").trim();
+  } catch {
+    segment = "";
+  }
+  if (!segment || segment.length > 120 || /[\\/\[\]()<>]/.test(segment)) segment = "";
+  const filename = segment || "video";
+  return {
+    src: url,
+    label: `附件：${filename}`,
+    filename,
+    mimeType: resolveVideoMimeType(null, filename) ?? "video/mp4",
+  };
+};
+
+type PreparedDetailsBody = {
+  markdown: string;
+  images: Array<{ src: string; width: number | null }>;
+  videoUrls: string[];
+};
+
+const replaceOutsideCodeFences = (
+  source: string,
+  pattern: RegExp,
+  replacer: (match: string, ...groups: Array<string | undefined>) => string,
+) => source.split(/(```[\s\S]*?```|~~~[\s\S]*?~~~)/g).map((segment) => {
+  if (segment.startsWith("```") || segment.startsWith("~~~")) return segment;
+  pattern.lastIndex = 0;
+  return segment.replace(pattern, replacer);
+}).join("");
+
+/**
+ * Other Markdown editors treat the inside of <details> as HTML, so images and
+ * remote videos are exchanged as tags. The editor still stores image nodes and
+ * the existing video attachment.
+ */
+const prepareDetailsBody = (source: string): PreparedDetailsBody => {
+  const images: PreparedDetailsBody["images"] = [];
+  const videoUrls: string[] = [];
+  const withoutVideos = replaceOutsideCodeFences(
+    source,
+    /<video\b([^>]*)>([\s\S]*?)<\/video\s*>|<video\b([^>]*)\/>/gi,
+    (_match, openAttrs, _inner, selfClosingAttrs) => {
+      const video = remoteVideoFromSrc(readHtmlAttr(openAttrs || selfClosingAttrs || "", "src"));
+      if (!video) return "";
+      videoUrls.push(video.src);
+      return `\n\n[${escapeMarkdownLabel(video.label)}](${video.src})\n\n`;
+    },
+  );
+  const markdown = replaceOutsideCodeFences(
+    withoutVideos,
+    /<img\b([^>]*)\/?>/gi,
+    (tag, attrs) => {
+      const src = readHtmlAttr(attrs || "", "src");
+      if (!src) return tag;
+      const alt = readHtmlAttr(attrs || "", "alt");
+      const title = readHtmlAttr(attrs || "", "title");
+      images.push({ src, width: readPercentWidth(readHtmlAttr(attrs || "", "width")) });
+      return title ? `![${alt}](${src} "${title}")` : `![${alt}](${src})`;
+    },
+  );
+  return { markdown, images, videoUrls };
+};
+
+const applyDetailsMedia = (
+  nodes: JSONContent[],
+  images: PreparedDetailsBody["images"],
+  videoUrls: string[],
+) => {
+  const videos = new Set(videoUrls);
+  let imageIndex = 0;
+  const visit = (node: JSONContent): JSONContent => {
+    if (node.type === "image") {
+      const expected = images[imageIndex];
+      const src = typeof node.attrs?.src === "string" ? node.attrs.src : "";
+      if (expected && expected.src === src) {
+        imageIndex += 1;
+        if (expected.width != null) {
+          return { ...node, attrs: { ...node.attrs, width: expected.width } };
+        }
+      }
+      return node;
+    }
+
+    if (node.type === FILE_ATTACHMENT_NODE_TYPE && videos.has(String(node.attrs?.url || ""))) {
+      const filename = typeof node.attrs?.filename === "string" ? node.attrs.filename : "";
+      return {
+        ...node,
+        attrs: {
+          ...node.attrs,
+          mimeType: resolveVideoMimeType(null, filename) ?? "video/mp4",
+        },
+      };
+    }
+
+    return Array.isArray(node.content)
+      ? { ...node, content: node.content.map(visit) }
+      : node;
+  };
+
+  return nodes.map(visit);
+};
+
+const htmlAttribute = (name: string, value: string) => `${name}="${escapeHtml(value)}"`;
+
+const renderDetailsImage = (node: JSONContent) => {
+  const src = typeof node.attrs?.src === "string" ? node.attrs.src.trim() : "";
+  if (!isDetailsImageSrc(src)) return null;
+  const alt = typeof node.attrs?.alt === "string" ? node.attrs.alt.trim() : "";
+  const title = typeof node.attrs?.title === "string" ? node.attrs.title.trim() : "";
+  const width = node.attrs?.width == null || node.attrs.width === ""
+    ? null
+    : parseImageWidth(node.attrs.width);
+  const attrs = [htmlAttribute("src", src)];
+  if (alt) attrs.push(htmlAttribute("alt", alt));
+  if (title) attrs.push(htmlAttribute("title", title));
+  if (width != null) attrs.push(htmlAttribute("width", `${width}%`));
+  return `<img ${attrs.join(" ")} />`;
+};
+
+const fileAttachmentNode = (node: JSONContent) => {
+  if (node.type === FILE_ATTACHMENT_NODE_TYPE) return node;
+  if (
+    node.type === "paragraph"
+    && node.content?.length === 1
+    && node.content[0]?.type === FILE_ATTACHMENT_NODE_TYPE
+  ) {
+    return node.content[0];
+  }
+  return null;
+};
+
+const renderDetailsVideo = (node: JSONContent) => {
+  const attachment = fileAttachmentNode(node);
+  if (!attachment) return null;
+  const url = typeof attachment.attrs?.url === "string" ? attachment.attrs.url.trim() : "";
+  if (!isRemoteHttpUrl(url)) return null;
+  const filename = typeof attachment.attrs?.filename === "string" ? attachment.attrs.filename : "";
+  const mimeType = typeof attachment.attrs?.mimeType === "string" ? attachment.attrs.mimeType : "";
+  if (resolveAttachmentKind(mimeType, filename || url) !== "video") return null;
+  return `<video src="${escapeHtml(url)}" controls></video>`;
+};
+
+const renderDetailsBody = (nodes: JSONContent[], helpers: MarkdownRendererHelpers) => {
+  const parts: string[] = [];
+  const buffer: JSONContent[] = [];
+  const flush = () => {
+    if (buffer.length === 0) return;
+    const rendered = helpers.renderChildren(buffer, "\n\n").trim();
+    if (rendered) parts.push(rendered);
+    buffer.length = 0;
+  };
+
+  for (const node of nodes) {
+    const media = node.type === "image" ? renderDetailsImage(node) : renderDetailsVideo(node);
+    if (!media) {
+      buffer.push(node);
+      continue;
+    }
+    flush();
+    parts.push(media);
+  }
+  flush();
+  return parts.join("\n\n");
+};
+
+const attachmentParagraph = (document: Document, video: RemoteVideo) => {
+  const paragraph = document.createElement("p");
+  const span = document.createElement("span");
+  span.setAttribute("data-type", "edgeever-file-attachment");
+  span.setAttribute("data-file-url", video.src);
+  span.setAttribute("data-file-label", video.label);
+  span.setAttribute("data-file-name", video.filename);
+  span.setAttribute("data-file-mime-type", video.mimeType);
+  paragraph.appendChild(span);
+  return paragraph;
+};
 
 /**
  * GitHub-style HTML paste uses <details><summary>…</summary>blocks</details>.
@@ -98,6 +320,15 @@ export const wrapDetailsContentHtml = (html: string): string => {
   const document = new DOMParser().parseFromString(html, "text/html");
   const blocks = [...document.querySelectorAll("details")].reverse();
   for (const details of blocks) {
+    for (const video of [...details.querySelectorAll("video")]) {
+      if (video.closest("[data-type='edgeever-file-attachment'], [data-edgeever-video-player]")) continue;
+      const parsed = remoteVideoFromSrc(video.getAttribute("src") || "");
+      if (!parsed) {
+        video.remove();
+        continue;
+      }
+      video.replaceWith(attachmentParagraph(document, parsed));
+    }
     if (details.querySelector(':scope > [data-type="detailsContent"]')) continue;
     const wrapper = document.createElement("div");
     wrapper.setAttribute("data-type", "detailsContent");
@@ -235,7 +466,15 @@ export const DETAILS_EDITOR_CSS = `
 
 const parseDetailsMarkdown = (token: MarkdownToken, helpers: MarkdownParseHelpers) => {
   const summaryText = typeof token.summary === "string" ? token.summary : "";
-  const parsedBody = helpers.parseChildren(token.tokens || []);
+  const mediaToken = token as MarkdownToken & {
+    detailImages?: PreparedDetailsBody["images"];
+    detailVideoUrls?: string[];
+  };
+  const parsedBody = applyDetailsMedia(
+    helpers.parseChildren(token.tokens || []),
+    mediaToken.detailImages || [],
+    mediaToken.detailVideoUrls || [],
+  );
   const body = parsedBody.length > 0 ? parsedBody : [{ type: "paragraph" }];
   return helpers.createNode(DETAILS_NODE_TYPE, undefined, [
     helpers.createNode(
@@ -253,7 +492,7 @@ const renderDetailsMarkdown = (node: JSONContent, helpers: MarkdownRendererHelpe
   const body = children.find((child) => child.type === DETAILS_CONTENT_NODE_TYPE);
   const summaryHtml = escapeHtml(collectText(summary).trim());
   const bodyMarkdown = Array.isArray(body?.content) && body.content.length > 0
-    ? helpers.renderChildren(body.content, "\n\n").trim()
+    ? renderDetailsBody(body.content, helpers)
     : "";
   return `<details>\n<summary>${summaryHtml}</summary>\n\n${bodyMarkdown}\n\n</details>`;
 };
@@ -290,10 +529,10 @@ export const EdgeEverDetails = Details.extend({
 
       const summaryMatch = SUMMARY_PATTERN.exec(block.inner);
       const summary = summaryMatch ? stripHtmlTags(summaryMatch[1]) : "";
-      const bodySource = htmlImagesToMarkdown(unwrapDetailsContent(
+      const prepared = prepareDetailsBody(unwrapDetailsContent(
         summaryMatch ? block.inner.slice(summaryMatch[0].length) : block.inner,
       ));
-      const tokens = bodySource.trim() ? lexer.blockTokens(bodySource.trim()) : [];
+      const tokens = prepared.markdown.trim() ? lexer.blockTokens(prepared.markdown.trim()) : [];
       const trailing = /^\s*\n/.exec(source.slice(leading.length + block.raw.length))?.[0] ?? "";
 
       return {
@@ -301,6 +540,8 @@ export const EdgeEverDetails = Details.extend({
         raw: `${leading}${block.raw}${trailing}`,
         summary,
         tokens,
+        detailImages: prepared.images,
+        detailVideoUrls: prepared.videoUrls,
       };
     },
   },

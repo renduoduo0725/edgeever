@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   createDefaultDiagramDocument,
+  createDefaultTableDocument,
   diagramFallbackMarkdown,
   markdownToDoc,
   serializeDiagramDocument,
+  serializeTableDocument,
+  tableFallbackMarkdown,
 } from "@edgeever/shared";
 import { resolvePublicShareBody } from "./public-share-body";
 
@@ -34,6 +37,26 @@ describe("public share body", () => {
     expect(body.type).toBe("rich-text");
     if (body.type === "rich-text") {
       expect(body.content.content?.some((node) => node.type === "codeBlock" && node.attrs?.language === "mermaid")).toBe(true);
+    }
+  });
+
+  test("renders a structured table note as the readable markdown table", () => {
+    const document = createDefaultTableDocument();
+    const body = resolvePublicShareBody(shareOf(serializeTableDocument(document)), "share-token");
+    expect(body.type).toBe("rich-text");
+    if (body.type === "rich-text") {
+      expect(JSON.stringify(body.content)).not.toContain("edgeever-table-v1");
+      expect(body.content.content?.some((node) => node.type === "table")).toBe(true);
+    }
+  });
+
+  test("falls back to the readable table when the structured-table envelope cannot be parsed", () => {
+    const markdown = `${tableFallbackMarkdown(createDefaultTableDocument())}\n\n<!-- edgeever-table-v1:not-json -->`;
+    const body = resolvePublicShareBody(shareOf(markdown), "share-token");
+    expect(body.type).toBe("rich-text");
+    if (body.type === "rich-text") {
+      expect(JSON.stringify(body.content)).not.toContain("edgeever-table-v1");
+      expect(body.content.content?.some((node) => node.type === "table")).toBe(true);
     }
   });
 

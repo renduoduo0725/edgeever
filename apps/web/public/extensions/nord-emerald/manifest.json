@@ -5,6 +5,12 @@
   "version": "1.0.0",
   "themeApiVersion": "1",
   "description": "A calm Nord-inspired EdgeEver theme using the public theme token API.",
+  "locales": {
+    "zh-CN": {
+      "name": "Nord 翡翠",
+      "description": "一款宁静的 Nord 风格 EdgeEver 主题，基于公开主题令牌 API 构建。"
+    }
+  },
   "author": "EdgeEver",
   "modes": ["light", "dark"],
   "light": {

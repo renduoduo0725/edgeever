@@ -18,7 +18,7 @@ import { MobileAiAssistantModal } from "../components/MobileAiAssistantModal";
 import { MobileResourceActions } from "../components/MobileResourceActions";
 import { SAFE_DOM_WEBVIEW_PROPS } from "../lib/mobile-dom";
 import { getNextMobileNoteSearchIndex } from "../lib/mobile-note-search";
-import { hasMobileVisualDiagram, resolveMobileMemoViewerContent } from "../lib/mobile-diagram";
+import { hasMobileStructuredTable, hasMobileVisualDiagram, resolveMobileMemoViewerContent } from "../lib/mobile-diagram";
 import { safeDomCall } from "../lib/safe-dom-call";
 import {
   getMobileImageTarget,
@@ -524,6 +524,11 @@ export const MemoDetailModal = ({
     () => (memo ? hasMobileVisualDiagram(memo.contentMarkdown) : false),
     [memo]
   );
+  const isStructuredTable = useMemo(
+    () => (memo ? hasMobileStructuredTable(memo.contentMarkdown) : false),
+    [memo]
+  );
+  const locksRichTextEdit = isVisualDiagram || isStructuredTable;
   const visualDiagramJson = useMemo(() => {
     const diagram = memo ? parseDiagramDocument(memo.contentMarkdown) : null;
     return diagram ? JSON.stringify(diagram) : undefined;
@@ -1113,7 +1118,7 @@ export const MemoDetailModal = ({
               </View>
             ) : (
             <View style={detailLayoutStyles.meta}>
-              {!memo.isDeleted && !isVisualDiagram ? (
+              {!memo.isDeleted && !locksRichTextEdit ? (
                 <Pressable
                   accessibilityHint="进入编辑并聚焦标题"
                   accessibilityLabel="编辑笔记标题"
@@ -1232,7 +1237,7 @@ export const MemoDetailModal = ({
                 onAiRequest={isEditing ? editor.requestSelectionAi : undefined}
                 onChange={isEditing ? editor.persistDraft : undefined}
                 onImagePreview={isEditing ? undefined : onImagePreview}
-                onDoublePress={isEditing || isVisualDiagram ? undefined : async () => {
+                onDoublePress={isEditing || locksRichTextEdit ? undefined : async () => {
                   beginEditorStartup();
                   onRichEdit(memo, "body");
                 }}
@@ -1269,7 +1274,7 @@ export const MemoDetailModal = ({
             <Text style={styles.errorText}>笔记加载失败</Text>
           </View>
         )}
-        {memo && !memo.isDeleted && !isVisualDiagram && !isEditing ? (
+        {memo && !memo.isDeleted && !locksRichTextEdit && !isEditing ? (
           <Pressable
             accessibilityLabel="编辑笔记"
             accessibilityRole="button"
@@ -1289,7 +1294,7 @@ export const MemoDetailModal = ({
               <Pressable style={styles.actionSheet}>
                 <View style={styles.actionSheetHandle} />
                 <Text style={styles.actionSheetTitle}>{resolvedLocale !== "zh-CN" ? "Note actions" : "笔记操作"}</Text>
-                {!memo.isDeleted && !isVisualDiagram ? (
+                {!memo.isDeleted && !locksRichTextEdit ? (
                   <DetailActionSheetItem
                     icon={<Sparkles color="#16A06E" size={18} />}
                     label={resolvedLocale !== "zh-CN" ? "AI note assistant" : "AI 笔记助手"}

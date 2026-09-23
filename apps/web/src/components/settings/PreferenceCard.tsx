@@ -1,4 +1,4 @@
-import { AlignHorizontalJustifyCenter, ChartNoAxesCombined, Image, Keyboard, Languages, MousePointerClick, Palette, Sparkles, SunMoon } from "lucide-react";
+import { AlignHorizontalJustifyCenter, ChartNoAxesCombined, Image, Keyboard, Languages, MousePointerClick, Palette, Sparkles, SunMoon, Type } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { EditorContentAlignment, ShortcutSettings } from "@/lib/app-helpers";
@@ -19,6 +19,7 @@ import {
   writeAiSpaceShortcutPreference,
 } from "@/lib/ai-space-shortcut-preference";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   SETTINGS_CARD_HEADER_CLASSNAME,
@@ -37,6 +38,13 @@ import {
   supportedLocales,
   type AppLocalePreference,
 } from "@/i18n";
+import {
+  applyEditorBodyFontPreference,
+  readEditorBodyFontPreference,
+  writeEditorBodyFontPreference,
+  type EditorBodyFontChoice,
+} from "@/lib/editor-body-font";
+import { syncPublishedNoteBodyFont } from "@/lib/published-note-body-font";
 import { ShortcutSettingsItem } from "./ShortcutSettingsItem";
 import { CustomEditorThemeDialog } from "./CustomEditorThemeDialog";
 import {
@@ -84,6 +92,7 @@ export const PreferenceCard = ({
   const [linkOpenMode, setLinkOpenMode] = useState<EditorLinkOpenMode>(() => getStoredEditorLinkOpenMode());
   const [aiSelectionMenuEnabled, setAiSelectionMenuEnabled] = useState(readAiSelectionMenuPreference);
   const [aiSpaceShortcutEnabled, setAiSpaceShortcutEnabled] = useState(readAiSpaceShortcutPreference);
+  const [editorBodyFont, setEditorBodyFont] = useState(readEditorBodyFontPreference);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 640px)");
@@ -195,6 +204,13 @@ export const PreferenceCard = ({
     void changeAppLocalePreference(preference);
   };
 
+  const updateEditorBodyFont = (preference: { choice: EditorBodyFontChoice; customFamily: string }) => {
+    setEditorBodyFont(preference);
+    writeEditorBodyFontPreference(preference);
+    applyEditorBodyFontPreference(preference);
+    void syncPublishedNoteBodyFont();
+  };
+
   return (
     <Card className="w-full min-w-0 overflow-hidden shadow-none">
       <CardHeader className={SETTINGS_CARD_HEADER_CLASSNAME}>
@@ -278,6 +294,45 @@ export const PreferenceCard = ({
                 <SelectItem value="center">{t("settings.editorContentAlignments.center")}</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <Type className={SETTINGS_ITEM_ICON_CLASSNAME} />
+            <div className="min-w-0">
+              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorBodyFontTitle")}</div>
+              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.editorBodyFontDescription")}</div>
+            </div>
+          </div>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-80">
+            <Select
+              value={editorBodyFont.choice}
+              onValueChange={(value) => updateEditorBodyFont({ choice: value as EditorBodyFontChoice, customFamily: editorBodyFont.customFamily })}
+            >
+              <SelectTrigger aria-label={t("settings.editorBodyFontTitle")} className="h-9 bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="system">{t("settings.editorBodyFonts.system")}</SelectItem>
+                <SelectItem value="wenkai">{t("settings.editorBodyFonts.wenkai")}</SelectItem>
+                <SelectItem value="wenkai-screen">{t("settings.editorBodyFonts.wenkaiScreen")}</SelectItem>
+                <SelectItem value="source-han-serif">{t("settings.editorBodyFonts.sourceHanSerif")}</SelectItem>
+                <SelectItem value="source-han-sans">{t("settings.editorBodyFonts.sourceHanSans")}</SelectItem>
+                <SelectItem value="source-serif">{t("settings.editorBodyFonts.sourceSerif")}</SelectItem>
+                <SelectItem value="custom">{t("settings.editorBodyFonts.custom")}</SelectItem>
+              </SelectContent>
+            </Select>
+            {editorBodyFont.choice === "custom" ? (
+              <Input
+                value={editorBodyFont.customFamily}
+                aria-label={t("settings.editorBodyFontCustomLabel")}
+                placeholder={t("settings.editorBodyFontCustomPlaceholder")}
+                className="h-9"
+                maxLength={200}
+                onChange={(event) => updateEditorBodyFont({ choice: "custom", customFamily: event.target.value })}
+              />
+            ) : null}
           </div>
         </div>
 

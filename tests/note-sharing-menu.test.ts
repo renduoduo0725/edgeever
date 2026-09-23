@@ -24,5 +24,7 @@ describe("note sharing menu", () => {
     expect(shareDialogSource).toContain('t("sharing.passwordToggle")');
     expect(shareDialogSource).toContain("api.updateMemoShare(memoId, { passwordProtected })");
     expect(publicShareSource).toContain("api.unlockPublicMemoShare");
+    expect(publicShareSource).toContain("parsePublishedNoteBodyFont(share.bodyFont)");
+    expect(publicShareSource).toContain("applyEditorBodyFontPreference({ choice: publishedBodyFont, customFamily: \"\" })");
   });
 });

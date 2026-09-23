@@ -1,20 +1,32 @@
 {
-  "version": "1.81.0",
+  "version": "1.83.0",
   "changes": {
     "en-US": [
-      "Create richer architecture diagrams with new AI components and hardware icons, more reliable insertion and diagram-kind handling, and refined architecture and flowchart visuals.",
-      "Explore improved public Demo examples for flowcharts, mind maps, and architecture diagrams, with corrected routing, nesting, and saved automatic layouts.",
-      "Open Android GitHub update downloads through a compatible external destination."
+      "Choose a built-in font for note text: LXGW WenKai, LXGW WenKai Screen, Source Han Serif, Source Han Sans, or a Latin serif. A selected built-in font also appears on that note's public share page after the instance is upgraded. System fonts and custom font names stay off the share page.",
+      "Add a beta Database note. Web and desktop can edit records by field, and can filter, sort, and export CSV. Phones, iOS, and public shares stay read-only so the record model is not overwritten. Create-note menu items line up, and the table icon is a grid.",
+      "On macOS, the share extension can import a WeChat merged-forward chat into one note, including the transcript, images, and videos.",
+      "Images and remote videos stay inside fold blocks. Remote videos still open in the existing player.",
+      "Deleting a notebook also removes empty notebooks nested inside it. The notebook stays when any note remains.",
+      "Plugin pages no longer list capability declarations.",
+      "Desktop copy and paste keep working with the updated clipboard API."
     ],
     "zh-CN": [
-      "架构图新增 AI 组件与硬件图标，节点插入和图表类型识别更可靠，并优化架构图与流程图的视觉表现。",
-      "公开 Demo 的流程图、思维导图和架构图示例全面更新，并修正连线路由、层级结构与自动布局保存。",
-      "Android 客户端的 GitHub 更新下载现可通过兼容的外部目标正常打开。"
+      "笔记正文可以选择内置字体：霞鹜文楷、霞鹜文楷屏幕版、思源宋体、思源黑体或西文衬线。选中的内置字体会用在这篇笔记的公开分享页上，自建实例需要升级到这一版后才会生效。系统字体和自定义字体名不会出现在分享页。",
+      "新增 Beta 多维表格笔记。网页和桌面端可以按字段编辑记录，并支持筛选、排序和导出 CSV。手机、iOS 和公开分享页保持只读，避免把记录结构写坏。新建菜单里的笔记类型项已对齐，表格图标改为网格。",
+      "macOS 桌面端可以通过分享扩展，把微信合并转发的聊天记录导入成一篇笔记，包含对话、图片和视频。",
+      "折叠块里的图片和远程视频会留在折叠块内，远程视频仍用现有播放器打开。",
+      "删除笔记本时会一并删除其中的空子笔记本。只要里面还有笔记，这组笔记本会保留。",
+      "插件页面不再列出能力声明。",
+      "桌面端复制和粘贴在更新后的剪贴板接口下保持可用。"
     ],
     "ja": [
-      "アーキテクチャ図に AI コンポーネントとハードウェアアイコンを追加し、ノード挿入と図種別の処理を安定化して、アーキテクチャ図とフローチャートの表示を改善しました。",
-      "公開デモのフローチャート、マインドマップ、アーキテクチャ図の例を刷新し、配線、階層構造、自動レイアウトの保存を修正しました。",
-      "Android クライアントで GitHub の更新ダウンロードを互換性のある外部アプリから正しく開けるようになりました。"
+      "ノート本文に内蔵フォント（霞鹜文楷、霞鹜文楷スクリーン、源ノ明朝、源ノ角ゴシック、欧文セリフ）を選べます。選んだ内蔵フォントは、インスタンスをこの版に更新したあと、公開共有ページにも使われます。システムフォントと任意のフォント名は共有ページには出ません。",
+      "ベータのデータベースノートを追加しました。Web とデスクトップではフィールドごとに記録を編集し、絞り込み、並べ替え、CSV 書き出しができます。スマホ、iOS、公開共有は読み取り専用のままで、記録の構造が上書きされません。新規作成メニューの種類は揃い、表のアイコンはグリッドになりました。",
+      "macOS では共有拡張から、微信の結合転送チャットを 1 件のノートとして取り込めます。会話、画像、動画を含みます。",
+      "折りたたみブロック内の画像とリモート動画はブロックの中に残ります。リモート動画は従来のプレーヤーで開きます。",
+      "ノートブックを削除すると、中にある空の子ノートブックも一緒に削除されます。ノートが残っている場合は、そのノートブックは残ります。",
+      "プラグイン画面に機能宣言は表示されなくなりました。",
+      "デスクトップ版は更新後のクリップボード API でも、コピーと貼り付けが引き続き使えます。"
     ]
   }
 }

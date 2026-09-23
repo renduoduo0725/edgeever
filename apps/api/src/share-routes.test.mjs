@@ -99,8 +99,56 @@ describe("public memo shares", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      share: { memoShareTokens: { memo_target: targetToken } },
+      share: { memoShareTokens: { memo_target: targetToken }, bodyFont: null },
     });
+    sqlite.close();
+  });
+
+  test("publishes the author's built-in note font and ignores anything else", async () => {
+    const { sqlite, environment } = createDatabaseEnvironment();
+    sqlite.query("INSERT INTO users (id, username, password_hash, note_body_font) VALUES (?, ?, ?, ?)")
+      .run("usr_author", "author", "hash", "wenkai");
+    sqlite.query("UPDATE memo_shares SET created_by = ? WHERE id = ?")
+      .run("usr_author", "share_source");
+    const app = new Hono();
+    registerPublicShareRoutes(app);
+
+    const published = await app.request(`/api/public/shares/${sourceToken}`, {}, environment);
+    expect(published.status).toBe(200);
+    expect((await published.json()).share.bodyFont).toBe("wenkai");
+
+    sqlite.query("UPDATE users SET note_body_font = ? WHERE id = ?").run("Comic Sans", "usr_author");
+    const ignored = await app.request(`/api/public/shares/${sourceToken}`, {}, environment);
+    expect((await ignored.json()).share.bodyFont).toBeNull();
+    sqlite.close();
+  });
+
+  test("saves a signed-in user's published note font", async () => {
+    const { sqlite, environment } = createDatabaseEnvironment();
+    sqlite.query("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)")
+      .run("usr_author", "author", "hash");
+    const app = new Hono();
+    app.use("*", async (c, next) => {
+      c.set("auth", { kind: "user", actorType: "user", actorId: "usr_author", username: "author", displayName: null, scopes: [], workspaceId: "ws_member", role: "owner" });
+      await next();
+    });
+    registerMemoShareRoutes(app);
+
+    const response = await app.request("/api/v1/me/note-body-font", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ bodyFont: "source-han-serif" }),
+    }, environment);
+    expect(response.status).toBe(200);
+    expect(sqlite.query("SELECT note_body_font FROM users WHERE id = ?").get("usr_author").note_body_font).toBe("source-han-serif");
+
+    const cleared = await app.request("/api/v1/me/note-body-font", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ bodyFont: null }),
+    }, environment);
+    expect(cleared.status).toBe(200);
+    expect(sqlite.query("SELECT note_body_font FROM users WHERE id = ?").get("usr_author").note_body_font).toBeNull();
     sqlite.close();
   });
 

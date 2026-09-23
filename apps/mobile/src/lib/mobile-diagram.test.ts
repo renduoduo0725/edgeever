@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
-import { createDefaultDiagramDocument, diagramFallbackMarkdown, serializeDiagramDocument } from "@edgeever/shared";
-import { getMobileVisualDiagramKind, hasMobileVisualDiagram, resolveMobileMemoViewerContent } from "./mobile-diagram";
+import { createDefaultDiagramDocument, createDefaultTableDocument, diagramFallbackMarkdown, serializeDiagramDocument, serializeTableDocument, tableFallbackMarkdown } from "@edgeever/shared";
+import { getMobileVisualDiagramKind, hasMobileStructuredTable, hasMobileVisualDiagram, resolveMobileMemoViewerContent } from "./mobile-diagram";
 
 const hasMermaidCodeBlock = (doc: { content?: Array<{ type?: string; attrs?: { language?: string } }> }) =>
   Boolean(doc.content?.some((node) => node.type === "codeBlock" && node.attrs?.language === "mermaid"));
@@ -34,6 +34,17 @@ describe("mobile visual diagram viewer", () => {
     const viewerContent = resolveMobileMemoViewerContent(null, markdown);
     expect(JSON.stringify(viewerContent)).not.toContain("edgeever-diagram-v1");
     expect(hasMermaidCodeBlock(viewerContent)).toBe(true);
+  });
+
+  test("shows a structured table as a readable table and keeps the record marker out of the editor", () => {
+    const markdown = serializeTableDocument(createDefaultTableDocument());
+    expect(hasMobileStructuredTable(markdown)).toBe(true);
+    const viewerContent = resolveMobileMemoViewerContent(null, markdown);
+    expect(JSON.stringify(viewerContent)).not.toContain("edgeever-table-v1");
+    expect(viewerContent.content?.some((node) => node.type === "table")).toBe(true);
+    const broken = `${tableFallbackMarkdown(createDefaultTableDocument())}\n\n<!-- edgeever-table-v1:not-json -->`;
+    expect(hasMobileStructuredTable(broken)).toBe(true);
+    expect(JSON.stringify(resolveMobileMemoViewerContent(null, broken))).not.toContain("edgeever-table-v1");
   });
 
   test("fills the remaining phone viewport instead of shrinking the canvas to a postage stamp", () => {

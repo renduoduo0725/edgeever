@@ -19,6 +19,12 @@ describe("plugin manager card layout", () => {
     expect(catalogCard).toContain("commands.filter(isPluginCardCommand)");
   });
 
+  test("does not present informational capability declarations as plugin permissions", () => {
+    expect(source).not.toContain("plugins.details.permissions");
+    expect(source).not.toContain("manifest.permissions.map");
+    expect(catalogCard).not.toContain("manifest.permissions");
+  });
+
   test("uses GitHub icon links for marketplace and installed extension repositories", () => {
     expect(catalogCard.match(/<GitHubRepositoryLink/g)).toHaveLength(1);
     expect(catalogCard).toContain("showTooltip={false}");

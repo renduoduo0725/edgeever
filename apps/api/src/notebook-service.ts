@@ -241,43 +241,96 @@ export const updateNotebookRecord = async (
   return notebook;
 };
 
+const NOTEBOOK_DELETE_ID_CHUNK = 80;
+
+const chunkValues = <T>(values: T[], size: number) => {
+  const chunks: T[][] = [];
+  for (let index = 0; index < values.length; index += size) {
+    chunks.push(values.slice(index, index + size));
+  }
+  return chunks;
+};
+
+// Active notebooks in this subtree. The anchor may already be deleted so a
+// retried parent delete can still remove descendants that were left behind.
+const listActiveNotebookTree = async (db: DatabaseAdapter, workspaceId: string, id: string) => {
+  const rows = await db.prepare(
+    `WITH RECURSIVE tree(id) AS (
+       SELECT id FROM notebooks WHERE workspace_id = ? AND id = ?
+       UNION ALL
+       SELECT n.id
+       FROM notebooks n
+       INNER JOIN tree t ON n.parent_id = t.id
+       WHERE n.workspace_id = ?
+     )
+     SELECT n.id, n.slug
+     FROM notebooks n
+     INNER JOIN tree t ON t.id = n.id
+     WHERE n.workspace_id = ? AND n.is_deleted = 0`
+  ).bind(workspaceId, id, workspaceId, workspaceId).all<{ id: string; slug: string | null }>();
+
+  return rows.results;
+};
+
+const countActiveMemosInNotebooks = async (db: DatabaseAdapter, workspaceId: string, notebookIds: string[]) => {
+  let total = 0;
+  for (const chunk of chunkValues(notebookIds, NOTEBOOK_DELETE_ID_CHUNK)) {
+    const placeholders = chunk.map(() => "?").join(", ");
+    const row = await db.prepare(
+      `SELECT COUNT(*) AS count FROM memos WHERE workspace_id = ? AND is_deleted = 0 AND notebook_id IN (${placeholders})`
+    ).bind(workspaceId, ...chunk).first<{ count: number }>();
+    total += Number(row?.count ?? 0);
+  }
+  return total;
+};
+
 export const deleteNotebookRecord = async (
   db: DatabaseAdapter,
   workspaceId: string,
   id: string,
   actor: AuditActor
 ) => {
-  const current = await getNotebook(db, workspaceId, id);
+  const current = await db.prepare(
+    `SELECT id, slug, is_deleted FROM notebooks WHERE id = ? AND workspace_id = ?`
+  ).bind(id, workspaceId).first<{ id: string; slug: string | null; is_deleted: number }>();
   if (!current) throw new AppError("not_found", "Notebook not found", 404);
   if (isInboxNotebook(current, workspaceId)) {
+    if (current.is_deleted) return;
     throw new AppError("bad_request", "等待分类不能删除。", 400);
   }
 
-  const [childCount, memoCount] = await Promise.all([
-    db.prepare(`SELECT COUNT(*) AS count FROM notebooks WHERE workspace_id = ? AND parent_id = ? AND is_deleted = 0`)
-      .bind(workspaceId, id)
-      .first<{ count: number }>(),
-    db.prepare(`SELECT COUNT(*) AS count FROM memos WHERE workspace_id = ? AND notebook_id = ? AND is_deleted = 0`)
-      .bind(workspaceId, id)
-      .first<{ count: number }>(),
-  ]);
+  const tree = await listActiveNotebookTree(db, workspaceId, id);
+  if (tree.length === 0) return;
+  if (tree.some((notebook) => isInboxNotebook(notebook, workspaceId))) {
+    throw new AppError("bad_request", "等待分类不能删除。", 400);
+  }
 
-  if ((childCount?.count ?? 0) > 0 || (memoCount?.count ?? 0) > 0) {
+  const notebookIds = tree.map((notebook) => notebook.id);
+  // Empty child notebooks are removed with the parent. Notes anywhere in the
+  // subtree block the whole delete so a parent click cannot orphan them.
+  if (await countActiveMemosInNotebooks(db, workspaceId, notebookIds) > 0) {
     throw new AppError(
       "notebook_not_empty",
-      "Move or delete child notebooks and memos before deleting this notebook.",
+      "Move or delete notes in this notebook and its child notebooks before deleting it.",
       409
     );
   }
 
   const now = isoNow();
-  await db.prepare(
-    `UPDATE notebooks
-     SET is_deleted = 1, deleted_at = ?, updated_at = ?
-     WHERE id = ? AND workspace_id = ? AND slug <> 'inbox'
-       AND id <> 'nb_inbox' AND id <> ?`
-  ).bind(now, now, id, workspaceId, workspaceInboxId(workspaceId)).run();
-  await audit(db, actor.actorType, actor.actorId, "notebook.delete", "notebook", id, {});
+  const inboxId = workspaceInboxId(workspaceId);
+  const statements = chunkValues(notebookIds, NOTEBOOK_DELETE_ID_CHUNK).map((chunk) => {
+    const placeholders = chunk.map(() => "?").join(", ");
+    return db.prepare(
+      `UPDATE notebooks
+       SET is_deleted = 1, deleted_at = ?, updated_at = ?
+       WHERE workspace_id = ? AND is_deleted = 0 AND id IN (${placeholders})
+         AND slug <> 'inbox' AND id <> 'nb_inbox' AND id <> ?`
+    ).bind(now, now, workspaceId, ...chunk, inboxId);
+  });
+  statements.push(auditStatement(db, actor.actorType, actor.actorId, "notebook.delete", "notebook", id, {
+    notebookIds,
+  }));
+  await db.batch(statements);
 };
 
 export const restoreNotebookRecord = async (

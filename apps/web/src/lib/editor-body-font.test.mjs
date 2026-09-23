@@ -1,0 +1,105 @@
+import { afterEach, describe, expect, test } from "bun:test";
+import {
+  EDITOR_BODY_FONT_CUSTOM_STORAGE_KEY,
+  EDITOR_BODY_FONT_STORAGE_KEY,
+  applyEditorBodyFontPreference,
+  readEditorBodyFontPreference,
+  resolveEditorBodyFontStack,
+  sanitizeEditorBodyFontFamily,
+  writeEditorBodyFontPreference,
+} from "./editor-body-font.ts";
+
+const installLocalStorage = () => {
+  const values = new Map();
+  globalThis.window = {
+    localStorage: {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, String(value)),
+    },
+  };
+  return values;
+};
+
+describe("editor body font preference", () => {
+  afterEach(() => {
+    delete globalThis.window;
+    delete globalThis.document;
+  });
+
+  test("defaults to the system face and ignores unknown choices", () => {
+    const values = installLocalStorage();
+    expect(readEditorBodyFontPreference()).toEqual({ choice: "system", customFamily: "" });
+
+    values.set(EDITOR_BODY_FONT_STORAGE_KEY, "comic-sans");
+    expect(readEditorBodyFontPreference().choice).toBe("system");
+  });
+
+  test("persists a bundled face and a custom family", () => {
+    const values = installLocalStorage();
+    writeEditorBodyFontPreference({ choice: "wenkai", customFamily: "霞鹜文楷" });
+    expect(values.get(EDITOR_BODY_FONT_STORAGE_KEY)).toBe("wenkai");
+    expect(values.get(EDITOR_BODY_FONT_CUSTOM_STORAGE_KEY)).toBe("霞鹜文楷");
+    expect(readEditorBodyFontPreference()).toEqual({ choice: "wenkai", customFamily: "霞鹜文楷" });
+  });
+
+  test("falls back when local storage is unavailable", () => {
+    globalThis.window = {
+      localStorage: {
+        getItem: () => {
+          throw new Error("blocked");
+        },
+        setItem: () => {
+          throw new Error("blocked");
+        },
+      },
+    };
+    expect(readEditorBodyFontPreference()).toEqual({ choice: "system", customFamily: "" });
+    expect(() => writeEditorBodyFontPreference({ choice: "source-han-serif", customFamily: "" })).not.toThrow();
+  });
+
+  test("keeps installed font names and rejects style injection", () => {
+    expect(sanitizeEditorBodyFontFamily("  LXGW WenKai  ")).toBe("LXGW WenKai");
+    expect(sanitizeEditorBodyFontFamily('"Source Han Serif SC", Songti SC')).toBe('"Source Han Serif SC", Songti SC');
+    expect(sanitizeEditorBodyFontFamily("霞鹜文楷")).toBe("霞鹜文楷");
+    expect(sanitizeEditorBodyFontFamily("")).toBe("");
+    expect(sanitizeEditorBodyFontFamily("WenKai; color: red")).toBe("");
+    expect(sanitizeEditorBodyFontFamily("url(https://evil.example/font.woff2)")).toBe("");
+    expect(sanitizeEditorBodyFontFamily("a".repeat(201))).toBe("");
+  });
+
+  test("resolves bundled stacks and appends a system fallback to custom names", () => {
+    expect(resolveEditorBodyFontStack({ choice: "system", customFamily: "" })).toBeNull();
+    expect(resolveEditorBodyFontStack({ choice: "wenkai", customFamily: "" })).toContain("EdgeEver Kai");
+    expect(resolveEditorBodyFontStack({ choice: "wenkai-screen", customFamily: "" })).toContain("EdgeEver Kai Screen");
+    expect(resolveEditorBodyFontStack({ choice: "source-han-serif", customFamily: "" })).toContain("EdgeEver Song");
+    expect(resolveEditorBodyFontStack({ choice: "source-han-serif", customFamily: "" })).toContain("Source Serif 4");
+    expect(resolveEditorBodyFontStack({ choice: "source-han-sans", customFamily: "" })).toContain("EdgeEver Hei");
+    expect(resolveEditorBodyFontStack({ choice: "source-serif", customFamily: "" })).toContain("Source Serif 4");
+    expect(resolveEditorBodyFontStack({ choice: "custom", customFamily: "LXGW WenKai" })).toContain("LXGW WenKai");
+    expect(resolveEditorBodyFontStack({ choice: "custom", customFamily: "LXGW WenKai" })).toContain("PingFang SC");
+    expect(resolveEditorBodyFontStack({ choice: "custom", customFamily: "bad; family" })).toBeNull();
+  });
+
+  test("publishes the resolved stack on the document and clears it for the system face", () => {
+    installLocalStorage();
+    const style = new Map();
+    const dataset = {};
+    globalThis.document = {
+      documentElement: {
+        dataset,
+        style: {
+          setProperty: (key, value) => style.set(key, value),
+          removeProperty: (key) => style.delete(key),
+        },
+      },
+    };
+
+    applyEditorBodyFontPreference({ choice: "source-han-sans", customFamily: "" });
+    expect(dataset.editorBodyFont).toBe("source-han-sans");
+    expect(style.get("--editor-body-font-family")).toContain("EdgeEver Hei");
+
+    applyEditorBodyFontPreference({ choice: "system", customFamily: "" });
+    expect(dataset.editorBodyFont).toBeUndefined();
+    expect(style.has("--editor-body-font-family")).toBe(false);
+  });
+});

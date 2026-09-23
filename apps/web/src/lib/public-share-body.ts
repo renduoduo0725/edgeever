@@ -1,10 +1,14 @@
 import {
   hasDiagramDocumentMarker,
+  hasTableDocumentMarker,
   markdownToDoc,
   parseDiagramDocument,
+  parseTableDocument,
   resolveMemoContentDoc,
   rewriteMemoResourcesForShare,
   stripDiagramDocumentMarker,
+  stripTableDocumentMarker,
+  tableFallbackMarkdown,
   type DiagramDocument,
   type PublicMemoShare,
   type TiptapDoc,
@@ -18,8 +22,12 @@ export type PublicShareBody =
 export const resolvePublicShareBody = (share: PublicMemoShare, token: string): PublicShareBody => {
   const diagram = parseDiagramDocument(share.contentMarkdown);
   if (diagram) return { type: "diagram", diagram };
-  const richText = hasDiagramDocumentMarker(share.contentMarkdown)
-    ? markdownToDoc(stripDiagramDocumentMarker(share.contentMarkdown))
+  const table = parseTableDocument(share.contentMarkdown);
+  if (table) {
+    return { type: "rich-text", content: rewriteMemoResourcesForShare(markdownToDoc(tableFallbackMarkdown(table)), token, share.memoShareTokens) };
+  }
+  const richText = hasDiagramDocumentMarker(share.contentMarkdown) || hasTableDocumentMarker(share.contentMarkdown)
+    ? markdownToDoc(hasTableDocumentMarker(share.contentMarkdown) ? stripTableDocumentMarker(share.contentMarkdown) : stripDiagramDocumentMarker(share.contentMarkdown))
     : resolveMemoContentDoc(share.contentJson, share.contentMarkdown);
   return {
     type: "rich-text",

@@ -448,11 +448,13 @@ describe("release automation", () => {
       changesZh: ["优化发布流程。"],
       issueNumber: 126,
     });
+    expect(notes).toContain("## 主要更新");
     expect(notes).toContain("## Key Changes");
     expect(notes).toContain("Related Issue: #126");
-    expect(notes).toContain("## 🇨🇳 中文说明 / Chinese Changelog");
     expect(notes).toContain("关联 Issue：#126");
-    expect(notes.indexOf("## 🇨🇳 中文说明 / Chinese Changelog"))
+    expect(notes).not.toContain("中文说明");
+    expect(notes).not.toContain("Chinese Changelog");
+    expect(notes.indexOf("## 主要更新"))
       .toBeLessThan(notes.indexOf("## Key Changes"));
     expect(notes.indexOf("优化发布流程。"))
       .toBeLessThan(notes.indexOf("Improve the release flow."));

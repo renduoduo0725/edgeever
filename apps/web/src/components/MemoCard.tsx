@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, type DragEvent, type MouseEvent, type PointerEvent as ReactPointerEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import * as m from "motion/react-m";
-import { GitBranch, Network, Workflow, Star, Check, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
+import { GitBranch, Network, TableProperties, Workflow, Star, Check, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
 import { getMemoListTimestamp, type MemoSummary } from "@edgeever/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -91,6 +91,7 @@ export const MemoCard = ({
   const diagramLabel = memo.diagramKind
     ? t(`diagram.${memo.diagramKind === "mind-map" ? "mindMap" : memo.diagramKind}`)
     : null;
+  const tableLabel = !diagramLabel && memo.structuredTable ? t("structuredTable.name") : null;
   const DiagramIcon = memo.diagramKind === "mind-map" ? GitBranch : memo.diagramKind === "architecture" ? Network : Workflow;
   const listTimestamp = getMemoListTimestamp(memo, sortMode);
   const listTimestampLabel = formatMemoPreviewDate(
@@ -411,6 +412,18 @@ export const MemoCard = ({
               </div>
               {listDensity !== "compact" && memo.diagramPreview?.labels.length ? (
                 <div className="line-clamp-2 text-[13px] leading-relaxed text-slate-600 ">{memo.diagramPreview.labels.join(" · ")}</div>
+              ) : null}
+            </div>
+          ) : tableLabel ? (
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1 rounded border border-slate-200 px-1.5 py-0.5">
+                  <TableProperties className="h-3 w-3" aria-hidden="true" />{tableLabel}
+                </span>
+                {memo.tablePreview ? <span>{t("structuredTable.listCounts", { records: memo.tablePreview.recordCount, fields: memo.tablePreview.fieldCount })}</span> : null}
+              </div>
+              {listDensity !== "compact" && memo.tablePreview?.fieldNames.length ? (
+                <div className="line-clamp-2 text-[13px] leading-relaxed text-slate-600">{memo.tablePreview.fieldNames.join(" · ")}</div>
               ) : null}
             </div>
           ) : (

@@ -382,8 +382,6 @@ export const buildReleaseNotes = ({
   changesZh,
   issueNumber,
 }) => [
-  "## 🇨🇳 中文说明 / Chinese Changelog",
-  "",
   "## 主要更新",
   "",
   ...changesZh.map((change) => `- ${change}`),

@@ -164,6 +164,34 @@ describe("diagram document", () => {
     expect(fallback).toContain("classDef archDatabase");
   });
 
+  test("projects forward diagonal architecture edges through horizontal ports", () => {
+    const document = createDefaultDiagramDocument("architecture");
+    const edge = document.edges[0];
+    const source = document.nodes.find((node) => node.id === edge.source);
+    const target = document.nodes.find((node) => node.id === edge.target);
+    Object.assign(source, { x: 194, y: 711, width: 170, height: 64 });
+    Object.assign(target, { x: 446, y: 658, width: 170, height: 68 });
+
+    const projectedEdge = diagramDocumentToX6Cells(document, "light").edges[0];
+    expect(projectedEdge.source.port).toBe("right");
+    expect(projectedEdge.target.port).toBe("left");
+  });
+
+  test("projects architecture edge labels below component typography", () => {
+    const document = createDefaultDiagramDocument("architecture");
+    const projectedLabel = diagramDocumentToX6Cells(document, "light").edges[0].labels[0].attrs.label;
+    expect(projectedLabel.fontSize).toBe(10);
+    expect(projectedLabel.lineHeight).toBe(14);
+  });
+
+  test("projects mind map edge labels below topic typography", () => {
+    const document = createDefaultDiagramDocument("mind-map");
+    document.edges[0].label = "补充说明";
+    const projectedLabel = diagramDocumentToX6Cells(document, "light").edges[0].labels[0].attrs.label;
+    expect(projectedLabel.fontSize).toBe(10);
+    expect(projectedLabel.lineHeight).toBe(14);
+  });
+
   test("keeps legacy architecture nodes valid and projects resource-specific icons", () => {
     const legacy = createDefaultDiagramDocument("architecture");
     expect(legacy.nodes.every((node) => node.resourceIcon === undefined)).toBe(true);
@@ -235,6 +263,7 @@ describe("diagram document", () => {
 test('native flowchart projection shares label sizing and obstacle routing without mutating content', () => {
   const document = createDefaultDiagramDocument('flowchart');
   document.nodes[1].label = 'Transformer 前向计算\n因果注意力以及前馈网络'.repeat(4);
+  document.edges[0].label = '是';
   const original = structuredClone(document);
   const projection = diagramDocumentToX6Cells(document, 'dark');
   expect(projection.nodes[1].height).toBeGreaterThan(document.nodes[1].height);
@@ -242,6 +271,8 @@ test('native flowchart projection shares label sizing and obstacle routing witho
   expect(projection.edges[0].router.name).toBe('normal');
   expect(projection.edges[0].source.port).toBe('bottom');
   expect(projection.edges[0].target.port).toBe('top');
+  expect(projection.edges[0].labels[0].attrs.label.fontSize).toBe(10);
+  expect(projection.edges[0].labels[0].attrs.label.lineHeight).toBe(14);
   expect(projection.edges[0].attrs.line.fill).toBe('none');
   expect(projection.nodes[0].attrs.body.fill).not.toBe('#16A06E');
   expect(projection.nodes[0].attrs.label.fontFamily).toContain('Inter');

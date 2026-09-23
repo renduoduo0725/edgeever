@@ -11,6 +11,21 @@ export type MemoShare = {
   password?: string;
 };
 
+export const PUBLISHED_NOTE_BODY_FONTS = [
+  "wenkai",
+  "wenkai-screen",
+  "source-han-serif",
+  "source-han-sans",
+  "source-serif",
+] as const;
+
+export type PublishedNoteBodyFont = (typeof PUBLISHED_NOTE_BODY_FONTS)[number];
+
+export const parsePublishedNoteBodyFont = (value: unknown): PublishedNoteBodyFont | null =>
+  typeof value === "string" && (PUBLISHED_NOTE_BODY_FONTS as readonly string[]).includes(value)
+    ? value as PublishedNoteBodyFont
+    : null;
+
 export type PublicMemoShare = {
   title: string | null;
   contentJson: TiptapDoc;
@@ -18,6 +33,8 @@ export type PublicMemoShare = {
   tags: string[];
   updatedAt: string;
   memoShareTokens: Record<string, string>;
+  /** Built-in face chosen by the author. Null keeps the system font and downloads nothing. */
+  bodyFont: PublishedNoteBodyFont | null;
 };
 
 const RESOURCE_URL_PATTERN = /^\/api\/v1\/resources\/([^/?#]+)\/blob(?:[?#].*)?$/;

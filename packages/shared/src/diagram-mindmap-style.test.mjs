@@ -20,6 +20,8 @@ import {
   mindMapUsesUnderline,
   resolveMindMapNodeStyle,
   MIND_MAP_CONNECTOR_NAME,
+  MIND_MAP_EDGE_LABEL_FONT_SIZE,
+  MIND_MAP_EDGE_LABEL_LINE_HEIGHT,
   MIND_MAP_VERTICAL_GAP,
 } from "./diagram-mindmap-style.ts";
 
@@ -52,6 +54,15 @@ describe("mind map presentation", () => {
     expect(compactMindMapNodeSize("A much longer topic label", false).width).toBeLessThanOrEqual(168);
     expect(mindMapNodePresentation("核心主题", "root").fontSize).toBe(15);
     expect(MIND_MAP_VERTICAL_GAP).toBe(20);
+  });
+
+  test("keeps edge annotations visually subordinate to nested topics", () => {
+    const nestedPresentation = mindMapNodePresentation("分支主题", "nested");
+    const nestedVisual = mindMapNodeVisual("nested", palette);
+    expect(MIND_MAP_EDGE_LABEL_FONT_SIZE).toBe(10);
+    expect(MIND_MAP_EDGE_LABEL_LINE_HEIGHT).toBe(14);
+    expect(MIND_MAP_EDGE_LABEL_FONT_SIZE).toBeLessThan(nestedPresentation.fontSize);
+    expect(MIND_MAP_EDGE_LABEL_LINE_HEIGHT).toBeLessThan(nestedVisual.label.lineHeight);
   });
 
   test("uses a capsule root, rounded first-level topics, and lighter nested topics", () => {

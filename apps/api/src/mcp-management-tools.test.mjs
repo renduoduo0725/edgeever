@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { globSync, readFileSync } from "node:fs";
 import { Database } from "bun:sqlite";
 import { callMcpTool } from "./index.ts";
-import { parseDiagramDocument } from "@edgeever/shared";
+import { parseDiagramDocument, parseTableDocument, serializeTableDocument, createDefaultTableDocument } from "@edgeever/shared";
 
 class SqliteD1PreparedStatement {
   constructor(db, sql, bindings = []) {
@@ -196,6 +196,26 @@ describe("MCP template and AI instruction management", () => {
 
     const stored = sqlite.query("SELECT content_markdown FROM memo_contents WHERE memo_id = ?").get(created.memo.id);
     expect(parseDiagramDocument(stored.content_markdown).nodes.map((node) => node.id)).toContain("redis");
+  });
+
+  test("refuses to replace a structured table through update_memo", async () => {
+    const { sqlite, auth, context } = createFixture();
+    sqlite.query("INSERT INTO notebooks (id, workspace_id, name) VALUES (?, ?, ?)")
+      .run("nb_tables", "ws_mcp", "Tables");
+    const created = await callMcpTool(context, auth, "create_memo", {
+      notebookId: "nb_tables",
+      title: "阅读清单",
+      contentMarkdown: serializeTableDocument(createDefaultTableDocument()),
+    });
+    const read = await callMcpTool(context, auth, "get_memo", { memoId: created.memo.id });
+    expect(read.structuredTable).toMatchObject({ fieldCount: 3, recordCount: 1 });
+    expect(JSON.stringify(read)).not.toContain("edgeever-table-v1");
+    await expect(callMcpTool(context, auth, "update_memo", {
+      memoId: created.memo.id,
+      contentMarkdown: "plain text",
+    })).rejects.toMatchObject({ code: "table_update_required" });
+    const stored = sqlite.query("SELECT content_markdown FROM memo_contents WHERE memo_id = ?").get(created.memo.id);
+    expect(parseTableDocument(stored.content_markdown)?.records).toHaveLength(1);
   });
 
   test("keeps mind-map hierarchy edges consistent when a node is reparented", async () => {

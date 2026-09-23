@@ -451,17 +451,23 @@ hello **world**
   test("converts an HTML image inside details into an image node", () => {
     const markdown = `<details>
 <summary> </summary>
-<img src="https://example.com/a.png" alt="pic" title="t" />
+<img src="https://example.com/a.png" alt="pic" title="t" width=45% />
 </details>`;
     const doc = markdownToDoc(markdown);
     expect(doc.content[0]?.content?.[1]?.content?.[0]).toMatchObject({
       type: "image",
-      attrs: { src: "https://example.com/a.png", alt: "pic", title: "t" },
+      attrs: { src: "https://example.com/a.png", alt: "pic", title: "t", width: 45 },
     });
-    expect(docToMarkdown(doc)).toContain("![pic](https://example.com/a.png \"t\")");
+    const serialized = docToMarkdown(doc);
+    expect(serialized).toContain('<img src="https://example.com/a.png" alt="pic" title="t" width="45%" />');
+    expect(serialized).not.toContain("![pic]");
+    expect(markdownToDoc(serialized).content[0]?.content?.[1]?.content?.[0]).toMatchObject({
+      type: "image",
+      attrs: { src: "https://example.com/a.png", alt: "pic", title: "t", width: 45 },
+    });
   });
 
-  test("keeps an image inside a details block", () => {
+  test("keeps an image inside a details block and writes it back as HTML", () => {
     const markdown = `<details>
 <summary>图</summary>
 
@@ -474,7 +480,92 @@ hello **world**
       type: "image",
       attrs: { src: "https://example.com/a.png", alt: "pic" },
     });
-    expect(docToMarkdown(doc)).toContain("![pic](https://example.com/a.png)");
+    expect(docToMarkdown(doc)).toContain('<img src="https://example.com/a.png" alt="pic" />');
+  });
+
+  test("plays a remote video inside details through the existing attachment", () => {
+    const markdown = `<details>
+<summary>片段</summary>
+<video src="https://cdn.example.com/watch/clip.mp4" controls alt=" " title=" " width=45%></video>
+<video src="https://cdn.example.com/player?id=1" controls /></video>
+<video src="javascript:alert(1)" controls></video>
+</details>`;
+    const doc = markdownToDoc(markdown);
+    const body = doc.content[0]?.content?.[1]?.content || [];
+    expect(body).toHaveLength(2);
+    expect(body[0]?.content?.[0]).toMatchObject({
+      type: FILE_ATTACHMENT_NODE_TYPE,
+      attrs: {
+        url: "https://cdn.example.com/watch/clip.mp4",
+        filename: "clip.mp4",
+        mimeType: "video/mp4",
+        displayMode: "inline",
+      },
+    });
+    expect(body[1]?.content?.[0]).toMatchObject({
+      type: FILE_ATTACHMENT_NODE_TYPE,
+      attrs: {
+        url: "https://cdn.example.com/player?id=1",
+        mimeType: "video/mp4",
+        displayMode: "inline",
+      },
+    });
+
+    const serialized = docToMarkdown(doc);
+    expect(serialized).toContain('<video src="https://cdn.example.com/watch/clip.mp4" controls></video>');
+    expect(serialized).toContain('<video src="https://cdn.example.com/player?id=1" controls></video>');
+    expect(serialized).not.toContain("javascript:");
+    expect(serialized).not.toContain("width=");
+    expect(markdownToDoc(serialized).content[0]?.content?.[1]?.content?.[0]?.content?.[0]).toMatchObject({
+      type: FILE_ATTACHMENT_NODE_TYPE,
+      attrs: { url: "https://cdn.example.com/watch/clip.mp4", mimeType: "video/mp4" },
+    });
+  });
+
+  test("keeps an uploaded video attachment inside details as a resource link", () => {
+    const doc = {
+      type: "doc",
+      content: [{
+        type: "details",
+        content: [
+          { type: "detailsSummary", content: [{ type: "text", text: "片段" }] },
+          {
+            type: "detailsContent",
+            content: [{
+              type: "paragraph",
+              content: [{
+                type: FILE_ATTACHMENT_NODE_TYPE,
+                attrs: {
+                  url: "/api/v1/resources/res_video/blob",
+                  label: "附件：clip.mp4",
+                  filename: "clip.mp4",
+                  mimeType: "video/mp4",
+                  displayMode: "inline",
+                },
+              }],
+            }],
+          },
+        ],
+      }],
+    };
+
+    const serialized = docToMarkdown(doc);
+    expect(serialized).toContain("[附件：clip.mp4](/api/v1/resources/res_video/blob)");
+    expect(serialized).not.toContain("<video");
+  });
+
+  test("leaves a video sample inside a details code fence untouched", () => {
+    const markdown = `<details>
+<summary>示例</summary>
+
+\`\`\`html
+<video src="https://cdn.example.com/clip.mp4" controls></video>
+\`\`\`
+
+</details>`;
+    const serialized = docToMarkdown(markdownToDoc(markdown));
+    expect(serialized).toContain('<video src="https://cdn.example.com/clip.mp4" controls></video>');
+    expect(serialized).toContain("```html");
   });
 
   test("recovers details from Markdown when JSON only kept the tags as text", () => {

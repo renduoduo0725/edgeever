@@ -23,6 +23,12 @@ EdgeEver P0 扩展 API 支持受信任的客户端插件和无代码主题包。
   "apiVersion": "2",
   "settingsUi": "host",
   "description": "Adds a command for recent notes.",
+  "locales": {
+    "zh-CN": {
+      "name": "最近笔记",
+      "description": "添加一个查看最近笔记的命令。"
+    }
+  },
   "entry": "./main.js",
   "platforms": ["web", "desktop"],
   "permissions": ["notes:read", "editor:read", "ui:commands", "ui:notices", "ui:panels"]
@@ -30,6 +36,8 @@ EdgeEver P0 扩展 API 支持受信任的客户端插件和无代码主题包。
 ```
 
 Manifest 和 JavaScript 模块必须返回允许 EdgeEver 来源访问的 CORS 响应头。相对 `entry` 地址基于 Manifest 地址解析。
+
+顶层必填的 `name` 与可选的 `description` 保持为回退文案。插件与主题可以增加以 BCP 47 语言标签为键的 `locales` 对象，例如 `zh-CN`、`en-US` 或 `ja`；每种语言可覆盖 `name`、`description` 或两者。EdgeEver 会先匹配当前界面语言，再匹配相同基础语言，最后回退到顶层字段。这里本地化的是插件市场与插件管理页的元数据；运行时命令、面板、通知及宿主渲染的设置项标签仍由插件自行负责本地化。
 
 ## 通过 GitHub 分发
 
@@ -73,6 +81,12 @@ Registry 格式：
     "id": "com.example.recent-notes",
     "name": "Recent Notes",
     "description": "Shows recently updated notes.",
+    "locales": {
+      "zh-CN": {
+        "name": "最近笔记",
+        "description": "显示最近更新的笔记。"
+      }
+    },
     "author": "EdgeEver",
     "publisher": "edgeever",
     "category": "Productivity",

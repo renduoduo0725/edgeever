@@ -17,8 +17,10 @@ import {
   parseImageWidth,
   getImageReferrerPolicy,
   createEdgeEverDocumentExtensions,
+  parsePublishedNoteBodyFont,
   type PublicMemoShare,
 } from "@edgeever/shared";
+import { applyEditorBodyFontPreference } from "@/lib/editor-body-font";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import { PdfAttachment } from "@/components/editor/PdfAttachment";
 import { FileAttachment } from "@/components/editor/FileAttachment";
@@ -192,6 +194,20 @@ export const PublicSharePage = () => {
   });
   const share = shareQuery.data?.share;
   const passwordRequired = isSharePasswordError(shareQuery.error, "share_password_required");
+  const publishedBodyFont = share ? parsePublishedNoteBodyFont(share.bodyFont) : undefined;
+
+  useEffect(() => {
+    if (publishedBodyFont === undefined) return undefined;
+    if (!publishedBodyFont) {
+      delete document.documentElement.dataset.editorBodyFont;
+      document.documentElement.style.removeProperty("--editor-body-font-family");
+    } else {
+      applyEditorBodyFontPreference({ choice: publishedBodyFont, customFamily: "" });
+    }
+    return () => {
+      applyEditorBodyFontPreference();
+    };
+  }, [publishedBodyFont]);
 
   useEffect(() => {
     const previousTitle = document.title;
