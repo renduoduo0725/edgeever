@@ -13,7 +13,7 @@ export const alternativePageCopy = {
       "习惯印象笔记三栏，而不是时间流动或纯文件仓库。",
       "希望自托管，不想再为笔记 SaaS 和设备数量付费。",
       "希望用 Cloudflare 免费额度，或一行命令在 VPS / NAS 上跑 Docker。",
-      "希望把笔记交给 Claude Code、Codex 等 Agent，通过原生 MCP 读写。",
+      "希望把笔记交给 Claude Code、Codex、WorkBuddy 等 Agent，通过原生 MCP 读写。",
     ],
     notFitTitle: "不适合谁",
     notFit: [
@@ -107,7 +107,7 @@ export const alternativePageCopy = {
       "You want Evernote-style notebooks, not a timeline or a file vault.",
       "You want to self-host instead of paying a notes SaaS or hitting device caps.",
       "You want Cloudflare's free tier, or a one-line Docker install on a VPS or NAS.",
-      "You want coding agents such as Claude Code or Codex to read and organize notes through native MCP.",
+      "You want coding agents such as Claude Code, Codex, or WorkBuddy to read and organize notes through native MCP.",
     ],
     notFitTitle: "Who it is not for",
     notFit: [
@@ -201,7 +201,7 @@ export const alternativePageCopy = {
       "タイムラインやファイル倉庫ではなく、Evernote 型のノートブックが欲しい。",
       "ノート SaaS や端末数の課金をやめ、自分でホストしたい。",
       "Cloudflare 無料枠か、VPS / NAS への Docker 一行インストールが欲しい。",
-      "Claude Code や Codex などの Agent に、ネイティブ MCP でノートを読ませたい。",
+      "Claude Code や Codex、WorkBuddy などの Agent に、ネイティブ MCP でノートを読ませたい。",
     ],
     notFitTitle: "向いていない人",
     notFit: [

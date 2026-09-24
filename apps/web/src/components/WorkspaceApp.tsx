@@ -46,7 +46,7 @@ import {
 } from "@/lib/mobile-editor";
 import { cn } from "@/lib/utils";
 import { isBrowserOffline, isBrowserOnline } from "@/lib/network-status";
-import { createDefaultDiagramDocument, createDefaultTableDocument, diagramFallbackMarkdown, getNotebookDescendantIds, markdownToDoc, parseDiagramDocument, parseTableDocument, serializeDiagramDocument, serializeTableDocument, tableFallbackMarkdown, type NoteCreateKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
+import { createDefaultDiagramDocument, createDefaultTableDocument, diagramFallbackMarkdown, getNotebookDescendantIds, hasTableDocumentMarker, markdownToDoc, parseDiagramDocument, parseTableDocument, serializeDiagramDocument, serializeTableDocument, tableFallbackMarkdown, type NoteCreateKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
 import { toggleMobileMemoSelection } from "@edgeever/shared/mobile-ui";
 import type {
   Pane,
@@ -262,6 +262,8 @@ export const WorkspaceApp = ({
   const [notebookNameDialog, setNotebookNameDialog] = useState<NotebookNameDialogState | null>(null);
   const [notebookDeleteConfirmation, setNotebookDeleteConfirmation] = useState<Notebook | null>(null);
   const [appNoticeDialog, setAppNoticeDialog] = useState<AppNoticeDialogState | null>(null);
+  const [wechatImportFailureId, setWeChatImportFailureId] = useState<string | null>(null);
+  const [wechatImportsInProgress, setWeChatImportsInProgress] = useState(0);
   const [pendingCatalogTrustPluginIds, setPendingCatalogTrustPluginIds] = useState<string[]>([]);
   const [isExportingSelectedMemos, setIsExportingSelectedMemos] = useState(false);
   const [selectedMarkdownExportProgress, setSelectedMarkdownExportProgress] = useState<MarkdownExportProgress>({
@@ -1619,7 +1621,7 @@ export const WorkspaceApp = ({
     : null;
   const selectedMemo = memoQuery.data?.memo ?? cachedSelectedMemo;
   const selectedDiagram = parseDiagramDocument(selectedMemo?.contentMarkdown);
-  const selectedTable = parseTableDocument(selectedMemo?.contentMarkdown);
+  const selectedTableNote = hasTableDocumentMarker(selectedMemo?.contentMarkdown);
   const desktopNotebookSidebarCollapsed = Boolean(isDesktop && notebookSidebarCollapsed);
   const desktopFocusModeActive = Boolean(
     isDesktop && desktopFocusMode && rightView === "editor" && selectedMemo && !memoSelectionModeActive
@@ -1784,11 +1786,7 @@ export const WorkspaceApp = ({
     media?: Array<{ id: string; filename: string; mimeType: string; byteSize: number }>;
   }) => {
     const bridge = window.edgeeverDesktop;
-    const finish = () => {
-      if (payload.importId && bridge?.finishWeChatImport) void bridge.finishWeChatImport(payload.importId);
-    };
     if (!payload.ok || !payload.importId || !payload.markdown) {
-      finish();
       setAppNoticeDialog({
         title: t("memoList.importWeChatFailedTitle"),
         description: payload.reason === "unrecognized"
@@ -1809,6 +1807,8 @@ export const WorkspaceApp = ({
     setTemplatesOpen(false);
     setMobileBottomNavActive("home");
     creatingMemoSelectionRef.current = true;
+    setWeChatImportsInProgress((count) => count + 1);
+    let savedMemo: MemoDetail | null = null;
     try {
       const memo = await createWeChatChatMemo({
         notebookId,
@@ -1856,16 +1856,18 @@ export const WorkspaceApp = ({
         }),
         deleteMemo: (memoId) => repository.deleteMemo(memoId, true),
       });
-      await putLocalMemo(localDataScope, memo);
+      savedMemo = memo;
+      await bridge?.finishWeChatImport?.(importId, true).catch(() => undefined);
+      await putLocalMemo(localDataScope, memo).catch(() => undefined);
       revealCreatedMemo(memo);
     } catch {
+      if (!savedMemo) {
+        await bridge?.finishWeChatImport?.(importId, false).catch(() => undefined);
+        setWeChatImportFailureId(importId);
+      }
       creatingMemoSelectionRef.current = false;
-      setAppNoticeDialog({
-        title: t("memoList.importWeChatFailedTitle"),
-        description: t("memoList.importWeChatFailed"),
-      });
     } finally {
-      finish();
+      setWeChatImportsInProgress((count) => Math.max(0, count - 1));
     }
   }, [defaultMemoNotebookId, imageCompressionEnabled, localDataScope, memoView, notebooks, repository, selectedNotebookId, t]);
 
@@ -3003,6 +3005,13 @@ export const WorkspaceApp = ({
   return (
     <WorkspaceMotionProvider>
       <div className="edgeever-workspace-shell flex h-[100dvh] overflow-hidden text-slate-950">
+      {wechatImportsInProgress > 0 && (
+        <div className="pointer-events-none fixed inset-x-0 top-3 z-50 flex justify-center" role="status" aria-live="polite">
+          <div className="rounded-full border border-slate-200 bg-card px-4 py-2 text-sm font-medium text-slate-700 shadow-lg">
+            {t("memoList.importWeChatInProgress")}
+          </div>
+        </div>
+      )}
       {pullToRefreshVisible && (
         <div
           className="pointer-events-none fixed inset-x-0 top-[max(0.75rem,env(safe-area-inset-top))] z-50 flex justify-center lg:hidden"
@@ -3354,7 +3363,7 @@ export const WorkspaceApp = ({
                           onOpenExecutionCenter={handleOpenExecutionCenter}
                           
                         />
-                      ) : selectedMemo && selectedTable ? (
+                      ) : selectedMemo && selectedTableNote ? (
                         <TableEditorPane
                           key={selectedMemo.id}
                           memo={selectedMemo}
@@ -3543,6 +3552,29 @@ export const WorkspaceApp = ({
           tone="neutral"
           onCancel={() => setAppNoticeDialog(null)}
           onConfirm={() => setAppNoticeDialog(null)}
+        />
+      )}
+      {wechatImportFailureId && (
+        <AppConfirmDialog
+          title={t("memoList.importWeChatFailedTitle")}
+          description={t("memoList.importWeChatRetryHint")}
+          confirmLabel={t("memoList.importWeChatRetry")}
+          closeOnBrowserBack={false}
+          tone="neutral"
+          onCancel={() => setWeChatImportFailureId(null)}
+          onConfirm={() => {
+            const importId = wechatImportFailureId;
+            setWeChatImportFailureId(null);
+            void Promise.resolve(window.edgeeverDesktop?.retryWeChatImport?.(importId) ?? false).then((retried) => {
+              if (!retried) setAppNoticeDialog({
+                title: t("memoList.importWeChatFailedTitle"),
+                description: t("memoList.importWeChatFailed"),
+              });
+            }).catch(() => setAppNoticeDialog({
+              title: t("memoList.importWeChatFailedTitle"),
+              description: t("memoList.importWeChatFailed"),
+            }));
+          }}
         />
       )}
       {pendingCatalogTrustPluginIds.length > 0 ? (

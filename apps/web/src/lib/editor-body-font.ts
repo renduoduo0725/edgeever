@@ -5,7 +5,9 @@ export const EDITOR_BODY_FONT_CHOICES = [
   "system",
   "wenkai",
   "wenkai-screen",
+  "zhuque",
   "source-han-serif",
+  "neo-zhi-song",
   "source-han-sans",
   "source-serif",
   "custom",
@@ -21,12 +23,19 @@ export type EditorBodyFontPreference = {
 const CJK_FALLBACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif';
 
-const BUNDLED_FONT_STACKS: Record<Exclude<EditorBodyFontChoice, "system" | "custom">, string> = {
+export const BUNDLED_FONT_STACKS: Record<Exclude<EditorBodyFontChoice, "system" | "custom">, string> = {
   wenkai: `"EdgeEver Kai", ${CJK_FALLBACK}`,
   "wenkai-screen": `"EdgeEver Kai Screen", ${CJK_FALLBACK}`,
+  zhuque: `"EdgeEver Fangsong", ${CJK_FALLBACK}`,
   "source-han-serif": `"Source Serif 4", "EdgeEver Song", ${CJK_FALLBACK}`,
+  "neo-zhi-song": `"EdgeEver Zhi Song", ${CJK_FALLBACK}`,
   "source-han-sans": `"EdgeEver Hei", ${CJK_FALLBACK}`,
   "source-serif": `"Source Serif 4", ${CJK_FALLBACK}`,
+};
+
+export const getFontChoicePreviewStack = (choice: EditorBodyFontChoice): string | undefined => {
+  if (choice === "system" || choice === "custom") return undefined;
+  return BUNDLED_FONT_STACKS[choice];
 };
 
 const CUSTOM_FONT_FAMILY_PATTERN = /^[\p{L}\p{N}\s,'"._-]+$/u;

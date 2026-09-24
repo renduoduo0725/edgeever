@@ -31,12 +31,6 @@ The installer creates `~/edgeever`, generates an administrator password, pulls
 command again to upgrade without replacing the password or `/data` volume. The
 installer and Compose configuration use the official GHCR image.
 
-Some network environments in mainland China may experience slow connections or
-timeouts when accessing GHCR. If the image cannot be pulled normally, configure
-an available network proxy or a trusted registry mirror before deployment.
-Users are responsible for evaluating the availability and security of
-third-party network and registry services.
-
 By default, the installer schedules `~/edgeever/update.sh` with the current
 user's crontab at 04:17 server time every day. The updater refreshes the Compose
 configuration, pulls the configured image tag, restarts the service when needed,

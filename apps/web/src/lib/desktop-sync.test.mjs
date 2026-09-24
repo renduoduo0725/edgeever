@@ -6,6 +6,7 @@ const {
   createDesktopSyncDiagnosticText,
   createDesktopSyncSummary,
   isStagedResourceReferenced,
+  stagedIdsReferencedByUnsavedContent,
   hasDesktopSyncStateReset,
   mergeMemoIdMappings,
   mergeSyncedMemos,
@@ -66,6 +67,15 @@ describe("desktop staged resource sync", () => {
     expect(isStagedResourceReferenced([
       { contentMarkdown: "![photo](edgeever-staged://stage-1)" },
     ], "stage-1")).toBe(true);
+  });
+
+  test("keeps staged bytes while an editor draft or visible image still uses the old URL", () => {
+    const rewrites = [{ memoId: "memo-1", placeholder: "edgeever-staged://stage-1", url: "/api/v1/resources/res-1/blob" }];
+    expect(stagedIdsReferencedByUnsavedContent(rewrites, [
+      { contentJson: { type: "doc", content: [{ type: "image", attrs: { src: "edgeever-staged://stage-1" } }] } },
+    ])).toEqual(new Set(["stage-1"]));
+    expect(stagedIdsReferencedByUnsavedContent(rewrites, ["edgeever-staged://stage-1"])).toEqual(new Set(["stage-1"]));
+    expect(stagedIdsReferencedByUnsavedContent(rewrites, ["edgeever-staged://stage-10"])).toEqual(new Set());
   });
 
   test("retains a temporary id mapping when a later sync phase fails", () => {

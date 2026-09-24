@@ -1,10 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, realpath, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, realpath, readdir, rmdir, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { WeChatArchiveError, wechatChatNoteFromArchive } from "./wechat-chat-archive.mjs";
 
 export const WECHAT_INCOMING_DIRECTORY_NAME = "EdgeEver Incoming";
-const STALE_INCOMING_MS = 24 * 60 * 60 * 1000;
 const SAFE_ID = /^[A-Za-z0-9_-]{1,80}$/;
 
 export const isPathInsideDirectory = (filePath, directory) => {
@@ -46,23 +45,10 @@ const removeImportedZip = async (zipPath, downloadsPath) => {
   const parent = dirname(zipPath);
   const realParent = await realpath(parent).catch(() => null);
   if (root && realParent && isPathInsideDirectory(realParent, root)) {
-    await rm(realParent, { recursive: true, force: true }).catch(() => {});
+    await rm(zipPath, { force: true }).catch(() => {});
+    await rmdir(realParent).catch(() => {});
     return;
   }
-  await rm(zipPath, { force: true }).catch(() => {});
-};
-
-const removeStaleIncoming = async (downloadsPath, keepPath) => {
-  const root = incomingDirectory(downloadsPath);
-  const entries = await readdir(root, { withFileTypes: true }).catch(() => []);
-  const cutoff = Date.now() - STALE_INCOMING_MS;
-  await Promise.all(entries.map(async (entry) => {
-    const path = join(root, entry.name);
-    if (keepPath && (path === keepPath || keepPath.startsWith(`${path}${sep}`))) return;
-    const info = await stat(path).catch(() => null);
-    if (!info || info.mtimeMs > cutoff) return;
-    await rm(path, { recursive: true, force: true }).catch(() => {});
-  }));
 };
 
 export const createWeChatShareController = ({
@@ -73,13 +59,38 @@ export const createWeChatShareController = ({
   writeDiagnostic = () => {},
 }) => {
   const sessions = new Map();
+  const preparedPaths = new Set();
+  const inFlightPaths = new Set();
+  const completedPaths = new Set();
+  const failedPaths = new Set();
 
-  const finish = async (importId) => {
+  const finish = async (importId, success) => {
     if (!SAFE_ID.test(importId || "")) return;
     const session = sessions.get(importId);
-    sessions.delete(importId);
     if (!session) return;
+    if (!success) {
+      session.failed = true;
+      failedPaths.add(session.zipPath);
+      void writeDiagnostic("wechat-import.save-failed");
+      return;
+    }
+    sessions.delete(importId);
+    preparedPaths.delete(session.zipPath);
+    completedPaths.add(session.zipPath);
+    failedPaths.delete(session.zipPath);
+    await removeImportedZip(session.zipPath, downloadsPath());
     await rm(session.directory, { recursive: true, force: true }).catch(() => {});
+    void writeDiagnostic("wechat-import.saved", { media: session.media.size });
+  };
+
+  const retry = (importId) => {
+    if (!SAFE_ID.test(importId || "")) return false;
+    const session = sessions.get(importId);
+    if (!session?.failed) return false;
+    session.failed = false;
+    failedPaths.delete(session.zipPath);
+    sendToRenderer(session.payload);
+    return true;
   };
 
   const readMedia = async (importId, mediaId) => {
@@ -96,13 +107,14 @@ export const createWeChatShareController = ({
 
   const importFromProtocolUrl = async (value) => {
     const requestedPath = wechatImportFilePath(value);
-    if (!requestedPath) return;
+    if (!requestedPath || inFlightPaths.has(requestedPath) || preparedPaths.has(requestedPath)
+      || completedPaths.has(requestedPath) || failedPaths.has(requestedPath)) return;
+    inFlightPaths.add(requestedPath);
     onActivity();
     const downloads = downloadsPath();
     let zipPath = null;
     let preparedDirectory = null;
     try {
-      await removeStaleIncoming(downloads, requestedPath);
       zipPath = await assertIncomingZip(requestedPath, downloads);
       const archive = await readFile(zipPath);
       const note = wechatChatNoteFromArchive(archive, basename(zipPath));
@@ -128,25 +140,44 @@ export const createWeChatShareController = ({
           byteSize: item.bytes.length,
         });
       }
-      sessions.set(importId, { directory, media });
-      preparedDirectory = null;
-      sendToRenderer({
+      const payload = {
         ok: true,
         importId,
         title: note.title,
         markdown: note.markdown,
         media: listed,
-      });
-      void writeDiagnostic("wechat-import.accepted", { media: listed.length, bytes: archive.length });
+      };
+      sessions.set(importId, { directory, media, zipPath, payload, failed: false });
+      preparedPaths.add(requestedPath);
+      preparedDirectory = null;
+      sendToRenderer(payload);
+      void writeDiagnostic("wechat-import.prepared", { media: listed.length, bytes: archive.length });
     } catch (error) {
       if (preparedDirectory) await rm(preparedDirectory, { recursive: true, force: true }).catch(() => {});
       const reason = error instanceof WeChatArchiveError ? error.code : "failed";
+      failedPaths.add(requestedPath);
       sendToRenderer({ ok: false, reason: reason === "unrecognized" ? "unrecognized" : "failed" });
       void writeDiagnostic("wechat-import.rejected", { reason });
     } finally {
-      await removeImportedZip(zipPath, downloads);
+      inFlightPaths.delete(requestedPath);
     }
   };
 
-  return { importFromProtocolUrl, readMedia, finish };
+  const importPending = async () => {
+    const root = incomingDirectory(downloadsPath());
+    const batches = await readdir(root, { withFileTypes: true }).catch(() => []);
+    for (const batch of batches) {
+      if (!batch.isDirectory()) continue;
+      const directory = join(root, batch.name);
+      const files = await readdir(directory, { withFileTypes: true }).catch(() => []);
+      for (const file of files) {
+        if (!file.isFile() || !file.name.toLowerCase().endsWith(".zip")) continue;
+        const url = new URL("edgeever://wechat-import");
+        url.searchParams.set("path", join(directory, file.name));
+        await importFromProtocolUrl(url.href);
+      }
+    }
+  };
+
+  return { importFromProtocolUrl, importPending, readMedia, finish, retry };
 };

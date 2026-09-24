@@ -67,47 +67,105 @@ export const copyHtmlToClipboard = async (html: string, plainText: string) => {
   if (!copied) throw new Error("Clipboard copy was not available");
 };
 
-export const copyImageBlobToClipboard = async (blob: Blob): Promise<boolean> => {
+const toPngBlob = (blob: Blob): Promise<Blob | null> => {
+  if (blob.type === "image/png") return Promise.resolve(blob);
+  if (blob.type === "") return Promise.resolve(new Blob([blob], { type: "image/png" }));
+  if (typeof document === "undefined") return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    const image = document.createElement("img");
+    const url = URL.createObjectURL(blob);
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      canvas.getContext("2d")?.drawImage(image, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((png) => resolve(png), "image/png");
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    image.src = url;
+  });
+};
+
+export const copyImageUrlToClipboard = async (url: string): Promise<boolean> => {
+  const copyImage = typeof window !== "undefined" ? window.edgeeverDesktop?.copyImage : undefined;
+  if (copyImage) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return false;
+      return await copyImageBlobToClipboard(await response.blob());
+    } catch {
+      return false;
+    }
+  }
+
   if (typeof window === "undefined" || !navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
     return false;
   }
+
   try {
-    const type = blob.type === "image/jpeg" ? "image/jpeg" : "image/png";
+    // Safari keeps the click gesture only when write() runs now and the
+    // ClipboardItem payload is still a Promise. Fetch and PNG conversion stay inside it.
+    const pngPromise = fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error("Image fetch failed");
+        return response.blob();
+      })
+      .then((blob) => toPngBlob(blob))
+      .then((png) => {
+        if (!png) throw new Error("PNG conversion failed");
+        return png;
+      });
     await navigator.clipboard.write([
       new ClipboardItem({
-        [type]: blob,
+        "image/png": pngPromise,
       }),
     ]);
     return true;
   } catch (error) {
-    // If writing jpeg directly fails in some browsers (e.g. Safari only supports image/png),
-    // try converting blob to png via an image/canvas in memory
+    console.warn("Failed to copy image URL to clipboard:", error);
+    return false;
+  }
+};
+
+export const copyImageBlobToClipboard = async (blob: Blob): Promise<boolean> => {
+  const copyImage = typeof window !== "undefined" ? window.edgeeverDesktop?.copyImage : undefined;
+  if (copyImage) {
+    // Renderer clipboard writes are denied in the desktop app. Text and HTML
+    // already go through the main process; image bytes follow the same path.
     try {
-      const img = document.createElement("img");
-      const url = URL.createObjectURL(blob);
-      img.src = url;
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Image load failed for clipboard conversion"));
-      });
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      ctx?.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      const pngBlob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!pngBlob) return false;
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "image/png": pngBlob,
-        }),
-      ]);
-      return true;
+      const png = await toPngBlob(blob);
+      if (!png) return false;
+      return await copyImage(new Uint8Array(await png.arrayBuffer()));
     } catch {
-      console.warn("Failed to write image blob to clipboard:", error);
       return false;
     }
+  }
+
+  if (typeof window === "undefined" || !navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
+    return false;
+  }
+
+  try {
+    // Safari keeps the click gesture only when write() runs now and the
+    // ClipboardItem payload is still a Promise. JPEG conversion stays inside it.
+    const pngPromise = toPngBlob(blob).then((png) => {
+      if (!png) throw new Error("PNG conversion failed");
+      return png;
+    });
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "image/png": pngPromise,
+      }),
+    ]);
+    return true;
+  } catch (error) {
+    console.warn("Failed to write image blob to clipboard:", error);
+    return false;
   }
 };
 

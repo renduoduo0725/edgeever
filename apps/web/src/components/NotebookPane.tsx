@@ -15,8 +15,8 @@ import {
   Boxes,
   ArrowDownWideNarrow,
   Notebook as NotebookIcon,
-  Tags,
-  Archive,
+  Tag,
+  Paperclip,
   Trash2,
   KeyRound,
   LogOut,
@@ -670,14 +670,14 @@ export const NotebookPane = ({
 
       <TooltipProvider delayDuration={0} skipDelayDuration={0}>
         <nav className="grid shrink-0 grid-cols-2 gap-0.5 border-b border-slate-100 px-2 py-1.5 sm:grid-cols-3 lg:grid-cols-5" aria-label={t("notebookPane.secondaryEntries")}>
-          <SidebarShortcutButton icon={<Tags className="h-4 w-4" />} label={t("mobileSheets.tags")} onClick={onOpenTags} />
-          <SidebarShortcutButton icon={<Archive className="h-4 w-4" />} label={t("mobileSheets.assets")} onClick={onOpenAssets} />
+          <SidebarShortcutButton icon={<Tag className="h-4 w-4" />} label={t("mobileSheets.tags")} onClick={onOpenTags} />
+          <SidebarShortcutButton icon={<Paperclip className="h-4 w-4" />} label={t("mobileSheets.assets")} onClick={onOpenAssets} />
           {showTemplateEntry && <SidebarShortcutButton icon={<LayoutTemplate className="h-4 w-4" />} label={t("nav.templates")} onClick={onOpenTemplates} />}
           <PluginToolbarMenu
             host={pluginHost}
             onManage={onOpenPluginManager}
             align="start"
-            className="h-9 w-full rounded-md px-0 text-slate-600"
+            className="h-9 w-full rounded-md px-0 text-slate-600 hover:bg-slate-50 hover:text-slate-950"
           />
           <SidebarTrashShortcut active={view === "trash"} onOpenTrash={onOpenTrash} onEmptyTrash={onEmptyTrash} />
         </nav>
@@ -745,7 +745,6 @@ export const NotebookPane = ({
           <button
             className="mb-1 hidden h-8 w-full items-center justify-start gap-2 rounded-md px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50 lg:flex"
             type="button"
-            title={t("templates.useTemplate")}
             onClick={onOpenTemplates}
             disabled={isCreatingMemo}
           >
@@ -899,8 +898,8 @@ export const NotebookPane = ({
                 label={t("notebookPane.notebooks")}
                 onClick={onToggleCollapsed}
               />
-              <SidebarRailButton icon={<Tags className="h-4 w-4" />} label={t("mobileSheets.tags")} onClick={onOpenTags} />
-              <SidebarRailButton icon={<Archive className="h-4 w-4" />} label={t("mobileSheets.assets")} onClick={onOpenAssets} />
+              <SidebarRailButton icon={<Tag className="h-4 w-4" />} label={t("mobileSheets.tags")} onClick={onOpenTags} />
+              <SidebarRailButton icon={<Paperclip className="h-4 w-4" />} label={t("mobileSheets.assets")} onClick={onOpenAssets} />
               {showTemplateEntry ? (
                 <SidebarRailButton icon={<LayoutTemplate className="h-4 w-4" />} label={t("nav.templates")} onClick={onOpenTemplates} />
               ) : null}

@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { globSync, readFileSync } from "node:fs";
+import { addTableField, createDefaultTableDocument, serializeTableDocument, updateTableCell } from "@edgeever/shared";
 import {
   acquireMaintenanceLease,
   createMemoEditSession,
@@ -158,6 +159,55 @@ describe("database write optimizations", () => {
     expect(sqlite.query(
       "SELECT id, title, content_text, tags FROM memo_search_documents WHERE memo_id = ?",
     ).get(memo.id)).toEqual(searchRow);
+    sqlite.close();
+  });
+
+  test("keeps a structured table intact and retires an attachment removed from it", async () => {
+    const { database, sqlite } = createDatabase();
+    const memo = getSeedMemo(sqlite);
+    let document = addTableField(createDefaultTableDocument(), { id: "fld_files", name: "附件", type: "attachment" });
+    document = updateTableCell(document, "rec_sample", "fld_files", [{
+      resourceId: "res_table_file",
+      filename: "brief.pdf",
+      mimeType: "application/pdf",
+      byteSize: 12,
+    }]);
+    sqlite.query(
+      `INSERT INTO resources (id, memo_id, object_key, kind, mime_type, filename, byte_size)
+       VALUES ('res_table_file', ?, 'workspaces/test/brief.pdf', 'attachment', 'application/pdf', 'brief.pdf', 12)`,
+    ).run(memo.id);
+    const actor = { actorType: "user", actorId: "user_owner" };
+    const saved = await updateMemoRecord(
+      database,
+      memo.workspace_id,
+      memo.id,
+      { contentMarkdown: serializeTableDocument(document) },
+      actor,
+      "owner",
+    );
+    expect(saved.memo.contentMarkdown).toContain("edgeever-table-v1");
+
+    const replaced = await updateMemoRecord(
+      database,
+      memo.workspace_id,
+      memo.id,
+      { contentMarkdown: "普通笔记" },
+      actor,
+      "owner",
+    );
+    expect(replaced.error).toBe("table_update_required");
+    expect(sqlite.query("SELECT content_markdown FROM memo_contents WHERE memo_id = ?").get(memo.id).content_markdown).toContain("edgeever-table-v1");
+
+    const removed = await updateMemoRecord(
+      database,
+      memo.workspace_id,
+      memo.id,
+      { contentMarkdown: serializeTableDocument(updateTableCell(document, "rec_sample", "fld_files", [])) },
+      actor,
+      "owner",
+    );
+    expect(removed.releasedResources?.map((resource) => resource.id)).toEqual(["res_table_file"]);
+    expect(sqlite.query("SELECT is_deleted FROM resources WHERE id = 'res_table_file'").get().is_deleted).toBe(1);
     sqlite.close();
   });
 

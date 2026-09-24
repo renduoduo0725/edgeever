@@ -14,3 +14,24 @@ html[data-editor-body-font] .edgeever-editor[data-editor-theme] .ProseMirror :is
 html[data-editor-body-font] .edgeever-mobile-tiptap-content :is(h1, h2, h3, h4, h5, h6, p, li, blockquote, th, td) {
   font-family: var(--editor-body-font-family);
 }
+
+/* Interface font is the device chrome. A system note stays on the product
+ * sans stack, and a chosen note face still wins above. Themed editors keep
+ * their own family. Share pages stay on the sans stack so a viewer's
+ * interface font does not restyle the published note. */
+html[data-ui-font],
+html[data-ui-font] body {
+  font-family: var(--ui-font-family);
+  font-synthesis: weight style;
+}
+
+html[data-ui-font]:not([data-editor-body-font]) .edgeever-editor[data-editor-theme="default"] .ProseMirror,
+html[data-ui-font]:not([data-editor-body-font]) .edgeever-editor:not([data-editor-theme]) .ProseMirror,
+html[data-ui-font]:not([data-editor-body-font]) .edgeever-editor textarea[data-edgeever-mobile-editor="plain-textarea"],
+html[data-ui-font]:not([data-editor-body-font]) .edgeever-mobile-tiptap-content {
+  font-family: var(--edgeever-system-font-family);
+}
+
+html[data-ui-font] .edgeever-public-share {
+  font-family: var(--edgeever-system-font-family);
+}

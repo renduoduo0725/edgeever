@@ -81,10 +81,16 @@ actually needed.
   `bun run publish:stores -- --release vX.Y.Z --platform android --android-track production`
   for that Draft, then rerun the original release command to resume. When the
   audited range includes iOS runtime changes, the same command starts Xcode
-  Cloud and submits App Review after GitHub publication. An iOS failure leaves
-  the GitHub Release published; retry with
+  Cloud and submits App Review after GitHub publication. Once post-publication
+  audits pass, the script closes the tracking Issue and then waits for App
+  Store delivery. An iOS failure leaves the GitHub Release published and that
+  Issue closed; retry with
   `bun run publish:stores -- --release vX.Y.Z --platform ios`. See
   [Mobile Store Delivery](store-delivery.md).
+- Published desktop and Android audits read asset names and download
+  installers through the release API URL. `gh release view --json assets` and
+  `gh release download` can stay empty after a draft is published, and treating
+  that empty list as a missing asset set returns the Release to Draft.
 - After rebuilt desktop assets are uploaded to the Draft, the local release
   command signs only `latest-windows.json`; the private key never enters GitHub
   Actions. A second desktop workflow run downloads the Windows installer,
@@ -113,5 +119,7 @@ Independent builds are not required to have the same registry digest.
   run instead of creating another Issue, commit, or Release.
 - A failed post-publication native or GHCR audit attempts to return the Release to
   Draft and leaves the Issue open.
+- After those audits pass, the script closes the tracking Issue before waiting
+  for App Store delivery. A later App Store failure leaves that Issue closed.
 - If an explicit application installation fails, the script restores the previous
   app from its macOS Trash backup when possible.

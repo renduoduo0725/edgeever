@@ -5,6 +5,8 @@ import {
   addTableRecord,
   applyTableView,
   createDefaultTableDocument,
+  listTableAttachmentResourceIds,
+  tableAttachmentUrl,
   hasTableDocumentMarker,
   parseTableDocument,
   removeTableField,
@@ -79,5 +81,41 @@ describe("structured table documents", () => {
     const document = addTableField(createDefaultTableDocument(), { id: "fld_url", name: "链接", type: "url" });
     expect(document.records[0]?.cells.fld_url).toBe("");
     expect(document.fields.at(-1)?.name).toBe("链接");
+  });
+
+  test("stores attachment references and writes filename links into the readable table", () => {
+    const files = [
+      { resourceId: "res_brief", filename: "brief.pdf", mimeType: "application/pdf", byteSize: 12 },
+      { resourceId: "res_shot", filename: "shot.png", mimeType: "image/png", byteSize: 34 },
+    ];
+    let document = addTableField(createDefaultTableDocument(), { id: "fld_files", name: "附件", type: "attachment" });
+    document = updateTableCell(document, "rec_sample", "fld_files", files);
+    expect(document.records[0]?.cells.fld_files).toEqual(files);
+    expect(listTableAttachmentResourceIds(document)).toEqual(new Set(["res_brief", "res_shot"]));
+    const markdown = tableFallbackMarkdown(document);
+    expect(markdown).toContain(`[brief.pdf](${tableAttachmentUrl("res_brief")})`);
+    expect(markdown).toContain(`[shot.png](${tableAttachmentUrl("res_shot")})`);
+    expect(parseTableDocument(serializeTableDocument(document))?.records[0]?.cells.fld_files).toEqual(files);
+    expect(tableDocumentToCsv(document)).toContain("brief.pdf; shot.png");
+    const filled = replaceTableView(document, { filters: [{ fieldId: "fld_files", operator: "notEmpty" }], sort: null });
+    expect(applyTableView(filled)).toHaveLength(1);
+    const empty = updateTableCell(document, "rec_sample", "fld_files", []);
+    expect(applyTableView(replaceTableView(empty, { filters: [{ fieldId: "fld_files", operator: "empty" }], sort: null }))).toHaveLength(1);
+  });
+
+  test("keeps ten unique attachments and turns a removed attachment field back into text", () => {
+    const files = Array.from({ length: 12 }, (_, index) => ({
+      resourceId: `res_${index}`,
+      filename: `file-${index}.txt`,
+      mimeType: "text/plain",
+      byteSize: index,
+    }));
+    files.push({ resourceId: "res_0", filename: "duplicate.txt", mimeType: "text/plain", byteSize: 1 });
+    let document = addTableField(createDefaultTableDocument(), { id: "fld_files", name: "附件", type: "attachment" });
+    document = updateTableCell(document, "rec_sample", "fld_files", files);
+    expect(document.records[0]?.cells.fld_files).toHaveLength(10);
+    document = updateTableField(document, "fld_files", { type: "text" });
+    expect(document.records[0]?.cells.fld_files).toContain("file-0.txt");
+    expect(listTableAttachmentResourceIds(document).size).toBe(0);
   });
 });

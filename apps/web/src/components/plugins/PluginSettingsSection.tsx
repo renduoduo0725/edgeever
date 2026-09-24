@@ -1,8 +1,13 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 import type { PluginManifest, PluginSettingField, PluginSettingValue } from "@edgeever/plugin-api";
 import type { EdgeEverPluginHost } from "@/lib/plugins/plugin-host";
+import {
+  createPluginSettingWriteQueue,
+  planPluginSettingWrite,
+  pluginSettingLoadSignature,
+} from "./plugin-settings-commit";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,6 +73,7 @@ const PluginSettingFieldRow = ({
   disabled,
   field,
   inputId,
+  onBlur,
   onChange,
   value,
 }: {
@@ -76,6 +82,7 @@ const PluginSettingFieldRow = ({
   disabled: boolean;
   field: PluginSettingField;
   inputId: string;
+  onBlur?: () => void;
   onChange: (value: PluginSettingValue | "") => void;
   value: PluginSettingValue | "";
 }) => {
@@ -136,6 +143,7 @@ const PluginSettingFieldRow = ({
             min={field.type === "number" ? field.min : undefined}
             max={field.type === "number" ? field.max : undefined}
             step={field.type === "number" ? field.step ?? "any" : undefined}
+            onBlur={onBlur}
             onChange={(event) => onChange(
               field.type === "number" && event.target.value !== "" ? Number(event.target.value) : event.target.value,
             )}
@@ -163,28 +171,46 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
   const formId = useId();
   const fields = manifest.settings?.fields ?? [];
   const fieldGroups = groupPluginSettingFields(fields);
+  const fieldLoadSignature = pluginSettingLoadSignature(fields);
+  const fieldsRef = useRef(fields);
+  fieldsRef.current = fields;
+  const settingWrites = useRef(createPluginSettingWriteQueue()).current;
+  const valuesRef = useRef<Record<string, PluginSettingValue | "">>({});
+  const committedRef = useRef<Record<string, PluginSettingValue | "">>({});
+  const revisionRef = useRef<Record<string, number>>({});
+  const loadedRef = useRef(false);
   const [values, setValues] = useState<Record<string, PluginSettingValue | "">>({});
   const [configuredSecrets, setConfiguredSecrets] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(fields.length > 0);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  valuesRef.current = values;
 
   useEffect(() => {
     let active = true;
-    setLoading(fields.length > 0);
-    setMessage(null);
+    const currentFields = fieldsRef.current;
+    const started = { ...revisionRef.current };
+    loadedRef.current = false;
+    setLoading(currentFields.length > 0);
     setError(null);
     setLoadError(null);
-    void Promise.all(fields.map(async (field) => {
+    void Promise.all(currentFields.map(async (field) => {
       if (field.type === "secret") return { key: field.key, value: "" as const, configured: await host.hasSettingValue(manifest.id, field.key) };
       return { key: field.key, value: await host.getSettingValue(manifest.id, field.key) ?? "", configured: false };
     })).then((loaded) => {
       if (!active) return;
-      setValues(Object.fromEntries(loaded.map((item) => [item.key, item.value])));
+      setValues((current) => {
+        const next = { ...current };
+        for (const item of loaded) {
+          if ((revisionRef.current[item.key] ?? 0) !== (started[item.key] ?? 0)) continue;
+          next[item.key] = item.value;
+          committedRef.current[item.key] = item.value;
+        }
+        return next;
+      });
       setConfiguredSecrets(Object.fromEntries(loaded.map((item) => [item.key, item.configured])));
+      loadedRef.current = true;
       setLoading(false);
     }).catch((error) => {
       if (!active) return;
@@ -192,48 +218,86 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
       setLoading(false);
     });
     return () => { active = false; };
-  }, [host, manifest.id, manifest.version, manifest.settings, loadAttempt]);
+  }, [host, manifest.id, manifest.version, fieldLoadSignature, loadAttempt]);
+
+  const flushSettings = () => {
+    if (!loadedRef.current) return;
+    for (const field of fieldsRef.current) {
+      if ((revisionRef.current[field.key] ?? 0) === 0) continue;
+      const plan = planPluginSettingWrite(field, valuesRef.current[field.key] ?? "");
+      if (plan.action === "set") void host.setSettingValue(manifest.id, field.key, plan.value);
+      else if (plan.action === "remove") void host.removeSettingValue(manifest.id, field.key);
+    }
+  };
+  const flushRef = useRef(flushSettings);
+  flushRef.current = flushSettings;
+
+  useEffect(() => {
+    const flush = () => flushRef.current();
+    window.addEventListener("pagehide", flush);
+    const stopHibernatePrepare = window.edgeeverDesktop?.onHibernatePrepare?.(flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      stopHibernatePrepare?.();
+      flush();
+    };
+  }, [host, manifest.id]);
 
   if (fields.length === 0) return null;
 
-  const clearFeedback = () => {
-    setMessage(null);
-    setError(null);
+  const settingError = (field: PluginSettingField, reason: "required" | "invalid") =>
+    reason === "required"
+      ? t("plugins.settings.required", { name: field.label })
+      : t("plugins.settings.invalid", { name: field.label });
+
+  const persistSetting = (field: PluginSettingField, value: PluginSettingValue | "") => {
+    const plan = planPluginSettingWrite(field, value);
+    if (plan.action === "keep") {
+      if (plan.error) setError(settingError(field, plan.error));
+      return;
+    }
+    const seen = revisionRef.current[field.key] ?? 0;
+    void settingWrites.enqueue(field.key, async () => {
+      try {
+        if (plan.action === "set") await host.setSettingValue(manifest.id, field.key, plan.value);
+        else await host.removeSettingValue(manifest.id, field.key);
+        if ((revisionRef.current[field.key] ?? 0) !== seen) return;
+        committedRef.current[field.key] = plan.action === "set" ? plan.value : "";
+        if (field.type === "secret") setConfiguredSecrets((current) => ({ ...current, [field.key]: true }));
+      } catch (writeError) {
+        if ((revisionRef.current[field.key] ?? 0) !== seen) return;
+        if (field.type === "boolean" || field.type === "select") {
+          setValues((current) => current[field.key] === value
+            ? { ...current, [field.key]: committedRef.current[field.key] ?? "" }
+            : current);
+        }
+        setError(writeError instanceof Error ? writeError.message : String(writeError));
+      }
+    });
   };
 
-  const save = async () => {
-    setSaving(true);
-    setMessage(null);
+  const changeSetting = (field: PluginSettingField, value: PluginSettingValue | "") => {
+    revisionRef.current[field.key] = (revisionRef.current[field.key] ?? 0) + 1;
+    valuesRef.current = { ...valuesRef.current, [field.key]: value };
     setError(null);
-    try {
-      // Check every required field before writing any values.
-      for (const field of fields) {
-        const value = values[field.key];
-        if (field.type === "secret" && value === "" && configuredSecrets[field.key]) continue;
-        if (field.required && (value == null || (typeof value === "string" && !value.trim()))) {
-          throw new Error(t("plugins.settings.required", { name: field.label }));
-        }
-      }
-      for (const field of fields) {
-        const value = values[field.key];
-        if (field.type === "secret" && value === "") {
-          continue;
-        }
-        if (value === "") {
-          await host.removeSettingValue(manifest.id, field.key);
-          continue;
-        }
-        await host.setSettingValue(manifest.id, field.key, value);
-        if (field.type === "secret") {
-          setConfiguredSecrets((current) => ({ ...current, [field.key]: true }));
-          setValues((current) => ({ ...current, [field.key]: "" }));
-        }
-      }
-      setMessage(t("plugins.settings.saved"));
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
+    setValues((current) => ({ ...current, [field.key]: value }));
+    persistSetting(field, value);
+  };
+
+  const settleSetting = (field: PluginSettingField) => {
+    const value = valuesRef.current[field.key] ?? "";
+    const plan = planPluginSettingWrite(field, value);
+    if (field.type === "secret") {
+      if (plan.action !== "set") return;
+      valuesRef.current = { ...valuesRef.current, [field.key]: "" };
+      setValues((current) => current[field.key] === value ? { ...current, [field.key]: "" } : current);
+      return;
+    }
+    if (plan.action === "keep") {
+      const restored = committedRef.current[field.key] ?? "";
+      valuesRef.current = { ...valuesRef.current, [field.key]: restored };
+      setValues((current) => ({ ...current, [field.key]: restored }));
+      setError(null);
     }
   };
 
@@ -248,52 +312,44 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
           <Button size="sm" variant="outline" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>{t("plugins.settings.retry")}</Button>
         </div>
       ) : (
-        <form onChange={clearFeedback} onSubmit={(event) => { event.preventDefault(); void save(); }}>
-          <fieldset disabled={saving} className="min-w-0">
-            <div className="py-5">
-              {fieldGroups.map((group, groupIndex) => {
-                const rows = group.fields.map((field) => {
-                  const value = values[field.key] ?? "";
-                  const inputId = `${formId}-${field.key}`;
-                  return (
-                    <PluginSettingFieldRow
-                      key={field.key}
-                      compact={group.compact}
-                      configuredSecret={Boolean(configuredSecrets[field.key])}
-                      disabled={saving}
-                      field={field}
-                      inputId={inputId}
-                      value={value}
-                      onChange={(nextValue) => {
-                        clearFeedback();
-                        setValues((current) => ({ ...current, [field.key]: nextValue }));
-                      }}
-                    />
-                  );
-                });
-                return group.compact ? (
-                  <div
-                    key={group.id}
-                    className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4${groupIndex > 0 ? " mt-5" : ""}`}
-                  >
-                    {rows}
-                  </div>
-                ) : (
-                  <Card
-                    key={group.id}
-                    className={`${groupIndex > 0 ? "mt-5 " : ""}divide-y divide-slate-100 overflow-hidden shadow-none`}
-                  >
-                    {rows}
-                  </Card>
+        <form onSubmit={(event) => event.preventDefault()}>
+          <div className="py-5">
+            {fieldGroups.map((group, groupIndex) => {
+              const rows = group.fields.map((field) => {
+                const value = values[field.key] ?? "";
+                const inputId = `${formId}-${field.key}`;
+                return (
+                  <PluginSettingFieldRow
+                    key={field.key}
+                    compact={group.compact}
+                    configuredSecret={Boolean(configuredSecrets[field.key])}
+                    disabled={false}
+                    field={field}
+                    inputId={inputId}
+                    value={value}
+                    onBlur={field.type === "boolean" || field.type === "select" ? undefined : () => settleSetting(field)}
+                    onChange={(nextValue) => changeSetting(field, nextValue)}
+                  />
                 );
-              })}
-            </div>
-            <div className="flex min-h-14 flex-wrap items-center justify-end gap-3 border-t border-slate-200 pt-4">
-              {message ? <span className="mr-auto text-sm text-emerald-700" role="status">{message}</span> : null}
-              {error ? <p className="mr-auto text-sm text-rose-700" role="alert">{t("plugins.settings.saveFailed", { message: error })}</p> : null}
-              <Button type="submit" size="sm" disabled={saving}>{saving ? t("common.saving") : t("common.save")}</Button>
-            </div>
-          </fieldset>
+              });
+              return group.compact ? (
+                <div
+                  key={group.id}
+                  className={`grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4${groupIndex > 0 ? " mt-5" : ""}`}
+                >
+                  {rows}
+                </div>
+              ) : (
+                <Card
+                  key={group.id}
+                  className={`${groupIndex > 0 ? "mt-5 " : ""}divide-y divide-slate-100 overflow-hidden shadow-none`}
+                >
+                  {rows}
+                </Card>
+              );
+            })}
+          </div>
+          {error ? <p className="border-t border-slate-200 pt-4 text-sm text-rose-700" role="alert">{t("plugins.settings.saveFailed", { message: error })}</p> : null}
         </form>
       )}
     </section>

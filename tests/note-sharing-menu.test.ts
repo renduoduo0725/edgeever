@@ -6,11 +6,21 @@ import { zhCN } from "../packages/shared/src/i18n/zh-CN";
 const readSource = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 const editorSource = readSource("../apps/web/src/components/EditorPane.tsx");
+const editorActionsSource = readSource("../apps/web/src/components/editor/useEditorDocumentActions.ts");
 const memoListSource = readSource("../apps/web/src/components/MemoListPane.tsx");
 const shareDialogSource = readSource("../apps/web/src/components/dialogs/ShareMemoDialog.tsx");
 const publicShareSource = readSource("../apps/web/src/components/PublicSharePage.tsx");
 
 describe("note sharing menu", () => {
+  test("keeps sharing available while reading is locked and on the phone", () => {
+    expect(editorActionsSource).toContain("if (canShareMemo) setShareOpen(true)");
+    expect(editorActionsSource).not.toContain("if (!effectiveReadOnly) setShareOpen(true)");
+    expect(editorSource).toContain("canShareMemo: Boolean(memo && !readOnly)");
+    expect(editorSource).toContain("{!readOnly && (\n                  <DropdownMenuItem");
+    expect(editorSource).toContain('className="h-8 w-8 text-slate-500 sm:hidden"');
+    expect(editorSource).toContain('title={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : "sharing.action")}');
+  });
+
   test("explains why sharing a newly created local note is disabled", () => {
     expect(zhCN.sharing.afterSync).toBe("同步后可分享笔记");
     expect(enUS.sharing.afterSync).toBe("Share note after sync");

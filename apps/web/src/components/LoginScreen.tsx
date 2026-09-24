@@ -22,7 +22,7 @@ const getDefaultLoginCredentials = () => {
   const hostname = window.location.hostname;
   const isDemoHost = hostname === "demo.edgeever.org" || hostname.startsWith("edgeever-demo.");
 
-  return isDemoHost ? DEMO_LOGIN_CREDENTIALS : { username: "admin", password: "" };
+  return isDemoHost ? DEMO_LOGIN_CREDENTIALS : { username: "", password: "" };
 };
 
 export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitting, onSubmit }: LoginScreenProps) => {

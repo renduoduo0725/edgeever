@@ -8,7 +8,7 @@
 
 ### 步骤 2：配置 EdgeEver MCP
 
-在 EdgeEver 的 **设置 → API & MCP 授权** 中生成具有笔记、笔记本和资源读写权限的 Token，点击 **复制完整 MCP 配置**，并将其配置到 Codex、Claude Code、Cursor 等 AI Agent 中。
+在 EdgeEver 的 **设置 → API & MCP 授权** 中生成具有笔记、笔记本和资源读写权限的 Token，点击 **复制完整 MCP 配置**，并将其配置到 Codex、Claude Code、Cursor、WorkBuddy 等 AI Agent 中。
 
 ### 步骤 3：发送一条 Prompt 完成导入
 

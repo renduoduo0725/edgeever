@@ -109,6 +109,33 @@ describe("WeChat chat archive", () => {
     ]);
   });
 
+  test("adds the first message time when WeChat provides only a generic archive name", () => {
+    expect(wechatChatNoteFromArchive(sampleArchive(), "聊天记录.zip").title).toBe("聊天记录 · 2026-09-22 22:15");
+    expect(wechatChatNoteFromArchive(sampleArchive()).title).toBe("聊天记录 · 2026-09-22 22:15");
+    const withoutMessages = zipOf([{ name: "聊天记录.txt", data: "无法识别时间的旧聊天记录" }]);
+    expect(wechatChatNoteFromArchive(withoutMessages, "聊天记录.zip").title).toBe("聊天记录");
+  });
+
+  test("preserves transcript text that does not match a message header", () => {
+    const archive = zipOf([{ name: "聊天记录.txt", data: [
+      "聊天开始前的说明",
+      "·鱼",
+      "2026年9月22日 22:15",
+      "你好",
+      "",
+      "[系统消息] 群名已更改",
+      "",
+      "·鱼",
+      "2026年9月22日 22:16",
+      "收到",
+    ].join("\n") }]);
+    const note = wechatChatNoteFromArchive(archive, "聊天记录.zip");
+    expect(note.title).toBe("聊天记录 · 2026-09-22 22:15");
+    expect(note.markdown).toContain("聊天开始前的说明");
+    expect(note.markdown).toContain("\\[系统消息\\] 群名已更改");
+    expect(note.markdown).toContain("收到");
+  });
+
   test("rejects archives that are not a WeChat transcript", () => {
     expect(() => wechatChatNoteFromArchive(zipOf([{ name: "readme.txt", data: "hello" }]))).toThrow(WeChatArchiveError);
     expect(() => wechatChatNoteFromArchive(Buffer.from("not a zip"))).toThrow(WeChatArchiveError);

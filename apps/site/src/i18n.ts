@@ -235,7 +235,7 @@ export const siteCopy = {
         {
           tag: "Remote MCP",
           title: "AI Agent 智脑联动",
-          desc: "原生接入 Antigravity、Claude Code、Codex 智能读写与整理",
+          desc: "原生接入 Antigravity、Claude Code、Codex、WorkBuddy 智能读写与整理",
           icon: "bx:bxs-bot",
           color: "from-green-500/10 to-emerald-500/5",
         },
@@ -278,7 +278,7 @@ export const siteCopy = {
           title: "原生 AI Agent 联动与编辑器内置多模型",
           summary: "内置 REST API、Remote MCP endpoint 与多模型集成，让 AI 真正成为个人知识库的智能副驾驶。",
           points: [
-            "内置 Remote MCP endpoint：直接授权 Antigravity、Claude Code、Codex 等 AI Agent 读取、生成与整理笔记。",
+            "内置 Remote MCP endpoint：直接授权 Antigravity、Claude Code、Codex、WorkBuddy 等 AI Agent 读取、生成与整理笔记。",
             "支持接入自己的 AI 模型：无缝配置 OpenAI、Anthropic Claude、Google Gemini、DeepSeek 及自定义兼容接口。",
             "智能编辑与提炼：在编辑器中随时对全文或选区进行要点提炼、语法校对、翻译、续写润色与知识地图生成。",
             "数据打通：通过 Agent 轻松打通 Notion Database、飞书多维表格等工具，将碎片笔记沉淀为结构化数据。",
@@ -425,7 +425,7 @@ export const siteCopy = {
       card2: {
         badge: "AI Native",
         title: "Native AI Agent & Built-in LLM Models",
-        desc: "Built-in Remote MCP endpoint connects Antigravity, Claude Code, and Codex; in-editor AI supports OpenAI, Claude, Gemini, and DeepSeek for summarization and editing.",
+        desc: "Built-in Remote MCP endpoint connects Antigravity, Claude Code, Codex, and WorkBuddy; in-editor AI supports OpenAI, Claude, Gemini, and DeepSeek for summarization and editing.",
         mockupStatus: "MCP & AI Connected",
         mockupCmd: "> mcp.search_notes(\"EdgeEver\")",
         mockupResult: "Found relevant notes. Generated multi-model summary & tags automatically.",
@@ -506,7 +506,7 @@ export const siteCopy = {
         {
           tag: "Remote MCP",
           title: "AI Agent Synergy",
-          desc: "Connect Antigravity, Claude Code & Codex for smart knowledge operations",
+          desc: "Connect Antigravity, Claude Code, Codex & WorkBuddy for smart knowledge operations",
           icon: "bx:bxs-bot",
           color: "from-green-500/10 to-emerald-500/5",
         },
@@ -549,7 +549,7 @@ export const siteCopy = {
           title: "Native AI Agent Synergy & In-Editor Multi-Model Assistants",
           summary: "Built-in REST API, Remote MCP endpoint, and multi-model integration turn AI into a true copilot for your notes.",
           points: [
-            "Remote MCP Endpoint: Authorize Antigravity, Claude Code, and Codex to read, summarize, and organize your knowledge base.",
+            "Remote MCP Endpoint: Authorize Antigravity, Claude Code, Codex, and WorkBuddy to read, summarize, and organize your knowledge base.",
             "Connect Your Own AI Models: Support for OpenAI, Anthropic Claude, Google Gemini, DeepSeek, and custom compatible endpoints.",
             "In-Editor AI Actions: Summarize, polish, translate, extract action items, and continue writing with a single click.",
             "Ecosystem Integration: Sync seamlessly with Notion databases and Feishu Bitable, transforming raw thoughts into structured data.",

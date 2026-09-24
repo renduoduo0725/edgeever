@@ -76,7 +76,7 @@ export const jaSiteCopy = {
     card2: {
       badge: "AI Native",
       title: "ネイティブな AI Agent とエディタ内 LLM",
-      desc: "Remote MCP で Antigravity、Claude Code、Codex をつなぎ、エディタ内 AI は OpenAI、Claude、Gemini、DeepSeek で要約や編集ができます。",
+      desc: "Remote MCP で Antigravity、Claude Code、Codex、WorkBuddy をつなぎ、エディタ内 AI は OpenAI、Claude、Gemini、DeepSeek で要約や編集ができます。",
       mockupStatus: "MCP と AI 接続済み",
       mockupCmd: "> mcp.search_notes(\"EdgeEver\")",
       mockupResult: "関連ノートを見つけ、要約とタグを自動生成しました。",
@@ -157,7 +157,7 @@ export const jaSiteCopy = {
       {
         tag: "Remote MCP",
         title: "AI Agent 連携",
-        desc: "Antigravity、Claude Code、Codex で知識ベースを操作",
+        desc: "Antigravity、Claude Code、Codex、WorkBuddy で知識ベースを操作",
         icon: "bx:bxs-bot",
         color: "from-green-500/10 to-emerald-500/5",
       },
@@ -200,7 +200,7 @@ export const jaSiteCopy = {
         title: "ネイティブな AI Agent とエディタ内の複数モデル",
         summary: "REST API、Remote MCP、複数モデル接続で、AI をノートの相棒にします。",
         points: [
-          "Remote MCP: Antigravity、Claude Code、Codex に読み取り、要約、整理を任せられます。",
+          "Remote MCP: Antigravity、Claude Code、Codex、WorkBuddy に読み取り、要約、整理を任せられます。",
           "自分のモデル: OpenAI、Anthropic Claude、Google Gemini、DeepSeek、互換エンドポイント。",
           "エディタ内の操作: 要約、推敲、翻訳、やることを抽出、続きを書く。",
           "周辺連携: Notion データベースや Feishu Bitable とつなぎ、メモを構造化できます。",

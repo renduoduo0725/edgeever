@@ -1,4 +1,4 @@
-import { AlignHorizontalJustifyCenter, ChartNoAxesCombined, Image, Keyboard, Languages, MousePointerClick, Palette, Sparkles, SunMoon, Type } from "lucide-react";
+import { AlignHorizontalJustifyCenter, AppWindow, BookOpenText, ChartNoAxesCombined, Image, Keyboard, Languages, MousePointerClick, Palette, Sparkles, SunMoon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { EditorContentAlignment, ShortcutSettings } from "@/lib/app-helpers";
@@ -40,10 +40,13 @@ import {
 } from "@/i18n";
 import {
   applyEditorBodyFontPreference,
+  getFontChoicePreviewStack,
   readEditorBodyFontPreference,
   writeEditorBodyFontPreference,
   type EditorBodyFontChoice,
+  type EditorBodyFontPreference,
 } from "@/lib/editor-body-font";
+import { applyUiFontPreference, readUiFontPreference, writeUiFontPreference } from "@/lib/ui-font";
 import { syncPublishedNoteBodyFont } from "@/lib/published-note-body-font";
 import { ShortcutSettingsItem } from "./ShortcutSettingsItem";
 import { CustomEditorThemeDialog } from "./CustomEditorThemeDialog";
@@ -58,6 +61,122 @@ import {
   type CustomEditorTheme,
   type ThemePreference,
 } from "../ThemeProvider";
+
+const CUSTOM_FONT_SUGGESTIONS = [
+  { label: "苹方 (PingFang SC)", family: "PingFang SC" },
+  { label: "微软雅黑 (Microsoft YaHei)", family: "Microsoft YaHei" },
+  { label: "鸿蒙黑体 (HarmonyOS)", family: "HarmonyOS Sans SC" },
+  { label: "冬青黑体 (Hiragino)", family: "Hiragino Sans GB" },
+] as const;
+
+const FontChoiceFields = ({
+  label,
+  preference,
+  onChange,
+}: {
+  label: string;
+  preference: EditorBodyFontPreference;
+  onChange: (preference: EditorBodyFontPreference) => void;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex w-full shrink-0 flex-col gap-2 sm:w-80">
+      <Select
+        value={preference.choice}
+        onValueChange={(value) => onChange({ choice: value as EditorBodyFontChoice, customFamily: preference.customFamily })}
+      >
+        <SelectTrigger aria-label={label} className="h-9 bg-card">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="system">{t("settings.editorBodyFonts.system")}</SelectItem>
+          <SelectItem
+            value="wenkai"
+            style={{ fontFamily: getFontChoicePreviewStack("wenkai") }}
+          >
+            <span style={{ fontFamily: getFontChoicePreviewStack("wenkai") }}>
+              {t("settings.editorBodyFonts.wenkai")}
+            </span>
+          </SelectItem>
+          <SelectItem
+            value="wenkai-screen"
+            style={{ fontFamily: getFontChoicePreviewStack("wenkai-screen") }}
+          >
+            <span style={{ fontFamily: getFontChoicePreviewStack("wenkai-screen") }}>
+              {t("settings.editorBodyFonts.wenkaiScreen")}
+            </span>
+          </SelectItem>
+          <SelectItem
+            value="zhuque"
+            style={{ fontFamily: getFontChoicePreviewStack("zhuque") }}
+          >
+            <span style={{ fontFamily: getFontChoicePreviewStack("zhuque") }}>
+              {t("settings.editorBodyFonts.zhuque")}
+            </span>
+          </SelectItem>
+          <SelectItem
+            value="source-han-serif"
+            style={{ fontFamily: getFontChoicePreviewStack("source-han-serif") }}
+          >
+            <span style={{ fontFamily: getFontChoicePreviewStack("source-han-serif") }}>
+              {t("settings.editorBodyFonts.sourceHanSerif")}
+            </span>
+          </SelectItem>
+          <SelectItem
+            value="neo-zhi-song"
+            style={{ fontFamily: getFontChoicePreviewStack("neo-zhi-song") }}
+          >
+            <span style={{ fontFamily: getFontChoicePreviewStack("neo-zhi-song") }}>
+              {t("settings.editorBodyFonts.neoZhiSong")}
+            </span>
+          </SelectItem>
+          <SelectItem
+            value="source-han-sans"
+            style={{ fontFamily: getFontChoicePreviewStack("source-han-sans") }}
+          >
+            <span style={{ fontFamily: getFontChoicePreviewStack("source-han-sans") }}>
+              {t("settings.editorBodyFonts.sourceHanSans")}
+            </span>
+          </SelectItem>
+          <SelectItem
+            value="source-serif"
+            style={{ fontFamily: getFontChoicePreviewStack("source-serif") }}
+          >
+            <span style={{ fontFamily: getFontChoicePreviewStack("source-serif") }}>
+              {t("settings.editorBodyFonts.sourceSerif")}
+            </span>
+          </SelectItem>
+          <SelectItem value="custom">{t("settings.editorBodyFonts.custom")}</SelectItem>
+        </SelectContent>
+      </Select>
+      {preference.choice === "custom" ? (
+        <div className="flex flex-col gap-1.5">
+          <Input
+            value={preference.customFamily}
+            aria-label={t("settings.editorBodyFontCustomLabel")}
+            placeholder={t("settings.editorBodyFontCustomPlaceholder")}
+            className="h-9"
+            maxLength={200}
+            onChange={(event) => onChange({ choice: "custom", customFamily: event.target.value })}
+          />
+          <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-500">
+            <span className="shrink-0 text-slate-400">{t("settings.editorBodyFontSuggestions")}:</span>
+            {CUSTOM_FONT_SUGGESTIONS.map((item) => (
+              <button
+                key={item.family}
+                type="button"
+                className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900"
+                onClick={() => onChange({ choice: "custom", customFamily: item.family })}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
 
 interface PreferenceCardProps {
   imageCompressionEnabled: boolean;
@@ -93,6 +212,7 @@ export const PreferenceCard = ({
   const [aiSelectionMenuEnabled, setAiSelectionMenuEnabled] = useState(readAiSelectionMenuPreference);
   const [aiSpaceShortcutEnabled, setAiSpaceShortcutEnabled] = useState(readAiSpaceShortcutPreference);
   const [editorBodyFont, setEditorBodyFont] = useState(readEditorBodyFontPreference);
+  const [uiFont, setUiFont] = useState(readUiFontPreference);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 640px)");
@@ -204,11 +324,17 @@ export const PreferenceCard = ({
     void changeAppLocalePreference(preference);
   };
 
-  const updateEditorBodyFont = (preference: { choice: EditorBodyFontChoice; customFamily: string }) => {
+  const updateEditorBodyFont = (preference: EditorBodyFontPreference) => {
     setEditorBodyFont(preference);
     writeEditorBodyFontPreference(preference);
     applyEditorBodyFontPreference(preference);
     void syncPublishedNoteBodyFont();
+  };
+
+  const updateUiFont = (preference: EditorBodyFontPreference) => {
+    setUiFont(preference);
+    writeUiFontPreference(preference);
+    applyUiFontPreference(preference);
   };
 
   return (
@@ -273,6 +399,21 @@ export const PreferenceCard = ({
           </div>
         </div>
 
+        <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <AppWindow className={SETTINGS_ITEM_ICON_CLASSNAME} />
+            <div className="min-w-0">
+              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.uiFontTitle")}</div>
+              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.uiFontDescription")}</div>
+            </div>
+          </div>
+          <FontChoiceFields
+            label={t("settings.uiFontTitle")}
+            preference={uiFont}
+            onChange={updateUiFont}
+          />
+        </div>
+
         <div className="hidden min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:flex">
           <div className="flex min-w-0 items-start gap-3">
             <AlignHorizontalJustifyCenter className={SETTINGS_ITEM_ICON_CLASSNAME} />
@@ -281,7 +422,7 @@ export const PreferenceCard = ({
               <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.editorContentAlignmentDescription")}</div>
             </div>
           </div>
-          <div className="w-full shrink-0 sm:w-44">
+          <div className="w-full shrink-0 sm:w-80">
             <Select
               value={editorContentAlignment}
               onValueChange={(value) => onEditorContentAlignmentChange(value as EditorContentAlignment)}
@@ -299,41 +440,17 @@ export const PreferenceCard = ({
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex min-w-0 items-start gap-3">
-            <Type className={SETTINGS_ITEM_ICON_CLASSNAME} />
+            <BookOpenText className={SETTINGS_ITEM_ICON_CLASSNAME} />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorBodyFontTitle")}</div>
               <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.editorBodyFontDescription")}</div>
             </div>
           </div>
-          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-80">
-            <Select
-              value={editorBodyFont.choice}
-              onValueChange={(value) => updateEditorBodyFont({ choice: value as EditorBodyFontChoice, customFamily: editorBodyFont.customFamily })}
-            >
-              <SelectTrigger aria-label={t("settings.editorBodyFontTitle")} className="h-9 bg-card">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="system">{t("settings.editorBodyFonts.system")}</SelectItem>
-                <SelectItem value="wenkai">{t("settings.editorBodyFonts.wenkai")}</SelectItem>
-                <SelectItem value="wenkai-screen">{t("settings.editorBodyFonts.wenkaiScreen")}</SelectItem>
-                <SelectItem value="source-han-serif">{t("settings.editorBodyFonts.sourceHanSerif")}</SelectItem>
-                <SelectItem value="source-han-sans">{t("settings.editorBodyFonts.sourceHanSans")}</SelectItem>
-                <SelectItem value="source-serif">{t("settings.editorBodyFonts.sourceSerif")}</SelectItem>
-                <SelectItem value="custom">{t("settings.editorBodyFonts.custom")}</SelectItem>
-              </SelectContent>
-            </Select>
-            {editorBodyFont.choice === "custom" ? (
-              <Input
-                value={editorBodyFont.customFamily}
-                aria-label={t("settings.editorBodyFontCustomLabel")}
-                placeholder={t("settings.editorBodyFontCustomPlaceholder")}
-                className="h-9"
-                maxLength={200}
-                onChange={(event) => updateEditorBodyFont({ choice: "custom", customFamily: event.target.value })}
-              />
-            ) : null}
-          </div>
+          <FontChoiceFields
+            label={t("settings.editorBodyFontTitle")}
+            preference={editorBodyFont}
+            onChange={updateEditorBodyFont}
+          />
         </div>
 
         {!isMobile && (

@@ -273,10 +273,7 @@ export const EditorOutline = ({ editor, scrollContainer, collapsed, shortcutLabe
             ? "absolute right-2 top-6 z-10 h-8 w-8 overflow-hidden"
             : "sticky top-6 h-fit max-h-[calc(100vh-8rem)] shrink-0 overflow-y-auto py-2"
         )}
-        style={{
-          ...(!collapsed ? { width: EDITOR_OUTLINE_WIDTH } : {}),
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
-        }}
+        style={!collapsed ? { width: EDITOR_OUTLINE_WIDTH } : undefined}
         aria-label={t("editor.outline")}
       >
         <div className={cn("flex", collapsed ? "justify-center" : "mb-3 justify-between px-1")}>

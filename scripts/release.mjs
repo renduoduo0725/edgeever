@@ -1856,23 +1856,7 @@ const releaseMain = async (options) => {
     throw error;
   }
 
-  if (iosPlan.rebuild) {
-    try {
-      await waitForRun({
-        repository: options.repository,
-        runId: checkpoint.iosStoreRunId,
-        label: "App Store delivery",
-      });
-    } catch (error) {
-      console.error(
-        "[release] GitHub Release is published; App Store delivery failed and must be retried with bun run publish:stores -- --release "
-        + `${tag} --platform ios`,
-      );
-      throw error;
-    }
-  }
-
-  run("gh", [
+  const releaseComment = run("gh", [
     "issue",
     "comment",
     String(issueNumber),
@@ -1880,7 +1864,10 @@ const releaseMain = async (options) => {
     options.repository,
     "--body",
     `Released in [${tag}](${releaseUrl}).\n\nRequired local validations, Draft asset and image preparation, and post-publication audits passed.`,
-  ]);
+  ], { allowFailure: true });
+  if (releaseComment.status !== 0) {
+    console.warn(`[release] failed to comment on Issue #${issueNumber} before closing it`);
+  }
   const timingStoreRunId =
     checkpoint.storeRecoveryRunId ??
     checkpoint.storeRunId ??
@@ -1937,6 +1924,24 @@ const releaseMain = async (options) => {
     "--reason",
     "completed",
   ]);
+  console.log(`[release] closed Issue #${issueNumber}`);
+
+  if (iosPlan.rebuild) {
+    try {
+      await waitForRun({
+        repository: options.repository,
+        runId: checkpoint.iosStoreRunId,
+        label: "App Store delivery",
+      });
+    } catch (error) {
+      console.error(
+        `[release] GitHub Release is published and Issue #${issueNumber} is closed; App Store delivery failed and must be retried with bun run publish:stores -- --release `
+        + `${tag} --platform ios`,
+      );
+      throw error;
+    }
+  }
+
   console.log(`[release] ${tag} is complete; Demo deployment is not blocking completion`);
 
   if (options.installDesktop) {

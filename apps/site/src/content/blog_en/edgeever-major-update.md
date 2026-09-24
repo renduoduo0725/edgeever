@@ -44,7 +44,7 @@ Break free from commercial "2-device login limits" with a self-hosted API that s
 
 ### 4. Native AI Agent Synergy & In-Editor Multi-Model Integration
 
-- **Remote MCP Endpoint**: Built-in Model Context Protocol endpoint and stdio bridge authorizing Antigravity, Claude Code, and Codex to read, summarize, and organize notes, connecting seamlessly with Notion databases and Feishu Bitable.
+- **Remote MCP Endpoint**: Built-in Model Context Protocol endpoint and stdio bridge authorizing AI Agents such as Antigravity, Claude Code, Codex, and WorkBuddy to read, summarize, and organize notes, connecting seamlessly with Notion databases and Feishu Bitable.
 - **In-Editor Multi-Model AI**: Connect OpenAI, Anthropic Claude, Google Gemini, DeepSeek, and custom compatible endpoints for summarization, proofreading, translation, and action item extraction.
 
 ### 5. Creator Tools & Rich Media Rendering

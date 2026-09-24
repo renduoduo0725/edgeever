@@ -163,7 +163,7 @@ export const RevisionHistoryDialog = ({
                       </span>
                       <span className="mt-1 flex items-center gap-1.5 truncate text-[11px] text-slate-400">
                         <UserRound className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                        <span className="truncate">{formatRevisionActor(revision.createdBy)}</span>
+                        <span className="truncate">{revision.createdBy === "table-form" ? t("revisions.formActor") : formatRevisionActor(revision.createdBy)}</span>
                       </span>
                     </button>
                   ))}

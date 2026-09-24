@@ -2608,6 +2608,7 @@ const RichEditorPane = ({
     shareOpen,
     wechatCopyState,
   } = useEditorDocumentActions({
+    canShareMemo: Boolean(memo && !readOnly),
     documentActionRequest,
     editor,
     effectiveReadOnly,
@@ -3530,18 +3531,33 @@ const RichEditorPane = ({
           />
 
           <div className="flex shrink-0 items-center gap-1">
-            {isMemoShared && (
-              <button
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-50 px-2 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200 transition-colors hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            {isMemoShared && !readOnly && (
+              <Button
+                className="h-8 gap-1.5 rounded-full bg-emerald-50 px-2 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100 hover:text-emerald-800 focus-visible:ring-emerald-500"
+                size="sm"
+                variant="ghost"
                 type="button"
                 title={t("sharing.manage")}
                 aria-label={t("sharing.manage")}
-                disabled={effectiveReadOnly}
                 onClick={() => setShareOpen(true)}
               >
                 <Share2 className="h-3.5 w-3.5" aria-hidden="true" />
                 <span className="hidden sm:inline">{t("sharing.active")}</span>
-              </button>
+              </Button>
+            )}
+            {!readOnly && !isMemoShared && !mobileEditingActive && (
+              <Button
+                className="h-8 w-8 text-slate-500 sm:hidden"
+                size="icon"
+                variant="ghost"
+                type="button"
+                title={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : "sharing.action")}
+                aria-label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : "sharing.action")}
+                disabled={isLocalMemoId(memo.id)}
+                onClick={() => setShareOpen(true)}
+              >
+                <Share2 className="h-4 w-4" aria-hidden="true" />
+              </Button>
             )}
             <span
               className="hidden whitespace-nowrap px-1.5 text-xs tabular-nums text-slate-400 sm:inline-flex"
@@ -3753,7 +3769,7 @@ const RichEditorPane = ({
                   <History className="h-4 w-4 text-slate-500" />
                   {t("editor.versionHistory")}
                 </DropdownMenuItem>
-                {!effectiveReadOnly && (
+                {!readOnly && (
                   <DropdownMenuItem
                     className={cn(
                       "flex h-9 w-full items-center gap-2 px-3 text-left text-sm hover:bg-slate-50 cursor-pointer outline-none",

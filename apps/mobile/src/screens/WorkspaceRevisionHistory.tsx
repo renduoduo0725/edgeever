@@ -178,7 +178,7 @@ export const RevisionHistoryModal = ({
                 >
                   <Text style={[styles.revisionPillTitle, selectedRevision?.id === revision.id && styles.revisionPillTitleActive]}>{`版本 ${revision.revision}`}</Text>
                   <Text style={[styles.revisionPillMeta, selectedRevision?.id === revision.id && styles.revisionPillTitleActive]}>
-                    {formatDate(revision.createdAt, localePreference)} · {formatRevisionActor(revision.createdBy)}
+                    {formatDate(revision.createdAt, localePreference)} · {revision.createdBy === "table-form" ? "表单提交" : formatRevisionActor(revision.createdBy)}
                   </Text>
                 </Pressable>
               ))}

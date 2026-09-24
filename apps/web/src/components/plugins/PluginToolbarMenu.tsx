@@ -113,7 +113,7 @@ export const PluginToolbarMenu = ({
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <Button
-                  className={cn("relative hidden h-8 w-8 text-slate-500 hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-emerald-500/70 lg:inline-flex", className)}
+                  className={cn("relative hidden h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-emerald-500/70 lg:inline-flex", className)}
                   size="icon"
                   variant="ghost"
                   aria-label={t("plugins.toolbar.open")}

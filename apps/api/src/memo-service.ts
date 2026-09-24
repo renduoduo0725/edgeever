@@ -10,7 +10,9 @@ import {
   resolveMergedMemoTitle,
   isSuspiciousMemoOverwrite,
   isMemoEditBindingValid,
+  listTableAttachmentResourceIds,
   normalizeTags,
+  parseTableDocument,
   type MemoDetail,
   type MemoEditSession,
   type MemoSummary,
@@ -1175,6 +1177,12 @@ export const importMemosRecord = async (
   };
 };
 
+export type ReleasedTableResource = {
+  id: string;
+  objectKey: string;
+  storageConfigId: string;
+};
+
 export const updateMemoRecord = async (
   db: DatabaseAdapter,
   workspaceId: string,
@@ -1185,7 +1193,7 @@ export const updateMemoRecord = async (
   requireEditSession = false,
   commit?: MemoMutationCommit,
 ): Promise<
-  | { memo: MemoDetail; error?: never; message?: never; status?: never; details?: never }
+  | { memo: MemoDetail; releasedResources?: ReleasedTableResource[]; error?: never; message?: never; status?: never; details?: never }
   | { error: string; message: string; status?: number; details?: Record<string, unknown> }
 > => {
   const current = await getMemoDetailRow(db, workspaceId, id);
@@ -1334,6 +1342,33 @@ export const updateMemoRecord = async (
   const tags = input.tags === undefined ? parseJsonArray(current.tags_json) : normalizeTags(input.tags);
   const excerpt = createExcerpt(contentText);
   const notebookId = input.notebookId ?? current.notebook_id;
+  const currentTable = parseTableDocument(current.content_markdown);
+  const nextTable = parseTableDocument(contentMarkdown);
+  if (currentTable && !nextTable) {
+    return {
+      error: "table_update_required",
+      message: "Structured table content must stay a structured table.",
+      status: 409,
+    };
+  }
+  const removedAttachmentIds = currentTable && nextTable
+    ? [...listTableAttachmentResourceIds(currentTable)].filter((resourceId) => !listTableAttachmentResourceIds(nextTable).has(resourceId))
+    : [];
+  const releasedResources = removedAttachmentIds.length
+    ? await db.prepare(
+      `SELECT id, object_key, storage_config_id
+       FROM resources
+       WHERE memo_id = ? AND is_deleted = 0 AND id IN (${removedAttachmentIds.map(() => "?").join(", ")})`,
+    ).bind(id, ...removedAttachmentIds).all<ReleasedTableResource & { object_key: string; storage_config_id: string }>()
+    : { results: [] };
+  const releasedResourceRows = (releasedResources.results ?? []).map((row) => ({
+    id: row.id,
+    objectKey: row.object_key,
+    storageConfigId: row.storage_config_id,
+  }));
+  const releaseResourceStatements = releasedResourceRows.map((resource) => db.prepare(
+    `UPDATE resources SET is_deleted = 1, deleted_at = ?, updated_at = ? WHERE id = ? AND memo_id = ? AND is_deleted = 0`,
+  ).bind(updatedAt, updatedAt, resource.id, id));
   const contentHash = await sha256(contentMarkdown + JSON.stringify(contentJson));
   const unchanged =
     notebookId === current.notebook_id
@@ -1385,6 +1420,7 @@ export const updateMemoRecord = async (
   await db.batch([
     ...(commit?.before ?? []),
     ...revisionStatements,
+    ...releaseResourceStatements,
     db
       .prepare(
         `UPDATE memos
@@ -1417,7 +1453,7 @@ export const updateMemoRecord = async (
     return { error: "not_found", message: "Memo not found after update" };
   }
 
-  return { memo };
+  return { memo, releasedResources: releasedResourceRows };
 };
 
 const parseDoc = (json: string): TiptapDoc => {

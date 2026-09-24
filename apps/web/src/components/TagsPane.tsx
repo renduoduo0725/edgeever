@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Pencil, Tags, Trash2 } from "lucide-react";
+import { ChevronLeft, Pencil, Tag, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { Input } from "@/components/ui/input";
 import { cn, formatDateTime } from "@/lib/utils";
 import { WORKSPACE_PAGE_TITLE_CLASSNAME } from "@/lib/workspace-ui";
@@ -54,11 +55,13 @@ export const TagsPane = ({
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-card">
       <header className="flex h-[calc(4rem+env(safe-area-inset-top))] shrink-0 items-end justify-between border-b border-slate-200 px-6 pb-3 pt-[env(safe-area-inset-top)] lg:h-16 lg:items-center lg:pb-0 lg:pt-0">
         <div className="flex min-w-0 items-center gap-3">
-          <Button size="icon" variant="ghost" title={t("common.back")} aria-label={t("common.back")} onClick={onClose} className="h-9 w-9 rounded-lg hover:bg-slate-100">
-            <ChevronLeft className="h-5 w-5 text-slate-500" />
-          </Button>
+          <ButtonTooltip title={t("common.back")}>
+            <Button size="icon" variant="ghost" aria-label={t("common.back")} onClick={onClose} className="h-9 w-9 rounded-lg hover:bg-slate-100">
+              <ChevronLeft className="h-5 w-5 text-slate-500" />
+            </Button>
+          </ButtonTooltip>
           <div className="min-w-0">
-            <h1 className={`flex items-center gap-2 ${WORKSPACE_PAGE_TITLE_CLASSNAME}`}><Tags className="h-4 w-4 text-emerald-700" />{t("tagsDialog.title")}</h1>
+            <h1 className={`flex items-center gap-2 ${WORKSPACE_PAGE_TITLE_CLASSNAME}`}><Tag className="h-4 w-4 text-emerald-700" />{t("tagsDialog.title")}</h1>
             <p className="mt-0.5 text-xs text-slate-500">{t("tagsDialog.count", { count: tags.length })}</p>
           </div>
         </div>

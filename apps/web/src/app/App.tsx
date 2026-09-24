@@ -27,6 +27,7 @@ const EvernoteImportGuidePane = lazy(() =>
 const LoginScreen = lazy(() => import("@/components/LoginScreen").then((module) => ({ default: module.LoginScreen })));
 const WorkspaceApp = lazy(() => import("@/components/WorkspaceApp").then((module) => ({ default: module.WorkspaceApp })));
 const PublicSharePage = lazy(() => import("@/components/PublicSharePage").then((module) => ({ default: module.PublicSharePage })));
+const PublicTableFormPage = lazy(() => import("@/components/PublicTableFormPage").then((module) => ({ default: module.PublicTableFormPage })));
 
 const AuthLoadingScreen = ({ title = "EdgeEver", detail }: { title?: string; detail?: string }) => (
   <div className="flex h-[100dvh] items-center justify-center bg-slate-50 px-6 text-center text-slate-700">
@@ -228,6 +229,7 @@ export const App = () => {
       <PwaInstallProvider>
         <Routes>
           <Route path="/share/:token" element={<Suspense fallback={<AuthLoadingScreen />}><PublicSharePage /></Suspense>} />
+          <Route path="/form/:token" element={<Suspense fallback={<AuthLoadingScreen />}><PublicTableFormPage /></Suspense>} />
           <Route path={EVERNOTE_MIGRATION_PATH} element={<EvernoteMigrationRoute />} />
           <Route path="/" element={<AuthenticatedWorkspace />} />
           <Route path="/settings" element={<AuthenticatedWorkspace />} />

@@ -44,7 +44,7 @@ EdgeEver 同一套应用完美支持两种自托管形态：
 
 ### 4. 原生 AI Agent 智脑与内置多模型
 
-- **Remote MCP 协议**：内置 Model Context Protocol endpoint 与 stdio bridge，直接授权 Antigravity、Claude Code、Codex 等 AI 助手安全读写与整理笔记，也可与 Notion Database、飞书多维表格轻松打通。
+- **Remote MCP 协议**：内置 Model Context Protocol endpoint 与 stdio bridge，直接授权 Antigravity、Claude Code、Codex、WorkBuddy 等 AI Agent 安全读写与整理笔记，也可与 Notion Database、飞书多维表格轻松打通。
 - **编辑器内置 AI 模型**：支持接入 OpenAI、Anthropic Claude、Google Gemini、DeepSeek 及自定义兼容服务，在编辑器中一键进行智能总结、语法校对、翻译、续写润色与提炼行动项。
 
 ### 5. 创作者排版与富媒体渲染

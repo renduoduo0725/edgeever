@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { FILE_ATTACHMENT_NODE_TYPE } from "@edgeever/shared";
+import { FILE_ATTACHMENT_NODE_TYPE, resolveMemoContentDoc } from "@edgeever/shared";
+import { IMAGE_WIDTH_PRESETS } from "@edgeever/shared/image-display";
 import { createWeChatChatMemo } from "./wechat-chat-import.ts";
 
 const memo = {
@@ -44,6 +45,12 @@ describe("WeChat chat note", () => {
     const saved = JSON.stringify(updated.contentJson);
     expect(saved).toContain("edgeever-staged://微信图片_1.jpg");
     expect(saved).toContain(FILE_ATTACHMENT_NODE_TYPE);
+    expect(updated.contentJson.content.find((node) => node.type === "image")?.attrs?.width).toBe(
+      IMAGE_WIDTH_PRESETS.find((preset) => preset.id === "small").width,
+    );
+    expect(resolveMemoContentDoc(updated.contentJson, updated.contentMarkdown).content.find(
+      (node) => node.type === "image",
+    )?.attrs?.width).toBe(IMAGE_WIDTH_PRESETS.find((preset) => preset.id === "small").width);
   });
 
   test("removes the empty note when an attachment cannot be saved", async () => {

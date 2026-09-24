@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { Archive, CheckSquare, FileDown, Folder as NotebookIcon, KeyRound, LayoutList, List, Merge, Star, Tags, Trash2, X } from "lucide-react";
+import { CheckSquare, FileDown, Folder as NotebookIcon, KeyRound, LayoutList, List, Merge, Paperclip, Star, Tag, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -173,8 +173,8 @@ export const MobileListActionsSheet = ({
           ))}
 
           <div className="my-2 h-px bg-slate-100" />
-          <MobileListActionButton icon={<Tags className="h-4 w-4" />} label={t("mobileSheets.tags")} onClick={onOpenTags} />
-          <MobileListActionButton icon={<Archive className="h-4 w-4" />} label={t("mobileSheets.assets")} onClick={onOpenAssets} />
+          <MobileListActionButton icon={<Tag className="h-4 w-4" />} label={t("mobileSheets.tags")} onClick={onOpenTags} />
+          <MobileListActionButton icon={<Paperclip className="h-4 w-4" />} label={t("mobileSheets.assets")} onClick={onOpenAssets} />
           {view === "trash" ? (
             <MobileListActionButton icon={<Trash2 className="h-4 w-4" />} label={t("mobileSheets.emptyTrash")} onClick={onEmptyTrash} />
           ) : (

@@ -16,6 +16,7 @@ import { AppError } from "./app-error";
 import { apiError, notFound } from "./http-errors";
 import type { ListMemosInput, ListMemosResult } from "./memo-list-service";
 import { getActorLabel, getAuditActor, getWorkspaceId, requireScopes } from "./request-auth";
+import { deleteReleasedResourceObjects } from "./resource-service";
 import type { DatabaseAdapter } from "./storage-contract";
 
 type MemoRouteDependencies = {
@@ -101,7 +102,7 @@ type MemoRouteDependencies = {
     actorLabel: string,
     requireEditSession: boolean,
   ) => Promise<
-    | { memo: MemoDetail; error?: never; message?: never; status?: never; details?: never }
+    | { memo: MemoDetail; releasedResources?: { objectKey: string; storageConfigId: string }[]; error?: never; message?: never; status?: never; details?: never }
     | { error: string; message: string; status?: number; details?: Record<string, unknown> }
   >;
 };
@@ -284,6 +285,9 @@ export const registerMemoRoutes = (
         },
         (result.status ?? (result.error === "not_found" ? 404 : 409)) as 400,
       );
+    }
+    if (result.releasedResources?.length) {
+      await deleteReleasedResourceObjects(context.env, result.releasedResources);
     }
     return context.json({ memo: result.memo });
   };

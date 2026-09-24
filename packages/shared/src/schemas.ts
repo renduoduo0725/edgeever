@@ -387,12 +387,61 @@ export const MemoShareUpdateSchema = z.object({
 });
 
 export const NoteBodyFontUpdateSchema = z.object({
-  bodyFont: z.enum(["wenkai", "wenkai-screen", "source-han-serif", "source-han-sans", "source-serif"]).nullable(),
+  bodyFont: z.enum(["wenkai", "wenkai-screen", "zhuque", "source-han-serif", "neo-zhi-song", "source-han-sans", "source-serif"]).nullable(),
 });
 
 export const PublicShareUnlockSchema = z.object({
   password: z.string().min(1).max(64),
 });
+
+export const TableFormFieldSchema = z.object({
+  fieldId: z.string().trim().min(1).max(80),
+  required: z.boolean(),
+});
+
+export const TableFormUpdateSchema = z.object({
+  enabled: z.boolean(),
+  passwordProtected: z.boolean(),
+  rotatePassword: z.boolean().optional(),
+  title: z.string().trim().max(120),
+  description: z.string().trim().max(1000),
+  submitLabel: z.string().trim().max(40),
+  fields: z.array(TableFormFieldSchema).max(40),
+});
+
+export const PublicTableFormSubmissionSchema = z.object({
+  cells: z.record(z.string().max(80), z.unknown()),
+});
+
+export type TableFormFieldSetting = z.infer<typeof TableFormFieldSchema>;
+
+export type TableFormSettings = {
+  enabled: boolean;
+  token: string;
+  passwordProtected: boolean;
+  password?: string;
+  title: string;
+  description: string;
+  submitLabel: string;
+  fields: TableFormFieldSetting[];
+};
+
+export type PublicTableFormField = {
+  id: string;
+  name: string;
+  type: "text" | "number" | "checkbox" | "date" | "select" | "url" | "attachment";
+  required: boolean;
+  options?: string[];
+};
+
+export type PublicTableForm = {
+  passwordRequired: boolean;
+  title: string;
+  description: string;
+  submitLabel: string;
+  full: boolean;
+  fields: PublicTableFormField[];
+};
 
 export type NotebookCreateInput = z.infer<typeof NotebookCreateSchema>;
 export type NotebookUpdateInput = z.infer<typeof NotebookUpdateSchema>;
@@ -432,3 +481,5 @@ export type AiPromptTemplateCreateInput = z.input<typeof AiPromptTemplateCreateS
 export type AiPromptTemplateUpdateInput = z.infer<typeof AiPromptTemplateUpdateSchema>;
 export type MemoShareUpdateInput = z.infer<typeof MemoShareUpdateSchema>;
 export type PublicShareUnlockInput = z.infer<typeof PublicShareUnlockSchema>;
+export type TableFormUpdateInput = z.infer<typeof TableFormUpdateSchema>;
+export type PublicTableFormSubmissionInput = z.infer<typeof PublicTableFormSubmissionSchema>;

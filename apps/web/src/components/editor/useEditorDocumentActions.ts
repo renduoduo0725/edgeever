@@ -17,6 +17,7 @@ import { isEditorReady } from "./editor-pane-helpers";
 export type WechatCopyState = "idle" | "copying" | "copied" | "error";
 
 export const useEditorDocumentActions = ({
+  canShareMemo,
   documentActionRequest,
   editor,
   effectiveReadOnly,
@@ -32,6 +33,7 @@ export const useEditorDocumentActions = ({
   useMarkdownSourceEditor,
   useMobilePlainTextEditor,
 }: {
+  canShareMemo: boolean;
   documentActionRequest?: MemoDocumentActionRequest | null;
   editor: Editor | null;
   effectiveReadOnly: boolean;
@@ -232,16 +234,16 @@ export const useEditorDocumentActions = ({
         exportPdf: handleExportPdf,
         saveAsTemplate: handleSaveAsTemplate,
         share: () => {
-          if (!effectiveReadOnly) setShareOpen(true);
+          if (canShareMemo) setShareOpen(true);
         },
         shareImage: handleOpenImageShare,
       },
       documentActionRequest.printWindow,
     );
   }, [
+    canShareMemo,
     documentActionRequest,
     editor,
-    effectiveReadOnly,
     handleExportHtml,
     handleExportMarkdown,
     handleExportPdf,

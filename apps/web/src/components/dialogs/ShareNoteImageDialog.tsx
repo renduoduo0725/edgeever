@@ -86,8 +86,9 @@ export const ShareNoteImageDialog = ({
   const [prepared, setPrepared] = useState<PreparedNoteImage | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [error, setError] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "failed">("idle");
   const generationRef = useRef(0);
+  const copyAttemptRef = useRef(0);
 
   useEffect(() => {
     if (!open) return;
@@ -101,12 +102,14 @@ export const ShareNoteImageDialog = ({
     setShowTags(false);
     setShowUpdatedAt(true);
     setShowBranding(true);
-    setCopied(false);
+    setCopyState("idle");
   }, [open, source.title]);
 
   useEffect(() => {
     if (!open) return;
     const generation = ++generationRef.current;
+    copyAttemptRef.current += 1;
+    setCopyState("idle");
     setPrepared(null);
     setError(false);
     const timer = window.setTimeout(() => {
@@ -170,12 +173,20 @@ export const ShareNoteImageDialog = ({
   const noticeKind = prepared ? getHtmlImageEmbedNoticeKind(prepared.images) : "none";
 
   const handleCopyImage = async () => {
-    if (!prepared) return;
+    if (!prepared || copyState === "copying") return;
+    const attempt = ++copyAttemptRef.current;
+    setCopyState("copying");
     const success = await copyImageBlobToClipboard(prepared.blob);
-    if (success) {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+    if (attempt !== copyAttemptRef.current) return;
+    if (!success) {
+      setCopyState("failed");
+      return;
     }
+    setCopyState("copied");
+    window.setTimeout(() => {
+      if (attempt !== copyAttemptRef.current) return;
+      setCopyState((current) => (current === "copied" ? "idle" : current));
+    }, 2000);
   };
 
   const share = async () => {
@@ -388,6 +399,11 @@ export const ShareNoteImageDialog = ({
           </div>
         </div>
 
+        {copyState === "failed" ? (
+          <p className="border-t border-rose-100 bg-rose-50 px-5 py-2 text-xs text-rose-700" role="alert">
+            {t("editor.imageShare.copyFailed")}
+          </p>
+        ) : null}
         <DialogFooter className="border-t border-slate-200 px-5 py-3.5">
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
@@ -395,10 +411,10 @@ export const ShareNoteImageDialog = ({
           <Button
             variant="outline"
             size="sm"
-            disabled={!prepared}
+            disabled={!prepared || copyState === "copying"}
             onClick={() => void handleCopyImage()}
           >
-            {copied ? (
+            {copyState === "copied" ? (
               <>
                 <Check className="h-4 w-4 text-emerald-600" />
                 <span className="text-emerald-700">{t("editor.imageShare.copied")}</span>

@@ -38,10 +38,11 @@ final class ShareViewController: NSViewController {
             guard let url = shareURL(for: destination) else {
                 throw CocoaError(.fileWriteUnknown)
             }
-            if let context = extensionContext {
-                _ = await context.open(url)
-                context.completeRequest(returningItems: nil)
+            guard let context = extensionContext else {
+                throw CocoaError(.fileReadUnknown)
             }
+            _ = NSWorkspace.shared.open(url)
+            context.completeRequest(returningItems: nil)
         } catch {
             extensionContext?.cancelRequest(withError: error)
         }
@@ -83,6 +84,7 @@ final class ShareViewController: NSViewController {
         try FileManager.default.createDirectory(at: batch, withIntermediateDirectories: true)
         let filename = sanitizedFilename(provider.suggestedName)
         let destination = batch.appendingPathComponent(filename, isDirectory: false)
+        let partial = batch.appendingPathComponent("\(filename).partial", isDirectory: false)
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             provider.loadFileRepresentation(forTypeIdentifier: type) { source, error in
                 guard let source else {
@@ -90,10 +92,8 @@ final class ShareViewController: NSViewController {
                     return
                 }
                 do {
-                    if FileManager.default.fileExists(atPath: destination.path) {
-                        try FileManager.default.removeItem(at: destination)
-                    }
-                    try FileManager.default.copyItem(at: source, to: destination)
+                    try FileManager.default.copyItem(at: source, to: partial)
+                    try FileManager.default.moveItem(at: partial, to: destination)
                     continuation.resume()
                 } catch {
                     continuation.resume(throwing: error)

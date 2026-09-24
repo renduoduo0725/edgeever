@@ -11,7 +11,7 @@
 #### 步骤 1：在 AI 助手中安装并启用两个 MCP 服务
 
 1. **配置 Notion MCP 服务**：
-   在你的 AI 助手（如 Claude Code/Cursor/Cline 等）中配置好 Notion MCP 服务。配置成功后，AI 助手将获得直接读取你 Notion 页面（Pages）和数据库（Databases）的授权。
+   在你的 AI 助手（如 Claude Code/Cursor/WorkBuddy/Cline 等）中配置好 Notion MCP 服务。配置成功后，AI 助手将获得直接读取你 Notion 页面（Pages）和数据库（Databases）的授权。
    
 2. **配置 EdgeEver MCP 服务**：
    - 登录你的 EdgeEver 实例，点击左下角的 **个人中心** -> **MCP 设置**。

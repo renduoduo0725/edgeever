@@ -69,10 +69,14 @@ bun run release -- \
   执行
   `bun run publish:stores -- --release vX.Y.Z --platform android --android-track production`，
   再重新执行原发布命令续跑。当审计范围内包含 iOS 运行时变化时，同一条命令
-  会在 GitHub 公开发布之后启动 Xcode Cloud 并提交 App Review。iOS 失败不会
-  把已经公开的 GitHub Release 恢复为 Draft；用
+  会在 GitHub 公开发布之后启动 Xcode Cloud 并提交 App Review。发布后审计
+  通过后，脚本会关闭跟踪 Issue，然后再等待 App Store 投递。iOS 失败时，
+  GitHub Release 保持已发布，跟踪 Issue 保持已关闭；用
   `bun run publish:stores -- --release vX.Y.Z --platform ios` 重试即可。详见
   [移动端商店交付](store-delivery.zh-CN.md)。
+- 公开发布后的桌面和 Android 审计通过 Release API URL 读取文件名并下载安装包。
+  Draft 刚公开时，`gh release view --json assets` 和 `gh release download`
+  可能持续看不到这些文件；如果把空列表当成资产缺失，发布会被退回 Draft。
 - 重建后的桌面资产上传到 Draft 后，本地发布命令只签署
   `latest-windows.json`，私钥不会进入 GitHub Actions。第二次桌面工作流会重新
   下载 Windows 安装包、`latest.yml`、清单、签名和校验和文件并独立审计，通过后
@@ -96,4 +100,6 @@ GitHub 官方仓库必须配置 `CNB_TCR_BUILD_PUSH_TOKEN` Actions Secret，该�
   Release。
 - 发布后的原生资产或 GHCR 镜像审计失败时，脚本会尝试将 Release 恢复为
   Draft，并保留 Issue。
+- 这些审计通过后，脚本会先关闭跟踪 Issue，再等待 App Store 投递。之后的
+  App Store 失败会让该 Issue 维持关闭。
 - 显式安装时若替换应用失败，脚本会尽可能从 macOS 废纸篓备份恢复上一版应用。

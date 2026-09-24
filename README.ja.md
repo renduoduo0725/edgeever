@@ -38,6 +38,7 @@ EdgeEver は、オープンソースのノートと知識ベースの作業領�
 * **Evernote**：広告と余分な機能で重くなり、書き出しが煩雑で、無料枠は狭く、AI / MCP は有料プランです。
 * **Obsidian**：ファイルは開いていますが、コアはクローズドです。公式同期は有料、第三者同期は手間がかかります。フラットなローカルファイル走査に依存するため、ノートが数千・数万件に増えたりプラグインを重ねると起動や検索がもたつきます。画像と添付をノートと一緒に置くと保管庫が膨らみ、モバイル同期が遅く、削除後に添付が残りやすいです。気軽な取り込みには重いことがあります。
 * **Memos などのタイムライン型**：簡潔ですが、三ペインの整理作業とはレイアウトが違います。
+* **思源ノート（SiYuan）などのブロック型知識ベース**：高機能でオープンソースのセルフホストに対応していますが、徹底した「ブロック（Block）」構造により日常的な気軽なメモや流れるような文章作成には心理的負荷がやや高くなります。また、サーバー費用ゼロの Serverless 運用形態がなく、マルチデバイス同期は公式の有料サブスクリプション、または S3/WebDAV 同期機能を有料でアンロックして自前ストレージを用意する必要があります。
 
 **EdgeEver はその隙間を埋めます。** 同期と自前運用を含めてスタック全体がオープンソースです。使い慣れた三ペインを残し、1万件のノートを抱えて常駐しても軽快でなめらか、ネイティブな AI Agent と無料で始められる導入もあります。
 
@@ -67,7 +68,7 @@ EdgeEver は、オープンソースのノートと知識ベースの作業領�
 - **導入方法を選べる**：Cloudflare の無料 Serverless、または VPS / NAS / 自宅サーバーの Docker。Cloudflare の無料保存の目安では、個人なら短いノート約 15 万、画像約 5 万。Docker の保存は必要に応じて伸ばせ、ノート数百万件と大きな画像庫にも足ります。
 - **開かれたデータ、囲い込みなし**：標準 SQLite、REST API、MCP、CLI。知識は透明に保存され、特定アプリに縛られません。
 - **欠損のない ZIP バックアップ**：Markdown、Front Matter、入れ子フォルダ、相対パスの添付、版履歴をまとめて書き出し、どこでも復元できます。
-- **ネイティブな AI Agent 連携**：MCP で Claude Code、Codex、Antigravity などがノートを読み、整理し、要約できます。Notion や Feishu Bitable ともつなぎます。
+- **ネイティブな AI Agent 連携**：MCP で Claude Code、Codex、Antigravity、WorkBuddy などの AI Agent がノートを読み、整理し、要約できます。Notion や Feishu Bitable ともつなぎます。
 - **自分の AI モデル**：OpenAI、Anthropic、Gemini 互換と第三者リレーを接続し、全文または選択範囲の要約、要点抽出、校正、翻訳、続きの執筆ができます。
 - **プラグイン API**： [Plugin API](docs/plugin-development.md) で拡張できます。
 - **台数制限のない同期**：商用の端末数上限はありません。Web、PWA、ブラウザ経由で PC、タブレット、モバイルを同期します。
@@ -98,7 +99,7 @@ Cloudflare のオンライン導入は、次のいずれかです。
 
 ### 方法 A: AI Agent で導入（推奨）
 
-次のプロンプトを AI Agent（Codex、Claude、Cursor、workbuddy、Antigravity、OpenClaw、Hermes Agent など）へそのまま送ってください。実行中に GitHub や Cloudflare へのアクセスが求められたら、権限を確認して認可してください。
+次のプロンプトを AI Agent（Codex、Claude、Cursor、WorkBuddy、Antigravity、OpenClaw、Hermes Agent など）へそのまま送ってください。実行中に GitHub や Cloudflare へのアクセスが求められたら、権限を確認して認可してください。
 
 ```text
 EdgeEver をオンラインで導入してください:
@@ -139,8 +140,6 @@ curl -fsSL https://edgeever.org/install.sh | bash
 ```
 
 このコマンドは最新イメージを引き、管理者パスワードを生成し、Docker Compose で EdgeEver を起動し、毎日の自動更新を設定します。
-
-公式コンテナイメージは GitHub Container Registry（GHCR）にあります。中国本土などの一部ネットワークでは遅い、またはタイムアウトすることがあります。引き出せない場合は、導入前に使えるネットワークプロキシか信頼できるレジストリミラーを設定してください。第三者のネットワークやレジストリの可用性と安全性は、利用者自身が判断してください。
 
 手動導入と設定は [Docker deployment guide](docs/deploy-docker.md) を見てください。
 

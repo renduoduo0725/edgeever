@@ -11,7 +11,7 @@ Since EdgeEver natively supports AI Agent (Model Context Protocol, MCP) integrat
 #### Step 1: Install and Enable Both MCP Servers in Your AI Assistant
 
 1. **Configure Memos MCP**:
-   Set up your old Memos instance's MCP server (using the official or community-provided Memos MCP plugin) in your AI assistant (e.g., Claude Code, Cursor).
+   Set up your old Memos instance's MCP server (using the official or community-provided Memos MCP plugin) in your AI assistant (e.g., Claude Code, Cursor, WorkBuddy).
 
 2. **Configure EdgeEver MCP**:
    - Log in to your EdgeEver instance, and click **Profile** -> **MCP settings**.

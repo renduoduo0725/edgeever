@@ -3,12 +3,20 @@ import { Base64 } from "js-base64";
 export const TABLE_SCHEMA_VERSION = 1 as const;
 export const TABLE_FIELD_LIMIT = 40;
 export const TABLE_RECORD_LIMIT = 2000;
-export const TABLE_FIELD_TYPES = ["text", "number", "checkbox", "date", "select", "url"] as const;
+export const TABLE_FIELD_TYPES = ["text", "number", "checkbox", "date", "select", "url", "attachment"] as const;
 export const TABLE_FILTER_OPERATORS = ["contains", "eq", "empty", "notEmpty"] as const;
+export const TABLE_ATTACHMENT_LIMIT = 10;
+export const TABLE_ATTACHMENT_FILTER_OPERATORS = ["empty", "notEmpty"] as const;
 
 export type TableFieldType = (typeof TABLE_FIELD_TYPES)[number];
 export type TableFilterOperator = (typeof TABLE_FILTER_OPERATORS)[number];
-export type TableCellValue = string | number | boolean | null;
+export type TableAttachment = {
+  resourceId: string;
+  filename: string;
+  mimeType: string;
+  byteSize: number;
+};
+export type TableCellValue = string | number | boolean | null | TableAttachment[];
 
 export type TableField = {
   id: string;
@@ -66,6 +74,8 @@ const TABLE_COMMENT = new RegExp(`<!--\\s*${TABLE_MARKER}:([\\s\\S]*?)\\s*-->`);
 const FIELD_NAME_LIMIT = 80;
 const OPTION_LIMIT = 40;
 const CELL_TEXT_LIMIT = 2000;
+const ATTACHMENT_ID_PATTERN = /^[A-Za-z0-9_-]{1,80}$/;
+const ATTACHMENT_BYTE_LIMIT = 1024 * 1024 * 1024;
 
 const encodeBase64Url = (value: string) => Base64.encodeURI(value);
 const decodeBase64Url = (value: string) => Base64.decode(value);
@@ -97,7 +107,35 @@ const cleanOptions = (value: unknown) => {
   return options;
 };
 
+const cleanAttachment = (value: unknown): TableAttachment | null => {
+  if (!isRecord(value) || typeof value.resourceId !== "string" || !ATTACHMENT_ID_PATTERN.test(value.resourceId)) return null;
+  const filename = cleanName(value.filename, "attachment");
+  const mimeType = typeof value.mimeType === "string" ? value.mimeType.replace(/\s+/g, " ").trim().slice(0, 120) : "";
+  const byteSize = typeof value.byteSize === "number" ? value.byteSize : Number(value.byteSize);
+  if (!Number.isFinite(byteSize) || byteSize < 0) return null;
+  return {
+    resourceId: value.resourceId,
+    filename,
+    mimeType,
+    byteSize: Math.min(Math.floor(byteSize), ATTACHMENT_BYTE_LIMIT),
+  };
+};
+
+export const tableAttachmentUrl = (resourceId: string) =>
+  `/api/v1/resources/${encodeURIComponent(resourceId)}/blob`;
+
 export const coerceTableCell = (field: TableField, value: unknown): TableCellValue => {
+  if (field.type === "attachment") {
+    const items = Array.isArray(value) ? value : [];
+    const attachments: TableAttachment[] = [];
+    for (const item of items) {
+      const attachment = cleanAttachment(item);
+      if (!attachment || attachments.some((current) => current.resourceId === attachment.resourceId)) continue;
+      attachments.push(attachment);
+      if (attachments.length >= TABLE_ATTACHMENT_LIMIT) break;
+    }
+    return attachments;
+  }
   if (field.type === "checkbox") {
     return value === true || value === "true" || value === 1 || value === "1";
   }
@@ -106,11 +144,28 @@ export const coerceTableCell = (field: TableField, value: unknown): TableCellVal
     const number = typeof value === "number" ? value : Number(value);
     return Number.isFinite(number) ? number : null;
   }
+  if (Array.isArray(value)) {
+    return value.map((item) => cleanAttachment(item)?.filename ?? "").filter(Boolean).join(", ").slice(0, CELL_TEXT_LIMIT);
+  }
   if (value === null || value === undefined) return "";
   return String(value).slice(0, CELL_TEXT_LIMIT);
 };
 
 const emptyCell = (field: TableField): TableCellValue => coerceTableCell(field, field.type === "checkbox" ? false : null);
+
+export const listTableAttachmentResourceIds = (document: TableDocument | null | undefined) => {
+  const ids = new Set<string>();
+  if (!document) return ids;
+  for (const record of document.records) {
+    for (const field of document.fields) {
+      if (field.type !== "attachment") continue;
+      const value = record.cells[field.id];
+      if (!Array.isArray(value)) continue;
+      for (const attachment of value) ids.add(attachment.resourceId);
+    }
+  }
+  return ids;
+};
 
 const parseField = (value: unknown): TableField | null => {
   if (!isRecord(value) || typeof value.id !== "string" || !value.id || value.id.length > 80) return null;
@@ -179,7 +234,15 @@ export const hasTableDocumentMarker = (markdown: string | null | undefined) =>
 export const stripTableDocumentMarker = (markdown: string | null | undefined) =>
   (markdown ?? "").replace(TABLE_COMMENT, "").trimEnd();
 
+const markdownLabel = (value: string) => value.replace(/\\/g, "\\\\").replace(/\[/g, "\\[").replace(/\]/g, "\\]");
+
+const attachmentNames = (value: TableCellValue) =>
+  Array.isArray(value) ? value.map((item) => item.filename).filter(Boolean) : [];
+
 const markdownCell = (field: TableField, value: TableCellValue) => {
+  if (field.type === "attachment" && Array.isArray(value)) {
+    return value.map((item) => `[${markdownLabel(item.filename)}](${tableAttachmentUrl(item.resourceId)})`).join(" ");
+  }
   if (value === null || value === undefined || value === "") return "";
   const text = field.type === "checkbox" ? (value === true ? "true" : "false") : String(value);
   return text.replace(/\r?\n/g, " ").replace(/\|/g, "\\|");
@@ -222,7 +285,9 @@ export const createDefaultTableDocument = (labels: TableSeedLabels = {}): TableD
 };
 
 const csvCell = (value: TableCellValue) => {
-  const text = value === null || value === undefined ? "" : value === true ? "true" : value === false ? "false" : String(value);
+  const text = Array.isArray(value)
+    ? attachmentNames(value).join("; ")
+    : value === null || value === undefined ? "" : value === true ? "true" : value === false ? "false" : String(value);
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, "\"\"")}"` : text;
 };
 
@@ -235,6 +300,10 @@ export const tableDocumentToCsv = (document: TableDocument, records: TableRecord
 };
 
 const cellSortText = (field: TableField, value: TableCellValue) => {
+  if (field.type === "attachment") {
+    const names = attachmentNames(value);
+    return names.length ? `${String(names.length).padStart(4, "0")} ${names.join(" ")}` : null;
+  }
   if (value === null || value === undefined || value === "") return null;
   if (field.type === "number") return typeof value === "number" ? value : null;
   if (field.type === "checkbox") return value === true ? 1 : 0;
@@ -242,6 +311,15 @@ const cellSortText = (field: TableField, value: TableCellValue) => {
 };
 
 const matchesFilter = (field: TableField, value: TableCellValue, filter: TableFilter) => {
+  if (field.type === "attachment") {
+    const names = attachmentNames(value);
+    const empty = names.length === 0;
+    if (filter.operator === "empty") return empty;
+    if (filter.operator === "notEmpty") return !empty;
+    const expected = (filter.value ?? "").trim().toLocaleLowerCase();
+    if (filter.operator === "eq") return names.some((name) => name.toLocaleLowerCase() === expected);
+    return names.some((name) => name.toLocaleLowerCase().includes(expected));
+  }
   const empty = field.type === "checkbox" ? value !== true : value === null || value === "";
   if (filter.operator === "empty") return empty;
   if (filter.operator === "notEmpty") return !empty;

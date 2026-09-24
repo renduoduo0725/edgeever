@@ -8,7 +8,7 @@ In the flomo Web app or desktop client, click the small arrow next to your usern
 
 ### Step 2: Configure EdgeEver MCP
 
-Generate a token with memo, notebook, and resource read/write permissions in **EdgeEver Settings → API & MCP authorization**. Click **Copy full MCP config** and configure it in Codex, Claude Code, Cursor, or another AI Agent.
+Generate a token with memo, notebook, and resource read/write permissions in **EdgeEver Settings → API & MCP authorization**. Click **Copy full MCP config** and configure it in Codex, Claude Code, Cursor, WorkBuddy, or another AI Agent.
 
 ### Step 3: Import with one prompt
 

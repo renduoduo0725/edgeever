@@ -9,7 +9,7 @@ import "yet-another-react-lightbox/styles.css";
 import "yet-another-react-lightbox/plugins/thumbnails.css";
 
 import {
-  Archive,
+  Paperclip,
   HardDrive,
   ExternalLink,
   ChevronLeft,
@@ -207,7 +207,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
           </ButtonTooltip>
           <div className="min-w-0">
             <h1 className={`flex items-center gap-2 ${WORKSPACE_PAGE_TITLE_CLASSNAME}`}>
-              <Archive className="h-4.5 w-4.5 text-emerald-700" />
+              <Paperclip className="h-4.5 w-4.5 text-emerald-700" />
               {t("assets.title")}
             </h1>
             <p className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] font-medium text-slate-400 uppercase tracking-wider">
@@ -309,7 +309,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
             </div>
           ) : filteredResources.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-card px-6 py-24 text-center">
-              <Archive className="h-10 w-10 text-slate-350 mb-3 stroke-[1.5]" />
+              <Paperclip className="h-10 w-10 text-slate-350 mb-3 stroke-[1.5]" />
               <p className="text-sm font-semibold text-slate-500">
                 {searchQuery || filterType !== "all" ? t("assets.noMatches") : t("assets.empty")}
               </p>

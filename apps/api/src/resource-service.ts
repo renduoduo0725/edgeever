@@ -4,7 +4,7 @@ import type {
   ResourceStorageSummary,
 } from "@edgeever/shared";
 import { auditStatement } from "./audit";
-import type { AppContext, AuditActor } from "./api-context";
+import type { AppContext, AuditActor, Bindings } from "./api-context";
 import { AppError } from "./app-error";
 import { createId, isoNow } from "./entity-utils";
 import { sha256Bytes } from "./hash-utils";
@@ -107,6 +107,16 @@ export const validateImageUpload = (mimeType: string, size: number) => {
   }
   if (size <= 0 || size > MAX_IMAGE_UPLOAD_BYTES) {
     throw new AppError("upload_too_large", "Image must be between 1 byte and 100 MiB.", 413);
+  }
+};
+
+export const deleteReleasedResourceObjects = async (
+  env: Bindings,
+  resources: { objectKey: string; storageConfigId: string }[],
+) => {
+  for (const resource of resources) {
+    const source = await resolveObjectStorage(env, resource.storageConfigId);
+    await source.store.delete(resource.objectKey).catch(() => undefined);
   }
 };
 
@@ -234,6 +244,7 @@ type ResourceCreateInput = {
   mimeType: string;
   bytes: Uint8Array;
   actor: AuditActor;
+  metadata?: Record<string, unknown>;
 };
 
 const storeResource = async (
@@ -347,7 +358,7 @@ export const createAttachmentResource = async (
     kind: "attachment",
     width: null,
     height: null,
-    metadata: {},
+    metadata: input.metadata ?? {},
     auditMetadata: {},
   });
 };

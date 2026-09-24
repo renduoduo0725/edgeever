@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef } from "@tanstack/react-table";
-import { ChevronLeft, Download, Plus, TableProperties, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, Copy, Download, Form, Paperclip, Plus, RefreshCw, TableProperties, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   addTableField,
@@ -12,16 +13,21 @@ import {
   removeTableField,
   removeTableRecord,
   replaceTableView,
+  listTableAttachmentResourceIds,
   serializeTableDocument,
+  TABLE_ATTACHMENT_FILTER_OPERATORS,
+  TABLE_ATTACHMENT_LIMIT,
   TABLE_FIELD_LIMIT,
   TABLE_FIELD_TYPES,
   TABLE_FILTER_OPERATORS,
   TABLE_RECORD_LIMIT,
+  tableAttachmentUrl,
   tableDocumentToCsv,
   tableFallbackMarkdown,
   updateTableCell,
   updateTableField,
   type MemoDetail,
+  type TableAttachment,
   type TableCellValue,
   type TableDocument,
   type TableField,
@@ -31,6 +37,7 @@ import {
   type TableRecord,
 } from "@edgeever/shared";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
+import { TableFormDialog } from "@/components/dialogs/TableFormDialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -42,6 +49,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { api } from "@/lib/api";
+import { copyImageUrlToClipboard } from "@/lib/clipboard";
+import { toDesktopResourceDownloadUrl, toDesktopResourceUrl } from "@/lib/desktop-resources";
 import { EDITOR_LOCAL_SAVE_DELAY_MS } from "@/lib/app-helpers";
 import { createLocalEditSession } from "@/components/editor/editor-pane-helpers";
 import { isLocalMemoId } from "@/lib/local-mirror";
@@ -69,6 +78,7 @@ const parseOptionText = (value: string) => value.split(/[,，]/).map((item) => i
 
 const displayCell = (field: TableField, value: TableCellValue) => {
   if (field.type === "checkbox") return value === true ? "true" : "false";
+  if (Array.isArray(value)) return value.map((item) => item.filename).join(", ");
   if (value === null || value === undefined || value === "") return "";
   return String(value);
 };
@@ -149,6 +159,198 @@ const FieldHeader = ({
   );
 };
 
+const attachmentItems = (value: TableCellValue): TableAttachment[] => Array.isArray(value) ? value : [];
+
+const isImageAttachment = (item: TableAttachment) => item.mimeType.toLowerCase().startsWith("image/");
+
+const downloadTableAttachment = (href: string, filename: string) => {
+  const anchor = document.createElement("a");
+  anchor.href = toDesktopResourceDownloadUrl(href, filename);
+  anchor.download = filename;
+  anchor.rel = "noreferrer";
+  anchor.click();
+};
+
+const AttachmentCell = ({
+  field,
+  record,
+  memoId,
+  readOnly,
+  repository,
+  onAdd,
+  onRemove,
+  onUploaded,
+}: {
+  field: TableField;
+  record: TableRecord;
+  memoId: string;
+  readOnly: boolean;
+  repository: EdgeEverRepository;
+  onAdd: (attachment: TableAttachment) => boolean;
+  onRemove: (resourceId: string) => void;
+  onUploaded: (resourceId: string) => void;
+}) => {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const copyTimer = useRef<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const items = attachmentItems(record.cells[field.id] ?? null);
+  const limitReached = items.length >= TABLE_ATTACHMENT_LIMIT;
+
+  useEffect(() => () => {
+    if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+  }, []);
+
+  const copyImage = async (href: string, resourceId: string) => {
+    setCopyError(null);
+    const copied = await copyImageUrlToClipboard(href);
+    if (!copied) {
+      setCopiedId(null);
+      setCopyError(t("structuredTable.copyImageFailed"));
+      return;
+    }
+    setCopiedId(resourceId);
+    if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    copyTimer.current = window.setTimeout(() => {
+      setCopiedId((current) => current === resourceId ? null : current);
+    }, 2000);
+  };
+
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files?.length || readOnly) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      for (const file of files) {
+        const { resource } = await repository.uploadMemoResource(memoId, file);
+        const added = onAdd({
+          resourceId: resource.id,
+          filename: resource.filename || file.name,
+          mimeType: resource.mimeType || file.type,
+          byteSize: resource.byteSize ?? file.size,
+        });
+        if (!added) {
+          void repository.deleteResource(resource.id).catch(() => undefined);
+          break;
+        }
+        onUploaded(resource.id);
+      }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : t("structuredTable.saveError"));
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="flex min-w-36 flex-col gap-1 px-2">
+      {items.map((item) => {
+        const href = toDesktopResourceUrl(tableAttachmentUrl(item.resourceId));
+        const image = isImageAttachment(item);
+        const openLabel = t("structuredTable.openAttachment", { name: item.filename });
+        const copied = copiedId === item.resourceId;
+        return (
+          <div key={item.resourceId} className="group/attachment flex items-center gap-1">
+            {image ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="h-8 w-8 shrink-0 overflow-hidden rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
+                    aria-label={openLabel}
+                  >
+                    <img src={href} alt="" className="h-full w-full object-cover" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>{openLabel}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <>
+                <Paperclip className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                <a href={href} className="min-w-0 flex-1 truncate text-sm text-emerald-700 underline-offset-2 hover:underline" target="_blank" rel="noreferrer">{item.filename}</a>
+              </>
+            )}
+            <div className="hidden items-center gap-1 group-hover/attachment:flex group-focus-within/attachment:flex">
+              {image ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label={copied ? t("structuredTable.imageCopied") : t("structuredTable.copyImage")}
+                      onClick={() => { void copyImage(href, item.resourceId); }}
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{copied ? t("structuredTable.imageCopied") : t("structuredTable.copyImage")}</TooltipContent>
+                </Tooltip>
+              ) : null}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label={t("structuredTable.downloadAttachment", { name: item.filename })}
+                    onClick={() => downloadTableAttachment(href, item.filename)}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("structuredTable.downloadAttachment", { name: item.filename })}</TooltipContent>
+              </Tooltip>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label={t("structuredTable.removeAttachment", { name: item.filename })}
+              disabled={readOnly}
+              onClick={() => onRemove(item.resourceId)}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        );
+      })}
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        className="sr-only"
+        aria-label={t("structuredTable.addAttachment")}
+        disabled={readOnly || uploading || limitReached}
+        onChange={(event) => { void uploadFiles(event.target.files); }}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-8 justify-start px-0 text-xs"
+        disabled={readOnly || uploading || limitReached}
+        aria-label={limitReached ? t("structuredTable.attachmentLimit") : t("structuredTable.addAttachment")}
+        onClick={() => inputRef.current?.click()}
+      >
+        <Plus className="h-3.5 w-3.5" />
+        {uploading ? t("structuredTable.uploading") : limitReached ? t("structuredTable.attachmentLimit") : t("structuredTable.addAttachment")}
+      </Button>
+      {uploadError ? <p className="text-xs text-rose-600">{uploadError}</p> : null}
+      {copyError ? <p className="text-xs text-rose-600" role="alert">{copyError}</p> : null}
+    </div>
+  );
+};
+
 const RecordCell = ({
   document,
   field,
@@ -156,9 +358,14 @@ const RecordCell = ({
   active,
   readOnly,
   onEdit,
+  memoId,
+  repository,
   onCommit,
   onDraft,
   onChange,
+  onAdd,
+  onRemove,
+  onUploaded,
 }: {
   document: TableDocument;
   field: TableField;
@@ -166,14 +373,33 @@ const RecordCell = ({
   active: boolean;
   readOnly: boolean;
   onEdit: (cell: EditingCell | null) => void;
+  memoId: string;
+  repository: EdgeEverRepository;
   onCommit: (value: string) => void;
   onDraft: (value: string) => void;
   onChange: (document: TableDocument) => void;
+  onAdd: (attachment: TableAttachment) => boolean;
+  onRemove: (resourceId: string) => void;
+  onUploaded: (resourceId: string) => void;
 }) => {
   const value = record.cells[field.id] ?? null;
   const text = displayCell(field, value);
   const [draft, setDraft] = useState(text);
   useEffect(() => { if (active) setDraft(text); }, [active, text]);
+  if (field.type === "attachment") {
+    return (
+      <AttachmentCell
+        field={field}
+        record={record}
+        memoId={memoId}
+        readOnly={readOnly}
+        repository={repository}
+        onAdd={onAdd}
+        onRemove={onRemove}
+        onUploaded={onUploaded}
+      />
+    );
+  }
   if (field.type === "checkbox") {
     return (
       <Checkbox
@@ -256,15 +482,27 @@ export const TableEditorPane = ({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
+  const formQuery = useQuery({
+    queryKey: ["table-form", memo.id],
+    queryFn: () => api.getTableForm(memo.id),
+    enabled: !isLocalMemoId(memo.id),
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const formAccepting = formQuery.data?.form?.enabled === true;
   const [editSessionReady, setEditSessionReady] = useState(false);
   const memoRef = useRef(memo);
   const titleRef = useRef(title);
   const documentRef = useRef(document);
   const editingRef = useRef(editing);
   const editSessionRef = useRef<MemoEditSession | null>(null);
+  const pendingUploadIdsRef = useRef(new Set<string>());
   const savedSnapshotRef = useRef(parsed ? snapshotOf(memo.title ?? "", parsed) : "");
   const saveRef = useRef<() => void>(() => undefined);
-  memoRef.current = memo;
+  if (memo.revision >= memoRef.current.revision) memoRef.current = memo;
   titleRef.current = title;
   documentRef.current = document;
   editingRef.current = editing;
@@ -336,6 +574,13 @@ export const TableEditorPane = ({
       });
       memoRef.current = result.memo;
       savedSnapshotRef.current = nextSnapshot;
+      const keptAttachmentIds = listTableAttachmentResourceIds(nextDocument);
+      for (const resourceId of pendingUploadIdsRef.current) {
+        if (keptAttachmentIds.has(resourceId)) continue;
+        pendingUploadIdsRef.current.delete(resourceId);
+        void repository.deleteResource(resourceId).catch(() => undefined);
+      }
+      pendingUploadIdsRef.current.clear();
       const hasNewChanges = snapshotOf(titleRef.current, documentRef.current ?? nextDocument) !== nextSnapshot;
       setDirty(hasNewChanges);
       if (!hasNewChanges) await onSaved(result.memo);
@@ -370,6 +615,27 @@ export const TableEditorPane = ({
             record={row.original}
             active={editing?.recordId === row.original.id && editing.fieldId === field.id}
             readOnly={readOnly}
+            memoId={memo.id}
+            repository={repository}
+            onAdd={(attachment) => {
+              const current = documentRef.current;
+              const rowRecord = current?.records.find((item) => item.id === row.original.id);
+              const existing = attachmentItems(rowRecord?.cells[field.id] ?? null);
+              if (!current || existing.length >= TABLE_ATTACHMENT_LIMIT || existing.some((item) => item.resourceId === attachment.resourceId)) return false;
+              changeDocument(updateTableCell(current, row.original.id, field.id, [...existing, attachment]));
+              return true;
+            }}
+            onRemove={(resourceId) => {
+              const current = documentRef.current;
+              const rowRecord = current?.records.find((item) => item.id === row.original.id);
+              if (!current || !rowRecord) return;
+              if (pendingUploadIdsRef.current.has(resourceId)) {
+                pendingUploadIdsRef.current.delete(resourceId);
+                void repository.deleteResource(resourceId).catch(() => undefined);
+              }
+              changeDocument(updateTableCell(current, row.original.id, field.id, attachmentItems(rowRecord.cells[field.id] ?? null).filter((item) => item.resourceId !== resourceId)));
+            }}
+            onUploaded={(resourceId) => pendingUploadIdsRef.current.add(resourceId)}
             onEdit={(cell) => {
               editingRef.current = cell;
               if (cell) draftRef.current = displayCell(field, row.original.cells[field.id] ?? null);
@@ -403,7 +669,7 @@ export const TableEditorPane = ({
         ),
       },
     ];
-  }, [document, editing, readOnly, t]);
+  }, [document, editing, memo.id, readOnly, repository, t]);
 
   const table = useReactTable({ data: visibleRecords, columns, getCoreRowModel: getCoreRowModel(), getRowId: (row) => row.id });
 
@@ -428,6 +694,40 @@ export const TableEditorPane = ({
   const saveLabel = saveError ? saveError : saving ? t("structuredTable.saving") : dirty ? t("structuredTable.unsaved") : editSessionReady ? t("structuredTable.saved") : "";
   const fieldLimitReached = document.fields.length >= TABLE_FIELD_LIMIT;
   const recordLimitReached = document.records.length >= TABLE_RECORD_LIMIT;
+
+  const refreshBlocked = refreshing || saving || dirty || Boolean(editing) || isLocalMemoId(memo.id);
+  const refreshTable = async () => {
+    if (refreshBlocked || refreshingRef.current) return;
+    refreshingRef.current = true;
+    setRefreshing(true);
+    setSaveError(null);
+    try {
+      const latest = (await api.getMemo(memo.id)).memo;
+      if (latest.revision < memoRef.current.revision) return;
+      const next = parseTableDocument(latest.contentMarkdown);
+      if (!next) {
+        setSaveError(t("structuredTable.unreadable"));
+        return;
+      }
+      const nextTitle = latest.title ?? "";
+      setTitle(nextTitle);
+      titleRef.current = nextTitle;
+      setDocument(next);
+      documentRef.current = next;
+      savedSnapshotRef.current = snapshotOf(nextTitle, next);
+      setDirty(false);
+      setSaveFailed(false);
+      setEditing(null);
+      editingRef.current = null;
+      memoRef.current = latest;
+      await onSaved(latest).catch(() => undefined);
+    } catch (error) {
+      setSaveError(error instanceof Error && error.message ? error.message : t("structuredTable.refreshError"));
+    } finally {
+      refreshingRef.current = false;
+      setRefreshing(false);
+    }
+  };
 
   const exportCsv = () => {
     const blob = new Blob([tableDocumentToCsv(document, visibleRecords)], { type: "text/csv;charset=utf-8" });
@@ -472,6 +772,40 @@ export const TableEditorPane = ({
         </div>
         <span className="text-xs text-slate-500">{countLabel}</span>
         {saveLabel ? <span className={saveError ? "text-xs text-rose-600" : "text-xs text-slate-400"}>{saveLabel}</span> : null}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={refreshBlocked}
+                aria-label={t("structuredTable.refresh")}
+                onClick={() => { void refreshTable(); }}
+              >
+                <RefreshCw className={refreshing ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+                {t("structuredTable.refresh")}
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{t(dirty || editing ? "structuredTable.unsaved" : "structuredTable.refreshTooltip")}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={readOnly}
+              className={formAccepting ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800" : undefined}
+              onClick={() => setFormOpen(true)}
+            >
+              <Form className="h-4 w-4" />
+              {t(formAccepting ? "structuredTable.formLive" : "structuredTable.openForm")}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t(formAccepting ? "structuredTable.formLiveTooltip" : "structuredTable.openFormTooltip")}</TooltipContent>
+        </Tooltip>
         <Button type="button" variant="outline" size="sm" onClick={exportCsv}>
           <Download className="h-4 w-4" />
           {t("structuredTable.exportCsv")}
@@ -524,7 +858,12 @@ export const TableEditorPane = ({
                 value={filter.fieldId}
                 aria-label={t("structuredTable.filter")}
                 disabled={readOnly}
-                onChange={(event) => setFilter(index, { ...filter, fieldId: event.target.value })}
+                onChange={(event) => {
+                  const fieldId = event.target.value;
+                  const attachmentField = document.fields.find((field) => field.id === fieldId)?.type === "attachment";
+                  const operator = attachmentField && (filter.operator === "contains" || filter.operator === "eq") ? "notEmpty" : filter.operator;
+                  setFilter(index, { ...filter, fieldId, operator });
+                }}
               >
                 {document.fields.map((field) => <option key={field.id} value={field.id}>{field.name}</option>)}
               </select>
@@ -535,7 +874,7 @@ export const TableEditorPane = ({
                 disabled={readOnly}
                 onChange={(event) => setFilter(index, { ...filter, operator: event.target.value as TableFilterOperator })}
               >
-                {TABLE_FILTER_OPERATORS.map((operator) => <option key={operator} value={operator}>{t(`structuredTable.operators.${operator}`)}</option>)}
+                {(document.fields.find((field) => field.id === filter.fieldId)?.type === "attachment" ? TABLE_ATTACHMENT_FILTER_OPERATORS : TABLE_FILTER_OPERATORS).map((operator) => <option key={operator} value={operator}>{t(`structuredTable.operators.${operator}`)}</option>)}
               </select>
               {operatorNeedsValue ? (
                 <Input
@@ -608,6 +947,13 @@ export const TableEditorPane = ({
           </select>
         </label>
       </div>
+      <TableFormDialog
+        memoId={memo.id}
+        memoTitle={title}
+        fields={document.fields}
+        open={formOpen}
+        onOpenChange={setFormOpen}
+      />
       <div className="min-h-0 flex-1 overflow-auto">
         <table className="w-max min-w-full border-collapse">
           <thead className="sticky top-0 z-10 bg-card">
@@ -625,7 +971,7 @@ export const TableEditorPane = ({
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="border-b border-slate-100">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-2 py-1 align-middle">
+                  <td key={cell.id} className="px-2 py-1 align-top">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}

@@ -284,6 +284,34 @@ try {
     throw new Error(`Cached resource protocol failed: ${JSON.stringify(cachedResource)}`);
   }
 
+  const aliasedResource = await evaluate(`(async () => {
+    const bridge = window.edgeeverDesktop;
+    await bridge.recordStagedResourceAlias(${JSON.stringify(staged.id)}, "/api/v1/resources/${cachedResourceId}/blob");
+    await bridge.removeStagedResource(${JSON.stringify(staged.id)});
+    const [pending, aliases, response, bridged] = await Promise.all([
+      bridge.listStagedResources(),
+      bridge.listStagedResourceAliases("protocol-e2e-memo"),
+      fetch("edgeever-staged://${staged.id}"),
+      bridge.readStagedResource(${JSON.stringify(staged.id)}),
+    ]);
+    return {
+      pending: pending.some((item) => item.id === ${JSON.stringify(staged.id)}),
+      alias: aliases.find((item) => item.id === ${JSON.stringify(staged.id)})?.resourceId,
+      status: response.status,
+      text: await response.text(),
+      bridgeText: new TextDecoder().decode(bridged.bytes),
+    };
+  })()`);
+  if (
+    aliasedResource.pending
+    || aliasedResource.alias !== cachedResourceId
+    || aliasedResource.status !== 200
+    || aliasedResource.text !== fixtureText
+    || aliasedResource.bridgeText !== fixtureText
+  ) {
+    throw new Error(`Uploaded staged resource alias failed: ${JSON.stringify(aliasedResource)}`);
+  }
+
   await cdp.send("Browser.setDownloadBehavior", {
     behavior: "allow",
     downloadPath: join(testDirectory, "downloads"),
@@ -302,12 +330,11 @@ try {
   await waitForDownloadedFile();
   if (!(await readFile(downloadedPath)).equals(fixtureBytes)) throw new Error("Downloaded resource bytes changed");
 
-  await evaluate(`window.edgeeverDesktop.removeStagedResource(${JSON.stringify(staged.id)})`);
   console.log(JSON.stringify({
     ok: true,
     executablePath,
     origin: appProtocol.origin,
-    checks: ["app-assets", "file-input", "staged-resource", "cached-resource-range", "download"],
+    checks: ["app-assets", "file-input", "staged-resource", "cached-resource-range", "staged-resource-alias", "download"],
   }));
 } catch (error) {
   const details = processOutput.length > 0 ? `\n\nProcess output:\n${processOutput.join("")}` : "";

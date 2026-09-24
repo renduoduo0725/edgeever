@@ -11,7 +11,7 @@
 #### 步骤 1：在 AI 助手中安装并启用两个 MCP 服务
 
 1. **配置 Memos MCP 服务**：
-   将你的旧 Memos 实例的 MCP 服务（可以使用 Memos 官方或社区提供的 MCP 插件）配置到你的 AI 助手（如 Claude Code/Cursor 等）中。
+   将你的旧 Memos 实例的 MCP 服务（可以使用 Memos 官方或社区提供的 MCP 插件）配置到你的 AI 助手（如 Claude Code/Cursor/WorkBuddy 等）中。
    
 2. **配置 EdgeEver MCP 服务**：
    - 登录你的 EdgeEver 实例，点击左下角的 **个人中心** -> **MCP 设置**。

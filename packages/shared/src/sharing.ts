@@ -14,7 +14,9 @@ export type MemoShare = {
 export const PUBLISHED_NOTE_BODY_FONTS = [
   "wenkai",
   "wenkai-screen",
+  "zhuque",
   "source-han-serif",
+  "neo-zhi-song",
   "source-han-sans",
   "source-serif",
 ] as const;

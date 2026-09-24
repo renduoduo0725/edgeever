@@ -45,8 +45,10 @@ describe("desktop release workflow", () => {
     const releasePlan = mobileWorkflow.indexOf("      - name: Compare with previous formal release");
     expect(regressionTests).toBeGreaterThanOrEqual(0);
     expect(regressionTests).toBeLessThan(releasePlan);
-    expect(workflow).toContain('gh release view "$CURRENT_TAG"');
-    expect(mobileWorkflow).toContain('gh release view "$CURRENT_TAG"');
+    expect(workflow).toContain('gh release view "$CURRENT_TAG" --repo "$GITHUB_REPOSITORY" --json apiUrl --jq .apiUrl');
+    expect(mobileWorkflow).toContain('gh release view "$CURRENT_TAG" --repo "$GITHUB_REPOSITORY" --json apiUrl --jq .apiUrl');
+    expect(workflow).toContain("gh api \"$release_api\" --jq '.assets[].name'");
+    expect(mobileWorkflow).toContain("gh api \"$release_api\" --jq '.assets[].name'");
     expect(workflow).not.toContain('releases/tags/${CURRENT_TAG}');
     expect(mobileWorkflow).not.toContain('releases/tags/${CURRENT_TAG}');
   });

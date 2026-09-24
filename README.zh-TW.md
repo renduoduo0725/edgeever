@@ -38,6 +38,7 @@ EdgeEver 是一款現代化的開源筆記與個人知識庫工作區。它為�
 * **Evernote**：功能日益臃腫，商業廣告與繁雜附加功能充斥，效能與記憶體佔用居高不下；且資料相對封閉難以匯出，免費版限制重重，支援 AI/MCP 的方案訂閱成本高昂。
 * **Obsidian**：Markdown 開放，核心閉源；官方同步收費，第三方同步繁瑣；純本地檔案依賴遍歷掃描，當筆記累積到數千上萬條或載入複雜外掛後，冷啟動與全庫檢索明顯卡頓遲緩；圖片與附件與文字混存，儲存庫體積極易膨脹導致行動端同步緩慢，且刪除筆記後殘留附件難清理；對於「隨時隨地隨手記」的輕量場景來說偏重。
 * **Memos / Flomo 等輕量筆記**：雖然簡單好用，但時間軸卡片版面與習慣了經典「三欄工作流程」的使用者有著天然的互動習慣差異。
+* **思源筆記等區塊級知識庫**：功能深厚且支援開源自託管，但全盤的「區塊級（Block）」架構使得日常隨手記錄與連續排版書寫的心智負擔偏重；且缺少零伺服器成本的 Serverless 部署型態，多端同步主要依賴官方付費訂閱，或需額外付費解鎖 S3/WebDAV 同步特性並自備儲存。
 
 **EdgeEver 恰好填補了這一空白**：全端開源，雲端同步與自行託管都可自行部署；同時保留經典三欄版面與流暢排版，萬條筆記常駐依然輕盈絲滑，原生支援接入 AI Agent，部署維護零門檻、零費用。
 
@@ -67,7 +68,7 @@ EdgeEver 是一款現代化的開源筆記與個人知識庫工作區。它為�
 - **自由選擇部署方式**：既可免費執行於 Cloudflare Serverless，也可透過 Docker 部署到 VPS、NAS 或家用伺服器。按 Cloudflare 免費儲存額度估算，個人部署可容納約 15 萬條短筆記和約 5 萬張圖片；Docker 儲存可按需擴充，輕鬆承載百萬級筆記與海量圖片。
 - **資料開放，不設圍牆**：以標準 SQLite 儲存，提供 REST API、MCP 與 CLI 介面。資料隨時可讀可匯出，不再擔心被任何特定平台綁定。
 - **無損 ZIP 打包與無縫遷移**：一鍵打包匯出包含 Markdown、Front Matter、巢狀目錄及附件的完整檔案，同時保留歷史版本與結構化資料，方便在不同實例間完整還原。
-- **原生 AI Agent 智慧聯動**：內建 MCP（Model Context Protocol）協定，支援 Claude Code、Codex、Antigravity 等 AI 助手直接讀取與整理筆記，也可與 Notion Database、飛書多維表格輕鬆串接。
+- **原生 AI Agent 智慧聯動**：內建 MCP（Model Context Protocol）協定，支援 Claude Code、Codex、Antigravity、WorkBuddy 等 AI Agent 直接讀取與整理筆記，也可與 Notion Database、飛書多維表格輕鬆串接。
 - **接入自己的 AI 模型**：支援新增多個 OpenAI、Anthropic、Gemini 相容服務與第三方中轉平台，在編輯器中隨時對全文或選取範圍進行智慧摘要、重點擷取、文法校對、翻譯與續寫潤飾。
 - **豐富的外掛 API**：可透過[外掛開發文件](docs/plugin-development.zh-CN.md)擴充 EdgeEver。
 - **多端無縫同步，無裝置限制**：自行託管資料無商業限制，擺脫免費帳號僅限 2 台裝置的束縛，在 PC、平板與手機上隨心同步。
@@ -98,7 +99,7 @@ Cloudflare 線上部署可以選擇以下兩種方式之一：
 
 ### 方案一：AI Agent 一鍵部署（建議）
 
-將下方提示詞直接複製傳送給 AI Agent（如 Codex、Claude、Cursor、workbuddy、Antigravity、OpenClaw、Hermes Agent 等）。執行過程中，如需存取 GitHub 或 Cloudflare，請確認權限範圍並依提示完成授權。
+將下方提示詞直接複製傳送給 AI Agent（如 Codex、Claude、Cursor、WorkBuddy、Antigravity、OpenClaw、Hermes Agent 等）。執行過程中，如需存取 GitHub 或 Cloudflare，請確認權限範圍並依提示完成授權。
 
 ```text
 請線上完成 EdgeEver 部署：
@@ -140,11 +141,6 @@ curl -fsSL https://edgeever.org/install.sh | bash
 
 此指令會自動拉取最新映像、產生管理員密碼、使用 Docker Compose 啟動
 EdgeEver，並設定每日自動更新。手動部署與設定說明見 [Docker 部署文件](docs/deploy-docker.zh-CN.md)。
-
-EdgeEver 官方容器映像託管於 GitHub Container Registry（GHCR）。部分中國大陸
-網路環境可能出現連線緩慢或逾時。如果無法正常拉取，請在部署前自行設定可用的
-網路代理或可信的映像加速服務。第三方網路及映像服務的可用性與安全性由
-使用者自行評估。
 
 ---
 

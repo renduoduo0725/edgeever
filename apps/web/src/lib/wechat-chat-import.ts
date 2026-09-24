@@ -1,6 +1,8 @@
 import { docToMarkdown, markdownToDoc, type TiptapDoc } from "@edgeever/shared";
+import { IMAGE_WIDTH_PRESETS } from "@edgeever/shared/image-display";
 
 export const WECHAT_MEDIA_URL_PREFIX = "edgeever-wechat-media://";
+const WECHAT_IMAGE_WIDTH = IMAGE_WIDTH_PRESETS.find((preset) => preset.id === "small")!.width;
 
 type WeChatMedia = {
   id: string;
@@ -20,7 +22,9 @@ type WeChatMemo = {
 
 const noteContent = (markdown: string) => {
   const parsed = markdownToDoc(markdown);
-  const nodes = parsed.content ?? [];
+  const nodes = (parsed.content ?? []).map((node) => node.type === "image"
+    ? { ...node, attrs: { ...node.attrs, width: WECHAT_IMAGE_WIDTH } }
+    : node);
   const contentJson: TiptapDoc = {
     type: "doc",
     content: nodes.at(-1)?.type === "paragraph" ? nodes : [...nodes, { type: "paragraph" }],

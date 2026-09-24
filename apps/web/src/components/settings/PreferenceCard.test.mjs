@@ -12,11 +12,25 @@ describe("editor body font preference", () => {
     expect(preferenceCard).toContain('value="source-han-serif"');
     expect(preferenceCard).toContain('value="custom"');
     expect(fontFaces).toContain('fontFace("EdgeEver Kai"');
+    expect(fontFaces).toContain('fontFace("EdgeEver Fangsong"');
+    expect(fontFaces).toContain('fontFace("EdgeEver Zhi Song"');
     expect(fontFaces).toContain('fontFace("EdgeEver Song"');
     expect(fontFaces).toContain("kai.woff2?url");
+    expect(fontFaces).toContain("fangsong.woff2?url");
+    expect(fontFaces).toContain("zhi-song.woff2?url");
+    expect(preferenceCard).toContain('t("settings.uiFontTitle")');
+    expect(preferenceCard).toContain("applyUiFontPreference");
+    expect(preferenceCard).toContain("getFontChoicePreviewStack");
+    expect(preferenceCard).toContain("BookOpenText");
+    expect(preferenceCard).toContain("AppWindow");
+    expect(preferenceCard).toContain("CUSTOM_FONT_SUGGESTIONS");
+    expect(preferenceCard).toContain('t("settings.editorBodyFontSuggestions")');
     expect(editorFonts).toContain("html[data-editor-body-font] .edgeever-editor .ProseMirror");
+    expect(editorFonts).toContain("html[data-ui-font]");
+    expect(editorFonts).toContain("html[data-ui-font]:not([data-editor-body-font]) .edgeever-editor[data-editor-theme=\"default\"] .ProseMirror");
+    expect(editorFonts).toContain("html[data-ui-font] .edgeever-public-share");
     expect(editorFonts).not.toContain(".edgeever-code-source");
-    for (const fileName of ["kai.woff2", "kai-screen.woff2", "song.woff2", "hei.woff2", "source-serif-4-regular.woff2", "OFL-lxgw-wenkai.txt", "OFL-source-han-serif.txt", "OFL-source-serif-4.txt"]) {
+    for (const fileName of ["kai.woff2", "kai-screen.woff2", "fangsong.woff2", "song.woff2", "zhi-song.woff2", "hei.woff2", "source-serif-4-regular.woff2", "OFL-lxgw-wenkai.txt", "OFL-zhuque-fangsong.txt", "OFL-source-han-serif.txt", "OFL-source-serif-4.txt", "IPA-lxgw-neo-zhi-song.txt"]) {
       expect(existsSync(new URL(`../../assets/fonts/editor-body/${fileName}`, import.meta.url))).toBe(true);
     }
   });

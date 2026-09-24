@@ -104,12 +104,16 @@ describe("release automation", () => {
     const publication = releaseSource.indexOf('"--draft=false"');
     const iosWait = releaseSource.indexOf('label: "App Store delivery"');
     const restoreDraft = releaseSource.lastIndexOf('"--draft=true"');
+    const issueClose = releaseSource.indexOf('"issue",\n    "close"', publication);
 
     expect(iosPlan).toBeGreaterThan(0);
     expect(iosDispatch).toBeGreaterThan(iosPlan);
     expect(iosDispatch).toBeLessThan(publication);
     expect(iosWait).toBeGreaterThan(publication);
     expect(iosWait).toBeGreaterThan(restoreDraft);
+    expect(issueClose).toBeGreaterThan(restoreDraft);
+    expect(issueClose).toBeLessThan(iosWait);
+    expect(releaseSource).toContain("is closed; App Store delivery failed");
     expect(releaseSource).toContain('platform: "ios"');
     expect(releaseSource).toContain("iosRebuild: iosPlan.rebuild");
     expect(releaseSource).toContain("updateIosMarketingVersion");

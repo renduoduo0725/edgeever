@@ -30,12 +30,19 @@ sed \
 plutil -lint "$appex/Contents/Info.plist" >/dev/null
 swiftc \
   -O \
+  -parse-as-library \
+  -application-extension \
   -target "$target" \
   -sdk "$sdk" \
   -module-name EdgeEverShare \
   -emit-executable \
+  -Xlinker -e -Xlinker _NSExtensionMain \
   -o "$appex/Contents/MacOS/EdgeEverShare" \
   "$source_directory/ShareViewController.swift"
+if ! xcrun nm -u "$appex/Contents/MacOS/EdgeEverShare" | grep -q '_NSExtensionMain'; then
+  echo "Share extension is missing the NSExtensionMain entry point" >&2
+  exit 1
+fi
 chmod 755 "$appex/Contents/MacOS/EdgeEverShare"
 codesign \
   --force \

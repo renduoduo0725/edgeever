@@ -11,7 +11,7 @@ Thanks to EdgeEver's native support for AI Agent and Model Context Protocol (MCP
 #### Step 1: Install and Enable Both MCP Servers in Your AI Assistant
 
 1. **Configure Notion MCP**:
-   Set up the Notion MCP server in your AI assistant (e.g., Claude Code, Cursor, Cline). Once configured, the AI assistant will be authorized to read your Notion Pages and Databases.
+   Set up the Notion MCP server in your AI assistant (e.g., Claude Code, Cursor, WorkBuddy, Cline). Once configured, the AI assistant will be authorized to read your Notion Pages and Databases.
 
 2. **Configure EdgeEver MCP**:
    - Log in to your EdgeEver instance, and click **Profile** -> **MCP settings**.

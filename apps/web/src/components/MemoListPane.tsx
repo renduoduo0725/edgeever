@@ -21,8 +21,8 @@ import {
   ChevronDown,
   Search,
   MoreHorizontal,
-  Tags,
-  Archive,
+  Tag,
+  Paperclip,
   Trash2,
   KeyRound,
   CheckSquare,
@@ -261,7 +261,7 @@ export const MemoSelectionActionBar = ({
 
 const getMobileFilterIcon = (filterMode: MemoFilterMode) => {
   if (filterMode === "tagged") {
-    return <Tags className="h-4 w-4" />;
+    return <Tag className="h-4 w-4" />;
   }
   if (filterMode === "untagged") {
     return <TagX className="h-4 w-4" />;
@@ -1337,14 +1337,14 @@ export const MemoListPane = ({
                   className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
                   onClick={onOpenTags}
                 >
-                  <Tags className="h-4 w-4 text-slate-500" />
+                  <Tag className="h-4 w-4 text-slate-500" />
                   {t("memoList.tags")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
                   onClick={onOpenAssets}
                 >
-                  <Archive className="h-4 w-4 text-slate-500" />
+                  <Paperclip className="h-4 w-4 text-slate-500" />
                   {t("memoList.assets")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
