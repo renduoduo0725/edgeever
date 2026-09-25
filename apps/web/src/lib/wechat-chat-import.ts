@@ -1,4 +1,9 @@
-import { docToMarkdown, markdownToDoc, type TiptapDoc } from "@edgeever/shared";
+import {
+  docToMarkdown,
+  groupConsecutiveImagesIntoGalleries,
+  markdownToDoc,
+  type TiptapDoc,
+} from "@edgeever/shared";
 import { IMAGE_WIDTH_PRESETS } from "@edgeever/shared/image-display";
 
 export const WECHAT_MEDIA_URL_PREFIX = "edgeever-wechat-media://";
@@ -25,9 +30,10 @@ const noteContent = (markdown: string) => {
   const nodes = (parsed.content ?? []).map((node) => node.type === "image"
     ? { ...node, attrs: { ...node.attrs, width: WECHAT_IMAGE_WIDTH } }
     : node);
+  const groupedNodes = groupConsecutiveImagesIntoGalleries(nodes);
   const contentJson: TiptapDoc = {
     type: "doc",
-    content: nodes.at(-1)?.type === "paragraph" ? nodes : [...nodes, { type: "paragraph" }],
+    content: groupedNodes.at(-1)?.type === "paragraph" ? groupedNodes : [...groupedNodes, { type: "paragraph" }],
   };
   return { contentJson, contentMarkdown: docToMarkdown(contentJson) };
 };

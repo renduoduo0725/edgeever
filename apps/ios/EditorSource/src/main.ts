@@ -5,7 +5,6 @@ import { Editor } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import CodeBlock from "@tiptap/extension-code-block";
-import { EdgeEverLink } from "@edgeever/shared/editor-link";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { NodeSelection } from "@tiptap/pm/state";
 import mermaid from "mermaid";
@@ -46,6 +45,7 @@ import {
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import { createIosImageGallery } from "./document-nodes";
 import { createImageInsertTransaction, groupUploadedImages, NATIVE_IMAGE_GALLERY_CSS } from "@edgeever/shared/native-image-gallery";
+import { NEW_IMAGE_WIDTH_PERCENT } from "@edgeever/shared/image-display";
 
 const galleryStyle = document.createElement("style");
 galleryStyle.textContent = NATIVE_IMAGE_GALLERY_CSS;
@@ -759,7 +759,6 @@ function buildExtensions(placeholder: string) {
       table: { table: { resizable: false } },
       markdown: true,
     }),
-    EdgeEverLink,
     NativeAttachmentMetadata,
     CodeBlock.configure({
       languageClassPrefix: "language-",
@@ -1525,7 +1524,7 @@ const api: EdgeEverEditorAPI = {
     editor
       .chain()
       .focus()
-      .setImage({ src: previewDataUrl, alt: uploadId })
+      .setImage({ src: previewDataUrl, alt: uploadId, width: NEW_IMAGE_WIDTH_PERCENT })
       .run();
     // mark last image
     const imgs = editorEl.querySelectorAll("img");
@@ -1538,6 +1537,7 @@ const api: EdgeEverEditorAPI = {
     if (!editor.isEditable) return;
     editor.view.dispatch(createImageInsertTransaction(editor.state, {
       src: imageUrl, alt: alt || uploadId || "",
+      width: NEW_IMAGE_WIDTH_PERCENT,
     }));
     emitChange(editor);
   },

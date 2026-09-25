@@ -1,26 +1,32 @@
 export const deploymentPrompts = {
-  "en-US": `Deploy EdgeEver online:
+  "en-US": `Deploy EdgeEver entirely through GitHub and Cloudflare:
 1. Fork https://github.com/tianma-if/edgeever.
 2. Create D1 \`edgeever\` and R2 \`edgeever-resources\` in Cloudflare.
-3. Import the Fork into Cloudflare Workers & Pages and use \`main\` as the production
-   branch.
-4. Add a Worker Secret named \`EDGE_EVER_AUTH_PASSWORD\`, using a password chosen by the
-   user as its value. Prefer a strong password of at least 32 characters that is unique
-   to this instance.
-5. Start the first build, verify \`/api/health\` and \`/api/openapi.json\`, then verify login
-   with username \`admin\` and the configured password.
+3. In Workers & Pages, create a Worker named \`edgeever\` from the Fork's \`main\` branch.
+   Use the repository root, keep Cloudflare's default Workers Builds deploy command,
+   and ensure its API token can read and edit D1. Select Save and Deploy.
+4. After the Worker is created, add the user's chosen password as the runtime Secret
+   \`EDGE_EVER_AUTH_PASSWORD\` (preferably at least 32 characters).
+   The username defaults to \`admin\`.
+   If the user specifies another, set \`EDGE_EVER_AUTH_USERNAME\` as a Workers Builds
+   variable before the next build.
+5. Run the build again, verify \`/api/health\` and \`/api/openapi.json\`, then log in
+   with that administrator username and password.
 6. Enable and manually run the GitHub Actions workflow named \`Update deployed EdgeEver\`
-   once so the Fork can automatically receive the latest EdgeEver features and fixes.`,
-  "zh-CN": `请在线完成 EdgeEver 部署：
+   once so the Fork can automatically receive future stable releases and fixes.`,
+  "zh-CN": `请全程通过 GitHub 和 Cloudflare 在线部署 EdgeEver：
 1. Fork https://github.com/tianma-if/edgeever。
 2. 在 Cloudflare 中创建 D1 \`edgeever\` 与 R2 \`edgeever-resources\`。
-3. 将这个 Fork 导入 Cloudflare Workers & Pages，并将 \`main\` 设为生产分支。
-4. 添加一个名为 \`EDGE_EVER_AUTH_PASSWORD\` 的 Worker Secret，值为用户自行设置的
-   管理员登录密码，建议使用至少 32 个字符且仅用于此实例的强密码。
-5. 启动首次构建，验证 \`/api/health\`、\`/api/openapi.json\`，并使用用户名 \`admin\`
-   和配置的密码验证登录。
+3. 在 Workers & Pages 中从 Fork 的 \`main\` 分支创建名为 \`edgeever\` 的 Worker。
+   使用仓库根目录，保留 Cloudflare Workers Builds 的默认部署命令，确认其 API Token
+   具备 D1 读取和编辑权限，然后保存并部署。
+4. Worker 创建后，设置运行时 Secret \`EDGE_EVER_AUTH_PASSWORD\`，值为用户指定的密码
+   （建议至少 32 个字符）。管理员用户名默认为 \`admin\`；如需自定义，请在再次构建前
+   设置 Workers Builds 构建变量 \`EDGE_EVER_AUTH_USERNAME\`。
+5. 再次构建，验证 \`/api/health\` 和 \`/api/openapi.json\`，再用该管理员
+   用户名和密码验证登录。
 6. 启用并手动运行一次名为 \`Update deployed EdgeEver\` 的 GitHub Actions 工作流，
-   以便后续自动同步更新，持续获得 EdgeEver 最新的产品特性和问题修复。`,
+   以便后续自动同步正式版本，持续获得 EdgeEver 的功能更新和问题修复。`,
 } as const;
 
 export const manualDeploymentCopy = {
@@ -37,19 +43,19 @@ export const manualDeploymentCopy = {
       },
       {
         title: "Import & Configure the Project",
-        body: "Import the Fork into Cloudflare Workers & Pages and use main as the production branch. The deploy command creates the bindings; do not edit Fork files.",
+        body: "Create a Worker named edgeever from the Fork's main branch in Cloudflare Workers & Pages. Use the repository root and keep Cloudflare's default Workers Builds deploy command, which runs in Cloudflare. Ensure its API token can read and edit D1. The deploy command creates the bindings; do not edit Fork files.",
       },
       {
-        title: "Set the Administrator Password",
-        body: "Add a Worker Secret named EDGE_EVER_AUTH_PASSWORD and set its value to your chosen administrator login password. Prefer a strong password of at least 32 characters that is unique to this instance.",
+        title: "Choose the Administrator Password",
+        body: "Choose an administrator password, preferably at least 32 characters. Once the Worker is created, save it as the runtime Secret EDGE_EVER_AUTH_PASSWORD.",
       },
       {
         title: "Build & Verify",
-        body: "Start the initial build. Once deployed, confirm /api/health returns 200, then verify login with username admin and the configured password.",
+        body: "Save and Deploy creates the Worker and starts a build. If it fails because the administrator Secret is missing, add the runtime Secret from step 4 and retry. The username defaults to admin; to use another, set the EDGE_EVER_AUTH_USERNAME Workers Builds variable before retrying. Once deployed, confirm /api/health returns 200, then log in with the configured username and password.",
       },
       {
         title: "Enable Automatic Updates",
-        body: "Open the Fork's Actions tab, click I understand my workflows, go ahead and enable them, then manually run Update deployed EdgeEver once so the Fork can automatically receive future EdgeEver features and fixes.",
+        body: "Open the Fork's Actions tab, click I understand my workflows, go ahead and enable them, then manually run Update deployed EdgeEver once so the Fork can automatically receive future stable releases and fixes.",
       },
     ],
   },
@@ -66,19 +72,19 @@ export const manualDeploymentCopy = {
       },
       {
         title: "导入并配置项目",
-        body: "在 Cloudflare Workers & Pages 中导入该 Fork，并将 main 设为生产分支。binding 由部署命令生成，不要修改 Fork 中的文件。",
+        body: "在 Cloudflare Workers & Pages 中从 Fork 的 main 分支创建名为 edgeever 的 Worker。使用仓库根目录，保留由 Cloudflare 在线执行的 Workers Builds 默认部署命令，并确认其 API Token 具备 D1 读取和编辑权限。binding 由部署命令生成，不要修改 Fork 中的文件。",
       },
       {
-        title: "设置管理员密码",
-        body: "添加一个名为 EDGE_EVER_AUTH_PASSWORD 的 Worker Secret，并将其值设为您要使用的管理员登录密码。建议使用至少 32 个字符且仅用于此实例的强密码。",
+        title: "准备管理员密码",
+        body: "准备管理员登录密码，建议至少 32 个字符。Worker 创建后，将它保存为运行时 Secret EDGE_EVER_AUTH_PASSWORD。",
       },
       {
         title: "首次构建与验证",
-        body: "启动首次构建。部署完成后访问 /api/health，确认返回 200，并使用用户名 admin 和配置的密码验证登录。",
+        body: "保存并部署会创建 Worker 并启动构建。如因缺少管理员 Secret 而失败，添加第 4 步的运行时 Secret 后重试。管理员用户名默认为 admin；如需使用其他用户名，请在重试构建前设置 Workers Builds 构建变量 EDGE_EVER_AUTH_USERNAME。部署完成后访问 /api/health，确认返回 200，再用配置的管理员用户名和密码登录。",
       },
       {
         title: "启用自动更新",
-        body: "进入 Fork 的 Actions 标签页，点击 I understand my workflows, go ahead and enable them，然后手动运行一次 Update deployed EdgeEver，确保后续能够自动获得 EdgeEver 的最新功能与修复。",
+        body: "进入 Fork 的 Actions 标签页，点击 I understand my workflows, go ahead and enable them，然后手动运行一次 Update deployed EdgeEver，确保后续能够自动获得正式版本的功能更新与修复。",
       },
     ],
   },

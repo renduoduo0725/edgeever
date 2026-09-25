@@ -730,7 +730,7 @@ export const checkpointRunIds = (checkpoint) => [...new Set([
   ...CHECKPOINT_RUN_FIELDS.map((field) => Number(checkpoint[field])),
 ].filter((runId) => Number.isInteger(runId) && runId > 0))];
 
-export const prepareReleaseCheckpoint = ({ storedState, releaseSha }) => {
+export const prepareReleaseCheckpoint = ({ storedState, releaseSha, preserveIosStoreRun = false }) => {
   if (storedState.releaseSha === releaseSha) return storedState;
   const legacyHistory = CHECKPOINT_RUN_FIELDS.flatMap((field) => {
     const runId = Number(storedState[field]);
@@ -746,6 +746,9 @@ export const prepareReleaseCheckpoint = ({ storedState, releaseSha }) => {
     releaseSha,
     ...(runHistory.length > 0 ? { runHistory } : {}),
     ...(storedState.playDelivery ? { playDelivery: storedState.playDelivery } : {}),
+    ...(preserveIosStoreRun && storedState.iosStoreRunId
+      ? { iosStoreRunId: storedState.iosStoreRunId }
+      : {}),
   };
 };
 
@@ -833,11 +836,12 @@ const viewWorkflowRun = ({ repository, runId }) => ghJson([
   "status,conclusion,url,headSha,jobs",
 ]);
 
-const cancelSupersededCheckpointRuns = ({ repository, checkpoint, headSha }) => {
+const cancelSupersededCheckpointRuns = ({ repository, checkpoint, headSha, preserveIosStoreRun = false }) => {
   const candidates = CHECKPOINT_RUN_FIELDS.flatMap((field) => checkpoint[field]
     ? [{ field, runId: checkpoint[field] }]
     : []).filter(({ field }, index, entries) =>
     CANCELLABLE_CHECKPOINT_RUN_FIELDS.has(field) &&
+    !(preserveIosStoreRun && field === "iosStoreRunId") &&
     entries.findIndex((candidate) => Number(candidate.runId) === Number(entries[index].runId)) === index
   );
   for (const { field, runId } of candidates) {
@@ -1110,11 +1114,12 @@ const startIosStoreDelivery = async ({
   headSha,
   checkpoint,
   persistCheckpoint,
+  allowPriorIosRun = false,
 }) => {
   let iosStoreRunId = checkpoint.iosStoreRunId;
   if (iosStoreRunId) {
     const existing = viewWorkflowRun({ repository, runId: iosStoreRunId });
-    if (existing.headSha === headSha) {
+    if (existing.headSha === headSha || allowPriorIosRun) {
       if (existing.status !== "completed") {
         console.log(`[release] reusing App Store delivery: ${existing.url}`);
         return iosStoreRunId;
@@ -1596,16 +1601,28 @@ const releaseMain = async (options) => {
     tag,
   });
   let checkpointCommentId = storedCheckpoint.commentId;
+  const priorReleaseSha = storedCheckpoint.state.releaseSha;
+  const preserveIosStoreRun = Boolean(
+    storedCheckpoint.state.iosStoreRunId &&
+    priorReleaseSha &&
+    priorReleaseSha !== releaseSha &&
+    run("git", ["merge-base", "--is-ancestor", priorReleaseSha, releaseSha], {
+      allowFailure: true,
+    }).status === 0 &&
+    !planNativeRelease("ios", changedFilesBetween(priorReleaseSha, releaseSha)).rebuild
+  );
   if (storedCheckpoint.state.releaseSha && storedCheckpoint.state.releaseSha !== releaseSha) {
     cancelSupersededCheckpointRuns({
       repository: options.repository,
       checkpoint: storedCheckpoint.state,
       headSha: releaseSha,
+      preserveIosStoreRun,
     });
   }
   const checkpoint = prepareReleaseCheckpoint({
     storedState: storedCheckpoint.state,
     releaseSha,
+    preserveIosStoreRun,
   });
   const persistCheckpoint = () => {
     checkpointCommentId = saveReleaseCheckpoint({
@@ -1679,6 +1696,7 @@ const releaseMain = async (options) => {
       headSha: releaseSha,
       checkpoint,
       persistCheckpoint,
+      allowPriorIosRun: preserveIosStoreRun,
     });
   }
 

@@ -114,6 +114,12 @@ const request = async <M extends DesktopRpcMethod>(method: M, params: DesktopRpc
   return bridge.sidecarRequest<DesktopRpcResponses[M]>(method, params);
 };
 
+export const cancelPendingDesktopImportMemo = async (memoId: string) => {
+  const result = await request("memo.delete", { memoId, permanent: true, cancelPendingCreate: true });
+  window.dispatchEvent(new CustomEvent("edgeever:sync-queue-changed"));
+  return result;
+};
+
 export const createDesktopRepository = (): EdgeEverRepository => ({
   listNotebooks: () => request("notebook.list", {}),
 

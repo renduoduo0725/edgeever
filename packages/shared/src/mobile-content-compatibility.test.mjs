@@ -86,6 +86,18 @@ describe("native editor unknown-content compatibility", () => {
       .toEqual(galleryDocument);
   });
 
+  test("keeps empty links visible and serializable in native editors", () => {
+    const document = {
+      type: "doc",
+      content: [{
+        type: "paragraph",
+        content: [{ type: "edgeeverEmptyExternalLink", attrs: { href: "https://example.com", title: null } }],
+      }],
+    };
+    expect(prepareNativeEditorContent(document)).toEqual(document);
+    expect(docToMarkdown(document)).toBe("[](https://example.com)");
+  });
+
   test("keeps Markdown generation alive by projecting unknown content to text", () => {
     const markdown = docToMarkdown(futureDocument);
     expect(markdown).toContain("保留主题块正文");

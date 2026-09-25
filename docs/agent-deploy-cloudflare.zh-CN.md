@@ -16,31 +16,26 @@
    - 创建名称严格为 `edgeever-resources` 的 R2 存储桶。
 
 3. **Cloudflare 项目导入**
-   - 登录 Cloudflare **Workers & Pages** 控制台，导入该 Fork 仓库。
-   - 配置项目使用仓库根目录、生产环境 `main` 分支，并读取仓库根目录下的 `wrangler.toml`。
+   - 在 Cloudflare **Workers & Pages** 中导入 Fork 仓库，创建名为 `edgeever` 的 Worker。选择仓库根目录和生产分支 `main`。
+   - 在 Cloudflare Workers Builds 设置中保留默认部署命令 `npx wrangler deploy`。该命令由 Cloudflare 的构建环境执行，用户无需在本机运行；仓库会将其接入 EdgeEver 的受验证部署流程。应用不要创建为 Pages 项目。
+   - 点击 **Save and Deploy** 创建 Worker。首次构建可能因为尚未添加管理员 Secret 而失败；完成下一步配置后重试。
 
 4. **配置登录凭据与实例参数**
-   - **Worker Secret**：添加密钥 `EDGE_EVER_AUTH_PASSWORD`，值为初始管理员登录密码；建议使用至少 32 个字符且仅用于此实例的强密码。
+   - **Worker Secret**：Worker 创建后，添加运行时密钥 `EDGE_EVER_AUTH_PASSWORD`，值为初始管理员登录密码；建议使用至少 32 个字符的强密码。
    - 该密码只配置为 Worker 运行时 Secret，不要复制到 Workers Builds 构建变量；标准部署入口会复用并验证已存在的 Secret。
    - 不要修改 `wrangler.toml`，也不要在控制台重复添加 binding。部署命令会根据标准资源名称生成 `DB` 与 `RESOURCES` binding。
    - 对按旧版文档部署的已有 Worker，不要要求用户重命名或重新配置自定义 R2 存储桶。没有显式覆盖时，部署会自动保留线上 `RESOURCES` binding 与管理员用户名。
 
-5. **配置 Workers Builds 命令**
-   - 在 Cloudflare 项目的构建设置中，填入以下标准命令：
-
-     ```text
-     Build command: bun install --frozen-lockfile && EDGE_EVER_DEPLOYMENT_TRIGGER=main_push EDGE_EVER_DEPLOYMENT_METHOD=cloudflare_workers_builds bun run build:cloudflare
-     Deploy command: bun run deploy:cloudflare-builds
-     ```
-
-   - 部署命令会根据 `edgeever` 数据库名称自动查询 D1 UUID，并把所有实例参数仅写入临时生成的 Wrangler 配置。受版本控制的 `wrangler.toml` 必须保持不变；若把实例专属配置提交到该文件，部署会直接拒绝，避免 Fork 因基础设施配置产生分叉。
+5. **检查 Workers Builds 配置**
+   - 在 Cloudflare 的构建设置中保持仓库根目录、`main` 分支和默认部署命令 `npx wrangler deploy`。已有部署若在构建设置中使用显式的 `bun run build:cloudflare` 与 `bun run deploy:cloudflare-builds` 命令，可继续沿用。
+   - 部署流程会根据 `edgeever` 数据库名称自动查询 D1 UUID，并把所有实例参数仅写入临时生成的 Wrangler 配置。受版本控制的 `wrangler.toml` 必须保持不变；若把实例专属配置提交到该文件，部署会直接拒绝，避免 Fork 因基础设施配置产生分叉。
    - 请确保 Workers Builds API Token 具有 D1 读取和编辑权限。高级非敏感自定义参数应放在 `EDGE_EVER_*` Workers Builds 构建变量中。如使用其他数据库名称，设置 `EDGE_EVER_D1_DATABASE_NAME`；仅在无法自动查询 UUID 时设置 `EDGE_EVER_D1_DATABASE_ID`。密码始终属于运行时 Secret。
 
 6. **启动首次构建与服务验证**
-   - 触发启动首次构建，待构建部署完成后，进行如下自动化验证：
+   - 添加运行时 Secret 及用户要求的用户名覆盖后，重试构建。部署完成后进行如下自动化验证：
      - 检查 `https://<你的 Worker 域名>/api/health` 返回 `200` 状态码且 JSON 内容为 `{"ok": true}`。
      - 检查 `https://<你的 Worker 域名>/api/openapi.json` 可以访问，且 JSON 含 `"ok": true`。
-     - 使用用户名 `admin` 和 `EDGE_EVER_AUTH_PASSWORD` 验证登录 API。
+     - 使用配置的管理员用户名（默认 `admin`）和 `EDGE_EVER_AUTH_PASSWORD` 验证登录 API。
 
 7. **验证上游更新通道**
    - 在 Fork 仓库的 **Actions** 标签页中启用 **Update deployed EdgeEver**（公共 Fork 上定时任务默认关闭，必须手动启用）。
@@ -54,4 +49,4 @@
 
 ## 可选：自定义初始管理员用户名
 
-普通部署直接使用默认用户名 `admin`，不要主动询问用户是否需要修改。仅当用户明确要求自定义管理员用户名时，才在首次构建前通过 Workers Builds 构建变量设置 `EDGE_EVER_AUTH_USERNAME`，并在登录验证时使用该用户名。管理员账号已创建后，仅修改该变量不会重命名现有账号。
+普通部署直接使用默认用户名 `admin`，不要主动询问用户是否需要修改。仅当用户明确要求自定义管理员用户名时，才在重试首次构建前通过 Workers Builds 构建变量设置 `EDGE_EVER_AUTH_USERNAME`，并在登录验证时使用该用户名。管理员账号已创建后，仅修改该变量不会重命名现有账号。

@@ -1,8 +1,6 @@
 # EdgeEver 手动在线部署指南
 
-本文档为在线部署 EdgeEver 的详细图文操作指南。整个部署流程在浏览器中即可完成，**不需要本地安装任何代码或配置本地环境**。
-
-> 💡 **零成本自托管**：部署完全使用 Cloudflare 免费配额，**无需购买 VPS / 云服务器，也不需要折腾域名证书或 Docker**。
+通过 GitHub 和 Cloudflare 在浏览器中部署 EdgeEver，无需本地安装代码或配置服务器。
 
 ---
 
@@ -13,7 +11,7 @@
 
 ---
 
-## 首次部署图文指南
+## 首次部署
 
 ### 步骤 1：Fork 仓库
 
@@ -24,67 +22,47 @@
 
 ### 步骤 2：在 Cloudflare 创建存储与数据库资源
 
-登录 [Cloudflare Dashboard](https://dash.cloudflare.com/) 控制台：
+登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)；入口变化时参考官方的 [D1](https://developers.cloudflare.com/d1/get-started/) 和 [R2](https://developers.cloudflare.com/r2/get-started/) 指南：
 
 1. **创建 D1 数据库**：
-   - 导航至 **Workers & Pages** -> **D1**，点击 **Create database**。
+   - 在 **Storage & databases** 中打开 **D1 SQL Database**，点击 **Create database**。
    - 数据库名称严格填入：`edgeever`，点击 **Create**。
 2. **创建 R2 存储桶**（用于存储笔记附件与图片）：
-   - 导航至 **Workers & Pages** -> **R2**，点击 **Create bucket**。
+   - 在 **Storage & databases** 中打开 **R2** -> **Overview**。如尚未开通 R2，先按页面提示完成订阅；然后点击 **Create bucket**。
    - 存储桶名称严格填入：`edgeever-resources`，点击 **Create bucket**。
 
 ---
 
 ### 步骤 3：导入项目
 
-1. 在 Cloudflare 控制台中，进入 **Workers & Pages** -> **Overview**，点击 **Create application** -> **Pages** / **Workers** (选择导入 Git 仓库)。
-2. 选择 **Connect to Git**，授权并选中您刚才 Fork 的 `edgeever` 仓库。
+1. 打开 **Workers & Pages**，点击 **Create application** → **Import a repository** 旁的 **Get started**。入口变化时参考 [Cloudflare 官方步骤](https://developers.cloudflare.com/workers/ci-cd/builds/#connect-a-new-worker)。
+2. 按提示连接 GitHub 账户，授权 Cloudflare 访问该 Fork，并选中您刚才 Fork 的 `edgeever` 仓库。
 3. 在项目设置中：
-   - **Production branch**：选择 `main`
-   - **Root directory**：保持留空或默认 `/`
+   - **Worker 名称**：`edgeever`，与根目录 `wrangler.toml` 中的 `name` 一致
+   - **Git branch**（或 **Production branch**）：选择 `main`
+   - **Root directory**：保持留空，使用仓库根目录
+   - Deploy command: npx wrangler deploy（保留 Cloudflare 默认值，由 Workers Builds 在线执行，无需在本机运行）
+   - **API token**：自动生成的 token 可能没有 D1 权限。选择或创建限定到目标账户、具备 D1 读取与编辑权限的 User API Token；权限不足时按构建日志调整后重试。
 
-仓库中的部署命令会根据标准资源名称生成 `DB` 与 `RESOURCES` binding。不要修改 `wrangler.toml`，也不要在控制台中重复添加 binding。
-
-按旧版文档创建过自定义 R2 存储桶的已有部署，不需要改名或迁移数据。未显式设置 Builds 变量时，部署命令会读取线上 Worker 当前的 `RESOURCES` binding，并自动继续使用原存储桶。
+部署命令会自动生成 `DB` 与 `RESOURCES` binding，并查询 D1 UUID。不要修改 `wrangler.toml` 或在控制台重复添加 binding。
 
 ---
 
-### 步骤 4：设置管理员密码
+### 步骤 4：创建项目并设置管理员密码
 
-在 Worker 的 **Settings** -> **Variables and Secrets** 中添加以下 Secret：
+点击 **Save and Deploy** 创建 Worker。首次构建会因缺少管理员 Secret 而校验失败；先不要使用站点地址。在 Worker 的 **Settings** → **Variables and Secrets** 中点击 **Add**，添加运行时 Secret 并点击 **Deploy**：
 
 | 类型 (Type) | 名称 (Name) | 值 (Value) | 说明 |
 | :--- | :--- | :--- | :--- |
-| **Secret** | `EDGE_EVER_AUTH_PASSWORD` | 建议至少 32 个字符且仅用于此实例的强密码 | 管理员登录密码 |
+| **Secret** | `EDGE_EVER_AUTH_PASSWORD` | 建议至少 32 个字符的强密码 | 管理员登录密码 |
 
-`EDGE_EVER_AUTH_PASSWORD` 是变量名，Secret 的值才是您自行设置的管理员登录密码。它属于 Worker 运行时 Secret，不是 Workers Builds 构建变量；无需、也不应把密码重复填写到构建变量中。
+`EDGE_EVER_AUTH_PASSWORD` 是变量名，值是管理员登录密码。它属于 Worker 运行时 Secret，不是 Workers Builds 构建变量。
 
----
-
-### 步骤 5：启动构建
-
-保留 Cloudflare 自动填写的默认部署命令：
-
-```text
-Deploy command: npx wrangler deploy
-```
-
-点击 **Save and Deploy** 启动首次构建部署。仓库提供的 Wrangler 兼容入口会识别 Workers Builds，并自动将默认命令接入 EdgeEver 的完整构建、数据库迁移、部署及线上验证流水线。因此无需复制自定义命令，也不会把 `wrangler.toml` 中的 D1 占位符提交给 Cloudflare。
-
-部署流水线会根据 `edgeever` 数据库名称自动查询 D1 UUID。受版本控制的 `wrangler.toml` 必须保持不变；若把实例专属配置提交到该文件，部署会直接拒绝。Workers Builds API Token 必须具有 D1 读取和编辑权限。
-
-已有项目继续使用下列显式命令也受支持，无需修改：
-
-```text
-Build command:  bun install --frozen-lockfile && EDGE_EVER_DEPLOYMENT_TRIGGER=main_push EDGE_EVER_DEPLOYMENT_METHOD=cloudflare_workers_builds bun run build:cloudflare
-Deploy command: bun run deploy:cloudflare-builds
-```
-
-发布完成后，CI 部署会记录 Wrangler 返回的实际公网入口，并请求该入口的 `/api/health`。如果线上 Worker 缺少 `DB` 或 `RESOURCES` binding、绑定了未初始化的 D1，或没有返回健康状态，构建会直接失败。
+返回构建记录并重试，确认构建及线上健康检查成功。
 
 ---
 
-### 步骤 6：验证部署、登录与自动更新
+### 步骤 5：验证部署、登录与自动更新
 
 1. 构建完成后，Cloudflare 会为您生成一个二级域名（如 `https://edgeever.your-subdomain.workers.dev`）。
 2. 在浏览器打开该域名下的健康检查接口：`https://你的域名/api/health`，确认返回 `200` 及 JSON：
@@ -109,7 +87,7 @@ EDGE_EVER_UPDATE_CHANNEL=edge
 
 ## 高级配置：实例参数
 
-普通部署不需要配置以下参数。如需自定义实例，请在 **Settings -> Builds -> Variables and secrets** 中添加非敏感构建变量，不要修改仓库文件：
+自定义实例时，在 Worker 的 **Settings → Build → Build variables and secrets** 中添加非敏感构建变量：
 
 | 构建变量 | 用途 |
 | :--- | :--- |
@@ -122,9 +100,9 @@ EDGE_EVER_UPDATE_CHANNEL=edge
 | `EDGE_EVER_WORKERS_DEV` | 启用或禁用 `workers.dev` 路由 |
 | `EDGE_EVER_CUSTOM_DOMAIN` / `EDGE_EVER_ROUTE_PATTERN` | 自定义路由 |
 
-如需自定义初始管理员用户名，请在首次构建前设置 `EDGE_EVER_AUTH_USERNAME`。普通部署无需配置，直接使用默认用户名 `admin` 即可；管理员账号已创建后，仅修改该变量不会重命名现有账号。
+自定义管理员用户名须在重试首次构建前设置；账号创建后修改该变量不会重命名账号。
 
-密码及其他凭据始终属于 Worker 运行时 Secret，绝不能放入 Builds 构建变量。高级本地部署也可以使用被 Git 忽略的 `.env.local`，或仓库外部的 `WRANGLER_CONFIG` 文件。
+旧部署的自定义 R2 存储桶无需迁移；不设置覆盖变量时，升级会沿用线上 `RESOURCES` binding。已有项目的显式构建命令也可继续使用，详见 [Workers Builds 配置](cloudflare-workers-builds.zh-CN.md)。
 
 ---
 

@@ -156,6 +156,23 @@ describe("file attachment Markdown compatibility", () => {
     expect(doc.content[0]?.content?.[0]?.type).toBe("text");
   });
 
+  test("preserves an empty external link through Markdown and JSON", () => {
+    const markdown = "Before [](https://example.com/path) and [named](https://example.com).";
+    const doc = markdownToDoc(markdown);
+    expect(doc.content[0]?.content?.[1]).toMatchObject({
+      type: "edgeeverEmptyExternalLink",
+      attrs: { href: "https://example.com/path" },
+    });
+    expect(docToMarkdown(doc)).toBe(markdown);
+    expect(markdownToDoc("`[](https://example.com)`").content[0]?.content?.[0]?.type).toBe("text");
+  });
+
+  test("recovers an empty link from older content JSON", () => {
+    const markdown = "Read [](https://example.com) here";
+    const oldDoc = markdownToDoc("Read  here");
+    expect(resolveMemoContentDoc(oldDoc, markdown)).toEqual(markdownToDoc(markdown));
+  });
+
   test("keeps video preview expanded unless compact display mode is stored", () => {
     expect(resolveFileDisplayMode(undefined)).toBe("inline");
     expect(resolveFileDisplayMode("inline")).toBe("inline");

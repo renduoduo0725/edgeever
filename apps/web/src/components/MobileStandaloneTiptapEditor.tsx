@@ -9,6 +9,7 @@ import { mergeAttributes } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
 import { createExcerpt, createEdgeEverDocumentExtensions, docToMarkdown, docToText, emptyDoc, getImageReferrerPolicy, isPdfAttachment, wrapDetailsContentHtml, type MemoDetail, type MemoEditSession, type Notebook, type TagSummary, type TiptapDoc } from "@edgeever/shared";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
+import { NEW_IMAGE_WIDTH_PERCENT } from "@edgeever/shared/image-display";
 import { getMobileEditorInputAttributes, getMobileEditorPlaceholder } from "@edgeever/shared/mobile-editor";
 import { EdgeEverLink } from "@edgeever/shared/editor-link";
 import { createInlineFieldExtension } from "@/components/editor/InlineField";
@@ -633,6 +634,7 @@ export const MobileStandaloneTiptapEditor = ({
             src: resource.url,
             alt: file.name,
             title: file.name,
+            width: NEW_IMAGE_WIDTH_PERCENT,
           })
           .run();
       } else if (isPdfAttachment(file.type, resource.filename || file.name)) {

@@ -1,32 +1,29 @@
 {
-  "version": "1.85.0",
+  "version": "1.86.0",
   "changes": {
     "en-US": [
-      "The interface can use its own device-local font, separate from the note font. Notes and public shares can also use Zhuque Fangsong or LXGW Neo ZhiSong.",
-      "In a structured table, click an image thumbnail to open it. Copy and download appear on hover, and copy places the image itself on the clipboard.",
-      "Plugin settings are saved on this device as soon as they change. Turning a scheduled digest on and setting its time no longer drops one of the two updates.",
-      "WeChat chat import keeps the archive until the note is saved, recovers compressed images, uses small images by default, and adds a time to generic chat titles.",
-      "Images staged for a note stay available while a draft still references them, and desktop links to those staged files keep working.",
-      "The login screen leaves the username blank except on the public demo.",
-      "Sidebar shortcuts use a tag icon for tags and a paperclip for attachments."
+      "WeChat chat imports now preserve quoted replies and render supported chat expressions and message types more clearly.",
+      "Newly uploaded note images use the small display size by default.",
+      "Markdown editing keeps empty links and pasted resources intact.",
+      "Desktop attachment imports stay together during sync and can be canceled cleanly before syncing.",
+      "Mobile navigation stays visible in settings, and the Android login form stays above the keyboard.",
+      "Cloudflare deployment instructions now clarify the manual setup and optional administrator username."
     ],
     "zh-CN": [
-      "界面可以单独使用本机字体，不影响笔记正文。笔记和公开分享还可以使用朱雀仿宋或霞鹜新致宋。",
-      "多维表格中点击图片缩略图即可打开。复制和下载在悬停时出现，复制会把图片本身放到剪贴板。",
-      "插件设置在本机一改即存。开启定时摘要并设置时间时，不会再丢掉其中一次更新。",
-      "微信聊天记录导入会把压缩包保留到笔记保存完成，并恢复被压缩的图片。导入图片默认使用小图，没有具体标题的聊天会带上时间。",
-      "草稿仍引用暂存图片时，这些图片会保留。桌面端指向这些暂存文件的链接也会继续可用。",
-      "除公开 Demo 外，登录页的用户名默认为空。",
-      "侧栏快捷入口中，标签使用标签图标，附件使用回形针图标。"
+      "导入微信聊天记录时，现在能更清晰地呈现引用回复、常见表情和消息类型。",
+      "新上传到笔记的图片默认以小图尺寸显示。",
+      "Markdown 编辑会保留空链接，并正确处理粘贴的资源。",
+      "桌面端导入的附件在同步时保持完整，尚未同步的导入也能干净地取消。",
+      "移动端在设置页仍可看到底部导航，Android 登录表单也会保持在键盘上方。",
+      "Cloudflare 部署说明进一步明确了手动部署流程及可选的管理员用户名。"
     ],
     "ja": [
-      "画面のフォントをこの端末だけで選べ、ノート本文とは別になります。ノートと公開共有では朱雀仿宋と霞鹜新致宋も使えます。",
-      "多次元テーブルでは画像のサムネイルをクリックすると開きます。コピーとダウンロードはホバー時に表示され、コピーは画像そのものをクリップボードに置きます。",
-      "プラグイン設定はこの端末で変更した直後に保存されます。定期ダイジェストをオンにして時刻を設定しても、どちらかの更新が失われません。",
-      "WeChat のチャット取り込みはノートの保存まで書庫を残し、圧縮された画像を復元します。画像は既定で小さく、具体的な題のないチャット名には時刻が付きます。",
-      "下書きが参照している一時画像は残ります。デスクトップ上のその一時ファイルへのリンクも引き続き使えます。",
-      "公開デモ以外では、ログイン画面のユーザー名は空のままです。",
-      "サイドバーのショートカットは、タグにタグのアイコン、添付ファイルにクリップのアイコンを使います。"
+      "WeChatチャットのインポートで、引用返信や対応する表情・メッセージの種類をより分かりやすく表示します。",
+      "新しくノートにアップロードした画像は、既定で小さいサイズで表示されます。",
+      "Markdown編集で空のリンクを保持し、貼り付けたリソースを正しく扱います。",
+      "デスクトップで取り込んだ添付ファイルは同期中も一体として保持され、同期前の取り込みを正常に取り消せます。",
+      "モバイル版では設定画面でも下部ナビゲーションが表示され、Androidのログインフォームはキーボードの上に表示されます。",
+      "Cloudflareのデプロイ手順で、手動設定と任意の管理者ユーザー名について説明を明確にしました。"
     ]
   }
 }

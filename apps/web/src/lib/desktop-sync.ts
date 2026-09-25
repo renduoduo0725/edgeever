@@ -19,7 +19,7 @@ import { api, ApiRequestError } from "@/lib/api";
 import { isDesktopResourceRuntime, mapMarkdownResourceUrls, mapTiptapResourceUrls, toApiResourceUrl } from "@/lib/desktop-resources";
 import { readEmergencyDraft } from "@/lib/emergency-draft";
 import { notebookDeleteIdsFromPayload } from "@/lib/notebook-delete";
-import { notifyMemoIdRemapped, notifyMemoSyncAcknowledged } from "@/lib/sync-events";
+import { notifyMemoIdRemapped, notifyMemoSyncAcknowledged, notifySyncQueueChanged } from "@/lib/sync-events";
 
 type StagedResourceRewrite = { memoId: string; placeholder: string; url: string };
 
@@ -767,9 +767,33 @@ export const mergeSyncedMemos = <T>(target: Map<string, T>, source: ReadonlyMap<
 };
 
 let activeSync: Promise<DesktopSyncResult> | null = null;
+let pausedImports = 0;
+
+// Importers create a local memo before its attachment can be staged. Keep that
+// short sequence together so cloud acknowledgement cannot remap the memo ID
+// between create and update (or leave an empty cloud memo on failure).
+export const pauseDesktopSyncForImport = async () => {
+  pausedImports += 1;
+  try {
+    if (activeSync) await activeSync;
+  } catch (error) {
+    pausedImports -= 1;
+    throw error;
+  }
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    pausedImports -= 1;
+    if (pausedImports === 0) notifySyncQueueChanged();
+  };
+};
 
 export const syncDesktopData = () => {
   if (activeSync) return activeSync;
+  if (pausedImports > 0) {
+    return Promise.resolve({ attempted: 0, synced: 0, failed: 0, conflicted: 0, memoIdMappings: new Map(), syncedMemos: new Map() });
+  }
   activeSync = (async () => {
     const memoIdMappings = new Map<string, string>();
     const syncedMemos = new Map<string, DesktopRpcResponses["memo.get"]["memo"]>();

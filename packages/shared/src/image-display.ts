@@ -9,6 +9,8 @@ export const IMAGE_WIDTH_PRESETS = [
   { id: "full", width: 100, labelKey: "editor.imageSizeFull" },
 ] as const;
 
+export const NEW_IMAGE_WIDTH_PERCENT = IMAGE_WIDTH_PRESETS[0].width;
+
 export type ImageWidthPresetId = (typeof IMAGE_WIDTH_PRESETS)[number]["id"];
 
 export const clampImageWidth = (width: number): number =>

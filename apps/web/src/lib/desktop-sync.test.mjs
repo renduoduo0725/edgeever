@@ -11,18 +11,37 @@ const {
   mergeMemoIdMappings,
   mergeSyncedMemos,
   normalizeDesktopMemoPayload,
+  pauseDesktopSyncForImport,
   orderBootstrapNotebooks,
   orderDesktopSyncChanges,
   resolveDesktopMemoSyncBase,
   resolveDesktopStaleMemoUpdate,
   desktopLocalRevisionWitnessesRemote,
   rewriteStagedResource,
+  syncDesktopData,
   shouldAttemptDesktopRecoveryPull,
   shouldPullDesktopChanges,
 } = await import("./desktop-sync.ts");
 const { ApiRequestError } = await import("./api.ts");
 
 describe("desktop staged resource sync", () => {
+  test("holds cloud sync until an imported screenshot is saved", async () => {
+    const originalWindow = globalThis.window;
+    const events = [];
+    globalThis.window = { dispatchEvent: (event) => { events.push(event.type); return true; } };
+    try {
+      const release = await pauseDesktopSyncForImport();
+      const result = await syncDesktopData();
+      expect(result.attempted).toBe(0);
+      expect(events).not.toContain("edgeever:sync-queue-changed");
+      release();
+      release();
+      expect(events.filter((event) => event === "edgeever:sync-queue-changed")).toHaveLength(1);
+    } finally {
+      globalThis.window = originalWindow;
+    }
+  });
+
   test("rewrites placeholders in memo JSON and markdown", () => {
     const rewrites = [{ memoId: "memo-1", placeholder: "edgeever-staged://stage-1", url: "/api/v1/resources/resource-1/blob" }];
     const value = {

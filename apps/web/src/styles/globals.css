@@ -1189,6 +1189,39 @@ textarea {
   border-radius: 2px;
 }
 
+.ProseMirror a.edgeever-empty-external-link,
+.markdown-content a.edgeever-empty-external-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5em;
+  min-height: 1.5em;
+  padding: 0 0.25em;
+  border: 1px solid var(--brand-green-border);
+  border-radius: 0.35em;
+  background: var(--brand-green-soft);
+  color: var(--brand-green-text);
+  font-size: 0.9em;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: baseline;
+}
+
+.ProseMirror a.edgeever-empty-external-link:hover,
+.markdown-content a.edgeever-empty-external-link:hover {
+  border-color: var(--brand-green);
+  background: var(--brand-green-muted);
+  color: var(--brand-green-text);
+  text-decoration: none;
+}
+
+.ProseMirror a.edgeever-empty-external-link:focus-visible,
+.markdown-content a.edgeever-empty-external-link:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: 2px;
+}
+
 .ProseMirror a.edgeever-note-link,
 .ProseMirror a[href^="#memo="] {
   display: inline-flex;

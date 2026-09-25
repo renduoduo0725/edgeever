@@ -1,6 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { checkInstalledExtensionUpdate, checkPluginUpdates, updateOfficialMarketplacePlugins } from "./plugin-updates.ts";
+import { stubUnavailableGithubInstance } from "./github-plugin-test-api.mjs";
+
+let restoreGithubInstance;
+beforeAll(() => { restoreGithubInstance = stubUnavailableGithubInstance(); });
+afterAll(() => { restoreGithubInstance?.(); });
 
 const pluginManifest = {
   type: "plugin",

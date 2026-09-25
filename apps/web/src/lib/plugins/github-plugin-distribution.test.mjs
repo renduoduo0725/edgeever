@@ -1,5 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { downloadGithubExtension, downloadPinnedGithubExtension, loadGithubInstallableManifest, loadGithubRepositoryManifest, parseGithubRepositoryUrl } from "./github-plugin-distribution.ts";
+import { stubUnavailableGithubInstance } from "./github-plugin-test-api.mjs";
+
+let restoreGithubInstance;
+beforeAll(() => { restoreGithubInstance = stubUnavailableGithubInstance(); });
+afterAll(() => { restoreGithubInstance?.(); });
 
 const manifest = {
   type: "plugin",

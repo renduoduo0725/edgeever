@@ -171,6 +171,26 @@ describe("release automation", () => {
     expect(checkpointRunIds(checkpoint)).toEqual([11, 12, 13]);
   });
 
+  test("keeps an active App Store delivery when a Draft advances without iOS changes", () => {
+    const storedState = {
+      releaseSha: "old",
+      desktopRunId: 11,
+      iosStoreRunId: 12,
+    };
+    const checkpoint = prepareReleaseCheckpoint({
+      storedState,
+      releaseSha: "new",
+      preserveIosStoreRun: true,
+    });
+    expect(checkpoint.iosStoreRunId).toBe(12);
+    expect(checkpoint.desktopRunId).toBeUndefined();
+    expect(checkpoint.runHistory).toContainEqual({
+      field: "iosStoreRunId",
+      runId: 12,
+      releaseSha: "old",
+    });
+  });
+
   test("verifies an immutable Play delivery without uploading across mobile-compatible fixes", () => {
     const playDelivery = { tag: "v1.42.0", releaseSha: "old" };
     expect(playDeliveryResumeAction({

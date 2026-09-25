@@ -164,7 +164,7 @@ export type DesktopRpcParams = {
   "memo.get": { memoId: string; includeDeleted?: boolean };
   "memo.create": DesktopMemoCreateParams;
   "memo.update": DesktopMemoUpdateParams;
-  "memo.delete": { memoId: string; permanent?: boolean };
+  "memo.delete": { memoId: string; permanent?: boolean; cancelPendingCreate?: boolean };
   "memo.restore": { memoId: string };
   "memo.revisions": { memoId: string; limit?: number };
   "memo.restoreRevision": { memoId: string; revisionId: string };

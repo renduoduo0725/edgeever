@@ -54,6 +54,7 @@ import {
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import {
   DEFAULT_IMAGE_WIDTH_PERCENT,
+  NEW_IMAGE_WIDTH_PERCENT,
   IMAGE_WIDTH_PRESETS,
   clampImageWidth,
   parseImageWidth,
@@ -2922,7 +2923,7 @@ const insertImageUploadPlaceholder = (
       alt,
       src: source,
       title: previewDataUrl,
-      width: DEFAULT_IMAGE_WIDTH_PERCENT,
+      width: NEW_IMAGE_WIDTH_PERCENT,
   }, selection ?? editor.state.selection);
   tr.setMeta(TRANSIENT_IMAGE_UPLOAD_META, true);
   editor.view.dispatch(tr);

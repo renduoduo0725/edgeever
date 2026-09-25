@@ -94,11 +94,14 @@ describe("WeChat chat archive", () => {
   test("turns the exported zip into messages, an inline image, and attachments", () => {
     const note = wechatChatNoteFromArchive(sampleArchive(), "聊天记录_20260922_223222.zip");
     expect(note.title).toBe("聊天记录_20260922_223222");
+    expect(note.markdown).toContain("> 💬 **微信聊天记录**");
+    expect(note.markdown).toContain("> **参与者**：鱼、Flechazo");
+    expect(note.markdown).toContain("> **包含媒体**：1 张图片、2 个附件");
     expect(note.markdown).toContain("**鱼** · 2026年9月22日 22:15");
     expect(note.markdown).toContain("[发布说明](https://example.com/post)");
     expect(note.markdown).toContain("![微信图片_202609222215_1.jpg](edgeever-wechat-media://m1)");
-    expect(note.markdown).toContain("\\[发呆\\]还没注册");
-    expect(note.markdown).toContain("\\[动画表情\\]");
+    expect(note.markdown).toContain("😶还没注册");
+    expect(note.markdown).toContain("*[动画表情]*");
     expect(note.markdown).toContain("[附件：微信视频_1.mp4](edgeever-wechat-media://m2)");
     expect(note.markdown).toContain("[附件：说明.pdf](edgeever-wechat-media://m3)");
     expect(note.markdown).not.toContain(".zip");
@@ -107,6 +110,45 @@ describe("WeChat chat archive", () => {
       ["微信视频_1.mp4", "video/mp4", "video-bytes"],
       ["说明.pdf", "application/pdf", "pdf-bytes"],
     ]);
+  });
+
+  test("formats quoted replies as markdown blockquotes and maps emoji", () => {
+    const quoteTranscript = [
+      "·张三",
+      "2026年9月24日 10:00",
+      "明天开会讨论方案",
+      "",
+      "·李四",
+      "2026年9月24日 10:05",
+      "「张三：明天开会讨论方案」",
+      "- - - - - - - - - - - - - - -",
+      "收到，我准备一下材料[OK]",
+    ].join("\n");
+    const archive = zipOf([{ name: "聊天记录.txt", data: quoteTranscript }]);
+    const note = wechatChatNoteFromArchive(archive, "项目组讨论.zip");
+    expect(note.markdown).toContain("> **张三**：明天开会讨论方案");
+    expect(note.markdown).toContain("收到，我准备一下材料👌");
+  });
+
+  test("simplifies times on the same day and keeps full date across days", () => {
+    const multiDayTranscript = [
+      "·张三",
+      "2026年9月24日 10:00",
+      "第一天上午",
+      "",
+      "·李四",
+      "2026年9月24日 10:05",
+      "第一天同天回复",
+      "",
+      "·张三",
+      "2026年9月25日 09:00",
+      "第二天上午",
+    ].join("\n");
+    const archive = zipOf([{ name: "聊天记录.txt", data: multiDayTranscript }]);
+    const note = wechatChatNoteFromArchive(archive, "跨天讨论.zip");
+    expect(note.markdown).toContain("**张三** · 2026年9月24日 10:00");
+    expect(note.markdown).toContain("**李四** · 10:05");
+    expect(note.markdown).toContain("**张三** · 2026年9月25日 09:00");
   });
 
   test("adds the first message time when WeChat provides only a generic archive name", () => {

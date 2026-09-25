@@ -68,4 +68,32 @@ describe("WeChat chat note", () => {
     })).rejects.toThrow("offline");
     expect(deleted).toEqual(["memo_1"]);
   });
+
+  test("groups consecutive images into an image gallery", async () => {
+    let updated = null;
+    await createWeChatChatMemo({
+      notebookId: "nb_inbox",
+      title: "多图聊天记录",
+      markdown: [
+        "![图1.jpg](edgeever-wechat-media://m1)",
+        "",
+        "![图2.jpg](edgeever-wechat-media://m2)",
+      ].join("\n"),
+      media: [
+        { id: "m1", filename: "图1.jpg", mimeType: "image/jpeg", byteSize: 2 },
+        { id: "m2", filename: "图2.jpg", mimeType: "image/jpeg", byteSize: 2 },
+      ],
+      createMemo: async () => ({ memo }),
+      readMedia: async (item) => new File(["a"], item.filename, { type: item.mimeType }),
+      uploadResource: async (_id, file) => ({ url: `edgeever-staged://${file.name}` }),
+      updateMemo: async (_created, content) => {
+        updated = content;
+        return { memo: { ...memo, contentMarkdown: content.contentMarkdown } };
+      },
+    });
+    expect(updated.contentJson.content.some((node) => node.type === "edgeeverImageGallery")).toBe(true);
+    const gallery = updated.contentJson.content.find((node) => node.type === "edgeeverImageGallery");
+    expect(gallery?.content?.length).toBe(2);
+  });
 });
+

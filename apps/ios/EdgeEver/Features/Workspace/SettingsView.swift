@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Android `WorkspaceSettingsView` parity: full-screen “我的”, not a system Form/List.
+/// Android `WorkspaceSettingsView` parity: full-height “我的” content above the shared bottom navigation.
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    let onClose: () -> Void
 
     private enum RootTab: Hashable {
         case general
@@ -86,7 +86,7 @@ struct SettingsView: View {
                 if tab != nil {
                     withAnimation(Motion.chip) { tab = nil }
                 } else {
-                    dismiss()
+                    onClose()
                 }
             } label: {
                 Image(systemName: "chevron.left")
@@ -408,7 +408,7 @@ struct SettingsView: View {
                 Button {
                     Task {
                         await env.session.signOut()
-                        dismiss()
+                        onClose()
                     }
                 } label: {
                     HStack(spacing: 8) {

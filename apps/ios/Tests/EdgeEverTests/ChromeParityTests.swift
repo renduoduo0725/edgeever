@@ -207,7 +207,8 @@ final class ChromeParityTests: XCTestCase {
             src.contains("mode: .create(") || src.contains("MemoEditView(mode: .create"),
             "create wiring"
         )
-        XCTAssertTrue(src.contains("fullScreenCover(isPresented: $showSettings)"), "Me full screen")
+        XCTAssertTrue(src.contains("SettingsView(onClose: { showSettings = false })"), "Me uses workspace chrome")
+        XCTAssertTrue(src.contains("active: showSettings"), "Me selects the persistent bottom tab")
     }
 
     /// Bottom chrome must be one bar: nav height + home-indicator padding (Android parity).

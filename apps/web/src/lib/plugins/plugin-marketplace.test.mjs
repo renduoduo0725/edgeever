@@ -1,7 +1,12 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { parseMarketplaceRegistry } from "@edgeever/plugin-api";
 import { sha256Hex } from "./github-plugin-distribution.ts";
 import { loadPluginMarketplace, resolveOfficialPluginMarketplace } from "./plugin-marketplace.ts";
+import { stubUnavailableGithubInstance } from "./github-plugin-test-api.mjs";
+
+let restoreGithubInstance;
+beforeAll(() => { restoreGithubInstance = stubUnavailableGithubInstance(); });
+afterAll(() => { restoreGithubInstance?.(); });
 
 describe("bundled plugin marketplace", () => {
   test("loads the registry beside the packaged desktop renderer", async () => {

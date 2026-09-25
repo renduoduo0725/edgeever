@@ -3,6 +3,7 @@ import type { TiptapDoc, TiptapMark, TiptapNode, TiptapTextNode } from "./conten
 import { FILE_ATTACHMENT_NODE_TYPE } from "./file-attachment";
 import { PDF_ATTACHMENT_NODE_TYPE } from "./pdf-attachment";
 import { PLUGIN_EMBED_NODE_TYPE } from "./plugin-embed";
+import { EMPTY_EXTERNAL_LINK_NODE_TYPE } from "./empty-external-link";
 
 export const UNSUPPORTED_BLOCK_NODE_TYPE = "edgeeverUnsupportedBlock" as const;
 export const UNSUPPORTED_INLINE_NODE_TYPE = "edgeeverUnsupportedInline" as const;
@@ -38,6 +39,7 @@ export const NATIVE_EDITOR_NODE_TYPES = new Set<string>([
   "tableHeader",
   "tableCell",
   "edgeeverMergeDivider",
+  EMPTY_EXTERNAL_LINK_NODE_TYPE,
   "inlineMath",
   "blockMath",
   ...FALLBACK_NODE_TYPES,

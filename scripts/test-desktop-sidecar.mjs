@@ -113,6 +113,14 @@ await request("sync.apply", {
 });
 inbox = (await request("notebook.list")).notebooks.find((notebook) => notebook.id === "ws_1_inbox");
 assert.ok(inbox, "sidecar should keep the workspace inbox even when its remote slug was renamed");
+const cancelledImport = (await request("memo.create", {
+  notebookId: inbox.id, title: "Failed screenshot import", contentMarkdown: "", tags: [],
+})).memo;
+assert.ok((await request("sync.outbox.list", { limit: 200 })).items.some((item) => item.kind === "memo.create" && item.entityId === cancelledImport.id));
+await request("memo.delete", { memoId: cancelledImport.id, permanent: true, cancelPendingCreate: true });
+assert.ok(!(await request("sync.outbox.list", { limit: 200 })).items.some((item) => item.entityId === cancelledImport.id), "cancelling an unsynced import must not queue a cloud delete");
+await assert.rejects(request("memo.get", { memoId: cancelledImport.id, includeDeleted: true }), /Query returned no rows/);
+await assert.rejects(request("memo.delete", { memoId: "memo_e2e_renamed_inbox", permanent: true, cancelPendingCreate: true }), /Only an unsynced local memo/);
 assert.equal(inbox.slug, "inbox", "synced inbox identity should restore slug=inbox");
 assert.equal(
   (await request("memo.get", { memoId: "memo_e2e_renamed_inbox", includeDeleted: true })).memo.notebookId,

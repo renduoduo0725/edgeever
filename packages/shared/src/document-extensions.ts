@@ -10,6 +10,8 @@ import { ImageGallery } from "./image-gallery";
 import { MergeDivider } from "./merge-divider";
 import { PdfAttachment } from "./pdf-attachment";
 import { PluginEmbed } from "./plugin-embed";
+import { EmptyExternalLink } from "./empty-external-link";
+import { EdgeEverLink } from "./editor-link";
 
 export type CreateEdgeEverDocumentExtensionsOptions = {
   mathematics: AnyExtension[];
@@ -36,7 +38,11 @@ const withOptional = (value: AnyExtension | false | undefined, fallback: AnyExte
 export const createEdgeEverDocumentExtensions = (
   options: CreateEdgeEverDocumentExtensionsOptions,
 ): AnyExtension[] => [
-  options.starterKit === undefined ? StarterKit : StarterKit.configure(options.starterKit),
+  options.markdown
+    ? StarterKit.configure({ ...options.starterKit, link: false })
+    : options.starterKit === undefined ? StarterKit : StarterKit.configure(options.starterKit),
+  ...(options.markdown ? [EdgeEverLink] : []),
+  EmptyExternalLink,
   TaskList,
   TaskItem.configure({ nested: true }),
   options.table === undefined ? TableKit : TableKit.configure(options.table),

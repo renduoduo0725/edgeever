@@ -34,14 +34,17 @@ const MobileBottomNavButton = ({
 }) => (
   <button
     className={cn(
-      "flex h-mobile-touch flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium transition-all duration-200",
-      active ? "text-slate-950" : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
+      "relative mx-auto flex h-12 w-20 flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-green)]",
+      active
+        ? "font-bold text-slate-950 [&_svg]:text-emerald-700"
+        : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
     )}
     type="button"
     aria-current={active ? "page" : undefined}
     aria-label={label}
     onClick={onClick}
   >
+    {active ? <span aria-hidden="true" className="absolute top-0 h-0.5 w-5 rounded-full bg-emerald-700" /> : null}
     {icon}
     <span>{label}</span>
   </button>
