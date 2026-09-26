@@ -15,8 +15,8 @@ export const BorderBeam = ({
   size = 200,
   duration = 15,
   borderWidth = 1.5,
-  colorFrom = "#70c9b7", // edgeever brand
-  colorTo = "#3fb2a1", // edgeever brand
+  colorFrom = "var(--edgeever-decor-beam-from)",
+  colorTo = "var(--edgeever-decor-beam-to)",
   delay = 0,
 }: BorderBeamProps) => {
   return (

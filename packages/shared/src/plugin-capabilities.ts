@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const PluginAiGenerateSchema = z.object({
   system: z.string().max(8000),
   prompt: z.string().min(1).max(90000),
-  maxOutputTokens: z.number().int().min(1).max(5000).optional(),
+  maxOutputTokens: z.number().int().min(1).optional(),
 }).strict();
 export type PluginAiGenerateRequest = z.infer<typeof PluginAiGenerateSchema>;
 export interface PluginAiStatus { configured: boolean; modelName?: string }

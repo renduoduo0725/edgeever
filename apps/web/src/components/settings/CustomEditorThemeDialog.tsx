@@ -139,7 +139,7 @@ export const CustomEditorThemeDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[440px] sm:max-w-[500px] max-h-[95vh] overflow-y-auto p-5">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-base">{t("settings.customEditorTheme.title")}</DialogTitle>
+          <DialogTitle>{t("settings.customEditorTheme.title")}</DialogTitle>
           <DialogDescription className="text-xs">{t("settings.customEditorTheme.description")}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 mt-1.5">
@@ -200,14 +200,14 @@ export const CustomEditorThemeDialog = ({
                     aria-label={t(labelKey)}
                     onChange={(event) => updateColor(key as keyof ThemeColors, event.target.value)}
                     maxLength={7}
-                    className="h-7 w-20 px-1.5 font-mono text-[11px]"
+                    className="h-7 w-20 px-1.5 font-mono text-xs"
                   />
                 </div>
               </div>
             ))}
           </div>
           {activeContrastIssues.length > 0 ? (
-            <p className="rounded-md bg-amber-50 px-2.5 py-2 text-[11px] leading-4 text-amber-800">
+            <p className="rounded-md bg-amber-50 px-2.5 py-2 text-xs leading-4 text-amber-800">
               {t("settings.customEditorTheme.contrastWarning", {
                 mode: t(`settings.customEditorTheme.modes.${activeMode}`),
                 fields: new Intl.ListFormat(i18n.resolvedLanguage ?? i18n.language, { type: "conjunction" })
@@ -215,7 +215,7 @@ export const CustomEditorThemeDialog = ({
               })}
             </p>
           ) : null}
-          {importError ? <p className="rounded-md bg-red-50 px-2.5 py-2 text-[11px] leading-4 text-red-700" role="alert">{importError}</p> : null}
+          {importError ? <p className="rounded-md bg-red-50 px-2.5 py-2 text-xs leading-4 text-red-700" role="alert">{importError}</p> : null}
 
           {/* Custom CSS Textarea */}
           <label className="grid gap-1 text-xs font-semibold text-slate-700">
@@ -224,7 +224,7 @@ export const CustomEditorThemeDialog = ({
               value={draft.customCss || ""}
               onChange={(event) => setDraft((current) => ({ ...current, customCss: event.target.value }))}
               placeholder="e.g. h1 { font-style: italic; } blockquote { border-radius: 6px; }"
-              className="min-h-[72px] w-full rounded-md border border-slate-200 bg-card p-2 font-mono text-[11px] focus:border-emerald-500 focus:outline-none"
+              className="min-h-[72px] w-full rounded-md border border-slate-200 bg-card p-2 font-mono text-xs focus:border-emerald-500 focus:outline-none"
               maxLength={2000}
             />
           </label>

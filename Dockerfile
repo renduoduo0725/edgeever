@@ -30,7 +30,7 @@ COPY packages packages
 COPY docs docs
 COPY release-summary.json release-summary.json
 COPY scripts/self-hosted-config.mjs scripts/self-hosted-secrets.mjs scripts/self-hosted-server.mjs scripts/
-COPY tsconfig.json tailwind.config.ts ./
+COPY tsconfig.json ./
 RUN bun run build:web && bun run build:self-hosted
 
 FROM oven/bun:1.3.14-alpine AS runtime

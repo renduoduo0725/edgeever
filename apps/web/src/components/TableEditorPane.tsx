@@ -116,7 +116,7 @@ const FieldHeader = ({
           disabled={readOnly}
         >
           <span className="truncate">{field.name}</span>
-          <span className="shrink-0 text-[10px] text-slate-400">{t(`structuredTable.types.${field.type}`)}</span>
+          <span className="shrink-0 text-xs text-slate-400">{t(`structuredTable.types.${field.type}`)}</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64 space-y-2 p-2">

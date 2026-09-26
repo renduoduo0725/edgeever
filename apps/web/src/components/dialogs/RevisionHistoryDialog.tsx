@@ -103,7 +103,7 @@ export const RevisionHistoryDialog = ({
               </div>
               {selectedRevision && (
                 <span className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border transition-colors",
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border transition-colors",
                   diffSummary.changed > 0
                     ? "bg-amber-50/80 text-amber-800 border-amber-200/40"
                     : "bg-slate-50 text-slate-600 border-slate-200/50"
@@ -129,7 +129,7 @@ export const RevisionHistoryDialog = ({
 
           <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)] lg:grid-rows-1">
             <aside className="min-h-0 max-h-[220px] overflow-y-auto border-b border-slate-100 bg-slate-50/30 p-4 lg:max-h-[calc(88dvh-73px)] lg:border-b-0 lg:border-r lg:border-slate-200/80">
-              <div className="mb-3 px-1 text-[11px] font-medium uppercase tracking-wider text-slate-400/90">
+              <div className="mb-3 px-1 text-xs font-medium uppercase tracking-wider text-slate-400/90">
                 {t("revisions.timeline")}
               </div>
               {revisionsQuery.isLoading ? (
@@ -157,11 +157,11 @@ export const RevisionHistoryDialog = ({
                       )}>
                         {t("revisions.revisionName", { revision: revision.revision })}
                       </span>
-                      <span className="mt-2 flex items-center gap-1.5 truncate text-[11px] text-slate-500">
+                      <span className="mt-2 flex items-center gap-1.5 truncate text-xs text-slate-500">
                         <Clock3 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                         <span className="truncate">{formatDateTime(revision.createdAt)}</span>
                       </span>
-                      <span className="mt-1 flex items-center gap-1.5 truncate text-[11px] text-slate-400">
+                      <span className="mt-1 flex items-center gap-1.5 truncate text-xs text-slate-400">
                         <UserRound className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                         <span className="truncate">{revision.createdBy === "table-form" ? t("revisions.formActor") : formatRevisionActor(revision.createdBy)}</span>
                       </span>
@@ -195,13 +195,13 @@ export const RevisionHistoryDialog = ({
                           {/* Left Cell (History) */}
                           <div
                             className={cn(
-                              "grid grid-cols-[3rem_minmax(0,1fr)] px-0 font-mono text-[13px] leading-6 transition-colors",
+                              "grid grid-cols-[3rem_minmax(0,1fr)] px-0 font-mono text-sm leading-6 transition-colors",
                               leftRow.state === "changed" && "bg-rose-50/45 text-rose-950 border-l-2 border-rose-400/85",
                               leftRow.state === "empty" && "bg-slate-50/30 text-transparent select-none border-l-2 border-transparent",
                               leftRow.state === "same" && "text-slate-700 border-l-2 border-transparent hover:bg-slate-50/30"
                             )}
                           >
-                            <span className="select-none border-r border-slate-200/60 bg-slate-50/50 px-3 text-right text-[11px] text-slate-400">
+                            <span className="select-none border-r border-slate-200/60 bg-slate-50/50 px-3 text-right text-xs text-slate-400">
                               {leftRow.lineNumber || ""}
                             </span>
                             <span className={cn("whitespace-pre-wrap break-words px-3 py-0.5", leftRow.state === "empty" && "select-none")}>
@@ -212,13 +212,13 @@ export const RevisionHistoryDialog = ({
                           {/* Right Cell (Current) */}
                           <div
                             className={cn(
-                              "grid grid-cols-[3rem_minmax(0,1fr)] px-0 font-mono text-[13px] leading-6 transition-colors",
+                              "grid grid-cols-[3rem_minmax(0,1fr)] px-0 font-mono text-sm leading-6 transition-colors",
                               rightRow.state === "changed" && "bg-emerald-50/45 text-emerald-950 border-l-2 border-emerald-400/85",
                               rightRow.state === "empty" && "bg-slate-50/30 text-transparent select-none border-l-2 border-transparent",
                               rightRow.state === "same" && "text-slate-700 border-l-2 border-transparent hover:bg-slate-50/30"
                             )}
                           >
-                            <span className="select-none border-r border-slate-200/60 bg-slate-50/50 px-3 text-right text-[11px] text-slate-400">
+                            <span className="select-none border-r border-slate-200/60 bg-slate-50/50 px-3 text-right text-xs text-slate-400">
                               {rightRow.lineNumber || ""}
                             </span>
                             <span className={cn("whitespace-pre-wrap break-words px-3 py-0.5", rightRow.state === "empty" && "select-none")}>

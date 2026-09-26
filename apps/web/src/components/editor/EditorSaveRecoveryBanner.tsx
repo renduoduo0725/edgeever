@@ -44,7 +44,7 @@ export const EditorSaveRecoveryBanner = ({
         <Button
           size="sm"
           variant="solid"
-          className="h-7 bg-rose-700 px-2.5 text-[11px] text-white hover:bg-rose-800"
+          className="h-7 bg-rose-700 px-2.5 text-xs text-white hover:bg-rose-800"
           disabled={isConflict ? actionPending !== null : savePending}
           onClick={() => { if (isConflict) void onAdoptCloud(); else onRetry(); }}
         >
@@ -57,14 +57,14 @@ export const EditorSaveRecoveryBanner = ({
         <Button
           size="sm"
           variant="ghost"
-          className="h-7 px-2.5 text-[11px] text-rose-800 hover:bg-rose-100"
+          className="h-7 px-2.5 text-xs text-rose-800 hover:bg-rose-100"
           disabled={actionPending !== null}
           onClick={() => void onCopyDraft()}
         >
           {t("editor.saveState.conflictCopyDraft")}
         </Button>
         {actionMessage ? (
-          <span className="text-[11px] font-medium text-rose-700" role="status" aria-live="polite">
+          <span className="text-xs font-medium text-rose-700" role="status" aria-live="polite">
             {actionMessage}
           </span>
         ) : null}

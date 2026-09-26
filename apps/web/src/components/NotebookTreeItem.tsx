@@ -172,7 +172,7 @@ export const NotebookTreeItem = ({
           <div
             data-notebook-id={node.id}
             className={cn(
-              "group relative flex h-9 items-center gap-1 rounded-md px-2 text-sm lg:text-[13px] transition-all duration-200 select-none",
+              "group relative flex h-9 items-center gap-1 rounded-md px-2 text-xs transition-all duration-200 select-none",
               selected
                 ? "edgeever-workspace-selection font-medium text-slate-950"
                 : hasSelectedDescendant
@@ -260,7 +260,7 @@ export const NotebookTreeItem = ({
                 }
               }}
             >
-              <NotebookIcon className={cn("h-4 w-4 shrink-0 transition-colors duration-200", selected ? "text-emerald-600 " : hasSelectedDescendant ? "text-slate-700" : "text-slate-500")} />
+              <NotebookIcon className={cn("h-4 w-4 shrink-0 transition-colors duration-200", selected || hasSelectedDescendant ? "text-slate-700" : "text-slate-500")} />
               <span
                 className={cn(
                   "truncate font-medium transition-colors duration-200",
@@ -282,7 +282,7 @@ export const NotebookTreeItem = ({
             <div ref={actionsRef} className="relative shrink-0">
                 <button
                   className={cn(
-                    "hidden h-6 w-6 items-center justify-center rounded-md group-focus-within:flex group-hover:flex transition-colors duration-150",
+                    "edgeever-reveal-on-touch hidden h-6 w-6 items-center justify-center rounded-md group-focus-within:flex group-hover:flex transition-colors duration-150",
                     selected ? "hover:bg-slate-200" : "hover:bg-slate-100"
                   )}
                   type="button"
@@ -299,7 +299,7 @@ export const NotebookTreeItem = ({
               {actionsOpen && (
                 <m.div className="absolute right-0 top-8 z-50 w-44 overflow-hidden rounded-md border border-slate-200 bg-card p-1 text-slate-950 shadow-lg" {...contentEnterMotion}>
                   <button
-                    className="flex h-9 w-full items-center gap-2 rounded-sm px-2 text-left text-sm outline-none hover:bg-slate-100"
+                    className="flex h-9 w-full items-center gap-2 rounded-sm px-2 text-left text-xs outline-none hover:bg-slate-100"
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
@@ -311,7 +311,7 @@ export const NotebookTreeItem = ({
                     {t("notebookTree.newChild")}
                   </button>
                   <button
-                    className="flex h-9 w-full items-center gap-2 rounded-sm px-2 text-left text-sm outline-none hover:bg-slate-100"
+                    className="flex h-9 w-full items-center gap-2 rounded-sm px-2 text-left text-xs outline-none hover:bg-slate-100"
                     type="button"
                     onClick={(event) => {
                       event.stopPropagation();
@@ -326,7 +326,7 @@ export const NotebookTreeItem = ({
                   <>
                     <div className="-mx-1 my-1 h-px bg-slate-100" />
                     <button
-                      className="flex h-9 w-full items-center gap-2 rounded-sm px-2 text-left text-sm text-rose-700 outline-none hover:bg-rose-50"
+                      className="flex h-9 w-full items-center gap-2 rounded-sm px-2 text-left text-xs text-rose-700 outline-none hover:bg-rose-50"
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
@@ -352,14 +352,14 @@ export const NotebookTreeItem = ({
         </ContextMenuTrigger>
         <ContextMenuContent className="w-48 bg-card border border-slate-200 rounded-md py-1 shadow-md">
           <ContextMenuItem
-            className="flex h-9 items-center gap-2 px-3 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+            className="flex h-9 items-center gap-2 px-3 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
             onClick={() => onCreateNotebook(node.id)}
           >
             <Plus className="h-4 w-4" />
             {t("notebookTree.newChild")}
           </ContextMenuItem>
           <ContextMenuItem
-            className="flex h-9 items-center gap-2 px-3 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+            className="flex h-9 items-center gap-2 px-3 text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
             onClick={() => onRenameNotebook(node)}
           >
             <Pencil className="h-4 w-4" />
@@ -369,7 +369,7 @@ export const NotebookTreeItem = ({
             <>
               <ContextMenuSeparator className="my-1 h-px bg-slate-100" />
               <ContextMenuItem
-                className="flex h-9 items-center gap-2 px-3 text-sm text-rose-700 hover:bg-rose-50 cursor-pointer outline-none"
+                className="flex h-9 items-center gap-2 px-3 text-xs text-rose-700 hover:bg-rose-50 cursor-pointer outline-none"
                 onClick={() => onDeleteNotebook(node)}
               >
                 <Trash2 className="h-4 w-4" />

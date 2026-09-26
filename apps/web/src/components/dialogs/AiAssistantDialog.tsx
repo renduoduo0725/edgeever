@@ -839,7 +839,7 @@ export const AiAssistantDialog = ({
                     <Button type="button" variant="solid" className="h-10 min-w-0 w-full gap-1.5 whitespace-nowrap px-3 text-sm font-semibold" disabled={generateDisabled} onClick={() => void generate()}>
                       <Sparkles className="h-4 w-4 shrink-0" />
                       {t("aiAssistant.generate")}
-                      <kbd aria-hidden="true" className="ml-0.5 rounded bg-card/10 px-1 py-0.5 text-[10px] font-medium leading-none text-white/65">
+                      <kbd aria-hidden="true" className="ml-0.5 rounded bg-card/10 px-1 py-0.5 text-xs font-medium leading-none text-white/65">
                         ↵
                       </kbd>
                     </Button>

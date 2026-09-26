@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
-import { createDefaultDiagramDocument, createDefaultTableDocument, diagramFallbackMarkdown, serializeDiagramDocument, serializeTableDocument, tableFallbackMarkdown } from "@edgeever/shared";
-import { getMobileVisualDiagramKind, hasMobileStructuredTable, hasMobileVisualDiagram, resolveMobileMemoViewerContent } from "./mobile-diagram";
+import { createDefaultDiagramDocument, createDefaultTableDocument, diagramFallbackMarkdown, serializeDiagramDocument, serializeInfographicDocument, serializeTableDocument, tableFallbackMarkdown } from "@edgeever/shared";
+import { getMobileVisualDiagramKind, hasMobileInfographic, hasMobileStructuredTable, hasMobileVisualDiagram, resolveMobileMemoViewerContent } from "./mobile-diagram";
 
 const hasMermaidCodeBlock = (doc: { content?: Array<{ type?: string; attrs?: { language?: string } }> }) =>
   Boolean(doc.content?.some((node) => node.type === "codeBlock" && node.attrs?.language === "mermaid"));
@@ -45,6 +45,14 @@ describe("mobile visual diagram viewer", () => {
     const broken = `${tableFallbackMarkdown(createDefaultTableDocument())}\n\n<!-- edgeever-table-v1:not-json -->`;
     expect(hasMobileStructuredTable(broken)).toBe(true);
     expect(JSON.stringify(resolveMobileMemoViewerContent(null, broken))).not.toContain("edgeever-table-v1");
+  });
+
+  test("shows infographic syntax without exposing its marker to the native viewer", () => {
+    const markdown = serializeInfographicDocument({ schemaVersion: 1, syntax: "infographic list-row-simple-horizontal-arrow\ndata\n  title Test" });
+    expect(hasMobileInfographic(markdown)).toBe(true);
+    const viewerContent = resolveMobileMemoViewerContent(null, markdown);
+    expect(JSON.stringify(viewerContent)).toContain("infographic list-row-simple-horizontal-arrow");
+    expect(JSON.stringify(viewerContent)).not.toContain("edgeever-infographic-v1");
   });
 
   test("fills the remaining phone viewport instead of shrinking the canvas to a postage stamp", () => {

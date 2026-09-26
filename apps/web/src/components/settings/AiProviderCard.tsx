@@ -166,19 +166,19 @@ export const AiProviderCard = ({ provider: saved, defaultDisplayName, defaultMod
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="truncate text-sm font-semibold text-slate-900">{effectiveDisplayName}</span>
             {saved.credentialsUnavailable ? (
-              <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+              <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
                 {t("aiModel.savedCredentialsUnavailableBadge")}
               </span>
             ) : null}
-            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
               {providerLabel}
             </span>
-            <span className="max-w-full truncate font-mono text-[11px] text-slate-400">
+            <span className="max-w-full truncate font-mono text-xs text-slate-400">
               {formatBaseUrl(saved.baseUrl)}
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
-            <span className="hidden text-[11px] text-slate-400 sm:inline">
+            <span className="hidden text-xs text-slate-400 sm:inline">
               {saved.isEnabled ? t("aiModel.serviceEnabledStatus") : t("aiModel.serviceDisabledStatus")}
             </span>
             <Switch
@@ -247,10 +247,10 @@ export const AiProviderCard = ({ provider: saved, defaultDisplayName, defaultMod
                 >
                   <span className="min-w-0 truncate font-medium">{model.displayName}</span>
                   {model.modelId !== model.displayName ? (
-                    <span className="min-w-0 truncate font-mono text-[11px] text-slate-400">({model.modelId})</span>
+                    <span className="min-w-0 truncate font-mono text-xs text-slate-400">({model.modelId})</span>
                   ) : null}
                   {model.id === defaultModelId ? (
-                    <span className="shrink-0 rounded border border-emerald-200/60 bg-emerald-50 px-1 py-0.5 text-[10px] font-medium text-emerald-700">
+                    <span className="shrink-0 rounded border border-emerald-200/60 bg-emerald-50 px-1 py-0.5 text-xs font-medium text-emerald-700">
                       {t("aiModel.defaultBadge")}
                     </span>
                   ) : null}
@@ -408,7 +408,7 @@ const formatBaseUrl = (baseUrl: string) => {
 };
 
 const Field = ({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) => (
-  <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+  <label className="grid gap-1.5 text-xs font-normal leading-5 text-slate-700">
     {label}{children}{hint ? <span className="text-xs font-normal leading-4 text-slate-500">{hint}</span> : null}
   </label>
 );

@@ -528,7 +528,7 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
               ) : null}
             </div>
             {isCloud && active && clientAheadOfInstance ? (
-              <p className="flex items-start gap-1.5 px-0.5 text-[11px] leading-4 text-slate-500" role="status">
+              <p className="flex items-start gap-1.5 px-0.5 text-xs leading-4 text-slate-500" role="status">
                 <Info className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" />
                 <span>{clientAheadHint}</span>
               </p>
@@ -564,7 +564,7 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
                     key={item.label}
                     className={cn("min-w-0", getColSpanClass(item.colSpan))}
                   >
-                    <dt className="truncate text-[11px] font-normal text-slate-400">{item.label}</dt>
+                    <dt className="truncate text-xs font-normal text-slate-400">{item.label}</dt>
                     <dd className="mt-0.5 flex min-w-0 items-center gap-1.5">
                       {item.status === "connected" ? (
                         <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]" />

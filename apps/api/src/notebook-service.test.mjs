@@ -239,9 +239,9 @@ describe("notebook identity", () => {
     const fixture = createFixture();
     try {
       fixture.sqlite.exec(`
-        UPDATE notebooks SET name = '注册考试' WHERE id = 'nb_notes';
+        UPDATE notebooks SET name = '注册考试', slug = NULL WHERE id = 'nb_notes';
         INSERT INTO notebooks (id, workspace_id, parent_id, name, slug, is_deleted, created_at, updated_at) VALUES
-          ('nb_law', 'ws_1', 'nb_notes', '法律法规', 'law', 0, '2026-09-10T00:00:00.000Z', '2026-09-10T00:00:00.000Z'),
+          ('nb_law', 'ws_1', 'nb_notes', '法律法规', NULL, 0, '2026-09-10T00:00:00.000Z', '2026-09-10T00:00:00.000Z'),
           ('nb_history', 'ws_1', 'nb_notes', '建筑史', 'history', 0, '2026-09-10T00:00:00.000Z', '2026-09-10T00:00:00.000Z'),
           ('nb_outline', 'ws_1', 'nb_history', '大纲', 'outline', 0, '2026-09-10T00:00:00.000Z', '2026-09-10T00:00:00.000Z');
         INSERT INTO memos (id, workspace_id, notebook_id, title, is_deleted, updated_at)

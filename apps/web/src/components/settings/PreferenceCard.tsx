@@ -25,8 +25,6 @@ import {
   SETTINGS_CARD_HEADER_CLASSNAME,
   SETTINGS_CARD_ICON_CLASSNAME,
   SETTINGS_CARD_TITLE_CLASSNAME,
-  SETTINGS_ITEM_DESCRIPTION_CLASSNAME,
-  SETTINGS_ITEM_ICON_CLASSNAME,
   SETTINGS_ITEM_TITLE_CLASSNAME,
 } from "./settings-ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -159,7 +157,7 @@ const FontChoiceFields = ({
             maxLength={200}
             onChange={(event) => onChange({ choice: "custom", customFamily: event.target.value })}
           />
-          <div className="flex flex-wrap items-center gap-1 text-[11px] text-slate-500">
+          <div className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
             <span className="shrink-0 text-slate-400">{t("settings.editorBodyFontSuggestions")}:</span>
             {CUSTOM_FONT_SUGGESTIONS.map((item) => (
               <button
@@ -347,11 +345,10 @@ export const PreferenceCard = ({
       </CardHeader>
       <CardContent className="divide-y divide-slate-100 p-0">
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <Languages className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <Languages className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.languageTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.languageDescription")}</div>
             </div>
           </div>
           <div className="w-full shrink-0 sm:w-80">
@@ -375,11 +372,10 @@ export const PreferenceCard = ({
         </div>
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <SunMoon className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <SunMoon className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.themeTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.themeDescription")}</div>
             </div>
           </div>
           <div className="w-full shrink-0 sm:w-80">
@@ -400,11 +396,10 @@ export const PreferenceCard = ({
         </div>
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <AppWindow className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <AppWindow className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.uiFontTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.uiFontDescription")}</div>
             </div>
           </div>
           <FontChoiceFields
@@ -415,11 +410,10 @@ export const PreferenceCard = ({
         </div>
 
         <div className="hidden min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:flex">
-          <div className="flex min-w-0 items-start gap-3">
-            <AlignHorizontalJustifyCenter className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <AlignHorizontalJustifyCenter className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorContentAlignmentTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.editorContentAlignmentDescription")}</div>
             </div>
           </div>
           <div className="w-full shrink-0 sm:w-80">
@@ -439,11 +433,10 @@ export const PreferenceCard = ({
         </div>
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <BookOpenText className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <BookOpenText className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorBodyFontTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.editorBodyFontDescription")}</div>
             </div>
           </div>
           <FontChoiceFields
@@ -455,15 +448,14 @@ export const PreferenceCard = ({
 
         {!isMobile && (
           <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <Palette className={SETTINGS_ITEM_ICON_CLASSNAME} />
+            <div className="flex min-w-0 items-center gap-3">
+              <Palette className="h-4 w-4 shrink-0 text-slate-500" />
               <div className="min-w-0">
                 <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.customEditorTheme.settingsTitle")}</div>
-                <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.customEditorTheme.settingsDescription")}</div>
               </div>
             </div>
             <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
-              <Button variant="outline" className="h-9 shrink-0 px-3 text-sm" onClick={handleEditClick}>
+              <Button variant="outline" className="h-9 shrink-0 px-3 text-xs" onClick={handleEditClick}>
                 {activeCustom || customEditorThemes.length > 0
                   ? t("settings.customEditorTheme.edit")
                   : t("settings.customEditorTheme.create")}
@@ -473,11 +465,10 @@ export const PreferenceCard = ({
         )}
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <ChartNoAxesCombined className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <ChartNoAxesCombined className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.mermaidThemeTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.mermaidThemeDescription")}</div>
             </div>
           </div>
           <div className="w-full shrink-0 sm:w-80">
@@ -497,11 +488,10 @@ export const PreferenceCard = ({
         </div>
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <Image className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <Image className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.imageCompressionTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.imageCompressionDescription")}</div>
             </div>
           </div>
           <div className="flex w-full shrink-0 justify-start sm:w-44 sm:justify-end">
@@ -514,11 +504,10 @@ export const PreferenceCard = ({
         </div>
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <Sparkles className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <Sparkles className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.aiSelectionMenuTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.aiSelectionMenuDescription")}</div>
             </div>
           </div>
           <div className="flex w-full shrink-0 justify-start sm:w-44 sm:justify-end">
@@ -534,11 +523,10 @@ export const PreferenceCard = ({
         </div>
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <Keyboard className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <Keyboard className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.aiSpaceShortcutTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.aiSpaceShortcutDescription")}</div>
             </div>
           </div>
           <div className="flex w-full shrink-0 justify-start sm:w-44 sm:justify-end">
@@ -555,11 +543,10 @@ export const PreferenceCard = ({
 
         {/* Desktop only: mobile editors always open links on a plain tap. */}
         <div className="hidden min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:flex">
-          <div className="flex min-w-0 items-start gap-3">
-            <MousePointerClick className={SETTINGS_ITEM_ICON_CLASSNAME} />
+          <div className="flex min-w-0 items-center gap-3">
+            <MousePointerClick className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.linkOpenModifierTitle")}</div>
-              <div className={SETTINGS_ITEM_DESCRIPTION_CLASSNAME}>{t("settings.linkOpenModifierDescription")}</div>
             </div>
           </div>
           <div className="flex w-full shrink-0 justify-start sm:w-44 sm:justify-end">

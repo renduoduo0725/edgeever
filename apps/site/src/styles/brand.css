@@ -24,4 +24,26 @@
   --edgeever-brand-logo-mark: var(--edgeever-celadon-700);
   --edgeever-brand-logo-accent: var(--edgeever-celadon-400);
   --edgeever-brand-surface: #f8fafc;
+
+  /* Decorative color only. Buttons, links, and the logo keep the hex brand tokens. */
+  --edgeever-decor-from: var(--edgeever-celadon-800);
+  --edgeever-decor-to: var(--edgeever-celadon-600);
+  --edgeever-decor-gradient: linear-gradient(135deg, var(--edgeever-decor-from) 0%, var(--edgeever-decor-to) 100%);
+  --edgeever-decor-beam-from: var(--edgeever-celadon-400);
+  --edgeever-decor-beam-to: var(--edgeever-celadon-500);
+  --edgeever-decor-glow: rgb(var(--edgeever-brand-rgb) / 0.25);
+  --edgeever-decor-shadow: rgb(var(--edgeever-brand-rgb) / 0.15);
+}
+
+@media (color-gamut: p3) {
+  :root {
+    /* Same lightness and hue as the celadon hex stops, with chroma past sRGB. */
+    --edgeever-decor-from: oklch(0.453 0.096 188.1);
+    --edgeever-decor-to: oklch(0.611 0.129 185);
+    --edgeever-decor-gradient: linear-gradient(in oklch 135deg, var(--edgeever-decor-from) 0%, var(--edgeever-decor-to) 100%);
+    --edgeever-decor-beam-from: oklch(0.775 0.169 179.2);
+    --edgeever-decor-beam-to: oklch(0.695 0.149 181.5);
+    --edgeever-decor-glow: oklch(0.611 0.129 185 / 0.25);
+    --edgeever-decor-shadow: oklch(0.611 0.129 185 / 0.15);
+  }
 }

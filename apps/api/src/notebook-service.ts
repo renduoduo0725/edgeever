@@ -324,7 +324,7 @@ export const deleteNotebookRecord = async (
       `UPDATE notebooks
        SET is_deleted = 1, deleted_at = ?, updated_at = ?
        WHERE workspace_id = ? AND is_deleted = 0 AND id IN (${placeholders})
-         AND slug <> 'inbox' AND id <> 'nb_inbox' AND id <> ?`
+         AND (slug IS NULL OR slug <> 'inbox') AND id <> 'nb_inbox' AND id <> ?`
     ).bind(now, now, workspaceId, ...chunk, inboxId);
   });
   statements.push(auditStatement(db, actor.actorType, actor.actorId, "notebook.delete", "notebook", id, {

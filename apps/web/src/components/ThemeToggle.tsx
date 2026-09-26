@@ -26,7 +26,7 @@ export const ThemeToggle = ({ className, showLabel = false }: { className?: stri
             aria-label={label}
             onClick={() => setPreference(nextTheme)}
           >
-            {resolvedTheme === "dark" ? <SunMedium className="h-5 w-5" strokeWidth={2.25} /> : <MoonStar className="h-5 w-5" strokeWidth={2.25} />}
+            {resolvedTheme === "dark" ? <SunMedium className="h-4 w-4" strokeWidth={1.75} /> : <MoonStar className="h-4 w-4" strokeWidth={1.75} />}
             {showLabel && <span className="inline text-xs font-medium lg:hidden">{label}</span>}
           </Button>
         </TooltipTrigger>

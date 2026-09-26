@@ -96,7 +96,7 @@ export const DesktopLocalDataCard = () => {
               <AlertTriangle className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <DialogTitle className="text-base leading-6">{t("localDataReset.dialogTitle")}</DialogTitle>
+              <DialogTitle className="leading-6">{t("localDataReset.dialogTitle")}</DialogTitle>
               <DialogDescription className="mt-1 text-sm leading-5">
                 {t("localDataReset.dialogDescription")}
               </DialogDescription>

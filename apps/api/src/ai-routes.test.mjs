@@ -356,6 +356,19 @@ describe("AI route contracts", () => {
     expect(await response.json()).toMatchObject({ error: { code: "forbidden" } });
   });
 
+  test("requires a user session and valid candidates for the infographic agent", async () => {
+    const payload = { prompt: "做个列表", currentContent: "", candidates: ["list-grid-simple"], history: [] };
+    const tokenApp = createApp({ currentAuth: { ...auth, kind: "agent", actorType: "agent" } });
+    const forbidden = await tokenApp.request("/api/v1/ai/infographic-agent", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload),
+    }, environment);
+    expect(forbidden.status).toBe(403);
+    const invalid = await createApp().request("/api/v1/ai/infographic-agent", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...payload, candidates: [] }),
+    }, environment);
+    expect(invalid.status).toBe(400);
+  });
+
   test("keeps demo AI settings immutable", async () => {
     const app = createApp({ demoMode: true });
     const response = await app.request(

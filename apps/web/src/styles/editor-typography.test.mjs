@@ -19,8 +19,8 @@ const declarationsForSelector = (source, selectorSuffix) =>
 
 describe("editor typography contract", () => {
   test("keeps the shared body rhythm compact", () => {
-    expect(MEMO_CONTENT_STYLE.body.lineHeight / MEMO_CONTENT_STYLE.body.fontSize).toBe(1.6);
-    expect(MEMO_CONTENT_STYLE.body.paragraphSpacing).toBe(6);
+    expect(MEMO_CONTENT_STYLE.body.lineHeight / MEMO_CONTENT_STYLE.body.fontSize).toBe(1.625);
+    expect(MEMO_CONTENT_STYLE.body.paragraphSpacing).toBe(8);
   });
 
   test("configures punctuation squeezing and overflow wrapping for body text", () => {
@@ -50,7 +50,7 @@ describe("editor typography contract", () => {
     const linkRules = declarationsForSelector(globals, ".ProseMirror a");
     const markdownLinkRules = declarationsForSelector(globals, ".markdown-content a");
 
-    expect(linkRules).toMatch(/color\s*:\s*var\(--brand-green-text\)/);
+    expect(linkRules).toMatch(/color\s*:\s*rgb\(var\(--slate-700-rgb\)\)/);
     expect(linkRules).toMatch(/text-decoration\s*:\s*underline/);
     expect(markdownLinkRules).toMatch(/color\s*:\s*var\(--brand-green-text\)/);
     expect(markdownLinkRules).toMatch(/text-decoration\s*:\s*underline/);

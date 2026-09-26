@@ -32,7 +32,7 @@ export const ExecutionCenterButton = ({ onClick, className }: ExecutionCenterBut
             )}
             onClick={onClick}
           >
-            <FileClock className="h-5 w-5" strokeWidth={2.1} />
+            <FileClock className="h-4 w-4" strokeWidth={1.75} />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">{t("executionHistory.openCenter")}</TooltipContent>

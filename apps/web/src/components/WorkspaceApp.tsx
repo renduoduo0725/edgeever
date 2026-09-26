@@ -46,7 +46,7 @@ import {
 } from "@/lib/mobile-editor";
 import { cn } from "@/lib/utils";
 import { isBrowserOffline, isBrowserOnline } from "@/lib/network-status";
-import { createDefaultDiagramDocument, createDefaultTableDocument, diagramFallbackMarkdown, getNotebookDescendantIds, hasTableDocumentMarker, markdownToDoc, parseDiagramDocument, parseTableDocument, serializeDiagramDocument, serializeTableDocument, tableFallbackMarkdown, type NoteCreateKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
+import { createDefaultDiagramDocument, createDefaultInfographicDocument, createDefaultTableDocument, diagramFallbackMarkdown, getNotebookDescendantIds, hasTableDocumentMarker, infographicFallbackMarkdown, markdownToDoc, parseDiagramDocument, parseInfographicDocument, parseTableDocument, serializeDiagramDocument, serializeInfographicDocument, serializeTableDocument, tableFallbackMarkdown, type NoteCreateKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
 import { toggleMobileMemoSelection } from "@edgeever/shared/mobile-ui";
 import type {
   Pane,
@@ -140,6 +140,7 @@ import { findMatchingMemoResource } from "@/lib/staged-resource-repair";
 const EditorPane = lazy(() => import("./EditorPane").then((module) => ({ default: module.EditorPane })));
 const DiagramEditorPane = lazy(() => import("./DiagramEditorPane"));
 const TableEditorPane = lazy(() => import("./TableEditorPane"));
+const InfographicEditorPane = lazy(() => import("./InfographicEditorPane"));
 const AssetsPane = lazy(() => import("./AssetsPane").then((module) => ({ default: module.AssetsPane })));
 const SettingsPane = lazy(() => import("./SettingsPane").then((module) => ({ default: module.SettingsPane })));
 const PluginMarketplacePane = lazy(() => import("./PluginMarketplacePane").then((module) => ({ default: module.PluginMarketplacePane })));
@@ -1233,7 +1234,7 @@ export const WorkspaceApp = ({
 
   const revealCreatedMemo = (memo: MemoDetail) => {
     const targetNotebookId = memo.notebookId;
-    const isStructuredNote = Boolean(parseDiagramDocument(memo.contentMarkdown) || parseTableDocument(memo.contentMarkdown));
+    const isStructuredNote = Boolean(parseDiagramDocument(memo.contentMarkdown) || parseTableDocument(memo.contentMarkdown) || parseInfographicDocument(memo.contentMarkdown));
 
     setMemoView("notebook");
     setSearch("");
@@ -1622,6 +1623,7 @@ export const WorkspaceApp = ({
   const selectedMemo = memoQuery.data?.memo ?? cachedSelectedMemo;
   const selectedDiagram = parseDiagramDocument(selectedMemo?.contentMarkdown);
   const selectedTableNote = hasTableDocumentMarker(selectedMemo?.contentMarkdown);
+  const selectedInfographicNote = Boolean(parseInfographicDocument(selectedMemo?.contentMarkdown));
   const desktopNotebookSidebarCollapsed = Boolean(isDesktop && notebookSidebarCollapsed);
   const desktopFocusModeActive = Boolean(
     isDesktop && desktopFocusMode && rightView === "editor" && selectedMemo && !memoSelectionModeActive
@@ -1911,6 +1913,17 @@ export const WorkspaceApp = ({
     setTemplatesOpen(false);
     setMobileBottomNavActive("home");
     creatingMemoSelectionRef.current = true;
+    if (kind === "infographic") {
+      const infographic = createDefaultInfographicDocument();
+      createMemoMutation.mutate({
+        notebookId: targetNotebookId,
+        title: t("infographic.name"),
+        contentJson: markdownToDoc(infographicFallbackMarkdown(infographic)),
+        contentMarkdown: serializeInfographicDocument(infographic),
+        tags: [],
+      });
+      return;
+    }
     if (kind === "table") {
       const table = createDefaultTableDocument({
         name: t("structuredTable.defaultFields.name"),
@@ -3379,6 +3392,26 @@ export const WorkspaceApp = ({
                           onToggleDesktopFocusMode={toggleDesktopFocusMode}
                           onOpenExecutionCenter={handleOpenExecutionCenter}
                           
+                        />
+                      ) : selectedMemo && selectedInfographicNote ? (
+                        <InfographicEditorPane
+                          key={selectedMemo.id}
+                          memo={selectedMemo}
+                          repository={repository}
+                          readOnly={memoView === "trash" || selectedMemo.isDeleted}
+                          onBackToList={() => {
+                            clearPendingCreatedMemo();
+                            setActivePane("memos");
+                          }}
+                          onSaved={async (memo) => {
+                            await putLocalMemo(localDataScope, memo);
+                            cacheMemoDetail(queryClient, memo, memoView);
+                            updateMemoSummaryInLists(queryClient, memoToSummary(memo));
+                            await Promise.all([
+                              queryClient.invalidateQueries({ queryKey: ["memos"], refetchType: "inactive" }),
+                              queryClient.invalidateQueries({ queryKey: ["notebooks"], refetchType: "inactive" }),
+                            ]);
+                          }}
                         />
                       ) : selectedMemo && selectedTableNote ? (
                         <TableEditorPane

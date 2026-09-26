@@ -81,7 +81,7 @@ export const ExecutionHistoryItemCard = ({
         </div>
       </dl>
       {item.errorMessage ? (
-        <pre className="mt-3 whitespace-pre-wrap break-words rounded-md bg-rose-50 p-2 font-mono text-[11px] leading-5 text-rose-700">
+        <pre className="mt-3 whitespace-pre-wrap break-words rounded-md bg-rose-50 p-2 font-mono text-xs leading-5 text-rose-700">
           {item.errorMessage}
         </pre>
       ) : null}

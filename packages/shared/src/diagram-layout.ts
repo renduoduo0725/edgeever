@@ -76,6 +76,8 @@ export type DiagramIrNodeType =
   | "external"
   | "boundary";
 
+// Product semantics for mind maps, flowcharts, and architecture diagrams.
+// AntV Infographic syntax is a separate, renderer-native document format.
 export type DiagramIr = {
   kind: DiagramKind;
   theme?: DiagramTheme;

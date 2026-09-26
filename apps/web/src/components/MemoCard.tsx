@@ -1,11 +1,9 @@
 import { useRef, useState, useEffect, type DragEvent, type MouseEvent, type PointerEvent as ReactPointerEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import * as m from "motion/react-m";
-import { GitBranch, Network, TableProperties, Workflow, Star, Check, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
+import { GitBranch, Network, Presentation, TableProperties, Workflow, Star, Check, MoreHorizontal, RotateCcw, Trash2 } from "lucide-react";
 import { getMemoListTimestamp, type MemoSummary } from "@edgeever/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { selectionSettleMotion } from "@/lib/motion";
 import type { MemoListDensity, MemoSortMode } from "@/lib/app-helpers";
 import { isDefaultMemoTitle, MEMO_DRAG_MIME, setMemoDragPreview } from "@/lib/app-helpers";
 
@@ -335,23 +333,16 @@ export const MemoCard = ({
       draggable={!isTrashView}
       onDragStart={handleDragStart}
       className={cn(
-        "edgeever-memo-divider group relative overflow-hidden border border-slate-100 bg-card transition lg:rounded-none lg:border-x-0 lg:border-t-0 lg:border-slate-200 lg:shadow-none transition-all duration-200 select-none",
-        isLast && "lg:border-b-0",
-        listDensity === "compact" ? "rounded-md shadow-none" : "rounded-lg shadow-[0_4px_16px_rgba(15,23,42,0.045)]",
+        "edgeever-memo-divider group relative overflow-hidden border border-slate-100 bg-card transition lg:my-0.5 lg:rounded-lg lg:border lg:border-transparent lg:bg-transparent lg:shadow-none transition-all duration-200 select-none",
+        isLast && "lg:border-b-transparent",
+        listDensity === "compact" ? "rounded-md shadow-none" : "rounded-lg shadow-[0_4px_16px_rgba(15,23,42,0.045)] lg:shadow-none",
         !selectionMode && selected
-          ? "edgeever-workspace-selection-desktop"
+          ? "edgeever-workspace-selection border-[var(--workspace-divider)] bg-workspace-selection lg:border-[var(--workspace-divider)] lg:bg-workspace-selection"
           : checked
-            ? "edgeever-workspace-selection-desktop bg-slate-50 ring-1 ring-slate-200 lg:ring-0"
-            : "active:bg-slate-50 lg:hover:bg-slate-50"
+            ? "bg-slate-50 ring-1 ring-slate-200 lg:border-[var(--workspace-divider)] lg:bg-[var(--workspace-selection)] lg:ring-0"
+            : "active:bg-slate-50 lg:hover:bg-white/70"
       )}
     >
-      {!selectionMode && selected ? (
-        <m.span
-          className="pointer-events-none absolute inset-y-2.5 left-0 z-10 hidden w-[3px] origin-center rounded-r-full bg-emerald-500 shadow-[0_0_8px_rgba(22,160,110,0.35)] lg:block"
-          aria-hidden="true"
-          {...selectionSettleMotion}
-        />
-      ) : null}
       <div className={cn("flex min-h-[132px] items-center", listDensity === "compact" && "min-h-[84px] lg:min-h-[76px]")}>
         {showSelectionControl && (
           <Tooltip><TooltipTrigger asChild><button
@@ -398,7 +389,7 @@ export const MemoCard = ({
           onContextMenu={handleContextMenu}
           onKeyDown={handleKeyDown}
         >
-          <div className={cn("mb-1.5 flex min-w-0 items-center gap-1.5 text-[15px] font-semibold tracking-[-0.012em] leading-snug text-slate-950", listDensity === "compact" && "mb-0.5 text-[14px]")}>
+          <div className={cn("mb-1.5 flex min-w-0 items-center gap-1.5 text-[14px] font-semibold tracking-[-0.012em] leading-snug text-slate-950", listDensity === "compact" && "mb-0.5")}>
             {memo.isPinned && <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500" />}
             <span className="min-w-0 truncate">{memoTitle}</span>
           </div>
@@ -411,9 +402,11 @@ export const MemoCard = ({
                 {memo.diagramPreview ? <span>{t("diagram.listCounts", { nodes: memo.diagramPreview.nodeCount, edges: memo.diagramPreview.edgeCount })}</span> : null}
               </div>
               {listDensity !== "compact" && memo.diagramPreview?.labels.length ? (
-                <div className="line-clamp-2 text-[13px] leading-relaxed text-slate-600 ">{memo.diagramPreview.labels.join(" · ")}</div>
+                <div className="line-clamp-2 text-xs leading-relaxed text-slate-600">{memo.diagramPreview.labels.join(" · ")}</div>
               ) : null}
             </div>
+          ) : memo.infographic ? (
+            <div className="flex items-center gap-1 text-xs text-slate-500"><Presentation className="h-3 w-3" aria-hidden="true" />{t("infographic.name")}</div>
           ) : tableLabel ? (
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
@@ -423,14 +416,14 @@ export const MemoCard = ({
                 {memo.tablePreview ? <span>{t("structuredTable.listCounts", { records: memo.tablePreview.recordCount, fields: memo.tablePreview.fieldCount })}</span> : null}
               </div>
               {listDensity !== "compact" && memo.tablePreview?.fieldNames.length ? (
-                <div className="line-clamp-2 text-[13px] leading-relaxed text-slate-600">{memo.tablePreview.fieldNames.join(" · ")}</div>
+                <div className="line-clamp-2 text-xs leading-relaxed text-slate-600">{memo.tablePreview.fieldNames.join(" · ")}</div>
               ) : null}
             </div>
           ) : (
             <div
               className={cn(
-                "line-clamp-2 min-h-10 text-[13px] leading-relaxed text-slate-600 ",
-                listDensity === "compact" && "line-clamp-1 min-h-0 text-[12.5px]"
+                "line-clamp-2 min-h-10 text-xs leading-relaxed text-slate-500",
+                listDensity === "compact" && "line-clamp-1 min-h-0"
               )}
             >
               {memoExcerpt}
@@ -445,7 +438,7 @@ export const MemoCard = ({
             {memo.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-[3px] border border-emerald-200/60 bg-emerald-50/60 px-1.5 py-0.5 text-[11px] font-medium tracking-tight text-emerald-800 transition-colors   "
+                className="text-xs tracking-tight text-slate-400"
               >
                 #{tag}
               </span>
@@ -455,9 +448,8 @@ export const MemoCard = ({
         {!selectionMode && (
           <div
             className={cn(
-              "mr-3 mt-4 hidden shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100 lg:flex",
-              selected && "opacity-100",
-              listDensity === "compact" && "lg:mt-3"
+              "mr-2 mt-3 hidden shrink-0 flex-col gap-1 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100 lg:flex",
+              listDensity === "compact" && "lg:mt-2"
             )}
           >
             <Tooltip><TooltipTrigger asChild><button

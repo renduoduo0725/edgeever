@@ -151,7 +151,8 @@ import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { DiagramToolbar, DiagramToolbarAddTrigger } from "@/components/DiagramToolbar";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
 import { MemoEditorMetadataRow } from "@/components/MemoEditorMetadataRow";
-import { MemoEditorTopRowLeading } from "@/components/MemoEditorTopRowLeading";
+import { MemoEditorFocusModeButton, MemoEditorTopRowLeading, MemoEditorUpdatedLabel } from "@/components/MemoEditorTopRowLeading";
+import { MemoEditorToolbarDivider } from "@/components/MemoEditorToolbarChrome";
 import {
   MEMO_EDITOR_TITLE_REGION_CLASS_NAME,
   MEMO_EDITOR_TOP_ROW_CLASS_NAME,
@@ -530,7 +531,7 @@ const ArchitectureComponentLibrary = ({
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-48">
                           <div>{label}</div>
-                          <div className="text-[11px] text-slate-300">{t("diagram.placeShapeHelp")}</div>
+                          <div className="text-xs text-slate-300">{t("diagram.placeShapeHelp")}</div>
                         </TooltipContent>
                       </Tooltip>
                     );
@@ -612,7 +613,7 @@ const ArchitectureIconPicker = ({
           {categories.length > 0 ? categories.map((category) => (
             <Collapsible key={category.id} defaultOpen>
               <DropdownMenuItem asChild onSelect={(event) => event.preventDefault()}>
-                <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--brand-green)]">
+                <CollapsibleTrigger className="group flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--brand-green)]">
                   <ChevronDown className="h-3.5 w-3.5 text-slate-400 transition-transform group-data-[state=closed]:-rotate-90" />
                   {t(category.labelKey)}
                 </CollapsibleTrigger>
@@ -3049,9 +3050,6 @@ export const DiagramEditorPane = ({
       <header className="shrink-0 border-b border-slate-200 bg-card">
         <div className={MEMO_EDITOR_TOP_ROW_CLASS_NAME}>
           <MemoEditorTopRowLeading
-            desktopFocusMode={desktopFocusMode}
-            updatedLabel={updatedLabel}
-            onToggleDesktopFocusMode={onToggleDesktopFocusMode}
             mobileBackButton={(
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -3062,13 +3060,35 @@ export const DiagramEditorPane = ({
                 <TooltipContent>{t("diagram.back")}</TooltipContent>
               </Tooltip>
             )}
+            titleInput={(
+              <MemoTitleInput
+                value={title}
+                readOnly={readOnly}
+                placeholder={kindLabel}
+                ariaLabel={t("diagram.title")}
+                onValueChange={(nextTitle) => {
+                  titleRef.current = nextTitle;
+                  setTitle(nextTitle);
+                  setDirtyVersion((current) => current + 1);
+                  const graph = graphRef.current;
+                  if (graph) {
+                    setDirty(savedSnapshotRef.current !== diagramEditorSnapshot(
+                      nextTitle,
+                      graphToDocument(graph, document.kind, themeRef.current, structureRef.current),
+                    ));
+                  }
+                }}
+              />
+            )}
           />
 
           <div className="flex shrink-0 items-center gap-1">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <MemoEditorUpdatedLabel updatedLabel={updatedLabel} />
             <m.span
               key={`mobile-${saveStatus}`}
               className={cn(
-              "inline-flex max-w-[5.5rem] truncate rounded-full px-2 py-1 text-[11px] font-medium sm:hidden",
+              "inline-flex max-w-[5.5rem] truncate rounded-full px-2 py-1 text-xs font-medium sm:hidden",
               saveStatusClassName,
             )}
               role="status"
@@ -3081,7 +3101,7 @@ export const DiagramEditorPane = ({
             <m.span
               key={saveStatus}
               className={cn(
-              "hidden items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium sm:inline-flex",
+              "hidden items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium sm:inline-flex",
               saveStatusClassName,
             )}
               role="status"
@@ -3100,6 +3120,13 @@ export const DiagramEditorPane = ({
               )}
               {saveLabel}
             </m.span>
+            </div>
+            <MemoEditorToolbarDivider className="mx-0.5 hidden h-4 sm:block" />
+            <div className="flex items-center gap-0.5">
+            <MemoEditorFocusModeButton
+              desktopFocusMode={desktopFocusMode}
+              onToggleDesktopFocusMode={onToggleDesktopFocusMode}
+            />
             {!readOnly && saveFailed && (
               <Button variant="soft" size="sm" disabled={saving || !editSessionReady} onClick={() => void save()}>
                 <RefreshCw className="h-4 w-4" />
@@ -3162,30 +3189,11 @@ export const DiagramEditorPane = ({
                 </>
               )}
             />
+            </div>
           </div>
         </div>
 
         <div className={MEMO_EDITOR_TITLE_REGION_CLASS_NAME}>
-          <div className="min-w-0">
-            <MemoTitleInput
-              value={title}
-              readOnly={readOnly}
-              placeholder={kindLabel}
-              ariaLabel={t("diagram.title")}
-              onValueChange={(nextTitle) => {
-                titleRef.current = nextTitle;
-                setTitle(nextTitle);
-                setDirtyVersion((current) => current + 1);
-                const graph = graphRef.current;
-                if (graph) {
-                  setDirty(savedSnapshotRef.current !== diagramEditorSnapshot(
-                    nextTitle,
-                    graphToDocument(graph, document.kind, themeRef.current, structureRef.current),
-                  ));
-                }
-              }}
-            />
-          </div>
           <MemoEditorMetadataRow
             contentMarkdown={memo.contentMarkdown}
             disabled={readOnly}
@@ -3349,7 +3357,7 @@ export const DiagramEditorPane = ({
               <span className="text-slate-300 dark:text-slate-600">·</span>
               <span className={cn("inline-flex items-center transition-colors duration-150", shiftSelectActive && "font-medium text-emerald-600 dark:text-emerald-400")}>
                 <span className="mr-1">{t("diagram.navHintHoldShift")}</span>
-                <kbd className={cn("mr-1 inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold transition-colors duration-150", shiftSelectActive ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300")}>
+                <kbd className={cn("mr-1 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-semibold transition-colors duration-150", shiftSelectActive ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "border-slate-200 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300")}>
                   Shift
                 </kbd>
                 <span>{t("diagram.navHintBoxSelect")}</span>
@@ -3384,22 +3392,22 @@ export const DiagramEditorPane = ({
               <div className="whitespace-nowrap px-1.5 pb-1.5 text-xs font-medium text-slate-500">{t("diagram.quickCreateTitle")}</div>
               <div className="grid grid-cols-3 gap-1">
                 <Button autoFocus className="relative h-16 min-w-0 flex-col gap-1 whitespace-nowrap px-2 text-xs" variant="ghost" aria-label={t("diagram.addStep")} onClick={() => createConnectedFlowNode("process")}>
-                  <kbd className="absolute right-1.5 top-1 text-[10px] font-normal text-slate-400">1</kbd>
+                  <kbd className="absolute right-1.5 top-1 text-xs font-normal text-slate-400">1</kbd>
                   <Box className="h-6 w-6" />
                   {t("diagram.addStep")}
                 </Button>
                 <Button className="relative h-16 min-w-0 flex-col gap-1 whitespace-nowrap px-2 text-xs" variant="ghost" aria-label={t("diagram.addDecision")} onClick={() => createConnectedFlowNode("decision")}>
-                  <kbd className="absolute right-1.5 top-1 text-[10px] font-normal text-slate-400">2</kbd>
+                  <kbd className="absolute right-1.5 top-1 text-xs font-normal text-slate-400">2</kbd>
                   <Diamond className="h-6 w-6" />
                   {t("diagram.addDecision")}
                 </Button>
                 <Button className="relative h-16 min-w-0 flex-col gap-1 whitespace-nowrap px-2 text-xs" variant="ghost" aria-label={t("diagram.addTerminator")} onClick={() => createConnectedFlowNode("terminator")}>
-                  <kbd className="absolute right-1.5 top-1 text-[10px] font-normal text-slate-400">3</kbd>
+                  <kbd className="absolute right-1.5 top-1 text-xs font-normal text-slate-400">3</kbd>
                   <Circle className="h-6 w-6" />
                   {t("diagram.addTerminator")}
                 </Button>
               </div>
-              <div className="whitespace-nowrap px-1.5 pt-1 text-[11px] text-slate-400">{t("diagram.quickCreateShortcuts")}</div>
+              <div className="whitespace-nowrap px-1.5 pt-1 text-xs text-slate-400">{t("diagram.quickCreateShortcuts")}</div>
             </div>
           ) : null}
           {nodeEditor ? (

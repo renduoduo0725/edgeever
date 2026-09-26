@@ -41,11 +41,11 @@ export function CompanionActionCard({ action, busy, onApply, onDismiss, onOpenNo
                       <ArrowUpRight className="h-2.5 w-2.5 shrink-0 opacity-50" />
                     </button>
                     {note.excerpt ? (
-                      <p className="mt-0.5 line-clamp-1 break-words text-[11px] text-slate-500 ">
+                      <p className="mt-0.5 line-clamp-1 break-words text-xs text-slate-500 ">
                         {note.excerpt}
                       </p>
                     ) : null}
-                    <p className="mt-0.5 break-words text-[10px] text-slate-400 ">
+                    <p className="mt-0.5 break-words text-xs text-slate-400 ">
                       {t("companion.actions.existingTags", { tags: note.tags.join(" · ") || "—" })}
                     </p>
                   </li>
@@ -78,7 +78,7 @@ export function CompanionActionCard({ action, busy, onApply, onDismiss, onOpenNo
                   {t("companion.actions.addTags", { tags: action.plan.tags.join(" · ") })}
                 </p>
                 {action.notes[0] ? (
-                  <p className="break-words text-[11px] text-slate-400 ">
+                  <p className="break-words text-xs text-slate-400 ">
                     {t("companion.actions.existingTags", { tags: action.notes[0].tags.join(" · ") || "—" })}
                   </p>
                 ) : null}

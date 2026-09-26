@@ -67,9 +67,9 @@ const McpExampleDialog = () => {
       </DialogTrigger>
       <DialogContent className="max-w-2xl gap-3 p-4 sm:p-5">
         <DialogHeader>
-          <DialogTitle className="text-base">{t("mcp.exampleTitle")}</DialogTitle>
+          <DialogTitle>{t("mcp.exampleTitle")}</DialogTitle>
         </DialogHeader>
-        <pre className="max-h-[55vh] overflow-auto rounded-md border border-slate-100 bg-slate-950 p-3 text-left text-[11px] leading-5 text-slate-100 sm:text-xs">
+        <pre className="max-h-[55vh] overflow-auto rounded-md border border-slate-100 bg-slate-950 p-3 text-left text-xs leading-5 text-slate-100 sm:text-xs">
           <code>{remoteExample}</code>
         </pre>
         <div className="flex justify-end">
@@ -420,7 +420,7 @@ export const McpConfigCard = () => {
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   {t("mcp.activeTokens")}
                 </span>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                   {tokens.length}
                 </span>
               </div>

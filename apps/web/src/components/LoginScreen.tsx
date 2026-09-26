@@ -68,11 +68,11 @@ export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitti
               role="alert"
             >
               <p className="text-sm font-medium leading-6">{error.message}</p>
-              <p className="mt-1 font-mono text-[11px] text-rose-500">
+              <p className="mt-1 font-mono text-xs text-rose-500">
                 {t("login.diagnosticCode", { code: error.diagnosticCode })}
               </p>
               {error.rayId ? (
-                <p className="mt-0.5 break-all font-mono text-[11px] text-rose-500">
+                <p className="mt-0.5 break-all font-mono text-xs text-rose-500">
                   {t("login.cloudflareRayId", { id: error.rayId })}
                 </p>
               ) : null}

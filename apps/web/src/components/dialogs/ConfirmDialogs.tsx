@@ -56,7 +56,7 @@ export const AppConfirmDialog = ({
             <Icon className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <DialogTitle className="text-base font-semibold text-slate-950">
+            <DialogTitle className="font-semibold text-slate-950">
               {title}
             </DialogTitle>
             <DialogDescription className="mt-1 text-sm leading-5 text-slate-500">
@@ -162,7 +162,7 @@ export const NotebookNameDialog = ({
         >
           <DialogHeader className="flex flex-row items-start justify-between gap-3 border-b border-slate-200 px-5 py-5 text-left">
             <div className="min-w-0">
-              <DialogTitle className="text-base font-semibold text-slate-950">
+              <DialogTitle className="font-semibold text-slate-950">
                 {title}
               </DialogTitle>
               <DialogDescription className="mt-1 text-sm leading-5 text-slate-500">

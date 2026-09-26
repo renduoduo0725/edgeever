@@ -110,7 +110,7 @@ export const WebDavBackupCard = () => {
   return (
     <Card className="w-full min-w-0 overflow-hidden shadow-none">
       <CardHeader className="p-4 pb-3">
-        <CardTitle className="flex items-center gap-2 text-sm"><CloudUpload className="h-4 w-4 text-emerald-700" />{t("dataExport.webdavTitle")}</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-sm"><CloudUpload className="h-4 w-4 text-slate-900" />{t("dataExport.webdavTitle")}</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-3 p-4 pt-0">
         <CardDescription className="text-xs leading-5">{t(WEBDAV_AUTO_BACKUP_ENABLED ? "dataExport.webdavDescription" : "dataExport.webdavManualDescription")}</CardDescription>
@@ -130,8 +130,8 @@ export const WebDavBackupCard = () => {
             </>
           ) : null}
         </div>
-        <p className="text-[11px] leading-4 text-slate-500">{t(WEBDAV_AUTO_BACKUP_ENABLED ? "dataExport.webdavSecurityNote" : "dataExport.webdavManualSecurityNote")}</p>
-        {WEBDAV_AUTO_BACKUP_ENABLED && schedule.enabled ? <p className="text-[11px] leading-4 text-emerald-700">{schedule.lastSuccessAt ? t("dataExport.webdavLastSuccess", { time: new Date(schedule.lastSuccessAt).toLocaleString() }) : t("dataExport.webdavWaitingForFirstBackup")}</p> : null}
+        <p className="text-xs leading-4 text-slate-500">{t(WEBDAV_AUTO_BACKUP_ENABLED ? "dataExport.webdavSecurityNote" : "dataExport.webdavManualSecurityNote")}</p>
+        {WEBDAV_AUTO_BACKUP_ENABLED && schedule.enabled ? <p className="text-xs leading-4 text-emerald-700">{schedule.lastSuccessAt ? t("dataExport.webdavLastSuccess", { time: new Date(schedule.lastSuccessAt).toLocaleString() }) : t("dataExport.webdavWaitingForFirstBackup")}</p> : null}
         {busy ? <div className="grid gap-1.5" aria-live="polite"><div className="flex items-center justify-between text-xs text-slate-500"><span>{t("dataExport.webdavWorking")}</span><span>{t("dataExport.progress", { completed: progress.completed, total: progress.total })}</span></div><Progress progress={progress} /></div> : null}
         {state === "complete" ? <p className="flex items-center gap-1.5 text-xs text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />{operation === "webdav-test" ? t("dataExport.webdavTestComplete") : message}</p> : null}
         {state === "error" ? <p className="flex items-center gap-1.5 text-xs text-red-600" role="alert"><AlertCircle className="h-3.5 w-3.5 shrink-0" />{message}</p> : null}

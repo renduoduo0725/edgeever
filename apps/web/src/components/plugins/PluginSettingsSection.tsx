@@ -37,7 +37,7 @@ const PluginSettingListDialog = ({ field }: { field: PluginSettingField }) => {
           type="button"
           variant="ghost"
           size="sm"
-          className="-ml-2 mt-0.5 h-7 gap-0.5 px-2 text-xs text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+          className="-ml-2 mt-0.5 h-7 gap-0.5 px-2 text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-950"
           aria-haspopup="dialog"
         >
           {list.actionLabel ?? t("plugins.settings.viewList")}
@@ -52,7 +52,7 @@ const PluginSettingListDialog = ({ field }: { field: PluginSettingField }) => {
         <ul className="min-h-0 divide-y divide-slate-100 overflow-y-auto pb-1">
           {list.items.map((item, index) => (
             <li key={`${item.title}:${item.description ?? ""}:${index}`} className="px-6 py-3">
-              <div className="text-sm font-medium text-slate-800">{item.title}</div>
+              <div className="text-xs font-normal leading-5 text-slate-800">{item.title}</div>
               {item.description ? <div className="mt-0.5 text-xs leading-5 text-slate-500">{item.description}</div> : null}
             </li>
           ))}
@@ -304,7 +304,7 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
   return (
     <section className="min-w-0" aria-labelledby={`${formId}-title`}>
       <header className="border-b border-slate-200 pb-5">
-        <h3 id={`${formId}-title`} className="text-base font-semibold text-slate-900">{t("plugins.settings.title")}</h3>
+        <h3 id={`${formId}-title`} className="text-sm font-semibold text-slate-900">{t("plugins.settings.title")}</h3>
       </header>
       {loading ? <p className="py-8 text-sm text-slate-500" role="status">{t("common.loading")}</p> : loadError ? (
         <div className="mt-5 grid justify-items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4">

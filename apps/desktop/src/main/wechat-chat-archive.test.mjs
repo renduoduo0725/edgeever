@@ -94,9 +94,7 @@ describe("WeChat chat archive", () => {
   test("turns the exported zip into messages, an inline image, and attachments", () => {
     const note = wechatChatNoteFromArchive(sampleArchive(), "聊天记录_20260922_223222.zip");
     expect(note.title).toBe("聊天记录_20260922_223222");
-    expect(note.markdown).toContain("> 💬 **微信聊天记录**");
-    expect(note.markdown).toContain("> **参与者**：鱼、Flechazo");
-    expect(note.markdown).toContain("> **包含媒体**：1 张图片、2 个附件");
+    expect(note.markdown).not.toContain("💬 **微信聊天记录**");
     expect(note.markdown).toContain("**鱼** · 2026年9月22日 22:15");
     expect(note.markdown).toContain("[发布说明](https://example.com/post)");
     expect(note.markdown).toContain("![微信图片_202609222215_1.jpg](edgeever-wechat-media://m1)");

@@ -49,7 +49,7 @@ export function CompanionToolActionCard({ action, busy, onApply, onDismiss, onOp
                     <ArrowUpRight className="h-2.5 w-2.5 shrink-0 opacity-50" />
                   </button>
                   {note.excerpt ? (
-                    <p className="line-clamp-1 break-words text-[11px] text-slate-500 ">
+                    <p className="line-clamp-1 break-words text-xs text-slate-500 ">
                       {note.excerpt}
                     </p>
                   ) : null}
@@ -63,7 +63,7 @@ export function CompanionToolActionCard({ action, busy, onApply, onDismiss, onOp
                 <dt className="font-medium text-slate-700 ">
                   {t(`companion.actions.fields.${key}`, { defaultValue: key })}
                 </dt>
-                <dd className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded bg-slate-100/80 p-2 text-[11px] text-slate-800  ">
+                <dd className="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded bg-slate-100/80 p-2 text-xs text-slate-800  ">
                   {display(value)}
                 </dd>
               </div>
@@ -74,7 +74,7 @@ export function CompanionToolActionCard({ action, busy, onApply, onDismiss, onOp
               {t(`companion.actions.effects.${name}`)}
             </p>
           ) : null}
-          <p className="text-[11px] leading-relaxed text-slate-400 ">
+          <p className="text-xs leading-relaxed text-slate-400 ">
             {t("companion.actions.toolHelp")}
           </p>
           <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-2.5 ">
@@ -123,7 +123,7 @@ export function CompanionToolActionCard({ action, busy, onApply, onDismiss, onOp
               <summary className="cursor-pointer hover:text-slate-800 ">
                 {t("companion.actions.receipt")}
               </summary>
-              <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded bg-slate-100 p-2 text-[11px] ">
+              <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded bg-slate-100 p-2 text-xs ">
                 {JSON.stringify(action.result, null, 2)}
               </pre>
             </details>

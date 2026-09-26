@@ -58,6 +58,8 @@ import type {
   AiPromptTemplateUpdateInput,
   AiStreamEvent,
   AiGenerateInput,
+  InfographicAgentEvent,
+  InfographicAgentRequest,
   AiTagSuggestionPromptUpdateInput,
   AiTagSuggestionsRequestInput,
   AiTagSuggestionsResponse,
@@ -1090,6 +1092,20 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
           options.onEvent,
         ),
       );
+    },
+
+    streamInfographicAgent: async (
+      payload: InfographicAgentRequest,
+      streamOptions: { signal?: AbortSignal; onEvent: (event: InfographicAgentEvent) => void },
+    ) => {
+      const { context, response } = await send("/api/v1/ai/infographic-agent", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        signal: streamOptions.signal,
+      });
+      if (!response.ok) await throwRequestError(context, response);
+      if (!response.body) throw new ApiRequestError("Streaming response is unavailable", 502, "ai_stream_unavailable");
+      await consumeEventStream(response.body, streamOptions.onEvent);
     },
 
     streamAiGeneration: async (

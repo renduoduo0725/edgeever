@@ -203,7 +203,7 @@ export const EditorOutline = ({ editor, scrollContainer, collapsed, shortcutLabe
           <li key={item.pos}>
             <div
               className={cn(
-                "group flex min-h-8 items-center rounded-[6px] pr-2 text-[13px] leading-5 transition-colors duration-150",
+                "group flex min-h-8 items-center rounded-[6px] pr-2 text-[12px] leading-5 transition-colors duration-150",
                 isActive
                   ? "bg-slate-100 text-slate-900"
                   : "text-slate-700 hover:bg-slate-50/70 hover:text-slate-900"
@@ -282,7 +282,7 @@ export const EditorOutline = ({ editor, scrollContainer, collapsed, shortcutLabe
               <button
                 type="button"
                 className={cn(
-                  "group flex items-center text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
+                  "group flex items-center text-left text-xs font-bold uppercase tracking-wider text-slate-500 transition-colors hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
                   collapsed ? "h-7 w-7 justify-center rounded-md hover:bg-slate-100" : "gap-1.5 rounded-sm"
                 )}
                 onClick={() => onCollapsedChange(!collapsed)}

@@ -64,13 +64,13 @@ function CompanionToolList({
                       <span className="truncate">{effect.title || t("common.untitledMemo")}</span>
                     </button>
                     {effect.kind === "trashed" ? (
-                      <Button type="button" size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" disabled={busy || pending === key}
+                      <Button type="button" size="sm" variant="ghost" className="h-6 px-1.5 text-xs" disabled={busy || pending === key}
                         onClick={() => void restore(effect, key)}>
                         <RotateCcw className="h-3 w-3" />{t("companion.timeline.restore")}
                       </Button>
                     ) : null}
                     {effect.kind === "updated" && effect.previousRevision != null ? (
-                      <Button type="button" size="sm" variant="ghost" className="h-6 px-1.5 text-[11px]" disabled={busy || pending === key}
+                      <Button type="button" size="sm" variant="ghost" className="h-6 px-1.5 text-xs" disabled={busy || pending === key}
                         onClick={() => void restore(effect, key)}>
                         <Undo2 className="h-3 w-3" />{t("companion.timeline.restoreRevision")}
                       </Button>
@@ -82,7 +82,7 @@ function CompanionToolList({
           ))}
         </ul>
       ) : null}
-      {message ? <p className="text-[11px] text-slate-500">{message}</p> : null}
+      {message ? <p className="text-xs text-slate-500">{message}</p> : null}
     </div>
   );
 }
@@ -105,7 +105,7 @@ export function CompanionRunTimeline({
     <div className="rounded-md border border-slate-200/80 bg-slate-50/70">
       <button
         type="button"
-        className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-[11px] font-medium text-slate-500"
+        className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left text-xs font-medium text-slate-500"
         aria-expanded={open}
         onClick={() => setOpen(value => !value)}
       >

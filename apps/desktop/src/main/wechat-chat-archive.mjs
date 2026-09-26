@@ -458,42 +458,6 @@ const formatHeader = (sender, time, state) => {
   return `**${escapeMarkdownText(sender)}** · ${date} ${clock}`;
 };
 
-const buildSummaryCard = (messages, mediaItems) => {
-  const structured = messages.filter((m) => !m.raw && m.sender && m.time);
-  if (structured.length < 2) return null;
-
-  const senders = [...new Set(structured.map((m) => m.sender))];
-  const firstTime = structured[0]?.time;
-  const lastTime = structured.at(-1)?.time;
-
-  let timeRange = firstTime;
-  if (lastTime && lastTime !== firstTime) {
-    const firstMatch = /^(\d{4}年\d{1,2}月\d{1,2}日)\s+(\d{1,2}:\d{2})/.exec(firstTime || "");
-    const lastMatch = /^(\d{4}年\d{1,2}月\d{1,2}日)\s+(\d{1,2}:\d{2})/.exec(lastTime || "");
-    if (firstMatch && lastMatch && firstMatch[1] === lastMatch[1]) {
-      timeRange = `${firstTime} ~ ${lastMatch[2]}`;
-    } else {
-      timeRange = `${firstTime} ~ ${lastTime}`;
-    }
-  }
-
-  const imageCount = mediaItems.filter((item) => isImage(item.filename)).length;
-  const otherCount = mediaItems.length - imageCount;
-  const mediaSummary = [];
-  if (imageCount > 0) mediaSummary.push(`${imageCount} 张图片`);
-  if (otherCount > 0) mediaSummary.push(`${otherCount} 个附件`);
-
-  const lines = [
-    "> 💬 **微信聊天记录**",
-    `> **参与者**：${senders.map(escapeMarkdownText).join("、")}`,
-    `> **时间**：${escapeMarkdownText(timeRange)} · 共 ${structured.length} 条消息`,
-  ];
-  if (mediaSummary.length > 0) {
-    lines.push(`> **包含媒体**：${mediaSummary.join("、")}`);
-  }
-  return lines.join("\n");
-};
-
 const titleTimestamp = (time) => {
   const match = /^(\d{4})年(\d{1,2})月(\d{1,2})日 (\d{1,2}):(\d{2})(?::\d{2})?$/.exec(time || "");
   if (!match) return null;
@@ -566,8 +530,7 @@ export const wechatChatNoteFromArchive = (bytes, archiveName = TRANSCRIPT_NAME) 
     })
     : [escapeMarkdownText(text.trim())];
   const unused = items.filter((item) => !item.used).map((item) => mediaMarkdown(item));
-  const summaryCard = buildSummaryCard(messages, items);
-  const markdown = [summaryCard, ...sections, ...unused].filter(Boolean).join("\n\n").trim();
+  const markdown = [...sections, ...unused].filter(Boolean).join("\n\n").trim();
   if (!markdown) throw new WeChatArchiveError("unrecognized");
   return {
     title: archiveTitle(archiveName, messages),

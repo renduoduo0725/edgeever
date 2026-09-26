@@ -1,11 +1,172 @@
+@import "tailwindcss";
+@import "tw-animate-css";
 @import "highlight.js/styles/github.css";
 @import "./editor-themes/index.css";
 @import "./publish-layout.css";
 @import "./code-highlight-dark.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@source "../../node_modules/streamdown/dist";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --shadow-panel: 0 1px 2px rgb(var(--slate-900-rgb) / 0.05), 0 16px 40px rgb(var(--slate-900-rgb) / 0.07);
+  /* Tailwind 4 shifted shadow-sm and blur-sm up one step. Keep the weights this UI shipped with. */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --blur-sm: 4px;
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-mobile-sheet: 10px;
+  --spacing-mobile-bottom-nav: 52px;
+  --spacing-mobile-control: 36px;
+  --spacing-mobile-fab: 52px;
+  --spacing-mobile-touch: 44px;
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-slate-50: rgb(var(--slate-50-rgb) / 1);
+  --color-slate-100: rgb(var(--slate-100-rgb) / 1);
+  --color-slate-200: rgb(var(--slate-200-rgb) / 1);
+  --color-slate-300: rgb(var(--slate-300-rgb) / 1);
+  --color-slate-400: rgb(var(--slate-400-rgb) / 1);
+  --color-slate-500: rgb(var(--slate-500-rgb) / 1);
+  --color-slate-600: rgb(var(--slate-600-rgb) / 1);
+  --color-slate-700: rgb(var(--slate-700-rgb) / 1);
+  --color-slate-800: rgb(var(--slate-800-rgb) / 1);
+  --color-slate-900: rgb(var(--slate-900-rgb) / 1);
+  --color-slate-950: rgb(var(--slate-950-rgb) / 1);
+  --color-workspace-canvas: var(--workspace-canvas);
+  --color-workspace-sidebar: var(--workspace-sidebar);
+  --color-workspace-memo-list: var(--workspace-memo-list);
+  --color-workspace-editor: var(--workspace-editor);
+  --color-workspace-selection: var(--workspace-selection);
+  --color-workspace-hover: var(--workspace-hover);
+  --color-emerald-50: rgb(var(--brand-green-50-rgb) / 1);
+  --color-emerald-100: rgb(var(--brand-green-100-rgb) / 1);
+  --color-emerald-200: rgb(var(--brand-green-200-rgb) / 1);
+  --color-emerald-300: rgb(var(--brand-green-300-rgb) / 1);
+  --color-emerald-400: rgb(var(--brand-green-400-rgb) / 1);
+  --color-emerald-500: rgb(var(--brand-green-500-rgb) / 1);
+  --color-emerald-600: rgb(var(--brand-green-600-rgb) / 1);
+  --color-emerald-700: rgb(var(--brand-green-700-rgb) / 1);
+  --color-emerald-800: rgb(var(--brand-green-800-rgb) / 1);
+  --color-emerald-900: rgb(var(--brand-green-900-rgb) / 1);
+  --color-emerald-950: rgb(var(--brand-green-950-rgb) / 1);
+  --color-amber-50: rgb(var(--amber-50-rgb) / 1);
+  --color-amber-100: rgb(var(--amber-100-rgb) / 1);
+  --color-amber-200: rgb(var(--amber-200-rgb) / 1);
+  --color-amber-300: rgb(var(--amber-300-rgb) / 1);
+  --color-amber-400: rgb(var(--amber-400-rgb) / 1);
+  --color-amber-500: rgb(var(--amber-500-rgb) / 1);
+  --color-amber-600: rgb(var(--amber-600-rgb) / 1);
+  --color-amber-700: rgb(var(--amber-700-rgb) / 1);
+  --color-amber-800: rgb(var(--amber-800-rgb) / 1);
+  --color-amber-900: rgb(var(--amber-900-rgb) / 1);
+  --color-amber-950: rgb(var(--amber-950-rgb) / 1);
+  --color-rose-50: rgb(var(--rose-50-rgb) / 1);
+  --color-rose-100: rgb(var(--rose-100-rgb) / 1);
+  --color-rose-200: rgb(var(--rose-200-rgb) / 1);
+  --color-rose-400: rgb(var(--rose-400-rgb) / 1);
+  --color-rose-500: rgb(var(--rose-500-rgb) / 1);
+  --color-rose-600: rgb(var(--rose-600-rgb) / 1);
+  --color-rose-700: rgb(var(--rose-700-rgb) / 1);
+  --color-rose-800: rgb(var(--rose-800-rgb) / 1);
+  --color-rose-950: rgb(var(--rose-950-rgb) / 1);
+  --color-red-50: rgb(var(--rose-50-rgb) / 1);
+  --color-red-100: rgb(var(--rose-100-rgb) / 1);
+  --color-red-600: rgb(var(--rose-600-rgb) / 1);
+  --color-red-700: rgb(var(--rose-700-rgb) / 1);
+  --color-blue-600: rgb(var(--blue-600-rgb) / 1);
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    border-color: var(--color-slate-200, currentColor);
+  }
+}
+
+/* v4 outline-none removes the outline entirely, and a same-named @utility is
+ * emitted before the built-in rule. This unlayered block wins and keeps the
+ * previous transparent outline, including the focus variants used in the app. */
+.outline-none,
+.focus\:outline-none:focus,
+.focus-visible\:outline-none:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+/* v4 hover variants only apply on devices that can hover. These controls are
+ * otherwise unreachable on touch. */
+@media (hover: none) {
+  .edgeever-reveal-on-touch {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.edgeever-infographic-selected-text {
+  outline: 2px solid #3384f5;
+  outline-offset: 2px;
+}
+
+.edgeever-infographic-preview > svg {
+  display: block;
+  width: min(100%, 760px);
+  height: auto;
+  max-height: min(800px, calc(100dvh - 180px));
+  margin-inline: auto;
+}
+
+.edgeever-infographic-chat-response :is(p, ul, ol, blockquote, pre) {
+  margin-block: 0.35em;
+}
+
+.edgeever-infographic-chat-response :is(ul, ol) {
+  padding-inline-start: 1.25rem;
+}
+
+.edgeever-infographic-chat-response ul {
+  list-style: disc;
+}
+
+.edgeever-infographic-chat-response ol {
+  list-style: decimal;
+}
+
+.edgeever-infographic-chat-response pre {
+  overflow-x: auto;
+}
 
 @keyframes edgeever-token-created {
   0% {
@@ -130,15 +291,18 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --brand-green-800-rgb: 17 83 60;
     --brand-green-900-rgb: 15 68 50;
     --brand-green-950-rgb: 7 37 28;
-    --workspace-canvas: #f8f9fa;
-    --workspace-sidebar: #f8f9fa;
-    --workspace-memo-list: #fafafa;
+    --workspace-canvas: #eef1f4;
+    --workspace-sidebar: #e7ebef;
+    --workspace-memo-list: #f4f6f8;
     --workspace-editor: #ffffff;
-    --workspace-divider: #e9ebed;
-    --workspace-memo-divider: #edf0f2;
-    --workspace-selection: #edf0f2;
-    --tooltip-bg: #1a1f1c;
-    --tooltip-fg: #f4f7f5;
+    --workspace-divider: #e1e5ea;
+    --workspace-memo-divider: #e6eaee;
+    --workspace-selection: #dde3e9;
+    --workspace-hover: color-mix(in srgb, var(--workspace-sidebar) 40%, white);
+    --tooltip-bg: #ffffff;
+    --tooltip-fg: #6b726e;
+    --tooltip-border: #e1e5ea;
+    --tooltip-shadow: 0 1px 2px rgb(16 24 20 / 0.04), 0 8px 20px rgb(16 24 20 / 0.08);
     --scrollbar-thumb: rgb(115 115 115 / 0.28);
     --scrollbar-thumb-hover: rgb(115 115 115 / 0.42);
     --search-match: rgb(254 240 138 / 0.8);
@@ -158,6 +322,9 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --amber-50-rgb: 255 251 235;
     --amber-100-rgb: 254 243 199;
     --amber-200-rgb: 253 230 138;
+    --amber-300-rgb: 252 211 77;
+    --amber-400-rgb: 251 191 36;
+    --amber-500-rgb: 245 158 11;
     --amber-600-rgb: 217 119 6;
     --amber-700-rgb: 180 83 9;
     --amber-800-rgb: 146 64 14;
@@ -166,6 +333,7 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --rose-50-rgb: 255 241 242;
     --rose-100-rgb: 255 228 230;
     --rose-200-rgb: 254 205 211;
+    --rose-400-rgb: 251 113 133;
     --rose-500-rgb: 244 63 94;
     --rose-600-rgb: 225 29 72;
     --rose-700-rgb: 190 18 60;
@@ -173,11 +341,11 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --rose-950-rgb: 76 5 25;
     --blue-600-rgb: 37 99 235;
     --dark-surface-rgb: 255 255 255;
-    --editor-body-font-size: 0.9375rem;
+    --editor-body-font-size: 1rem;
     --edgeever-system-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", Inter, ui-sans-serif, system-ui, sans-serif;
-    --editor-body-line-height: 1.6;
+    --editor-body-line-height: 1.625;
     --editor-paragraph-spacing: 0.35rem;
-    --memo-content-divider-color: rgb(var(--brand-green-300-rgb));
+    --memo-content-divider-color: #1a1d21;
     --memo-content-divider-spacing: 1.5rem;
     --editor-outline-width: 300px;
     --editor-content-max-width: 880px;
@@ -247,8 +415,12 @@ html.dark[data-edgeever-environment="demo"] body::after {
   --workspace-divider: #2a312d;
   --workspace-memo-divider: #3b4540;
   --workspace-selection: #1d3028;
-  --tooltip-bg: #252c28;
-  --tooltip-fg: #e9efeb;
+  --workspace-hover: color-mix(in srgb, var(--workspace-sidebar) 82%, white);
+  --memo-content-divider-color: #e7ebe8;
+  --tooltip-bg: #2c3330;
+  --tooltip-fg: #d7dfda;
+  --tooltip-border: #3e4944;
+  --tooltip-shadow: 0 1px 2px rgb(0 0 0 / 0.28), 0 8px 20px rgb(0 0 0 / 0.32);
   --scrollbar-thumb: rgb(137 150 142 / 0.38);
   --scrollbar-thumb-hover: rgb(137 150 142 / 0.55);
   --search-match: rgb(22 160 110 / 0.32);
@@ -268,6 +440,7 @@ html.dark[data-edgeever-environment="demo"] body::after {
   --amber-50-rgb: 69 26 3;
   --amber-100-rgb: 80 30 5;
   --amber-200-rgb: 146 64 14;
+  --amber-300-rgb: 180 83 9;
   --amber-600-rgb: 253 230 138;
   --amber-700-rgb: 253 230 138;
   --amber-800-rgb: 252 211 77;
@@ -389,8 +562,8 @@ html[data-edgeever-extension-theme] .text-slate-600 {
 html[data-edgeever-extension-theme] .border-slate-100,
 html[data-edgeever-extension-theme] .border-slate-200,
 html[data-edgeever-extension-theme] .border-slate-300,
-html[data-edgeever-extension-theme] .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-html[data-edgeever-extension-theme] .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+html[data-edgeever-extension-theme] .divide-slate-100 > :not(:last-child),
+html[data-edgeever-extension-theme] .divide-slate-200 > :not(:last-child) {
   border-color: var(--edgeever-theme-border, #e2e8f0);
 }
 
@@ -468,7 +641,7 @@ html[data-edgeever-extension-theme] kbd {
 }
 
 .edgeever-workspace-sidebar-footer {
-  background: color-mix(in srgb, var(--workspace-sidebar) 92%, transparent);
+  background: var(--workspace-sidebar);
 }
 
 .edgeever-workspace-selection {
@@ -557,7 +730,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 :root.dark .edgeever-workspace-sidebar-footer {
-  background: color-mix(in srgb, var(--workspace-sidebar) 90%, transparent);
+  background: var(--workspace-sidebar);
 }
 
 :root.dark .edgeever-workspace-selection,
@@ -710,10 +883,12 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   color: hsl(var(--foreground));
 }
 
-button,
-input,
-textarea {
-  font: inherit;
+@layer base {
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
 }
 
 .ProseMirror {
@@ -722,6 +897,7 @@ textarea {
   margin: 0;
   color: #27272a;
   font-size: var(--editor-body-font-size);
+  letter-spacing: -0.005em;
   line-height: var(--editor-body-line-height);
   min-height: 100%;
   outline: none;
@@ -1091,21 +1267,21 @@ textarea {
 }
 
 .ProseMirror h1 {
-  font-size: 1.875rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 650;
   line-height: 1.28;
-  letter-spacing: -0.022em;
+  letter-spacing: -0.02em;
   margin: 0 0 0.85rem;
-  color: #0f172a;
+  color: #1a1d21;
 }
 
 .ProseMirror h2 {
-  font-size: 1.375rem;
-  font-weight: 650;
+  font-size: 1.25rem;
+  font-weight: 600;
   line-height: 1.32;
   letter-spacing: -0.015em;
   margin: 1.4rem 0 0.6rem;
-  color: #0f172a;
+  color: #27272a;
 }
 
 .ProseMirror h3 {
@@ -1114,7 +1290,7 @@ textarea {
   line-height: 1.38;
   letter-spacing: -0.01em;
   margin: 1.15rem 0 0.5rem;
-  color: #1e293b;
+  color: #27272a;
 }
 
 .ProseMirror h4 {
@@ -1169,18 +1345,18 @@ textarea {
  * rule links are indistinguishable from body text. Note/attachment chips below
  * use more specific selectors and keep their chip appearance. */
 .ProseMirror a {
-  color: var(--brand-green-text);
+  color: rgb(var(--slate-700-rgb));
   font-weight: 500;
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--brand-green-text) 45%, transparent);
+  text-decoration-color: color-mix(in srgb, rgb(var(--slate-700-rgb)) 45%, transparent);
   text-underline-offset: 2px;
   cursor: pointer;
   transition: color 150ms ease, text-decoration-color 150ms ease;
 }
 
 .ProseMirror a:hover {
-  color: var(--brand-green);
-  text-decoration-color: var(--brand-green);
+  color: rgb(var(--slate-950-rgb));
+  text-decoration-color: rgb(var(--slate-950-rgb));
 }
 
 .ProseMirror a:focus-visible {
@@ -1197,10 +1373,10 @@ textarea {
   min-width: 1.5em;
   min-height: 1.5em;
   padding: 0 0.25em;
-  border: 1px solid var(--brand-green-border);
+  border: 1px solid rgb(var(--slate-200-rgb));
   border-radius: 0.35em;
-  background: var(--brand-green-soft);
-  color: var(--brand-green-text);
+  background: rgb(var(--slate-100-rgb));
+  color: rgb(var(--slate-700-rgb));
   font-size: 0.9em;
   font-weight: 700;
   line-height: 1;
@@ -1210,9 +1386,9 @@ textarea {
 
 .ProseMirror a.edgeever-empty-external-link:hover,
 .markdown-content a.edgeever-empty-external-link:hover {
-  border-color: var(--brand-green);
-  background: var(--brand-green-muted);
-  color: var(--brand-green-text);
+  border-color: rgb(var(--slate-300-rgb));
+  background: rgb(var(--slate-200-rgb));
+  color: rgb(var(--slate-950-rgb));
   text-decoration: none;
 }
 
@@ -1229,14 +1405,14 @@ textarea {
   gap: 0.2rem;
   max-width: min(100%, 32rem);
   padding: 0.03rem 0.32rem 0.05rem;
-  border: 1px solid var(--brand-green-border);
+  border: 1px solid rgb(var(--slate-200-rgb));
   border-radius: 0.35rem;
-  background: var(--brand-green-soft);
-  color: var(--brand-green-text);
+  background: rgb(var(--slate-100-rgb));
+  color: rgb(var(--slate-700-rgb));
   font-size: 0.9em;
   font-weight: 500;
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--brand-green) 55%, transparent);
+  text-decoration-color: color-mix(in srgb, rgb(var(--slate-500-rgb)) 55%, transparent);
   text-underline-offset: 2px;
   vertical-align: baseline;
   cursor: pointer;
@@ -1254,25 +1430,11 @@ textarea {
 
 .ProseMirror a.edgeever-note-link:hover,
 .ProseMirror a[href^="#memo="]:hover {
-  color: var(--brand-green-text);
-  border-color: var(--brand-green);
-  background: var(--brand-green-muted);
-  text-decoration-color: var(--brand-green-text);
-  box-shadow: 0 2px 8px rgb(var(--brand-green-rgb) / 0.1);
-}
-
-:root.dark .ProseMirror a.edgeever-note-link,
-:root.dark .ProseMirror a[href^="#memo="] {
-  border-color: var(--brand-green-border);
-  background: var(--brand-green-soft);
-  color: var(--brand-green-text);
-}
-
-:root.dark .ProseMirror a.edgeever-note-link:hover,
-:root.dark .ProseMirror a[href^="#memo="]:hover {
-  border-color: var(--brand-green);
-  background: var(--brand-green-muted);
-  color: var(--brand-green-text);
+  color: rgb(var(--slate-950-rgb));
+  border-color: rgb(var(--slate-300-rgb));
+  background: rgb(var(--slate-200-rgb));
+  text-decoration-color: rgb(var(--slate-950-rgb));
+  box-shadow: none;
 }
 
 .ProseMirror a.edgeever-attachment-link,
@@ -1420,8 +1582,12 @@ textarea {
   height: 1rem;
   margin: 0;
   border-radius: 3px;
-  accent-color: var(--brand-green);
+  accent-color: #1a1d21;
   cursor: pointer;
+}
+
+:root.dark .ProseMirror ul[data-type="taskList"] li[data-checked] > label input {
+  accent-color: #e7ebe8;
 }
 
 .ProseMirror ul[data-type="taskList"] li[data-checked] > div {
@@ -1474,21 +1640,21 @@ textarea {
 
 .ProseMirror blockquote {
   margin: 0 0 1rem;
-  border-left: 3px solid var(--brand-green);
-  border-radius: 1px 4px 4px 1px;
-  padding: 0.35rem 0.5rem 0.35rem 0.85rem;
-  color: #334155;
-  background: color-mix(in srgb, var(--brand-green) 4%, transparent);
+  border: 0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #3d4450;
+  background: #f3f5f7;
 }
 
 .ProseMirror code {
-  border: 1px solid #d4ebdc;
+  border: 1px solid #e1e5ea;
   border-radius: 4px;
-  background: #f2f9f5;
+  background: #f3f5f7;
   padding: 0.12rem 0.38rem;
   font-size: 0.875em;
   font-weight: 550;
-  color: #0d5f3a;
+  color: #3d4450;
   font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
@@ -2442,14 +2608,14 @@ textarea {
 
 :root.dark .ProseMirror blockquote {
   color: hsl(var(--foreground));
-  background: color-mix(in srgb, var(--brand-green) 7%, transparent);
+  background: rgb(255 255 255 / 0.05);
 }
 
 :root.dark .ProseMirror code,
 :root.dark .markdown-content code {
-  border-color: rgb(var(--brand-green-rgb) / 0.28);
-  background: rgb(var(--brand-green-rgb) / 0.1);
-  color: var(--brand-green-text);
+  border-color: rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.06);
+  color: hsl(var(--foreground));
 }
 
 :root.dark .ProseMirror pre,

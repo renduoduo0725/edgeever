@@ -31,11 +31,21 @@ const incomingDirectory = (downloadsPath) => join(downloadsPath, WECHAT_INCOMING
 
 const assertIncomingZip = async (filePath, downloadsPath) => {
   const root = incomingDirectory(downloadsPath);
-  if (!isPathInsideDirectory(filePath, root) || !filePath.toLowerCase().endsWith(".zip")) {
+  if (!filePath.toLowerCase().endsWith(".zip")) {
     throw new WeChatArchiveError("rejected-path");
   }
-  const [realRoot, realFile] = await Promise.all([realpath(root), realpath(filePath)]);
-  if (!isPathInsideDirectory(realFile, realRoot)) throw new WeChatArchiveError("rejected-path");
+  let realRoot;
+  let realFile;
+  try {
+    [realRoot, realFile] = await Promise.all([realpath(root), realpath(filePath)]);
+  } catch {
+    throw new WeChatArchiveError("rejected-path");
+  }
+  // The sandboxed share extension may name ~/Downloads through its container
+  // symlink. Validate the resolved file against the resolved incoming directory.
+  if (!isPathInsideDirectory(realFile, realRoot) || !realFile.toLowerCase().endsWith(".zip")) {
+    throw new WeChatArchiveError("rejected-path");
+  }
   return realFile;
 };
 
@@ -107,15 +117,16 @@ export const createWeChatShareController = ({
 
   const importFromProtocolUrl = async (value) => {
     const requestedPath = wechatImportFilePath(value);
-    if (!requestedPath || inFlightPaths.has(requestedPath) || preparedPaths.has(requestedPath)
-      || completedPaths.has(requestedPath) || failedPaths.has(requestedPath)) return;
-    inFlightPaths.add(requestedPath);
-    onActivity();
+    if (!requestedPath) return;
     const downloads = downloadsPath();
     let zipPath = null;
     let preparedDirectory = null;
     try {
       zipPath = await assertIncomingZip(requestedPath, downloads);
+      if (inFlightPaths.has(zipPath) || preparedPaths.has(zipPath)
+        || completedPaths.has(zipPath) || failedPaths.has(zipPath)) return;
+      inFlightPaths.add(zipPath);
+      onActivity();
       const archive = await readFile(zipPath);
       const note = wechatChatNoteFromArchive(archive, basename(zipPath));
       const importId = randomUUID();
@@ -148,18 +159,21 @@ export const createWeChatShareController = ({
         media: listed,
       };
       sessions.set(importId, { directory, media, zipPath, payload, failed: false });
-      preparedPaths.add(requestedPath);
+      preparedPaths.add(zipPath);
       preparedDirectory = null;
       sendToRenderer(payload);
       void writeDiagnostic("wechat-import.prepared", { media: listed.length, bytes: archive.length });
     } catch (error) {
       if (preparedDirectory) await rm(preparedDirectory, { recursive: true, force: true }).catch(() => {});
       const reason = error instanceof WeChatArchiveError ? error.code : "failed";
-      failedPaths.add(requestedPath);
-      sendToRenderer({ ok: false, reason: reason === "unrecognized" ? "unrecognized" : "failed" });
+      if (zipPath) failedPaths.add(zipPath);
+      // A stale or malformed protocol URL is not a failed save attempt.
+      if (reason !== "rejected-path") {
+        sendToRenderer({ ok: false, reason: reason === "unrecognized" ? "unrecognized" : "failed" });
+      }
       void writeDiagnostic("wechat-import.rejected", { reason });
     } finally {
-      inFlightPaths.delete(requestedPath);
+      if (zipPath) inFlightPaths.delete(zipPath);
     }
   };
 

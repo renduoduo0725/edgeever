@@ -26,7 +26,7 @@ export const AiPromptsCard = ({ onOpenLibrary }: { onOpenLibrary: () => void }) 
             <button className="flex w-full min-w-0 items-start justify-between gap-3 text-left" type="button">
               <span className="min-w-0">
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <Sparkles className="h-4 w-4 text-emerald-700" />
+                  <Sparkles className="h-4 w-4 text-slate-900" />
                   {t("aiPrompts.settingsTitle")}
                 </CardTitle>
                 <CardDescription className="mt-1 text-xs text-slate-500">{t("aiPrompts.settingsDescription")}</CardDescription>
@@ -39,7 +39,7 @@ export const AiPromptsCard = ({ onOpenLibrary }: { onOpenLibrary: () => void }) 
           <CardContent className="grid gap-3 p-4 pt-0 sm:px-5 sm:pb-5">
             <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200/70 bg-slate-50/50 px-3.5 py-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-800">{t("aiPrompts.listTitle")}</p>
+                <p className="text-xs font-normal leading-5 text-slate-800">{t("aiPrompts.listTitle")}</p>
                 <p className="mt-0.5 text-xs text-slate-500">{t("aiPrompts.count", { count })}</p>
               </div>
               <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 bg-card text-xs" onClick={onOpenLibrary}>

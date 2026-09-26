@@ -28,7 +28,7 @@ export const PluginUpdateDialog = ({
             {hasAddedAccess ? <AlertTriangle className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
           </span>
           <div className="min-w-0 flex-1">
-            <DialogTitle className="text-base font-semibold text-slate-950">
+            <DialogTitle className="font-semibold text-slate-950">
               {t("plugins.updates.confirmTitle", { name: update.latestManifest.name })}
             </DialogTitle>
             <DialogDescription className="mt-1 flex items-center gap-2 text-sm text-slate-500">

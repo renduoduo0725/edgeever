@@ -1,6 +1,7 @@
 import {
   AiDefaultModelUpdateSchema,
   AiGenerateSchema,
+  InfographicAgentRequestSchema,
   AiModelConfigCreateSchema,
   AiProviderConfigCreateSchema,
   AiProviderConfigUpdateSchema,
@@ -683,6 +684,40 @@ export const registerAiRoutes = (app: Hono<AppEnv>, dependencies: AiRouteDepende
           context.env,
         );
         return context.json(prepareAiGeneration({ ...fields, credentials }));
+      } catch (error) {
+        return withAiError(context, error, "ai_generation_failed");
+      }
+    },
+  );
+
+  app.post(
+    "/api/v1/ai/infographic-agent",
+    zValidator("json", InfographicAgentRequestSchema),
+    async (context) => {
+      const denied = requireUser(context);
+      if (denied) return denied;
+      try {
+        const input = context.req.valid("json");
+        const model = await loadDefaultAiModel(context.env.storage.db, getWorkspaceId(context), context.env);
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            const send = (event: import("@edgeever/shared").InfographicAgentEvent) => {
+              try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`)); }
+              catch { /* The client may have disconnected. */ }
+            };
+            send({ type: "start" });
+            try {
+              const { runInfographicAgent } = await import("./infographic-agent");
+              await runInfographicAgent({ input, model, signal: context.req.raw.signal, onEvent: send });
+            } catch (error) {
+              send({ type: "error", message: providerErrorMessage(error) });
+            } finally {
+              try { controller.close(); } catch { /* The client may have disconnected. */ }
+            }
+          },
+        });
+        return new Response(stream, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store" } });
       } catch (error) {
         return withAiError(context, error, "ai_generation_failed");
       }
