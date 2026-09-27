@@ -16,7 +16,6 @@ import {
   createAiGenerationResultBoundary,
   createAiGenerationStreamNormalizer,
   getDefaultAiPromptSeed,
-  getDefaultAiTagSuggestionPrompt,
   isAiTextAttachment,
   normalizeAiGenerationText,
 } from "@edgeever/shared";
@@ -155,17 +154,6 @@ export const getDefaultAiModelId = async (db: DatabaseAdapter, workspaceId: stri
   return row?.default_model_id ?? null;
 };
 
-export const getAiTagSuggestionPrompt = async (
-  db: DatabaseAdapter,
-  workspaceId: string,
-  locale?: string,
-) => {
-  const row = await db.prepare(
-    `SELECT tag_suggestion_prompt FROM ai_workspace_settings WHERE workspace_id = ? LIMIT 1`,
-  ).bind(workspaceId).first<{ tag_suggestion_prompt: string | null }>();
-  return row?.tag_suggestion_prompt?.trim() || getDefaultAiTagSuggestionPrompt(locale);
-};
-
 export const mapAiModelConfig = (row: AiModelConfigRow): AiModelConfig => ({
   id: row.id,
   providerConfigId: row.provider_config_id,
@@ -209,10 +197,9 @@ export const getAiSettings = async (
   workspaceId: string,
   encryptionConfigured: boolean,
   readOnly: boolean,
-  locale?: string,
   environment?: AiCredentialEnvironment,
 ): Promise<AiSettings> => {
-  const [providersResult, modelsResult, defaultModelId, promptRow] = await Promise.all([
+  const [providersResult, modelsResult, defaultModelId] = await Promise.all([
     db.prepare(
       `${selectProviderSql} WHERE workspace_id = ? ORDER BY created_at ASC, id ASC`,
     ).bind(workspaceId).all<AiProviderConfigRow>(),
@@ -224,19 +211,12 @@ export const getAiSettings = async (
        ORDER BY created_at ASC, id ASC`,
     ).bind(workspaceId).all<AiModelConfigRow>(),
     getDefaultAiModelId(db, workspaceId),
-    db.prepare(
-      `SELECT tag_suggestion_prompt FROM ai_workspace_settings WHERE workspace_id = ? LIMIT 1`,
-    ).bind(workspaceId).first<{ tag_suggestion_prompt: string | null }>(),
   ]);
-
-  const customizedPrompt = promptRow?.tag_suggestion_prompt?.trim() || null;
 
   return {
     providers: await Promise.all(providersResult.results.map((provider) =>
       withAiCredentialAvailability(provider, modelsResult.results, encryptionConfigured, environment))),
     defaultModelId,
-    tagSuggestionPrompt: customizedPrompt ?? getDefaultAiTagSuggestionPrompt(locale),
-    tagSuggestionPromptCustomized: Boolean(customizedPrompt),
     encryptionConfigured,
     readOnly,
   };

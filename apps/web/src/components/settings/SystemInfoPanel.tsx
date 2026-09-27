@@ -480,7 +480,7 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
           <section key={group.id} className="grid gap-2" aria-labelledby={headingId}>
             <div className="flex flex-wrap items-center justify-between gap-2 px-0.5">
               <div className="flex min-w-0 items-center gap-2">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-emerald-100 bg-emerald-50 text-emerald-700">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-slate-700">
                   {isCloud
                     ? <Cloud className="h-3.5 w-3.5" />
                     : isClient
@@ -533,12 +533,12 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
                 <span>{clientAheadHint}</span>
               </p>
             ) : isCloud && active && release ? (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50/70 px-3 py-1.5 text-slate-800" role="status">
-                <CircleCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                <div className="min-w-0 flex-1 text-xs font-medium text-emerald-950">
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-800" role="status">
+                <CircleCheck className="h-3.5 w-3.5 shrink-0 text-slate-700" />
+                <div className="min-w-0 flex-1 text-xs font-medium text-slate-950">
                   {t("systemInfo.deployedUpdateTitle", { version: releaseTag?.replace(/^v/, "") ?? release.version })}
                 </div>
-                <a className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-emerald-700 underline underline-offset-2 hover:text-emerald-900" href={releaseUrl} target="_blank" rel="noreferrer">
+                <a className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-slate-800 underline underline-offset-2 hover:text-slate-950" href={releaseUrl} target="_blank" rel="noreferrer">
                   {t("systemInfo.viewReleaseNotes")} <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
@@ -567,7 +567,7 @@ export const SystemInfoPanel = ({ active = true }: { active?: boolean }) => {
                     <dt className="truncate text-xs font-normal text-slate-400">{item.label}</dt>
                     <dd className="mt-0.5 flex min-w-0 items-center gap-1.5">
                       {item.status === "connected" ? (
-                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]" />
+                        <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-slate-950" />
                       ) : item.status === "connecting" ? (
                         <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 animate-pulse" />
                       ) : item.status === "failed" ? (

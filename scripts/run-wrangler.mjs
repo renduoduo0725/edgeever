@@ -19,6 +19,7 @@ import {
   PLACEHOLDER_D1_ID,
   productionVersionIds,
   repositoryWranglerConfigError,
+  resolveWranglerAssetsDirectory,
   runWranglerSync,
   shouldCaptureDeploymentTargets,
 } from "./wrangler-runner.mjs";
@@ -166,8 +167,9 @@ const envValue = (name) => {
 const isRemoteCommand =
   wranglerArgs.includes("deploy") || wranglerArgs.includes("--remote");
 const isDeployCommand = wranglerArgs.includes("deploy");
-const isRemoteDevCommand = wranglerArgs.includes("dev") && wranglerArgs.includes("--remote");
-const isLocalDevCommand = wranglerArgs.includes("dev") && wranglerArgs.includes("--local");
+const isDevCommand = wranglerArgs.includes("dev");
+const isRemoteDevCommand = isDevCommand && wranglerArgs.includes("--remote");
+const isLocalDevCommand = isDevCommand && wranglerArgs.includes("--local");
 // Any --local command rewrites .wrangler.generated.toml. Keep local-only vars
 // (especially auth-free access) so `d1 migrations apply --local` cannot strip
 // them and leave a later wrangler reload requiring login mid-session.
@@ -440,6 +442,12 @@ if (isDeployCommand && Object.keys(authSecrets).length === 0 && !useExistingAuth
 
 if (isDeployCommand && Object.keys(authSecrets).length === 0 && useExistingAuthSecret) {
   writeWranglerNotice("info", "using the authentication Secret provisioned by Cloudflare");
+}
+
+if (isDevCommand) {
+  // Local dev serves the web app from Vite, so an empty assets directory is enough.
+  const assetsDirectory = resolveWranglerAssetsDirectory(config, dirname(configPath));
+  if (assetsDirectory) mkdirSync(assetsDirectory, { recursive: true });
 }
 
 if (isLocalDevCommand && !hasEnvFileArg) {

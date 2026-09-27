@@ -48,7 +48,7 @@ export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitti
   return (
     <main className="flex h-[100dvh] items-center justify-center bg-[var(--workspace-canvas)] px-4 py-8 text-slate-950">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_15%,rgb(var(--brand-green-rgb)/0.045),transparent_42%)]" />
-      <GitHubRepositoryLink className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 h-10 w-10 justify-center rounded-full border border-slate-200 bg-card/85 text-slate-600 backdrop-blur transition hover:border-slate-300 hover:bg-card hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60" iconClassName="h-5 w-5" />
+      <GitHubRepositoryLink className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 h-10 w-10 justify-center rounded-full border border-slate-200 bg-card/85 text-slate-600 backdrop-blur transition hover:border-slate-300 hover:bg-card hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20" iconClassName="h-5 w-5" />
 
       <section className="relative w-full max-w-[400px] rounded-2xl border border-slate-200 bg-card/95 p-8 shadow-[0_20px_50px_rgb(0_0_0/0.08)] backdrop-blur-md">
         <div className="mb-8 flex items-center gap-4">
@@ -86,7 +86,7 @@ export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitti
                 autoCapitalize="none"
                 autoComplete="url"
                 autoCorrect="off"
-                className="h-11 rounded-lg bg-slate-50/50 px-3.5 focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+                className="h-11 rounded-lg bg-slate-50/50 px-3.5 focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-slate-900/10"
                 inputMode="url"
                 placeholder={t("login.instanceUrlPlaceholder")}
                 required
@@ -101,7 +101,7 @@ export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitti
             <span className="mb-2 block text-sm font-semibold text-slate-700">{t("login.username")}</span>
             <Input
               autoComplete="username"
-              className="h-11 rounded-lg bg-slate-50/50 px-3.5 focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+              className="h-11 rounded-lg bg-slate-50/50 px-3.5 focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-slate-900/10"
               required
               value={username}
               onChange={(event) => setUsername(event.target.value)}
@@ -112,7 +112,7 @@ export const LoginScreen = ({ error, instanceUrl: initialInstanceUrl, isSubmitti
             <span className="mb-2 block text-sm font-semibold text-slate-700">{t("login.password")}</span>
             <Input
               autoComplete="current-password"
-              className="h-11 rounded-lg bg-slate-50/50 px-3.5 focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-emerald-500/20"
+              className="h-11 rounded-lg bg-slate-50/50 px-3.5 focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-slate-900/10"
               required
               type="password"
               value={password}

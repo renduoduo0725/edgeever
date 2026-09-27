@@ -128,6 +128,20 @@ describe("mobile app scope", () => {
     expect(localTiptapEditorSource).toContain("scrollEditorPositionIntoView(editor, match.from");
   });
 
+  test("keeps in-note search on one icon row", () => {
+    expect(memoDetailSource).toContain('accessibilityLabel="上一个搜索结果"');
+    expect(memoDetailSource).toContain('accessibilityLabel="下一个搜索结果"');
+    expect(memoDetailSource).toContain('accessibilityLabel="关闭搜索"');
+    expect(memoDetailSource).not.toContain("label=\"上一个搜索结果\"");
+    expect(memoDetailSource).not.toContain("label=\"下一个搜索结果\"");
+    expect(memoDetailSource).not.toContain("label=\"关闭搜索\"");
+    const stylesSource = readFileSync(
+      new URL("../apps/mobile/src/screens/workspace-styles.ts", import.meta.url),
+      "utf8",
+    );
+    expect(stylesSource).toMatch(/noteSearchPanel: \{[\s\S]*?flexDirection: "row"/);
+  });
+
   test("keeps the Android editor caret visible while the keyboard viewport changes", () => {
     expect(workspaceEditorsSource).toContain("KeyboardAvoidingView");
     expect(workspaceEditorsSource).toContain('enabled={Platform.OS === "android"}');

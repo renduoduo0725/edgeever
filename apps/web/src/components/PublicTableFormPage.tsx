@@ -94,7 +94,7 @@ export const PublicTableFormPage = () => {
   };
 
   if (formQuery.isLoading) {
-    return <div className="grid min-h-screen place-items-center"><LoaderCircle className="h-6 w-6 animate-spin text-emerald-700" /></div>;
+    return <div className="grid min-h-screen place-items-center"><LoaderCircle className="h-6 w-6 animate-spin text-slate-500" /></div>;
   }
   if (formQuery.isError || !form) {
     return <div className="grid min-h-screen place-items-center px-6 text-sm text-slate-600">{t("structuredTable.form.closed")}</div>;
@@ -129,7 +129,7 @@ export const PublicTableFormPage = () => {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50/60 px-4">
         <main className="w-full max-w-md rounded-2xl border border-slate-200/80 bg-card p-8 shadow-sm space-y-5 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-700">
             <Check className="h-6 w-6" />
           </div>
           <h1 className="text-xl font-semibold text-slate-900">{t("structuredTable.form.submitted")}</h1>
@@ -174,7 +174,7 @@ export const PublicTableFormPage = () => {
                   <div className="pt-0.5">
                     <input
                       type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/70"
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900/20"
                       checked={value === true}
                       aria-label={field.name}
                       onChange={(event) => setValues((current) => ({ ...current, [field.id]: event.target.checked }))}
@@ -182,7 +182,7 @@ export const PublicTableFormPage = () => {
                   </div>
                 ) : field.type === "select" ? (
                   <select
-                    className="h-10 w-full rounded-md border border-slate-200 bg-card px-3 text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
+                    className="h-10 w-full rounded-md border border-slate-200 bg-card px-3 text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
                     value={typeof value === "string" ? value : ""}
                     required={field.required}
                     aria-label={field.name}

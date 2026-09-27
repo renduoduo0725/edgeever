@@ -3,6 +3,11 @@ import type { TiptapDoc, TiptapNode, TiptapTextNode } from "./content";
 
 export const IMAGE_GALLERY_NODE_TYPE = "edgeeverImageGallery" as const;
 export const IMAGE_GALLERY_LAYOUTS = ["auto", "2", "3", "1"] as const;
+/** In-document src used while a mobile upload has not finished. */
+export const TRANSIENT_IMAGE_UPLOAD_PREFIX = "edgeever-image-upload://";
+
+export const isTransientImageUploadSource = (source: unknown) =>
+  typeof source === "string" && source.startsWith(TRANSIENT_IMAGE_UPLOAD_PREFIX);
 export type ImageGalleryLayout = (typeof IMAGE_GALLERY_LAYOUTS)[number];
 
 export const resolveImageGalleryLayout = (value: unknown): ImageGalleryLayout =>

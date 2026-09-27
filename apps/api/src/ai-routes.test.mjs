@@ -6,8 +6,6 @@ import {
   AI_ACTIONS,
   AiGenerateSchema,
   AiTagSuggestionsRequestSchema,
-  DEFAULT_AI_TAG_SUGGESTION_PROMPT,
-  DEFAULT_AI_TAG_SUGGESTION_PROMPT_ZH_CN,
 } from "@edgeever/shared";
 import { registerAiRoutes } from "./ai-routes.ts";
 
@@ -178,59 +176,6 @@ describe("AI route contracts", () => {
       title: "",
       contentMarkdown: "   ",
     }).success).toBe(false);
-  });
-
-  test("stores and restores the workspace AI tag suggestion prompt", async () => {
-    const { sqlite, environment: databaseEnvironment } = createDatabaseEnvironment();
-    const app = createApp();
-
-    const initial = await app.request("/api/v1/ai/settings", {}, databaseEnvironment);
-    expect(await initial.json()).toMatchObject({
-      tagSuggestionPrompt: DEFAULT_AI_TAG_SUGGESTION_PROMPT,
-      tagSuggestionPromptCustomized: false,
-    });
-
-    const initialChinese = await app.request("/api/v1/ai/settings?locale=zh-CN", {}, databaseEnvironment);
-    expect(await initialChinese.json()).toMatchObject({
-      tagSuggestionPrompt: DEFAULT_AI_TAG_SUGGESTION_PROMPT_ZH_CN,
-      tagSuggestionPromptCustomized: false,
-    });
-
-    const customized = await app.request(
-      "/api/v1/ai/tag-suggestion-prompt",
-      {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt: "只推荐人物、作品类型和创作手法。" }),
-      },
-      databaseEnvironment,
-    );
-    expect(customized.status).toBe(200);
-    expect(await customized.json()).toMatchObject({
-      tagSuggestionPrompt: "只推荐人物、作品类型和创作手法。",
-      tagSuggestionPromptCustomized: true,
-    });
-
-    const customizedEnglish = await app.request("/api/v1/ai/settings?locale=en-US", {}, databaseEnvironment);
-    expect(await customizedEnglish.json()).toMatchObject({
-      tagSuggestionPrompt: "只推荐人物、作品类型和创作手法。",
-      tagSuggestionPromptCustomized: true,
-    });
-
-    const restored = await app.request(
-      "/api/v1/ai/tag-suggestion-prompt?locale=zh-CN",
-      {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ prompt: null }),
-      },
-      databaseEnvironment,
-    );
-    expect(await restored.json()).toMatchObject({
-      tagSuggestionPrompt: DEFAULT_AI_TAG_SUGGESTION_PROMPT_ZH_CN,
-      tagSuggestionPromptCustomized: false,
-    });
-    sqlite.close();
   });
 
   test("returns normalized AI tag suggestions and reuses canonical workspace tags", async () => {

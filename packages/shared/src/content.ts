@@ -13,7 +13,8 @@ import {
 } from "./mathematics-markdown";
 import { projectNativeUnknownContentForMarkdown } from "./mobile-content-compatibility";
 import { PluginEmbed, PLUGIN_EMBED_NODE_TYPE } from "./plugin-embed";
-import { ImageGallery, IMAGE_GALLERY_NODE_TYPE, normalizeImageGalleries } from "./image-gallery";
+import { NEW_IMAGE_WIDTH_PERCENT, parseImageWidth } from "./image-display";
+import { ImageGallery, IMAGE_GALLERY_NODE_TYPE, groupConsecutiveImagesIntoGalleries, normalizeImageGalleries } from "./image-gallery";
 import { EMPTY_EXTERNAL_LINK_NODE_TYPE } from "./empty-external-link";
 
 export { PluginEmbed, PLUGIN_EMBED_NODE_TYPE, pluginEmbedToMarkdown, normalizePluginEmbedAttributes } from "./plugin-embed";
@@ -126,13 +127,26 @@ const expandExtraBlankLinesForParse = (markdown: string) =>
     return segment.replace(/\n{3,}/g, (run) => "\n\n".repeat(run.length - 1));
   }).join("");
 
+const withDefaultImageWidths = (node: TiptapNode): TiptapNode => {
+  const content = node.content?.map((child) => (
+    child.type === "text" ? child : withDefaultImageWidths(child)
+  ));
+  const next = content ? { ...node, content } : node;
+  if (next.type !== "image" || parseImageWidth(next.attrs?.width) != null) return next;
+  return { ...next, attrs: { ...next.attrs, width: NEW_IMAGE_WIDTH_PERCENT } };
+};
+
 export const markdownToDoc = (markdown: string): TiptapDoc => {
   const normalized = markdown.replace(/\r\n?/g, "\n");
   if (!normalized) {
     return emptyDoc();
   }
 
-  return markdownManager.parse(expandExtraBlankLinesForParse(normalized)) as TiptapDoc;
+  const parsed = markdownManager.parse(expandExtraBlankLinesForParse(normalized)) as TiptapDoc;
+  return {
+    ...parsed,
+    content: groupConsecutiveImagesIntoGalleries(parsed.content.map(withDefaultImageWidths)),
+  };
 };
 
 const docContainsNodeType = (doc: TiptapDoc, nodeType: string): boolean => {

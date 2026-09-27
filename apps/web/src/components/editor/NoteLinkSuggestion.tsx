@@ -82,7 +82,7 @@ export const NoteLinkSuggestion = forwardRef<NoteLinkSuggestionHandle, NoteLinkS
                 onMouseDown={(event) => event.preventDefault()}
                 onSelect={() => command(item)}
               >
-                <Link2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                <Link2 className="h-4 w-4 shrink-0 text-slate-600" />
                 <span className="min-w-0 flex-1 truncate">{item.title || labels.untitled}</span>
                 <span className="max-w-40 truncate text-xs text-slate-400">{item.excerpt}</span>
               </CommandItem>

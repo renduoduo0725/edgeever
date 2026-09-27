@@ -33,7 +33,7 @@ export function CompanionActionCard({ action, busy, onApply, onDismiss, onOpenNo
                     <button
                       type="button"
                       disabled={busy}
-                      className="inline-flex max-w-full items-center gap-1 font-medium hover:text-emerald-600 hover:underline "
+                      className="inline-flex max-w-full items-center gap-1 font-medium hover:text-slate-950 hover:underline "
                       onClick={() => onOpenNote(note.id, note.notebookId)}
                     >
                       <FileText className="h-3 w-3 shrink-0 text-slate-400" />
@@ -60,9 +60,9 @@ export function CompanionActionCard({ action, busy, onApply, onDismiss, onOpenNo
                     type="button"
                     disabled={busy}
                     onClick={() => onOpenNote(action.notes[0].id, action.notes[0].notebookId)}
-                    className="group/note inline-flex max-w-full items-center gap-1.5 text-xs font-semibold text-slate-800 hover:text-emerald-600  "
+                    className="group/note inline-flex max-w-full items-center gap-1.5 text-xs font-semibold text-slate-800 hover:text-slate-950  "
                   >
-                    <FileText className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover/note:text-emerald-600 " />
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover/note:text-slate-950 " />
                     <span className="truncate">{action.notes[0].title || t("common.untitledMemo")}</span>
                     <ArrowUpRight className="h-3 w-3 shrink-0 opacity-40 group-hover/note:opacity-100" />
                   </button>
@@ -74,7 +74,7 @@ export function CompanionActionCard({ action, busy, onApply, onDismiss, onOpenNo
                 </div>
               ) : null}
               <div className="space-y-1 border-t border-slate-200/50 pt-2 text-xs ">
-                <p className="break-words font-medium text-emerald-700 ">
+                <p className="break-words font-medium text-slate-800 ">
                   {t("companion.actions.addTags", { tags: action.plan.tags.join(" · ") })}
                 </p>
                 {action.notes[0] ? (
@@ -109,7 +109,7 @@ export function CompanionActionCard({ action, busy, onApply, onDismiss, onOpenNo
           </div>
         </div>
       ) : action.status === "applied" ? (
-        <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200/50 bg-emerald-50/60 p-2.5 text-xs text-emerald-700   ">
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700   ">
           <span className="flex items-center gap-1.5 font-medium">
             <Check className="h-3.5 w-3.5" />
             {t("companion.actions.status.applied")}

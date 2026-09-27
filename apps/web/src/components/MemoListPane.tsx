@@ -1045,11 +1045,11 @@ export const MemoListPane = ({
       onDrop={handleFileDrop}
     >
       {fileDragActive && (
-        <div className="pointer-events-none absolute inset-2 z-40 flex items-center justify-center rounded-lg border-2 border-dashed border-emerald-500 bg-emerald-50/95 p-6 text-center shadow-lg backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-2 z-40 flex items-center justify-center rounded-lg border-2 border-dashed border-slate-400 bg-slate-50/95 p-6 text-center shadow-lg backdrop-blur-sm">
           <div>
-            <FileUp className="mx-auto h-8 w-8 text-emerald-600" />
-            <div className="mt-3 text-sm font-semibold text-emerald-950">{t("memoList.dropMarkdownTitle")}</div>
-            <div className="mt-1 text-xs text-emerald-800">{t("memoList.dropMarkdownDescription")}</div>
+            <FileUp className="mx-auto h-8 w-8 text-slate-700" />
+            <div className="mt-3 text-sm font-semibold text-slate-950">{t("memoList.dropMarkdownTitle")}</div>
+            <div className="mt-1 text-xs text-slate-600">{t("memoList.dropMarkdownDescription")}</div>
           </div>
         </div>
       )}

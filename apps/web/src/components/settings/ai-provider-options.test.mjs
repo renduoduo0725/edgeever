@@ -25,13 +25,6 @@ describe("AI provider display names", () => {
 });
 
 describe("AI settings cards tolerate missing text fields", () => {
-  test("tag suggestion prompt does not trim an unchecked API field", () => {
-    const source = readFileSync(new URL("./AiTagSuggestionPromptCard.tsx", import.meta.url), "utf8");
-    expect(source).toContain("tagSuggestionPrompt ?? \"\"");
-    expect(source).toContain("trimAiText(promptText)");
-    expect(source).not.toContain("prompt.trim()");
-  });
-
   test("provider cards trim optional names and URLs through the shared helper", () => {
     const providerCard = readFileSync(new URL("./AiProviderCard.tsx", import.meta.url), "utf8");
     const modelCard = readFileSync(new URL("./AiModelCard.tsx", import.meta.url), "utf8");

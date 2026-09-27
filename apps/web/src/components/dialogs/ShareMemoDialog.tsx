@@ -142,8 +142,8 @@ export const ShareMemoDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
         <DialogHeader className="border-b border-slate-200 px-5 py-5 pr-12 text-left">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Share2 className="h-5 w-5 text-emerald-600" />
+          <DialogTitle className="flex items-center gap-2 text-sm leading-6">
+            <Share2 className="h-5 w-5 text-slate-700" />
             {t("sharing.title")}
           </DialogTitle>
           <DialogDescription className="pt-1 leading-5">
@@ -173,7 +173,7 @@ export const ShareMemoDialog = ({
 
               <div className="space-y-3 rounded-lg border border-slate-200 px-3 py-3">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-slate-900">{t("sharing.passwordToggle")}</div>
+                  <div className="text-xs font-normal leading-5 text-slate-900">{t("sharing.passwordToggle")}</div>
                   <Switch
                     checked={share.passwordProtected}
                     disabled={isWorking}
@@ -240,14 +240,14 @@ export const ShareMemoDialog = ({
             </>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm leading-6 text-slate-600">{t("sharing.inactiveHint")}</p>
+              <p className="text-xs leading-6 text-slate-600">{t("sharing.inactiveHint")}</p>
               <Button className="w-full" variant="solid" disabled={isWorking} onClick={() => createMutation.mutate()}>
                 {createMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
                 {t("sharing.create")}
               </Button>
             </div>
           )}
-          {error ? <p className="text-sm text-rose-600" role="alert">{t("sharing.error")}</p> : null}
+          {error ? <p className="text-xs leading-5 text-rose-600" role="alert">{t("sharing.error")}</p> : null}
         </div>
       </DialogContent>
     </Dialog>

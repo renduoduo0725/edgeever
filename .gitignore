@@ -16,6 +16,8 @@ dist/
 build/
 apps/extension/dist-firefox/
 apps/extension/web-ext-artifacts/
+# Built store packages. Listing screenshots and promo tiles in this folder stay tracked.
+apps/extension/store-assets/*.zip
 release/desktop/
 coverage/
 playwright-report/

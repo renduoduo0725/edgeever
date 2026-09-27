@@ -69,13 +69,13 @@ describe("shared memo editor header actions", () => {
     expect(densitySource).toContain("max-h-12 overflow-hidden sm:max-h-9");
     expect(densitySource.match(/MEMO_EDITOR_TOP_ROW_CLASS_NAME =\s*"([^"]+)"/)?.[1]).not.toContain("sm:px-7");
     expect(densitySource.match(/MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME =\s*"([^"]+)"/)?.[1]).not.toContain("sm:px-7");
-    expect(densitySource).toContain("px-4 sm:px-7 lg:px-24");
+    expect(densitySource).toContain("[--editor-reading-gutter:1rem] sm:[--editor-reading-gutter:1.75rem] lg:[--editor-reading-gutter:6rem]");
     expect(densitySource).not.toContain("min-[1600px]:flex");
   });
 
   test("aligns the note title, notebook row, and article on one reading gutter", () => {
     expect(editorSource).toContain("MEMO_EDITOR_READING_GUTTER_CLASS_NAME");
-    expect(densitySource).toContain('export const MEMO_EDITOR_READING_GUTTER_CLASS_NAME = "px-4 sm:px-7 lg:px-24"');
+    expect(densitySource).toContain('px-[var(--editor-reading-gutter)]');
     expect(densitySource).toContain("MEMO_EDITOR_READING_GUTTER_CLASS_NAME");
     expect(editorSource).toContain("overflow-y-auto lg:[scrollbar-gutter:stable_both-edges]");
   });

@@ -174,72 +174,20 @@ export const getMemoFilterOptions = (t: TFunction): Array<{ value: MemoFilterMod
 
 export const getShortcutActionOptions = (
   t: TFunction
-): Array<{ value: ShortcutAction; label: string; description: string }> => [
-  {
-    value: "createMemo",
-    label: t("shortcuts.actions.createMemo.label"),
-    description: t("shortcuts.actions.createMemo.description"),
-  },
-  {
-    value: "createNotebook",
-    label: t("shortcuts.actions.createNotebook.label"),
-    description: t("shortcuts.actions.createNotebook.description"),
-  },
-  {
-    value: "focusSearch",
-    label: t("shortcuts.actions.focusSearch.label"),
-    description: t("shortcuts.actions.focusSearch.description"),
-  },
-  {
-    value: "focusGlobalSearch",
-    label: t("shortcuts.actions.focusGlobalSearch.label"),
-    description: t("shortcuts.actions.focusGlobalSearch.description"),
-  },
-  {
-    value: "focusReplace",
-    label: t("shortcuts.actions.focusReplace.label"),
-    description: t("shortcuts.actions.focusReplace.description"),
-  },
-  {
-    value: "openQuickSwitcher",
-    label: t("shortcuts.actions.openQuickSwitcher.label"),
-    description: t("shortcuts.actions.openQuickSwitcher.description"),
-  },
-  {
-    value: "openPreviousMemo",
-    label: t("shortcuts.actions.openPreviousMemo.label"),
-    description: t("shortcuts.actions.openPreviousMemo.description"),
-  },
-  {
-    value: "openNextMemo",
-    label: t("shortcuts.actions.openNextMemo.label"),
-    description: t("shortcuts.actions.openNextMemo.description"),
-  },
-  {
-    value: "openAiAssistant",
-    label: t("shortcuts.actions.openAiAssistant.label"),
-    description: t("shortcuts.actions.openAiAssistant.description"),
-  },
-  {
-    value: "saveAndSync",
-    label: t("shortcuts.actions.saveAndSync.label"),
-    description: t("shortcuts.actions.saveAndSync.description"),
-  },
-  {
-    value: "toggleReadingProtection",
-    label: t("shortcuts.actions.toggleReadingProtection.label"),
-    description: t("shortcuts.actions.toggleReadingProtection.description"),
-  },
-  {
-    value: "toggleEditorMode",
-    label: t("shortcuts.actions.toggleEditorMode.label"),
-    description: t("shortcuts.actions.toggleEditorMode.description"),
-  },
-  {
-    value: "toggleOutline",
-    label: t("shortcuts.actions.toggleOutline.label"),
-    description: t("shortcuts.actions.toggleOutline.description"),
-  },
+): Array<{ value: ShortcutAction; label: string }> => [
+  { value: "createMemo", label: t("shortcuts.actions.createMemo.label") },
+  { value: "createNotebook", label: t("shortcuts.actions.createNotebook.label") },
+  { value: "focusSearch", label: t("shortcuts.actions.focusSearch.label") },
+  { value: "focusGlobalSearch", label: t("shortcuts.actions.focusGlobalSearch.label") },
+  { value: "focusReplace", label: t("shortcuts.actions.focusReplace.label") },
+  { value: "openQuickSwitcher", label: t("shortcuts.actions.openQuickSwitcher.label") },
+  { value: "openPreviousMemo", label: t("shortcuts.actions.openPreviousMemo.label") },
+  { value: "openNextMemo", label: t("shortcuts.actions.openNextMemo.label") },
+  { value: "openAiAssistant", label: t("shortcuts.actions.openAiAssistant.label") },
+  { value: "saveAndSync", label: t("shortcuts.actions.saveAndSync.label") },
+  { value: "toggleReadingProtection", label: t("shortcuts.actions.toggleReadingProtection.label") },
+  { value: "toggleEditorMode", label: t("shortcuts.actions.toggleEditorMode.label") },
+  { value: "toggleOutline", label: t("shortcuts.actions.toggleOutline.label") },
 ];
 
 export const DEFAULT_SHORTCUT_SETTINGS: ShortcutSettings = {
@@ -383,11 +331,14 @@ export const writeDesktopReadingProtectionPreference = (enabled: boolean) => {
   }
 };
 
-export const readEditorOutlineCollapsedPreference = () => {
+export const readEditorOutlineCollapsedPreference = (options?: { defaultCollapsed?: boolean }) => {
   try {
-    return window.localStorage.getItem(EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY) !== "false";
+    const value = window.localStorage.getItem(EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY);
+    if (value === "false") return false;
+    if (value === "true") return true;
+    return options?.defaultCollapsed ?? true;
   } catch {
-    return true;
+    return options?.defaultCollapsed ?? true;
   }
 };
 

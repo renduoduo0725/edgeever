@@ -267,3 +267,28 @@ button:disabled {
 .about-links span {
   color: #94a3b8;
 }
+
+.image-save-shell {
+  width: min(100%, 420px);
+  padding: 22px;
+  font-size: 14px;
+}
+
+.image-save-shell h1 {
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.image-save-shell #host:empty {
+  display: none;
+}
+
+.image-save-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.image-save-actions button {
+  width: 100%;
+}

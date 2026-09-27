@@ -10,6 +10,8 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { createExcerpt, createEdgeEverDocumentExtensions, docToMarkdown, docToText, emptyDoc, getImageReferrerPolicy, isPdfAttachment, wrapDetailsContentHtml, type MemoDetail, type MemoEditSession, type Notebook, type TagSummary, type TiptapDoc } from "@edgeever/shared";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import { NEW_IMAGE_WIDTH_PERCENT } from "@edgeever/shared/image-display";
+import { insertUploadedResources } from "@/lib/resource-insertion";
+import { getResourceInsertionTarget } from "@/lib/resource-insertion-target";
 import { getMobileEditorInputAttributes, getMobileEditorPlaceholder } from "@edgeever/shared/mobile-editor";
 import { EdgeEverLink } from "@edgeever/shared/editor-link";
 import { createInlineFieldExtension } from "@/components/editor/InlineField";
@@ -627,16 +629,16 @@ export const MobileStandaloneTiptapEditor = ({
       setSaveStateStable("uploading");
       const { resource } = await uploadMobileEditorResource(currentMemo.id, uploadFile);
       if (resource.kind === "image") {
-        editor
-          .chain()
-          .focus()
-          .setImage({
+        const target = getResourceInsertionTarget(editor.state.selection);
+        editor.chain().focus().command(insertUploadedResources(target, [{
+          type: "image",
+          attrs: {
             src: resource.url,
             alt: file.name,
             title: file.name,
             width: NEW_IMAGE_WIDTH_PERCENT,
-          })
-          .run();
+          },
+        }], true)).run();
       } else if (isPdfAttachment(file.type, resource.filename || file.name)) {
         editor
           .chain()

@@ -1,7 +1,7 @@
 import { AlignHorizontalJustifyCenter, AppWindow, BookOpenText, ChartNoAxesCombined, Image, Keyboard, Languages, MousePointerClick, Palette, Sparkles, SunMoon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { EditorContentAlignment, ShortcutSettings } from "@/lib/app-helpers";
+import type { EditorContentAlignment } from "@/lib/app-helpers";
 import {
   EDITOR_LINK_OPEN_MODE_CHANGED_EVENT,
   getStoredEditorLinkOpenMode,
@@ -20,13 +20,7 @@ import {
 } from "@/lib/ai-space-shortcut-preference";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  SETTINGS_CARD_HEADER_CLASSNAME,
-  SETTINGS_CARD_ICON_CLASSNAME,
-  SETTINGS_CARD_TITLE_CLASSNAME,
-  SETTINGS_ITEM_TITLE_CLASSNAME,
-} from "./settings-ui";
+import { SETTINGS_ITEM_TITLE_CLASSNAME } from "./settings-ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -46,8 +40,16 @@ import {
 } from "@/lib/editor-body-font";
 import { applyUiFontPreference, readUiFontPreference, writeUiFontPreference } from "@/lib/ui-font";
 import { syncPublishedNoteBodyFont } from "@/lib/published-note-body-font";
-import { ShortcutSettingsItem } from "./ShortcutSettingsItem";
 import { CustomEditorThemeDialog } from "./CustomEditorThemeDialog";
+
+const PreferenceSection = ({ title, children }: { title: string; children: ReactNode }) => (
+  <section className="grid gap-2">
+    <h2 className="px-1 text-xs font-normal leading-5 text-slate-500">{title}</h2>
+    <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-card">
+      {children}
+    </div>
+  </section>
+);
 import {
   MERMAID_THEME_PREFERENCES,
   useAppearanceTheme,
@@ -179,8 +181,6 @@ const FontChoiceFields = ({
 interface PreferenceCardProps {
   imageCompressionEnabled: boolean;
   onImageCompressionChange: (enabled: boolean) => void;
-  shortcutSettings: ShortcutSettings;
-  onShortcutSettingsChange: (settings: ShortcutSettings) => void;
   editorContentAlignment: EditorContentAlignment;
   onEditorContentAlignmentChange: (alignment: EditorContentAlignment) => void;
 }
@@ -188,8 +188,6 @@ interface PreferenceCardProps {
 export const PreferenceCard = ({
   imageCompressionEnabled,
   onImageCompressionChange,
-  shortcutSettings,
-  onShortcutSettingsChange,
   editorContentAlignment,
   onEditorContentAlignmentChange,
 }: PreferenceCardProps) => {
@@ -336,14 +334,8 @@ export const PreferenceCard = ({
   };
 
   return (
-    <Card className="w-full min-w-0 overflow-hidden shadow-none">
-      <CardHeader className={SETTINGS_CARD_HEADER_CLASSNAME}>
-        <CardTitle className={SETTINGS_CARD_TITLE_CLASSNAME}>
-          <Image className={SETTINGS_CARD_ICON_CLASSNAME} />
-          {t("settings.preferences")}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="divide-y divide-slate-100 p-0">
+    <div className="grid gap-6">
+      <PreferenceSection title={t("settings.groups.interface")}>
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex min-w-0 items-center gap-3">
             <Languages className="h-4 w-4 shrink-0 text-slate-500" />
@@ -408,7 +400,9 @@ export const PreferenceCard = ({
             onChange={updateUiFont}
           />
         </div>
+      </PreferenceSection>
 
+      <PreferenceSection title={t("settings.groups.reading")}>
         <div className="hidden min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:flex">
           <div className="flex min-w-0 items-center gap-3">
             <AlignHorizontalJustifyCenter className="h-4 w-4 shrink-0 text-slate-500" />
@@ -486,7 +480,9 @@ export const PreferenceCard = ({
             </Select>
           </div>
         </div>
+      </PreferenceSection>
 
+      <PreferenceSection title={t("settings.groups.editing")}>
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex min-w-0 items-center gap-3">
             <Image className="h-4 w-4 shrink-0 text-slate-500" />
@@ -561,14 +557,7 @@ export const PreferenceCard = ({
             />
           </div>
         </div>
-
-        <div className="hidden lg:block">
-          <ShortcutSettingsItem
-            shortcutSettings={shortcutSettings}
-            onShortcutSettingsChange={onShortcutSettingsChange}
-          />
-        </div>
-      </CardContent>
+      </PreferenceSection>
       {!isMobile && editingTheme && (
         <CustomEditorThemeDialog
           open={customThemeDialogOpen}
@@ -579,6 +568,6 @@ export const PreferenceCard = ({
           isDefaultTheme={editingTheme.id === "custom-default"}
         />
       )}
-    </Card>
+    </div>
   );
 };

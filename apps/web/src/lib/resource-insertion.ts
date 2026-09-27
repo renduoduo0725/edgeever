@@ -7,7 +7,7 @@ import {
 import { mergeUploadedImagesIntoAdjacentGalleries } from "@edgeever/shared/image-gallery-editing";
 import type { ResourceInsertionTarget } from "./resource-insertion-target";
 
-/** Insert a batch and extend only galleries immediately beside the new media. */
+/** Insert a batch and fold it into the adjacent images or gallery. */
 export const insertUploadedResources = (
   target: ResourceInsertionTarget,
   content: TiptapNode[],

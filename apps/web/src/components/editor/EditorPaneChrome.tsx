@@ -219,7 +219,7 @@ export const MobileNotebookSelectSheet = ({
                     key={option.id}
                     className={cn(
                       "h-12 px-3 text-base",
-                      selected ? "bg-emerald-50 font-semibold text-emerald-700 data-[selected=true]:bg-emerald-50" : "text-slate-700",
+                      selected ? "bg-workspace-selection font-semibold text-slate-950 data-[selected=true]:bg-workspace-selection" : "text-slate-700",
                     )}
                     style={{ paddingLeft: `${12 + option.depth * 18}px` }}
                     value={option.id}

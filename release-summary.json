@@ -1,26 +1,26 @@
 {
-  "version": "1.87.0",
+  "version": "1.89.0",
   "changes": {
     "en-US": [
-      "Add beta infographic notes, created and edited on Web and desktop. Describe the content for AI to generate one, or start from a template, then keep revising it in the same conversation. Content edits keep the existing layout, and the editor follows dark mode. On mobile, edit them on Web or desktop.",
-      "Plugin AI calls no longer have an EdgeEver output-token ceiling. When a limit is omitted, the request still defaults to 3000 tokens. The model or provider may apply its own limit.",
-      "The workspace uses a cooler gray palette. Note titles line up with the toolbar and use the width beside the status controls. Menus, settings, and secondary pages use 14px and 12px type. Dividers and completed tasks use ink, tooltips use a light card, and the duplicate reading-mode icon is removed.",
-      "Desktop WeChat chat import no longer adds an extra summary card. Sandboxed share paths resolve correctly, and a link the system rejects is no longer reported as a failed import.",
-      "Notebooks that were missing an internal identifier can now be deleted. The inbox still cannot be deleted."
+      "The Web Clipper can save a right-clicked text selection as a new note, with the source link. Right-click actions stay on the top-level menu. A folded X post is expanded before the full text is saved. A clipped image is stored with the first version of the note, and a Google image-search source keeps only the query.",
+      "On Windows, right-click a file and choose Send to EdgeEver. On Windows 11 that item is under Show more options. Each selected file becomes its own note, and the original file stays in place. On macOS, sharing any file from Finder also saves it as a note: Markdown becomes the body, images become image notes, and other files are attached. WeChat merged-forward chats still import the same way. An access token that can write notes can also attach files to a note.",
+      "Consecutive pictures form one gallery. Images uploaded next to each other join that gallery, and consecutive Markdown images, such as a post with several photos, open as one gallery. A single image stays on its own. A Markdown image without a stored width uses the same 35% size as a small picture.",
+      "Settings preferences now live on their own tabs. Captions are shorter, shortcuts sit two per row, and the add-model dialog no longer repeats its title. The token page is named API Token, and ZIP export uses the same outline button as the other actions. A new OpenAI-compatible service suggests gpt-5.6-luna. The AI tag-prompt setting and the Product Hunt link are removed.",
+      "The public demo opens with the editor outline expanded, and adds sample infographic and structured-table notes. Emoji icons are removed from the sample titles."
     ],
     "zh-CN": [
-      "新增 Beta 信息图笔记，可在 Web 和桌面端创建与编辑。用一句话描述即可让 AI 生成，也可以从模板开始，然后在同一段对话里继续修改。改内容时会尽量保持原来的版式，编辑区跟随深色模式。手机端请在 Web 或桌面端修改。",
-      "插件调用 AI 时，EdgeEver 不再设置输出长度上限。未指定时仍默认 3000 token。模型或服务商可以有自己的上限。",
-      "工作区改为更冷静的灰白界面。笔记标题与工具栏左对齐，并占用状态控件左侧的宽度。菜单、设置和次级页面统一为 14px 与 12px。分割线和已完成任务改为墨色，提示改为浅色卡片，并去掉重复的阅读模式图标。",
-      "桌面端导入微信聊天记录时不再多出一张摘要卡。沙盒中的分享路径可以正确解析，被系统拒绝的链接也不会再被当成导入失败。",
-      "缺少内部标识的笔记本现在可以删除。收件箱仍然不能删除。"
+      "网页剪藏可以右键一段选中的文字，把它存成一篇新笔记，并带上来源链接。右键动作保持在菜单顶层。折叠的 X 帖子会先展开再保存全文。剪藏的图片和笔记一起写入第一版，Google 图片搜索的来源只保留查询词。",
+      "Windows 可以在文件上右键，选择「发送到 EdgeEver」。在 Windows 11 里，这一项位于「显示更多选项」。每个选中的文件会成为一篇笔记，原文件留在原地。macOS 从访达分享任意文件也会存成笔记：Markdown 成为正文，图片成为图片笔记，其他文件作为附件。微信合并转发的聊天记录仍按原来的方式导入。拥有写笔记权限的访问令牌也可以给笔记添加附件。",
+      "连续的图片会组成一个图库。挨着上传的图片会并进同一个图库；Markdown 里连续的图片，例如一条带多张照片的帖子，打开时也是一个图库。单张图片仍单独显示。没有记录宽度的 Markdown 图片，使用和小图相同的 35% 宽度。",
+      "设置里的偏好拆成了独立分页。说明文字更短，快捷键改成两列，添加模型时不再重复标题。访问令牌页改名为 API Token，导出 ZIP 的按钮与其他描边按钮一致。新建 OpenAI 兼容服务时，建议的模型是 gpt-5.6-luna。AI 标签提示词设置和 Product Hunt 链接已移除。",
+      "公开 Demo 会默认展开编辑器大纲，并加入信息图和多维表格的示例笔记。示例标题里的 emoji 已去掉。"
     ],
     "ja": [
-      "Web とデスクトップで作成・編集できるベータ版のインフォグラフィックノートを追加しました。内容を説明して AI に生成させるか、テンプレートから始め、同じ会話で修正を続けられます。内容の修正では既存のレイアウトを保ち、編集画面はダークモードに従います。モバイルでは Web またはデスクトップで編集してください。",
-      "プラグインの AI 呼び出しに、EdgeEver 独自の出力トークン上限はなくなりました。指定しない場合は従来どおり 3000 トークンが既定です。モデルやプロバイダが独自の上限を設けることがあります。",
-      "ワークスペースを落ち着いたグレーにしました。ノートのタイトルはツールバーと左端を揃え、状態表示の左側まで幅を使います。メニュー、設定、二次ページは 14px と 12px に統一します。区切り線と完了したタスクは墨色、ツールチップは明るいカードになり、重複していた閲覧モードのアイコンはなくなります。",
-      "デスクトップの WeChat チャット取り込みは、余分な要約カードを出さなくなりました。サンドボックス内の共有パスを正しく解決し、システムに拒否されたリンクを取り込み失敗として表示しません。",
-      "内部識別子のないノートブックも削除できるようになりました。受信箱は引き続き削除できません。"
+      "Web Clipper は、右クリックした選択テキストを出典リンク付きの新しいノートとして保存できます。右クリックの操作はメニューの最上位に残ります。折りたたまれた X の投稿は、全文を保存する前に展開されます。切り抜いた画像はノートの最初の版と一緒に保存され、Google 画像検索の出典は検索語だけを残します。",
+      "Windows では、ファイルを右クリックして「EdgeEver に送る」を選べます。Windows 11 では「その他のオプションを表示」の中にあります。選んだファイルごとにノートが作られ、元のファイルはそのまま残ります。macOS では、Finder から共有した任意のファイルもノートになります。Markdown は本文、画像は画像ノート、その他のファイルは添付です。WeChat の結合転送チャットはこれまでどおり取り込まれます。ノートの書き込み権限があるアクセストークンでも、ノートにファイルを添付できます。",
+      "連続した画像は一つのギャラリーになります。隣り合ってアップロードした画像はそのギャラリーに入り、複数枚の写真が並ぶ Markdown も開くと一つのギャラリーになります。一枚だけの画像はそのままです。幅が記録されていない Markdown 画像は、小さい画像と同じ 35% 幅になります。",
+      "設定の環境設定は専用のタブに分かれました。説明は短くなり、ショートカットは 2 列になり、モデル追加ではタイトルを繰り返さなくなりました。トークンのページ名は API Token で、ZIP 書き出しは他の操作と同じ枠線ボタンです。新しく追加する OpenAI 互換サービスでは、提案されるモデルが gpt-5.6-luna になります。AI タグ用プロンプトの設定と Product Hunt へのリンクはなくなりました。",
+      "公開デモでは、エディターのアウトラインが最初から展開され、インフォグラフィックと構造化テーブルのサンプルノートが加わりました。サンプルのタイトルから絵文字を外しました。"
     ]
   }
 }

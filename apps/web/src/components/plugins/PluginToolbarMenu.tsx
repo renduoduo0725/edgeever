@@ -94,7 +94,7 @@ export const PluginToolbarMenu = ({
         }}
       >
         {pendingAction === key ? (
-          <LoaderCircle className="h-4 w-4 animate-spin text-emerald-600" />
+          <LoaderCircle className="h-4 w-4 animate-spin text-slate-500" />
         ) : action.type === "panel" ? (
           <PanelRightOpen className="h-4 w-4 text-slate-500" />
         ) : (
@@ -113,13 +113,13 @@ export const PluginToolbarMenu = ({
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
                 <Button
-                  className={cn("relative hidden h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-emerald-500/70 lg:inline-flex", className)}
+                  className={cn("relative hidden h-8 w-8 text-slate-600 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-900/20 lg:inline-flex", className)}
                   size="icon"
                   variant="ghost"
                   aria-label={t("plugins.toolbar.open")}
                 >
                   <Puzzle className="h-4 w-4" />
-                  {hasActions ? <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-white" aria-hidden="true" /> : null}
+                  {hasActions ? <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-card" aria-hidden="true" /> : null}
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>

@@ -17,7 +17,7 @@ export function CompanionQuestionForm({
     return current.optionIds.length > 0 || Boolean(current.text.trim());
   });
   return (
-    <form className="space-y-3 rounded-md border border-emerald-200/80 bg-emerald-50/50 p-2.5" onSubmit={event => {
+    <form className="space-y-3 rounded-md border border-slate-200 bg-slate-50 p-2.5" onSubmit={event => {
       event.preventDefault();
       if (!ready || busy) return;
       onSubmit(questions.map(question => {
@@ -53,7 +53,7 @@ export function CompanionQuestionForm({
           ))}
           {(question.inputType === "free_text" || question.inputType !== "multi_select") ? (
             <input
-              className="w-full rounded-md border border-slate-200 px-2 py-1 text-xs outline-none focus:border-emerald-400"
+              className="w-full rounded-md border border-slate-200 px-2 py-1 text-xs outline-none focus:border-slate-900"
               placeholder={question.inputType === "free_text" ? undefined : t("companion.questions.other")}
               disabled={busy}
               value={value(question.id).text}

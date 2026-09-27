@@ -15,11 +15,11 @@ export const PwaIosPrompt = () => {
     <div className="fixed bottom-6 left-4 right-4 z-50 mx-auto max-w-md animate-in fade-in slide-in-from-bottom-5 duration-300">
       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-card/95 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-md">
         {/* Decorative top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-slate-900" />
         
         <button
           onClick={dismissIOSPrompt}
-          className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+          className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
           aria-label={t("common.close") || "Close"}
         >
           <X className="h-4 w-4" />

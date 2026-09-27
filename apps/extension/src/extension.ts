@@ -76,6 +76,42 @@ export const edgeEverRequest = async <T>(settings: ExtensionSettings, path: stri
   return response.json() as Promise<T>;
 };
 
+export const edgeEverFormRequest = async <T>(settings: ExtensionSettings, path: string, form: FormData): Promise<T> => {
+  const instanceUrl = normalizeInstanceUrl(settings.instanceUrl);
+  if (!instanceUrl || !settings.token) {
+    throw new Error(t("missingSettingsDetails"));
+  }
+
+  const response = await fetch(`${instanceUrl}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${settings.token}` },
+    body: form,
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+    throw new Error(body?.error?.message || t("requestFailed", String(response.status)));
+  }
+
+  return response.json() as Promise<T>;
+};
+
+export const uploadMemoImage = async (
+  settings: ExtensionSettings,
+  memoId: string,
+  file: { bytes: Uint8Array; mimeType: string; filename: string },
+) => {
+  const buffer = new ArrayBuffer(file.bytes.byteLength);
+  new Uint8Array(buffer).set(file.bytes);
+  const form = new FormData();
+  form.append("file", new File([buffer], file.filename, { type: file.mimeType }));
+  return edgeEverFormRequest<{ resource: { id: string } }>(
+    settings,
+    `/api/v1/memos/${encodeURIComponent(memoId)}/resources`,
+    form,
+  );
+};
+
 export const listNotebooks = (settings: ExtensionSettings) =>
   edgeEverRequest<{ notebooks: Notebook[] }>(settings, "/api/v1/notebooks");
 

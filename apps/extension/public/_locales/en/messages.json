@@ -3,7 +3,7 @@
     "message": "EdgeEver Web Clipper"
   },
   "extensionDescription": {
-    "message": "Save the current webpage or selected content to your self-hosted EdgeEver instance."
+    "message": "Save the current webpage, selected content, or a right-clicked image to your self-hosted EdgeEver instance."
   },
   "actionTitle": {
     "message": "Save to EdgeEver"
@@ -12,7 +12,7 @@
     "message": "Web Clipper"
   },
   "popupDescription": {
-    "message": "Clip the current webpage or selected content to your EdgeEver."
+    "message": "Clip the current page or selection. Right-click selected text to save that passage, right-click an image to save it, or right-click a post on X to save that post."
   },
   "saveCurrentPage": {
     "message": "Clip current page"
@@ -195,5 +195,124 @@
   },
   "emptyPageContent": {
     "message": "(No readable content was found on this page)"
+  },
+  "saveSelectionToEdgeEver": {
+    "message": "Save selection to EdgeEver"
+  },
+  "selectionSaveHint": {
+    "message": "Select text on a page, right-click, and choose “Save selection to EdgeEver”. It is saved as a new note in the default notebook selected below."
+  },
+  "savingSelection": {
+    "message": "Saving the selection…"
+  },
+  "selectionSaved": {
+    "message": "Saved the selection as a note."
+  },
+  "selectionEmpty": {
+    "message": "No text was selected, so nothing was saved."
+  },
+  "selectionNoteFallbackTitle": {
+    "message": "Selection"
+  },
+  "saveImageToEdgeEver": {
+    "message": "Save image to EdgeEver"
+  },
+  "imageSaveHint": {
+    "message": "Right-click an image on a webpage and choose “Save image to EdgeEver”. It is saved as a new note in the default notebook selected below."
+  },
+  "savingImage": {
+    "message": "Saving the image…"
+  },
+  "imageSaved": {
+    "message": "Saved as a new note."
+  },
+  "imageUnreadable": {
+    "message": "The image file could not be read, so nothing was saved. It may be drawn by the page, or it may require a signed-in download."
+  },
+  "imageTooLarge": {
+    "message": "This image is larger than 20 MB, so it was not saved."
+  },
+  "imageUnsupportedType": {
+    "message": "This image format cannot be saved into a note yet. PNG, JPEG, GIF, WebP, and AVIF are supported."
+  },
+  "imagePermissionIntro": {
+    "message": "This page cannot read the image file. After you allow the site that hosts it, EdgeEver saves it as a new note in the clipper's default notebook. Only the image you chose is read."
+  },
+  "imagePermissionHost": {
+    "message": "Site: $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "imagePermissionToast": {
+    "message": "Allow access to this image's site to save it."
+  },
+  "allowAndSaveImage": {
+    "message": "Allow and save"
+  },
+  "allowAllSitesAndSave": {
+    "message": "Allow all sites, then save future images directly"
+  },
+  "imagePermissionDenied": {
+    "message": "Site access was not allowed, so the image was not saved."
+  },
+  "imageResourceScopeRequired": {
+    "message": "This API token cannot write attachments. Create a full-access token in EdgeEver settings."
+  },
+  "imageNoteFallbackTitle": {
+    "message": "Image"
+  },
+  "imageAltFallback": {
+    "message": "Image"
+  },
+  "imageSaveWindowTitle": {
+    "message": "Save image to EdgeEver"
+  },
+  "imageSaveExpired": {
+    "message": "This save has expired. Right-click the image and try again."
+  },
+  "saveTweetToEdgeEver": {
+    "message": "Save this post to EdgeEver"
+  },
+  "tweetSaveHint": {
+    "message": "On X, right-click a post and choose “Save this post to EdgeEver”. The post text, including text behind Show more, and the photos go into one new note in the same default notebook."
+  },
+  "savingTweet": {
+    "message": "Saving this post…"
+  },
+  "tweetSaved": {
+    "message": "Saved this post as a note."
+  },
+  "tweetNotFound": {
+    "message": "Could not find that post. Right-click directly on the post."
+  },
+  "tweetPermissionIntro": {
+    "message": "A timeline has many posts. Allow access to X so the clipper can remember the post under the pointer. After that, right-click the same post once more. Only the post you choose is saved to the clipper's default notebook."
+  },
+  "tweetPermissionToast": {
+    "message": "Allow access to X to choose a post on the timeline. Then right-click that post again."
+  },
+  "tweetRightClickAgain": {
+    "message": "Posts on the timeline can be recognized now. Right-click that post again."
+  },
+  "allowTweetAccess": {
+    "message": "Allow access to X"
+  },
+  "tweetPermissionDenied": {
+    "message": "Access was not allowed. Right-click the post again to retry."
+  },
+  "tweetPermissionReady": {
+    "message": "Access allowed. Go back and right-click that post again."
+  },
+  "tweetNoteFallbackTitle": {
+    "message": "Post"
+  },
+  "tweetSaveWindowTitle": {
+    "message": "Save this post to EdgeEver"
+  },
+  "tweetTimeLabel": {
+    "message": "Time"
   }
 }

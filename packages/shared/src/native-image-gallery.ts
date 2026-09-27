@@ -39,7 +39,7 @@ export const createImageInsertTransaction = (
   return tr;
 };
 
-/** Group completed uploads, then extend adjacent galleries without moving user text. */
+/** Group a completed upload with the adjacent images or gallery, without crossing text. */
 export const groupUploadedImages = (editor: Editor, sources: readonly string[]): boolean => {
   if (!editor.isEditable || editor.isDestroyed || sources.length === 0) return false;
   const type = editor.schema.nodes[IMAGE_GALLERY_NODE_TYPE];

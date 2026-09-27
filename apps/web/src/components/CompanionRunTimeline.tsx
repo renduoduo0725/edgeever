@@ -37,8 +37,8 @@ function CompanionToolList({
         <ul className="space-y-1">
           {todos.map(todo => (
             <li key={todo.id} className="flex items-start gap-1.5 text-xs text-slate-700">
-              {todo.status === "completed" ? <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-600" /> : todo.status === "in_progress"
-                ? <Loader2 className="mt-0.5 h-3 w-3 shrink-0 animate-spin text-emerald-600" />
+              {todo.status === "completed" ? <Check className="mt-0.5 h-3 w-3 shrink-0 text-slate-950" /> : todo.status === "in_progress"
+                ? <Loader2 className="mt-0.5 h-3 w-3 shrink-0 animate-spin text-slate-500" />
                 : <Circle className="mt-0.5 h-3 w-3 shrink-0 text-slate-400" />}
               <span className={todo.status === "completed" ? "text-slate-500 line-through" : ""}>{todo.content}</span>
             </li>
@@ -58,7 +58,7 @@ function CompanionToolList({
                 const key = `${tool.id}-${effect.memoId}-${index}`;
                 return (
                   <div key={key} className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 pl-0.5">
-                    <button type="button" disabled={busy} className="inline-flex max-w-full items-center gap-1 font-medium hover:text-emerald-600 hover:underline"
+                    <button type="button" disabled={busy} className="inline-flex max-w-full items-center gap-1 font-medium hover:text-slate-950 hover:underline"
                       onClick={() => onOpenNote(effect.memoId!, effect.notebookId || "")}>
                       <FileText className="h-3 w-3 shrink-0 text-slate-400" />
                       <span className="truncate">{effect.title || t("common.untitledMemo")}</span>

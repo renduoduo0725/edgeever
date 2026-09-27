@@ -88,3 +88,15 @@ describe("block handle drop wiring", () => {
     expect(source).toContain("isInternalNodeDrag: Boolean(view.dragging)");
   });
 });
+
+describe("editor outline demo preference wiring", () => {
+  test("defaults outline to expanded in demo mode when unset and resets on demo restore", () => {
+    const editorSource = readFileSync(new URL("../EditorPane.tsx", import.meta.url), "utf8");
+    const workspaceSource = readFileSync(new URL("../WorkspaceApp.tsx", import.meta.url), "utf8");
+
+    expect(editorSource).toContain("readEditorOutlineCollapsedPreference({ defaultCollapsed: !demoMode })");
+    expect(workspaceSource).toContain("demoMode={demoMode}");
+    expect(workspaceSource).toContain("window.localStorage.removeItem(EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY)");
+  });
+});
+

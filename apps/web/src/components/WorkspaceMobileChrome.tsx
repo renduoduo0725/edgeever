@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Boxes, ChevronDown, ChevronRight, FileText, Home, Network, Plus, Presentation, Search, TableProperties, UserRound, Workflow, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Component, FileText, GitFork, Home, PieChart, Plus, Search, Table2, UserRound, Workflow, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -11,6 +11,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { BETA_BADGE_CLASSNAME } from "@/lib/workspace-ui";
 import type { NoteCreateKind, Notebook } from "@edgeever/shared";
 import type { MobileBottomNavItem, NotebookNode } from "@/lib/app-helpers";
 import {
@@ -34,9 +35,9 @@ const MobileBottomNavButton = ({
 }) => (
   <button
     className={cn(
-      "relative mx-auto flex h-12 w-20 flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-green)]",
+      "relative mx-auto flex h-12 w-20 flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/25",
       active
-        ? "font-bold text-slate-950 [&_svg]:text-emerald-700"
+        ? "font-bold text-slate-950 [&_svg]:text-slate-950"
         : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
     )}
     type="button"
@@ -44,7 +45,7 @@ const MobileBottomNavButton = ({
     aria-label={label}
     onClick={onClick}
   >
-    {active ? <span aria-hidden="true" className="absolute top-0 h-0.5 w-5 rounded-full bg-emerald-700" /> : null}
+    {active ? <span aria-hidden="true" className="absolute top-0 h-0.5 w-5 rounded-full bg-slate-950" /> : null}
     {icon}
     <span>{label}</span>
   </button>
@@ -78,7 +79,7 @@ export const MobileBottomNav = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex h-mobile-touch flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-mobile-touch flex-col items-center justify-center gap-0.5 rounded-md text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-50"
               type="button"
               aria-label={createMemoLabel}
               disabled={!canCreateMemo || isCreating}
@@ -93,7 +94,7 @@ export const MobileBottomNav = ({
               <span className="min-w-0 flex-1 truncate">{t("diagram.normalNote")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("mind-map")}>
-              <Network className="h-4 w-4 shrink-0" />
+              <GitFork className="h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{t("diagram.mindMap")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("flowchart")}>
@@ -101,19 +102,18 @@ export const MobileBottomNav = ({
               <span className="min-w-0 flex-1 truncate">{t("diagram.flowchart")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("architecture")}>
-              <Boxes className="h-4 w-4 shrink-0" />
+              <Component className="h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{t("diagram.architecture")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("infographic")}>
-              <Presentation className="h-4 w-4 shrink-0" />
+              <PieChart className="h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{t("infographic.name")}</span>
+              <span className={BETA_BADGE_CLASSNAME}>Beta</span>
             </DropdownMenuItem>
             <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("table")}>
-              <TableProperties className="h-4 w-4 shrink-0" />
+              <Table2 className="h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{t("structuredTable.name")}</span>
-              <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 text-xs font-normal leading-5 text-emerald-700">
-                Beta
-              </span>
+              <span className={BETA_BADGE_CLASSNAME}>Beta</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

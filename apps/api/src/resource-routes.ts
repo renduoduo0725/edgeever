@@ -21,7 +21,7 @@ import {
   type ResourceStatsRow,
 } from "./resource-service";
 import type { initiateResourceUpload as initiateResourceUploadService } from "./resource-upload-service";
-import { getAuditActor, getWorkspaceId, requireScopes } from "./request-auth";
+import { getAuditActor, getWorkspaceId, requireAnyScopes, requireScopes } from "./request-auth";
 import type { DatabaseAdapter } from "./storage-contract";
 
 type ResourceRouteDependencies = {
@@ -125,7 +125,7 @@ export const registerResourceRoutes = (
   });
 
   app.post("/api/v1/memos/:id/resources", async (context) => {
-    const denied = requireScopes(context, "write:resources");
+    const denied = requireAnyScopes(context, ["write:memos"], ["write:resources"]);
     if (denied) return denied;
 
     const declaredRequestBytes = Number(context.req.header("Content-Length"));
@@ -183,7 +183,7 @@ export const registerResourceRoutes = (
   });
 
   app.post("/api/v1/memos/:id/resource-uploads", async (context) => {
-    const denied = requireScopes(context, "write:resources");
+    const denied = requireAnyScopes(context, ["write:memos"], ["write:resources"]);
     if (denied) return denied;
 
     const memoId = context.req.param("id");
@@ -218,7 +218,7 @@ export const registerResourceRoutes = (
   });
 
   app.put("/api/v1/resource-uploads/:id/parts/:partNumber", async (context) => {
-    const denied = requireScopes(context, "write:resources");
+    const denied = requireAnyScopes(context, ["write:memos"], ["write:resources"]);
     if (denied) return denied;
 
     const body = context.req.raw.body;
@@ -246,7 +246,7 @@ export const registerResourceRoutes = (
   });
 
   app.post("/api/v1/resource-uploads/:id/complete", async (context) => {
-    const denied = requireScopes(context, "write:resources");
+    const denied = requireAnyScopes(context, ["write:memos"], ["write:resources"]);
     if (denied) return denied;
     try {
       const resource = await dependencies.completeResourceUpload(
@@ -261,7 +261,7 @@ export const registerResourceRoutes = (
   });
 
   app.delete("/api/v1/resource-uploads/:id", async (context) => {
-    const denied = requireScopes(context, "write:resources");
+    const denied = requireAnyScopes(context, ["write:memos"], ["write:resources"]);
     if (denied) return denied;
     try {
       await dependencies.abortResourceUpload(context, context.req.param("id"));

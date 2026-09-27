@@ -6,10 +6,13 @@ import { initializeTheme } from "@/components/ThemeProvider";
 import { applyEditorBodyFontPreference } from "@/lib/editor-body-font";
 import { installEditorBodyFontFaces } from "@/lib/editor-body-font-faces";
 import { applyUiFontPreference } from "@/lib/ui-font";
+import { installPhoneImageFillStyle } from "@edgeever/shared/image-display";
 import { bootstrapI18n } from "@/i18n";
 import { defaultLocale, getBrowserLocale } from "@/i18n/locales";
 import "./styles/mobile-markdown-editor.css";
 import "./styles/editor-body-fonts.css";
+
+installPhoneImageFillStyle();
 
 declare global {
   interface Window {

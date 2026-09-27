@@ -1,6 +1,6 @@
 # EdgeEver Web Clipper
 
-Chrome, Edge, and Firefox Manifest V3 extension for saving the current webpage or selected text to a user's self-hosted EdgeEver instance.
+Chrome, Edge, and Firefox Manifest V3 extension for saving the current webpage, selected text, or a right-clicked image to a user's self-hosted EdgeEver instance.
 
 ## Current MVP
 
@@ -8,6 +8,10 @@ Chrome, Edge, and Firefox Manifest V3 extension for saving the current webpage o
 - Test the connection and select a default notebook.
 - Click the extension action to capture the selected content, or extract the article body with Mozilla Readability when there is no selection.
 - Convert the extracted article HTML into Markdown with Turndown before uploading it.
+- Right-click an image and choose **Save image to EdgeEver**. The image file is uploaded into a new note in the default notebook, with the source page linked underneath.
+- Select text on a page, right-click, and choose **Save selection to EdgeEver**. That passage is saved as a new note in the default notebook, with the source page linked underneath. The rest of the page is not included.
+- On X, right-click the post text and choose **Save this post to EdgeEver**. The post text, author, time, and photos already shown in that post are saved into one note. Text folded behind Show more is expanded first, so a long post is saved in full. Right-clicking a photo saves that image instead, so the command stays on the top-level menu. A single-post page can be saved immediately. On a timeline, the extension asks once for access to X so it can remember the post under the pointer.
+- When the page cannot hand over the image bytes, the extension asks once for access to that image's site. After that, later images from the same site save directly.
 - Create a searchable EdgeEver memo with the source URL and a `web-clip` tag.
 
 The extension does not use a central relay service. The page content is sent directly to the EdgeEver instance configured by the user.
@@ -55,7 +59,7 @@ The Firefox package declares the data types required by its user-triggered clipp
 
 - `authenticationInfo`: the API token sent directly to the user's EdgeEver instance.
 - `browsingActivity`: the URL of the page the user chooses to clip.
-- `websiteContent`: the selected text or extracted article content the user chooses to clip.
+- `websiteContent`: the selected text, extracted article content, or image the user chooses to clip.
 
 No data is sent to an EdgeEver-operated relay, analytics service, or advertising service.
 

@@ -93,9 +93,13 @@ interface EdgeEverDesktopBridge {
   retryWeChatImport?(importId: string): Promise<boolean>;
   onImportWeChatChat?(callback: (payload: {
     ok: boolean;
+    kind?: "file";
     reason?: string;
     importId?: string;
     title?: string;
+    filename?: string;
+    mimeType?: string;
+    byteSize?: number;
     markdown?: string;
     media?: Array<{ id: string; filename: string; mimeType: string; byteSize: number }>;
   }) => void): () => void;

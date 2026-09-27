@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="imageSaveWindowTitle">Save image to EdgeEver</title>
+  </head>
+  <body>
+    <main class="image-save-shell">
+      <h1 data-i18n="imageSaveWindowTitle">Save image to EdgeEver</h1>
+      <p class="hint" data-i18n="imagePermissionIntro">This page cannot read the image file. After you allow the site that hosts it, EdgeEver saves it as a new note in the clipper's default notebook. Only the image you chose is read.</p>
+      <p id="host" class="hint"></p>
+      <div class="image-save-actions">
+        <button id="allow" type="button" disabled data-i18n="allowAndSaveImage">Allow and save</button>
+        <button id="allow-all" class="secondary" type="button" disabled data-i18n="allowAllSitesAndSave">Allow all sites and save future images directly</button>
+      </div>
+      <p id="status" class="status" role="status"></p>
+    </main>
+    <script type="module" src="/src/image-save.ts"></script>
+  </body>
+</html>

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { parseDiagramDocument } from "@edgeever/shared";
+import {
+  parseDiagramDocument,
+  parseInfographicDocument,
+  parseTableDocument,
+} from "@edgeever/shared";
 import { computeDiagramLayoutResult } from "../../../packages/shared/src/diagram-layout.ts";
 import {
   decodeDemoAttachment,
@@ -18,6 +22,10 @@ describe("demo seed catalog", () => {
     expect(memoIds.size).toBe(DEMO_SEED_MEMOS.length);
     expect(memoIds.has("memo_demo_overview")).toBe(true);
     expect(memoIds.has("memo_demo_overview_en")).toBe(true);
+    expect(memoIds.has("memo_demo_infographic")).toBe(true);
+    expect(memoIds.has("memo_demo_infographic_en")).toBe(true);
+    expect(memoIds.has("memo_demo_table")).toBe(true);
+    expect(memoIds.has("memo_demo_table_en")).toBe(true);
     expect(memoIds.has("memo_demo_architecture")).toBe(true);
     expect(memoIds.has("memo_demo_architecture_en")).toBe(true);
     expect(memoIds.has("memo_demo_flowchart")).toBe(true);
@@ -29,6 +37,30 @@ describe("demo seed catalog", () => {
     }
     for (const revision of DEMO_SEED_REVISIONS) {
       expect(memoIds.has(revision.memoId)).toBe(true);
+    }
+  });
+
+  test("seeds one editable example for infographic and structured table in each language", () => {
+    for (const suffix of ["", "_en"]) {
+      const infographicMemo = DEMO_SEED_MEMOS.find((c) => c.id === `memo_demo_infographic${suffix}`);
+      expect(infographicMemo).toBeDefined();
+      const infographic = parseInfographicDocument(infographicMemo?.markdown);
+      expect(infographic?.syntax).toContain("sequence-timeline-rounded-rect-node");
+
+      const tableMemo = DEMO_SEED_MEMOS.find((c) => c.id === `memo_demo_table${suffix}`);
+      expect(tableMemo).toBeDefined();
+      const table = parseTableDocument(tableMemo?.markdown);
+      expect(table?.fields.length).toBeGreaterThan(0);
+      expect(table?.records.length).toBeGreaterThan(0);
+      for (const record of table?.records ?? []) {
+        for (const [fieldId, cellValue] of Object.entries(record.cells)) {
+          if (Array.isArray(cellValue)) {
+            for (const item of cellValue) {
+              expect(item.resourceId).toBeDefined();
+            }
+          }
+        }
+      }
     }
   });
 

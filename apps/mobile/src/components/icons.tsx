@@ -32,6 +32,7 @@ export const Camera = createIcon("camera");
 export const Check = createIcon("check");
 export const CheckSquare = createIcon("check-square");
 export const ChevronDown = createIcon("chevron-down");
+export const ChevronUp = createIcon("chevron-up");
 export const ChevronLeft = createIcon("chevron-left");
 export const ChevronRight = createIcon("chevron-right");
 export const Code = createIcon("code");

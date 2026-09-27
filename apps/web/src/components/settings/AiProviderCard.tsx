@@ -116,8 +116,6 @@ export const AiProviderCard = ({ provider: saved, defaultDisplayName, defaultMod
     || Boolean(apiKey);
   const connectionError = saveMutation.error ?? testMutation.error;
   const cardError = toggleMutation.error ?? deleteMutation.error ?? discoverMutation.error ?? addModelMutation.error ?? deleteModelMutation.error;
-  const providerLabel = t(`aiModel.providers.${saved.provider}`);
-
   const handleProviderChange = (next: AiProvider) => {
     const previous = providerDefaults[provider];
     const defaults = providerDefaults[next];
@@ -164,15 +162,12 @@ export const AiProviderCard = ({ provider: saved, defaultDisplayName, defaultMod
       <div className="flex flex-col gap-2.5 p-3.5 sm:p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="truncate text-sm font-semibold text-slate-900">{effectiveDisplayName}</span>
+            <span className="truncate text-xs font-normal text-slate-900">{effectiveDisplayName}</span>
             {saved.credentialsUnavailable ? (
-              <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+              <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-normal text-amber-800">
                 {t("aiModel.savedCredentialsUnavailableBadge")}
               </span>
             ) : null}
-            <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              {providerLabel}
-            </span>
             <span className="max-w-full truncate font-mono text-xs text-slate-400">
               {formatBaseUrl(saved.baseUrl)}
             </span>
@@ -245,12 +240,9 @@ export const AiProviderCard = ({ provider: saved, defaultDisplayName, defaultMod
                   key={model.id}
                   className="inline-flex h-6.5 max-w-full min-w-0 items-center gap-1.5 rounded-md border border-slate-200/80 bg-slate-50/80 pl-2 pr-1 text-xs text-slate-700"
                 >
-                  <span className="min-w-0 truncate font-medium">{model.displayName}</span>
-                  {model.modelId !== model.displayName ? (
-                    <span className="min-w-0 truncate font-mono text-xs text-slate-400">({model.modelId})</span>
-                  ) : null}
+                  <span className="min-w-0 truncate font-normal">{model.displayName}</span>
                   {model.id === defaultModelId ? (
-                    <span className="shrink-0 rounded border border-emerald-200/60 bg-emerald-50 px-1 py-0.5 text-xs font-medium text-emerald-700">
+                    <span className="shrink-0 rounded border border-slate-200 bg-slate-100 px-1 py-0.5 text-xs font-normal text-slate-700">
                       {t("aiModel.defaultBadge")}
                     </span>
                   ) : null}

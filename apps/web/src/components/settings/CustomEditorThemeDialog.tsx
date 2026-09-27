@@ -161,7 +161,7 @@ export const CustomEditorThemeDialog = ({
               onClick={() => setActiveMode("light")}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1 text-xs font-medium transition-all ${
                 activeMode === "light"
-                  ? "bg-card text-emerald-800 shadow-sm"
+                  ? "bg-card font-semibold text-slate-950 shadow-sm"
                   : "text-slate-500 hover:text-slate-800"
               }`}
             >
@@ -173,7 +173,7 @@ export const CustomEditorThemeDialog = ({
               onClick={() => setActiveMode("dark")}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1 text-xs font-medium transition-all ${
                 activeMode === "dark"
-                  ? "bg-card text-emerald-800 shadow-sm"
+                  ? "bg-card font-semibold text-slate-950 shadow-sm"
                   : "text-slate-500 hover:text-slate-800"
               }`}
             >
@@ -224,7 +224,7 @@ export const CustomEditorThemeDialog = ({
               value={draft.customCss || ""}
               onChange={(event) => setDraft((current) => ({ ...current, customCss: event.target.value }))}
               placeholder="e.g. h1 { font-style: italic; } blockquote { border-radius: 6px; }"
-              className="min-h-[72px] w-full rounded-md border border-slate-200 bg-card p-2 font-mono text-xs focus:border-emerald-500 focus:outline-none"
+              className="min-h-[72px] w-full rounded-md border border-slate-200 bg-card p-2 font-mono text-xs focus:border-slate-900 focus:outline-none"
               maxLength={2000}
             />
           </label>

@@ -24,14 +24,14 @@ export const PluginUpdateDialog = ({
     <Dialog open={true} onOpenChange={(open) => { if (!open && !isUpdating) onCancel(); }}>
       <DialogContent className="max-w-md overflow-hidden rounded-lg border border-slate-200 bg-card p-0 shadow-lg">
         <DialogHeader className="flex flex-row items-start gap-4 border-b border-slate-200 px-5 py-5 text-left">
-          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${hasAddedAccess ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${hasAddedAccess ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-800"}`}>
             {hasAddedAccess ? <AlertTriangle className="h-5 w-5" /> : <ShieldCheck className="h-5 w-5" />}
           </span>
           <div className="min-w-0 flex-1">
             <DialogTitle className="font-semibold text-slate-950">
               {t("plugins.updates.confirmTitle", { name: update.latestManifest.name })}
             </DialogTitle>
-            <DialogDescription className="mt-1 flex items-center gap-2 text-sm text-slate-500">
+            <DialogDescription className="mt-1 flex items-center gap-2 text-xs leading-5 text-slate-500">
               <span>v{update.currentVersion}</span>
               <ArrowRight className="h-3.5 w-3.5" />
               <span>v{update.latestVersion}</span>
@@ -40,7 +40,7 @@ export const PluginUpdateDialog = ({
         </DialogHeader>
 
         <div className="grid gap-3 px-5 py-4 text-sm">
-          <p className="leading-6 text-slate-600">
+          <p className={`leading-6 text-slate-600 ${hasAddedAccess ? "text-sm" : "text-xs"}`}>
             {hasAddedAccess ? t("plugins.updates.addedAccessDescription") : t("plugins.updates.confirmDescription")}
           </p>
           {update.addedPermissions.length > 0 ? (

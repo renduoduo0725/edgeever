@@ -114,6 +114,32 @@ describe("resource route contracts", () => {
     expect(await response.json()).toMatchObject({ error: { code: "forbidden" } });
   });
 
+  test("lets a memo writer attach an image without the attachment-management scope", async () => {
+    const form = new FormData();
+    form.append("file", new File([Uint8Array.of(0xff, 0xd8, 0xff)], "cat.jpg", { type: "image/jpeg" }));
+    let uploaded = null;
+    const response = await createApp(
+      { ...agentAuth, scopes: ["write:memos"] },
+      async () => null,
+      {
+        getMemoDetail: async () => ({ id: "memo_1" }),
+        createImageResource: async (_context, input) => {
+          uploaded = input;
+          return { id: "res_1" };
+        },
+      },
+    ).request(
+      "/api/v1/memos/memo_1/resources",
+      { method: "POST", body: form },
+      createEnvironment(),
+    );
+
+    expect(response.status).toBe(201);
+    expect(uploaded.memoId).toBe("memo_1");
+    expect(uploaded.filename).toBe("cat.jpg");
+    expect(await response.json()).toMatchObject({ resource: { id: "res_1" } });
+  });
+
   test("replaces resource content with an explicit optimistic-concurrency baseline", async () => {
     let replacement;
     const form = new FormData();

@@ -209,8 +209,8 @@ export const ShareNoteImageDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[94vh] max-w-5xl gap-0 overflow-hidden p-0">
         <DialogHeader className="border-b border-slate-200 px-5 py-3.5 pr-12 text-left">
-          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-            <Share2 className="h-4.5 w-4.5 text-emerald-600" />
+          <DialogTitle className="flex items-center gap-2 text-sm leading-6 font-semibold">
+            <Share2 className="h-4.5 w-4.5 text-slate-700" />
             {t("editor.imageShare.title")}
           </DialogTitle>
           <DialogDescription className="sr-only">{t("editor.imageShare.description")}</DialogDescription>
@@ -226,12 +226,12 @@ export const ShareNoteImageDialog = ({
                 src={previewUrl}
               />
             ) : error ? (
-              <div className="flex min-h-64 items-center justify-center text-sm text-rose-600" role="alert">
+              <div className="flex min-h-64 items-center justify-center text-xs leading-5 text-rose-600" role="alert">
                 {t("editor.imageExport.error")}
               </div>
             ) : (
-              <div className="flex min-h-64 items-center justify-center gap-2 text-sm text-slate-500" role="status">
-                <LoaderCircle className="h-5 w-5 animate-spin text-emerald-600" />
+              <div className="flex min-h-64 items-center justify-center gap-2 text-xs leading-5 text-slate-500" role="status">
+                <LoaderCircle className="h-5 w-5 animate-spin text-slate-500" />
                 {t("editor.imageShare.generating")}
               </div>
             )}
@@ -253,9 +253,9 @@ export const ShareNoteImageDialog = ({
                       key={item.id}
                       aria-pressed={isSelected}
                       className={cn(
-                        "group relative flex items-center gap-2.5 rounded-lg border p-2 text-left text-xs font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                        "group relative flex items-center gap-2.5 rounded-lg border p-2 text-left text-xs font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20",
                         isSelected
-                          ? "border-emerald-500 bg-emerald-50/40 text-emerald-950 ring-1 ring-emerald-500"
+                          ? "border-slate-900 bg-slate-50 text-slate-950 ring-1 ring-slate-900"
                           : "border-slate-200 bg-card text-slate-700 hover:border-slate-300 hover:bg-slate-50/70",
                       )}
                       type="button"
@@ -284,9 +284,9 @@ export const ShareNoteImageDialog = ({
                     key={item.id}
                     aria-pressed={fontStyle === item.id}
                     className={cn(
-                      "h-8 rounded-md border text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                      "h-8 rounded-md border text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20",
                       fontStyle === item.id
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-900 font-semibold"
+                        ? "border-slate-900 bg-slate-100 text-slate-950 font-semibold"
                         : "border-slate-200 bg-card text-slate-600 hover:bg-slate-50",
                     )}
                     type="button"
@@ -306,9 +306,9 @@ export const ShareNoteImageDialog = ({
                       key={item.id}
                       aria-pressed={fontSize === item.id}
                       className={cn(
-                        "h-7 rounded border text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                        "h-7 rounded border text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20",
                         fontSize === item.id
-                          ? "border-emerald-500 bg-emerald-50/80 text-emerald-900 font-semibold"
+                          ? "border-slate-900 bg-slate-100 text-slate-950 font-semibold"
                           : "border-slate-200 bg-card text-slate-600 hover:bg-slate-50",
                       )}
                       type="button"
@@ -329,9 +329,9 @@ export const ShareNoteImageDialog = ({
                       key={item.id}
                       aria-pressed={cardWidth === item.id}
                       className={cn(
-                        "h-7 rounded border text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+                        "h-7 rounded border text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20",
                         cardWidth === item.id
-                          ? "border-emerald-500 bg-emerald-50/80 text-emerald-900 font-semibold"
+                          ? "border-slate-900 bg-slate-100 text-slate-950 font-semibold"
                           : "border-slate-200 bg-card text-slate-600 hover:bg-slate-50",
                       )}
                       type="button"

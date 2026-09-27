@@ -1,12 +1,15 @@
-import { normalizeImageGalleries, type TiptapDoc, type TiptapNode } from "@edgeever/shared";
-
-const IMAGE_UPLOAD_PLACEHOLDER_PREFIX = "edgeever-image-upload://";
+import {
+  isTransientImageUploadSource,
+  normalizeImageGalleries,
+  TRANSIENT_IMAGE_UPLOAD_PREFIX,
+  type TiptapDoc,
+  type TiptapNode,
+} from "@edgeever/shared";
 
 export const createMobileImageUploadPlaceholderSource = (id: string) =>
-  `${IMAGE_UPLOAD_PLACEHOLDER_PREFIX}${id}`;
+  `${TRANSIENT_IMAGE_UPLOAD_PREFIX}${id}`;
 
-export const isMobileImageUploadPlaceholderSource = (source: unknown) =>
-  typeof source === "string" && source.startsWith(IMAGE_UPLOAD_PLACEHOLDER_PREFIX);
+export const isMobileImageUploadPlaceholderSource = isTransientImageUploadSource;
 
 export const stripMobileImageUploadPlaceholders = (doc: TiptapDoc): TiptapDoc => {
   const stripNodes = (nodes: TiptapNode[]): TiptapNode[] => nodes.flatMap((node) => {

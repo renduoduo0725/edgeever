@@ -304,7 +304,7 @@ export const TableFormDialog = ({
           </div>
         ) : (
           <>
-            <label className="flex items-center justify-between gap-3 text-sm">
+            <label className="flex items-center justify-between gap-3 text-xs font-normal leading-5">
               <span>{t("structuredTable.form.enabled")}</span>
               <Switch checked={draft.enabled} onCheckedChange={changeEnabled} aria-label={t("structuredTable.form.enabled")} />
             </label>
@@ -334,7 +334,7 @@ export const TableFormDialog = ({
                 {t("structuredTable.form.saving")}
               </p>
             ) : null}
-            <label className="flex items-center justify-between gap-3 text-sm">
+            <label className="flex items-center justify-between gap-3 text-xs font-normal leading-5">
               <span>{t("structuredTable.form.password")}</span>
               <Switch checked={draft.passwordProtected} onCheckedChange={changePassword} aria-label={t("structuredTable.form.password")} />
             </label>
@@ -355,7 +355,7 @@ export const TableFormDialog = ({
                 {t("structuredTable.form.regenerate")}
               </Button>
             ) : null}
-            <label className="block space-y-1 text-sm">
+            <label className="block space-y-1 text-xs font-normal leading-5">
               <span>{t("structuredTable.form.formTitle")}</span>
               <Input
                 value={draft.title}
@@ -363,16 +363,16 @@ export const TableFormDialog = ({
                 aria-label={t("structuredTable.form.formTitle")}
               />
             </label>
-            <label className="block space-y-1 text-sm">
+            <label className="block space-y-1 text-xs font-normal leading-5">
               <span>{t("structuredTable.form.formDescription")}</span>
               <textarea
-                className="min-h-20 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70"
+                className="min-h-20 w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
                 value={draft.description}
                 onChange={(event) => changeText({ description: event.target.value })}
                 aria-label={t("structuredTable.form.formDescription")}
               />
             </label>
-            <label className="block space-y-1 text-sm">
+            <label className="block space-y-1 text-xs font-normal leading-5">
               <span>{t("structuredTable.form.submitLabel")}</span>
               <Input
                 value={draft.submitLabel}
@@ -382,11 +382,11 @@ export const TableFormDialog = ({
               />
             </label>
             <div className="space-y-2">
-              <p className="text-sm">{t("structuredTable.form.fields")}</p>
+              <p className="text-xs leading-5">{t("structuredTable.form.fields")}</p>
               {fields.map((field) => {
                 const setting = draft.selected.find((item) => item.fieldId === field.id);
                 return (
-                  <div key={field.id} className="flex items-center justify-between gap-3 text-sm">
+                  <div key={field.id} className="flex items-center justify-between gap-3 text-xs font-normal leading-5">
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -411,9 +411,9 @@ export const TableFormDialog = ({
                 );
               })}
             </div>
-            {error ? <p className="text-sm text-rose-600" role="alert">{error}</p> : null}
-            {!error && saving && link ? <p className="text-sm text-slate-500" role="status">{t("structuredTable.form.saving")}</p> : null}
-            {!error && !saving && confirmed ? <p className="text-sm text-emerald-700" role="status">{t("structuredTable.form.saved")}</p> : null}
+            {error ? <p className="text-xs leading-5 text-rose-600" role="alert">{error}</p> : null}
+            {!error && saving && link ? <p className="text-xs leading-5 text-slate-500" role="status">{t("structuredTable.form.saving")}</p> : null}
+            {!error && !saving && confirmed ? <p className="text-xs leading-5 text-emerald-700" role="status">{t("structuredTable.form.saved")}</p> : null}
           </>
         )}
       </DialogContent>

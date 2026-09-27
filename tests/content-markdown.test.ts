@@ -83,6 +83,16 @@ const answer = 42;
 
     const doc = markdownToDoc(markdown);
     expect(doc.content.map((node) => node.type)).toEqual(["codeBlock", "image"]);
+    expect(doc.content[1]?.attrs?.width).toBe(35);
+    expect(docToMarkdown(doc)).toBe(markdown);
+  });
+
+  test("groups consecutive images into one gallery and keeps a single image alone", () => {
+    const markdown = "正文\n\n![一](/a.png)\n\n![二](/b.png)\n\n![三](/c.png)\n\n来源";
+    const doc = markdownToDoc(markdown);
+    expect(doc.content.map((node) => node.type)).toEqual(["paragraph", "edgeeverImageGallery", "paragraph"]);
+    expect(doc.content[1]?.attrs).toEqual({ layout: "auto" });
+    expect(doc.content[1]?.content?.map((node) => node.attrs?.src)).toEqual(["/a.png", "/b.png", "/c.png"]);
     expect(docToMarkdown(doc)).toBe(markdown);
   });
 

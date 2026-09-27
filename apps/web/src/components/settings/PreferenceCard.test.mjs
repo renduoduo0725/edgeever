@@ -73,6 +73,24 @@ describe("paper editor themes", () => {
   });
 });
 
+describe("settings information architecture", () => {
+  test("groups general preferences and gives shortcuts and MCP their own navigation", () => {
+    const preferenceCard = readFileSync(new URL("./PreferenceCard.tsx", import.meta.url), "utf8");
+    const settingsPane = readFileSync(new URL("../SettingsPane.tsx", import.meta.url), "utf8");
+    const shortcuts = readFileSync(new URL("./ShortcutSettingsItem.tsx", import.meta.url), "utf8");
+
+    expect(preferenceCard).toContain('t("settings.groups.interface")');
+    expect(preferenceCard).toContain('t("settings.groups.reading")');
+    expect(preferenceCard).toContain('t("settings.groups.editing")');
+    expect(preferenceCard).not.toContain("ShortcutSettingsItem");
+    expect(settingsPane).toContain('t("settings.tabs.shortcuts")');
+    expect(settingsPane).toContain('t("settings.tabs.mcp")');
+    expect(settingsPane).toContain('item.key !== "shortcuts"');
+    expect(shortcuts).not.toContain("Dialog");
+    expect(shortcuts).toContain('t("shortcuts.reset")');
+  });
+});
+
 describe("custom editor theme portability", () => {
   test("offers import and export while keeping contrast as a warning", () => {
     const dialog = readFileSync(new URL("./CustomEditorThemeDialog.tsx", import.meta.url), "utf8");

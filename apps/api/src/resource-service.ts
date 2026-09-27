@@ -240,6 +240,7 @@ export const listResourcesForMcp = async (
 
 type ResourceCreateInput = {
   memoId: string;
+  resourceId?: string;
   filename: string;
   mimeType: string;
   bytes: Uint8Array;
@@ -258,7 +259,7 @@ const storeResource = async (
     objectKeyExtension?: string;
   },
 ) => {
-  const resourceId = createId("res");
+  const resourceId = input.resourceId?.trim() || createId("res");
   const now = isoNow();
   const workspaceId = getWorkspaceId(context);
   const filename = normalizeFilename(input.filename) || `${resourceId}${input.objectKeyExtension ?? ""}`;

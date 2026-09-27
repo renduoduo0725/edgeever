@@ -65,7 +65,7 @@ export const EditorNoteLinkPicker = ({
               <CommandGroup>
                 {candidates.map((candidate) => (
                   <CommandItem key={candidate.id} value={candidate.id} onSelect={() => onInsert(candidate)}>
-                    <Link2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <Link2 className="h-4 w-4 shrink-0 text-slate-600" />
                     <span className="min-w-0 flex-1 truncate">{candidate.title || t("common.untitledMemo")}</span>
                     <span className="max-w-40 truncate text-xs text-slate-400">{candidate.excerpt}</span>
                   </CommandItem>

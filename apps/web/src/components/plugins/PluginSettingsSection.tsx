@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { SETTINGS_ITEM_TITLE_CLASSNAME } from "@/components/settings/settings-ui";
 import { groupPluginSettingFields } from "./plugin-settings-layout";
 
 const PluginSettingListDialog = ({ field }: { field: PluginSettingField }) => {
@@ -89,7 +90,7 @@ const PluginSettingFieldRow = ({
   const { t } = useTranslation();
   const descriptionId = field.description ? `${inputId}-description` : undefined;
   const label = (
-    <label htmlFor={inputId} className="block text-sm font-medium leading-5 text-slate-800">
+    <label htmlFor={inputId} className={`block ${SETTINGS_ITEM_TITLE_CLASSNAME}`}>
       {field.label}
       {field.required ? <span className="ml-1 text-rose-600" aria-hidden="true">*</span> : null}
     </label>
@@ -306,9 +307,9 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
       <header className="border-b border-slate-200 pb-5">
         <h3 id={`${formId}-title`} className="text-sm font-semibold text-slate-900">{t("plugins.settings.title")}</h3>
       </header>
-      {loading ? <p className="py-8 text-sm text-slate-500" role="status">{t("common.loading")}</p> : loadError ? (
+      {loading ? <p className="py-8 text-xs leading-5 text-slate-500" role="status">{t("common.loading")}</p> : loadError ? (
         <div className="mt-5 grid justify-items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-4">
-          <p className="text-sm leading-6 text-rose-700" role="alert">{t("plugins.settings.loadFailed", { message: loadError })}</p>
+          <p className="text-xs leading-6 text-rose-700" role="alert">{t("plugins.settings.loadFailed", { message: loadError })}</p>
           <Button size="sm" variant="outline" onClick={() => setLoadAttempt((attempt) => attempt + 1)}>{t("plugins.settings.retry")}</Button>
         </div>
       ) : (
@@ -349,7 +350,7 @@ export const PluginSettingsSection = ({ host, manifest }: { host: EdgeEverPlugin
               );
             })}
           </div>
-          {error ? <p className="border-t border-slate-200 pt-4 text-sm text-rose-700" role="alert">{t("plugins.settings.saveFailed", { message: error })}</p> : null}
+          {error ? <p className="border-t border-slate-200 pt-4 text-xs leading-5 text-rose-700" role="alert">{t("plugins.settings.saveFailed", { message: error })}</p> : null}
         </form>
       )}
     </section>

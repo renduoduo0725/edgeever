@@ -45,11 +45,12 @@ import {
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import { createIosImageGallery } from "./document-nodes";
 import { createImageInsertTransaction, groupUploadedImages, NATIVE_IMAGE_GALLERY_CSS } from "@edgeever/shared/native-image-gallery";
-import { NEW_IMAGE_WIDTH_PERCENT } from "@edgeever/shared/image-display";
+import { installPhoneImageFillStyle, NEW_IMAGE_WIDTH_PERCENT } from "@edgeever/shared/image-display";
 
 const galleryStyle = document.createElement("style");
 galleryStyle.textContent = NATIVE_IMAGE_GALLERY_CSS;
 document.head.append(galleryStyle);
+installPhoneImageFillStyle();
 
 const detailsStyle = document.createElement("style");
 detailsStyle.textContent = DETAILS_EDITOR_CSS;

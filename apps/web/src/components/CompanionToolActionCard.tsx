@@ -42,7 +42,7 @@ export function CompanionToolActionCard({ action, busy, onApply, onDismiss, onOp
                     type="button"
                     disabled={busy}
                     onClick={() => onOpenNote(note.id, note.notebookId)}
-                    className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-slate-800 hover:text-emerald-600 hover:underline  "
+                    className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-slate-800 hover:text-slate-950 hover:underline  "
                   >
                     <FileText className="h-3 w-3 shrink-0 text-slate-400" />
                     <span className="truncate">{note.title || t("common.untitledMemo")}</span>
@@ -101,7 +101,7 @@ export function CompanionToolActionCard({ action, busy, onApply, onDismiss, onOp
         </div>
       ) : action.status === "applied" ? (
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200/50 bg-emerald-50/60 p-2.5 text-xs text-emerald-700   ">
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700   ">
             <span className="flex items-center gap-1.5 font-medium">
               <Check className="h-3.5 w-3.5" />
               {t("companion.actions.status.applied")}

@@ -12,6 +12,7 @@ import { downloadContentDispositionFromRequest, isSafeResourceId, parseByteRange
 import { isSupportedAssociatedFile } from "./file-association.mjs";
 import { createWeChatShareController } from "./wechat-share-import.mjs";
 import { enableMacShareExtension } from "./share-extension-registration.mjs";
+import { registerWindowsShareMenu, shareFilePathsFromCommandLine } from "./windows-share-menu.mjs";
 import { accountDataDirectory, accountScopeKey } from "./account-scope.mjs";
 import { rotateDiagnosticLog } from "./diagnostic-log.mjs";
 import { restrictDirectory, restrictFile } from "./file-permissions.mjs";
@@ -712,7 +713,7 @@ const handleProtocolUrl = (target) => {
   if (typeof target !== "string" || !target.startsWith("edgeever://")) return;
   try {
     const url = new URL(target);
-    if (url.hostname === "wechat-import") {
+    if (url.hostname === "wechat-import" || url.hostname === "share-import") {
       void wechatShare().importFromProtocolUrl(target);
       return;
     }
@@ -723,9 +724,22 @@ const handleProtocolUrl = (target) => {
   }
 };
 
+const pendingShareFiles = [];
+
+const importSharedCommandLineFiles = (commandLine) => {
+  const sharedFiles = shareFilePathsFromCommandLine(commandLine);
+  if (!protocolUrlsReady) {
+    pendingShareFiles.push(...sharedFiles);
+    return sharedFiles.length > 0;
+  }
+  for (const filePath of sharedFiles) void wechatShare().importLocalFile(filePath);
+  return sharedFiles.length > 0;
+};
+
 const handleOpenTarget = (commandLine) => {
   const target = commandLine.find((value) => value.startsWith("edgeever://"));
   if (target) handleProtocolUrl(target);
+  if (importSharedCommandLineFiles(commandLine)) return;
   const associatedFile = commandLine.find((value) => !value.startsWith("-") && isSupportedAssociatedFile(value));
   if (associatedFile) void importMarkdownFile(associatedFile);
 };
@@ -1860,10 +1874,24 @@ const startApplication = async () => {
       message: error instanceof Error ? error.message : String(error),
     });
   });
+  void registerWindowsShareMenu({
+    platform: process.platform,
+    packaged: app.isPackaged,
+    exePath: process.execPath,
+    locale: app.getLocale(),
+    execFile,
+  }).then((result) => {
+    if (result.registered) void writeDiagnostic("windows-share-menu.registered");
+  }).catch((error) => {
+    void writeDiagnostic("windows-share-menu.register-failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  });
   configureAutoUpdater();
   handleOpenTarget(process.argv);
   protocolUrlsReady = true;
   while (pendingProtocolUrls.length > 0) handleProtocolUrl(pendingProtocolUrls.shift());
+  while (pendingShareFiles.length > 0) void wechatShare().importLocalFile(pendingShareFiles.shift());
   if (process.platform === "darwin" && app.isPackaged) {
     void wechatShare().importPending();
     setInterval(() => { void wechatShare().importPending(); }, 2_000).unref();

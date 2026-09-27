@@ -55,6 +55,14 @@ export const requireScopes = (c: AppContext, ...scopes: TokenScope[]) => {
     : forbidden(c, `Missing required scope: ${scopes.join(", ")}`);
 };
 
+export const requireAnyScopes = (c: AppContext, ...scopeSets: TokenScope[][]) => {
+  const auth = c.get("auth");
+  if (!auth) return unauthorized(c, "Authentication required.");
+  return scopeSets.some((scopes) => hasScopes(auth, scopes))
+    ? null
+    : forbidden(c, `Missing required scope: ${scopeSets.map((scopes) => scopes.join(", ")).join(" or ")}`);
+};
+
 export const assertScope = (auth: AuthContext, scope: TokenScope) => {
   if (!hasScopes(auth, [scope])) {
     throw new AppError("forbidden", `Missing required scope: ${scope}`, 403);

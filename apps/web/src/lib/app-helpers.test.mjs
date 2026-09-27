@@ -263,12 +263,16 @@ describe("editor outline preference", () => {
   test("defaults to collapsed and only expands for an explicit false value", () => {
     const values = installLocalStorage();
     expect(readEditorOutlineCollapsedPreference()).toBe(true);
+    expect(readEditorOutlineCollapsedPreference({ defaultCollapsed: false })).toBe(false);
+    expect(readEditorOutlineCollapsedPreference({ defaultCollapsed: true })).toBe(true);
 
     values.set(EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY, "true");
     expect(readEditorOutlineCollapsedPreference()).toBe(true);
+    expect(readEditorOutlineCollapsedPreference({ defaultCollapsed: false })).toBe(true);
 
     values.set(EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY, "false");
     expect(readEditorOutlineCollapsedPreference()).toBe(false);
+    expect(readEditorOutlineCollapsedPreference({ defaultCollapsed: true })).toBe(false);
   });
 
   test("persists collapsed and expanded states", () => {

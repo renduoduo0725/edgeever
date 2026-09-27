@@ -97,7 +97,7 @@ export const UserManagementCard = ({ demoMode }: UserManagementCardProps) => {
           </div>
         </CardHeader>
         <CardContent className="grid gap-2 p-4 pt-0">
-          {usersQuery.isLoading ? <p className="text-sm text-slate-500">{t("users.loading")}</p> : null}
+          {usersQuery.isLoading ? <p className="text-xs leading-5 text-slate-500">{t("users.loading")}</p> : null}
           {usersQuery.data?.users.map((user) => (
             <div key={user.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-card/40 p-3">
               <div className="min-w-0">
@@ -184,7 +184,7 @@ export const UserManagementCard = ({ demoMode }: UserManagementCardProps) => {
               />
               <span className="text-xs font-normal text-slate-500">{t("users.passwordHint")}</span>
             </label>
-            {createMutation.isError ? <p className="text-sm font-medium text-rose-600" role="alert">{createError}</p> : null}
+            {createMutation.isError ? <p className="text-xs font-medium leading-5 text-rose-600" role="alert">{createError}</p> : null}
             <DialogFooter className="mt-1 gap-2 sm:space-x-0">
               <DialogClose asChild><Button type="button" variant="outline">{t("common.cancel")}</Button></DialogClose>
               <Button type="submit" variant="solid" disabled={createMutation.isPending}>

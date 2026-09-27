@@ -34,7 +34,7 @@ export const FeedbackLink = ({ className }: { className?: string }) => {
   return (
     <a
       className={cn(
-        "flex min-h-16 w-full items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-200/50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70",
+        "flex min-h-16 w-full items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-left text-xs font-normal leading-5 text-slate-600 transition-colors hover:bg-slate-200/50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20",
         className
       )}
       href={href}

@@ -236,7 +236,7 @@ export const AssetsPane = ({ onClose, repository, onOpenExecutionCenter }: Asset
                 onClick={() => setFilterType(type)}
                 className={`rounded-lg border border-transparent px-3 py-1.5 text-xs transition-colors ${
                   filterType === type
-                    ? "bg-slate-950 font-semibold text-slate-50"
+                    ? "bg-workspace-selection font-semibold text-slate-950"
                     : "font-medium text-slate-600 hover:bg-slate-100"
                 }`}
               >

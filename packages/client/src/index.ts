@@ -60,7 +60,6 @@ import type {
   AiGenerateInput,
   InfographicAgentEvent,
   InfographicAgentRequest,
-  AiTagSuggestionPromptUpdateInput,
   AiTagSuggestionsRequestInput,
   AiTagSuggestionsResponse,
   SyncBootstrapResponse,
@@ -934,12 +933,6 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
       request<AiSettings>("/api/v1/ai/default-model", {
         method: "PUT",
         body: JSON.stringify({ modelConfigId }),
-      }),
-
-    updateAiTagSuggestionPrompt: (payload: AiTagSuggestionPromptUpdateInput, locale?: string) =>
-      request<AiSettings>(`/api/v1/ai/tag-suggestion-prompt${locale ? `?locale=${encodeURIComponent(locale)}` : ""}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
       }),
 
     listAiPrompts: (locale?: string) => {

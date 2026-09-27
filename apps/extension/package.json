@@ -1,6 +1,6 @@
 {
   "name": "@edgeever/extension",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "dev": "vite --config vite.config.ts",
     "lint:firefox": "web-ext lint --source-dir dist-firefox --output text",
     "package:firefox": "bun run build:firefox && bun run lint:firefox && web-ext build --source-dir dist-firefox --artifacts-dir web-ext-artifacts --overwrite-dest",
-    "test": "bun test manifest.test.mjs"
+    "test": "bun test manifest.test.mjs image-clip.test.mjs tweet-clip.test.mjs selection-clip.test.mjs"
   },
   "dependencies": {
     "@mozilla/readability": "^0.6.0",

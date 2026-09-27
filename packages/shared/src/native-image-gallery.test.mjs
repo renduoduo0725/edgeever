@@ -30,17 +30,39 @@ describe("native gallery editing", () => {
     expect(groupUploadedImages(editor, ["one", "two", "three"])).toBe(true);
     expect(editor.state.doc.firstChild.content.content.map((node) => node.attrs.src)).toEqual(["one", "two", "three"]);
   });
-  test("groups only this batch, preserves order and is undoable", () => {
+  test("a new batch absorbs the adjacent standalone image and stays undoable", () => {
     const editor = makeEditor([image("old"), image("one"), image("two"), paragraph("text")]);
     expect(groupUploadedImages(editor, ["one", "two"])).toBe(true);
-    expect(editor.state.doc.child(0).attrs.src).toBe("old");
-    const group = editor.state.doc.child(1);
+    expect(editor.state.doc.childCount).toBe(2);
+    const group = editor.state.doc.child(0);
     expect(group.type.name).toBe(IMAGE_GALLERY_NODE_TYPE);
     expect(group.attrs.layout).toBe("auto");
-    expect(group.content.content.map((node) => node.attrs.src)).toEqual(["one", "two"]);
+    expect(group.content.content.map((node) => node.attrs.src)).toEqual(["old", "one", "two"]);
+    expect(editor.state.doc.child(1).textContent).toBe("text");
     undo(editor.state, editor.view.dispatch);
     expect(editor.state.doc.childCount).toBe(4);
     expect(editor.state.doc.child(1).attrs.src).toBe("one");
+  });
+
+  test("an unfinished upload between images stays outside the gallery", () => {
+    const editor = makeEditor([
+      image("old"),
+      image("edgeever-image-upload://pending"),
+      image("new"),
+    ]);
+    const original = editor.state.doc;
+    expect(groupUploadedImages(editor, ["new"])).toBe(false);
+    expect(editor.state.doc).toBe(original);
+  });
+
+  test("a later single upload beside a standalone image becomes one gallery", () => {
+    const editor = makeEditor([image("old"), paragraph("keep"), image("apart")]);
+    editor.view.dispatch(createImageInsertTransaction(editor.state, { src: "new" }, { from: 1, to: 1 }));
+    expect(groupUploadedImages(editor, ["new"])).toBe(true);
+    expect(editor.state.doc.child(0).content.content.map((node) => node.attrs.src)).toEqual(["old", "new"]);
+    expect(editor.state.doc.child(1).textContent).toBe("keep");
+    expect(editor.state.doc.child(2).attrs.src).toBe("apart");
+    editor.state.doc.check();
   });
 
   test("never crosses text or nests a gallery, and leaves isolated singletons alone", () => {
@@ -96,11 +118,11 @@ describe("native gallery editing", () => {
   test("groups only successful Android placeholder replacements and leaves pending uploads alone", () => {
     const editor = makeEditor([gallery()]);
     editor.view.dispatch(createImageInsertTransaction(editor.state, { src: "upload:third" }, { from: 4, to: 4 }));
-    editor.view.dispatch(createImageInsertTransaction(editor.state, { src: "upload:pending" }));
+    editor.view.dispatch(createImageInsertTransaction(editor.state, { src: "edgeever-image-upload://pending" }));
     editor.view.dispatch(editor.state.tr.setNodeMarkup(4, undefined, { src: "third", alt: "third" }));
     expect(groupUploadedImages(editor, ["third"])).toBe(true);
     expect(editor.state.doc.firstChild.childCount).toBe(3);
-    expect(editor.state.doc.lastChild.attrs.src).toBe("upload:pending");
+    expect(editor.state.doc.lastChild.attrs.src).toBe("edgeever-image-upload://pending");
     // Cancelling the pending upload must leave the existing gallery intact.
     const pendingPos = editor.state.doc.firstChild.nodeSize;
     editor.view.dispatch(editor.state.tr.delete(pendingPos, pendingPos + 1));

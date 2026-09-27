@@ -6,8 +6,8 @@ import { Maximize2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getImageReferrerPolicy, IMAGE_GALLERY_NODE_TYPE } from "@edgeever/shared";
 import {
-  DEFAULT_IMAGE_WIDTH_PERCENT,
   IMAGE_WIDTH_PRESETS,
+  NEW_IMAGE_WIDTH_PERCENT,
   clampImageWidth,
   parseImageWidth,
 } from "@edgeever/shared/image-display";
@@ -47,7 +47,7 @@ const ResizableImageNodeView = ({
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const [previewWidth, setPreviewWidth] = useState<number | null>(null);
-  const nodeWidth = parseImageWidth(node.attrs.width) ?? DEFAULT_IMAGE_WIDTH_PERCENT;
+  const nodeWidth = parseImageWidth(node.attrs.width) ?? NEW_IMAGE_WIDTH_PERCENT;
   const width = previewWidth ?? nodeWidth;
   const { editable, inGallery } = useEditorState({
     editor,

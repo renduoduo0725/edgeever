@@ -22,8 +22,8 @@ import {
   ChevronDown,
   ChevronUp,
   FileCode2,
+  FileText,
   Palette,
-  Type,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MEMO_EDITOR_TOOLBAR_COLLAPSED_CLASS_NAME } from "@/components/MemoEditorChromeDensity";
@@ -162,9 +162,9 @@ const toggleListAtSelection = (editor: Editor, listType: "bulletList" | "ordered
 export type EditorViewMode = "rich" | "markdown";
 
 const EDITOR_VIEW_MODES = [
-  { value: "rich", labelKey: "editorToolbar.richText", icon: Type },
+  { value: "rich", labelKey: "editorToolbar.richText", icon: FileText },
   { value: "markdown", labelKey: "editorToolbar.markdown", icon: FileCode2 },
-] as const satisfies ReadonlyArray<{ value: EditorViewMode; labelKey: string; icon: typeof Type }>;
+] as const satisfies ReadonlyArray<{ value: EditorViewMode; labelKey: string; icon: typeof FileText }>;
 
 export const EditorToolbar = ({
   editor,
@@ -365,7 +365,7 @@ export const EditorToolbar = ({
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={onMarkdownModeChange}
                   >
-                    {markdownMode ? <Type className="h-4 w-4" /> : <FileCode2 className="h-4 w-4" />}
+                    {markdownMode ? <FileText className="h-4 w-4" /> : <FileCode2 className="h-4 w-4" />}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="flex items-center gap-2">

@@ -85,11 +85,11 @@ export const RevisionHistoryDialog = ({
       <DialogContent className="grid max-h-[88dvh] max-w-[1120px] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-lg border border-slate-200 bg-card p-0 shadow-xl">
         <DialogHeader className="border-b border-slate-200 px-5 py-4 pr-12 text-left">
           <div className="min-w-0">
-            <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-              <History className="h-5 w-5 text-emerald-600" />
+            <DialogTitle className="flex items-center gap-2 text-sm leading-7 font-semibold text-slate-950">
+              <History className="h-5 w-5 text-slate-700" />
               {t("revisions.title")}
             </DialogTitle>
-            <DialogDescription className="mt-1 truncate text-sm text-slate-500">
+            <DialogDescription className="mt-1 truncate text-xs leading-5 text-slate-500">
               {getMemoTitle(memo.title)}
             </DialogDescription>
           </div>
@@ -133,9 +133,9 @@ export const RevisionHistoryDialog = ({
                 {t("revisions.timeline")}
               </div>
               {revisionsQuery.isLoading ? (
-                <div className="px-2 py-8 text-center text-sm text-slate-500">{t("revisions.loading")}</div>
+                <div className="px-2 py-8 text-center text-xs leading-5 text-slate-500">{t("revisions.loading")}</div>
               ) : revisions.length === 0 ? (
-                <div className="rounded-md border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
+                <div className="rounded-md border border-dashed border-slate-300 px-4 py-8 text-center text-xs leading-5 text-slate-500">
                   {t("revisions.empty")}
                 </div>
               ) : (
@@ -146,14 +146,14 @@ export const RevisionHistoryDialog = ({
                       className={cn(
                         "group flex flex-col w-full rounded-lg border p-3 text-left transition-all duration-200",
                         selectedRevision?.id === revision.id
-                          ? "border-emerald-200 bg-emerald-50/30 shadow-sm ring-1 ring-emerald-100/50"
+                          ? "border-slate-300 bg-slate-50 shadow-sm ring-1 ring-slate-200"
                           : "border-slate-100/80 bg-card/60 hover:border-slate-200 hover:bg-slate-50/80"
                       )}
                       onClick={() => setSelectedRevisionId(revision.id)}
                     >
                       <span className={cn(
                         "block text-sm font-semibold transition-colors duration-200",
-                        selectedRevision?.id === revision.id ? "text-emerald-950" : "text-slate-900 group-hover:text-slate-950"
+                        selectedRevision?.id === revision.id ? "text-slate-950" : "text-slate-900 group-hover:text-slate-950"
                       )}>
                         {t("revisions.revisionName", { revision: revision.revision })}
                       </span>
@@ -180,7 +180,7 @@ export const RevisionHistoryDialog = ({
                 </div>
                 <div className="flex h-11 items-center justify-between bg-slate-50/90 backdrop-blur-sm px-4">
                   <div className="text-xs font-semibold text-slate-600">{t("revisions.currentContent")}</div>
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <div className="h-2 w-2 rounded-full bg-slate-950" />
                 </div>
               </div>
 
@@ -213,7 +213,7 @@ export const RevisionHistoryDialog = ({
                           <div
                             className={cn(
                               "grid grid-cols-[3rem_minmax(0,1fr)] px-0 font-mono text-sm leading-6 transition-colors",
-                              rightRow.state === "changed" && "bg-emerald-50/45 text-emerald-950 border-l-2 border-emerald-400/85",
+                              rightRow.state === "changed" && "bg-slate-100 text-slate-950 border-l-2 border-slate-900",
                               rightRow.state === "empty" && "bg-slate-50/30 text-transparent select-none border-l-2 border-transparent",
                               rightRow.state === "same" && "text-slate-700 border-l-2 border-transparent hover:bg-slate-50/30"
                             )}
@@ -230,7 +230,7 @@ export const RevisionHistoryDialog = ({
                     })}
                   </div>
                 ) : (
-                  <div className="flex h-40 items-center justify-center text-sm text-slate-400">
+                  <div className="flex h-40 items-center justify-center text-xs leading-5 text-slate-400">
                     {t("revisions.emptyMemo")}
                   </div>
                 )}

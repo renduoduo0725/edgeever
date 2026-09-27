@@ -11,7 +11,7 @@ import { Image as RNImage, KeyboardAvoidingView, Platform, ScrollView, StyleShee
 import { Modal } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { SvgXml } from "react-native-svg";
-import { ActivityIndicator, ChevronDown, ChevronLeft, ChevronRight, Copy, Download, History, MoreHorizontal, Pencil, RotateCcw, Search, Share2, Sparkles, Tag, Trash2, X } from "../components/icons";
+import { ActivityIndicator, ChevronDown, ChevronLeft, ChevronUp, Copy, Download, History, MoreHorizontal, Pencil, RotateCcw, Search, Share2, Sparkles, Tag, Trash2, X } from "../components/icons";
 import { Alert, Pressable, Text, TextInput } from "../components/LocalizedText";
 import LocalTiptapEditor, { type LocalTiptapEditorRef } from "../components/LocalTiptapEditor";
 import { MobileAiAssistantModal } from "../components/MobileAiAssistantModal";
@@ -359,13 +359,6 @@ const DetailActionSheetItem = ({ danger = false, disabled = false, icon, label, 
   <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={[styles.actionSheetItem, disabled && styles.buttonDisabled]}>
     {icon}
     <Text style={[styles.actionSheetItemText, danger && styles.actionSheetItemTextDanger]}>{label}</Text>
-  </Pressable>
-);
-
-const DetailActionButton = ({ children, disabled = false, label, onPress }: { children: ReactNode; disabled?: boolean; label: string; onPress: () => void }) => (
-  <Pressable disabled={disabled} onPress={onPress} style={[styles.actionButton, disabled && styles.buttonDisabled]}>
-    {children}
-    <Text style={styles.actionButtonText}>{label}</Text>
   </Pressable>
 );
 
@@ -732,6 +725,13 @@ export const MemoDetailModal = ({
       return;
     }
     setActiveMatchIndex((current) => getNextMobileNoteSearchIndex(current, direction, searchMatchCount));
+  };
+  const closeNoteSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setBodySearchMatchCount(0);
+    setActiveMatchIndex(0);
+    safeDomCall(() => viewerRef.current?.search("", -1));
   };
 
   const closeActionsAndRun = (action: () => void) => {
@@ -1183,41 +1183,58 @@ export const MemoDetailModal = ({
               </Text>
               {searchOpen ? (
                 <View style={styles.noteSearchPanel}>
-                  <View style={styles.searchBox}>
-                    <Search color="#64748b" size={18} />
-                    <TextInput
-                      accessibilityLabel="在当前笔记内搜索"
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                      onChangeText={(value) => {
-                        setSearchQuery(value);
-                        setBodySearchMatchCount(0);
-                        setActiveMatchIndex(0);
-                      }}
-                      placeholder="在当前笔记内搜索"
-                      placeholderTextColor="#94a3b8"
-                      style={styles.searchInput}
-                      value={searchQuery}
-                    />
-                    <Text style={[styles.noteSearchCount, searchQuery.trim() && searchMatchCount === 0 && styles.noteSearchCountEmpty]}>{searchMatchLabel}</Text>
-                  </View>
-                  <View style={styles.richEditorSearchActions}>
-                    <DetailActionButton disabled={searchMatchCount === 0} label="上一个搜索结果" onPress={() => moveSearchMatch(-1)}>
-                      <ChevronLeft color={searchMatchCount === 0 ? "#cbd5e1" : "#0f172a"} size={16} />
-                    </DetailActionButton>
-                    <DetailActionButton disabled={searchMatchCount === 0} label="下一个搜索结果" onPress={() => moveSearchMatch(1)}>
-                      <ChevronRight color={searchMatchCount === 0 ? "#cbd5e1" : "#0f172a"} size={16} />
-                    </DetailActionButton>
-                    <DetailActionButton label="关闭搜索" onPress={() => {
-                      setSearchOpen(false);
-                      setSearchQuery("");
+                  <Search color="#64748b" size={16} />
+                  <TextInput
+                    accessibilityLabel="在当前笔记内搜索"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onChangeText={(value) => {
+                      setSearchQuery(value);
                       setBodySearchMatchCount(0);
                       setActiveMatchIndex(0);
-                      safeDomCall(() => viewerRef.current?.search("", -1));
-                    }}>
-                      <X color="#0f172a" size={16} />
-                    </DetailActionButton>
-                  </View>
+                    }}
+                    onSubmitEditing={() => moveSearchMatch(1)}
+                    placeholder="搜索"
+                    placeholderTextColor="#94a3b8"
+                    returnKeyType="search"
+                    style={styles.noteSearchInput}
+                    value={searchQuery}
+                  />
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    style={[styles.noteSearchCount, searchQuery.trim() && searchMatchCount === 0 && styles.noteSearchCountEmpty]}
+                  >
+                    {searchMatchLabel}
+                  </Text>
+                  <Pressable
+                    accessibilityLabel="上一个搜索结果"
+                    accessibilityRole="button"
+                    disabled={searchMatchCount === 0}
+                    hitSlop={4}
+                    onPress={() => moveSearchMatch(-1)}
+                    style={[styles.noteSearchIconButton, searchMatchCount === 0 && styles.buttonDisabled]}
+                  >
+                    <ChevronUp color={searchMatchCount === 0 ? "#cbd5e1" : "#0f172a"} size={18} />
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel="下一个搜索结果"
+                    accessibilityRole="button"
+                    disabled={searchMatchCount === 0}
+                    hitSlop={4}
+                    onPress={() => moveSearchMatch(1)}
+                    style={[styles.noteSearchIconButton, searchMatchCount === 0 && styles.buttonDisabled]}
+                  >
+                    <ChevronDown color={searchMatchCount === 0 ? "#cbd5e1" : "#0f172a"} size={18} />
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel="关闭搜索"
+                    accessibilityRole="button"
+                    hitSlop={4}
+                    onPress={closeNoteSearch}
+                    style={styles.noteSearchIconButton}
+                  >
+                    <X color="#0f172a" size={16} />
+                  </Pressable>
                 </View>
               ) : null}
               <View style={styles.detailDivider} />

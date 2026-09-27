@@ -11,9 +11,11 @@ import {
   LayoutGrid,
   LayoutList,
   LayoutTemplate,
-  Presentation,
+  GitFork,
+  Component,
+  PieChart,
+  Table2,
   BookPlus,
-  Boxes,
   ArrowDownWideNarrow,
   Notebook as NotebookIcon,
   Tag,
@@ -30,8 +32,6 @@ import {
   ExternalLink,
   RotateCcw,
   FileText,
-  Network,
-  TableProperties,
   Workflow,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NotebookTreeItem } from "./NotebookTreeItem";
 import { cn } from "@/lib/utils";
+import { BETA_BADGE_CLASSNAME } from "@/lib/workspace-ui";
 import type { Notebook, AuthUser, NoteCreateKind } from "@edgeever/shared";
 import type { NotebookNode, NotebookDropPosition, NotebookSortMode } from "@/lib/app-helpers";
 import type { SyncQueueSummary } from "@/lib/sync-queue";
@@ -252,7 +253,7 @@ const SidebarCollapseButton = ({
           <button
             type="button"
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70",
+              "flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20",
               className
             )}
             aria-label={label}
@@ -291,7 +292,7 @@ const SidebarRailButton = ({
         aria-label={label}
         onClick={onClick}
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-50",
           active && "edgeever-workspace-selection text-slate-950"
         )}
       >
@@ -312,7 +313,7 @@ const CreateMemoTypeItems = ({ onCreateMemo }: { onCreateMemo: (kind?: NoteCreat
         <span className="min-w-0 flex-1 truncate">{t("diagram.normalNote")}</span>
       </DropdownMenuItem>
       <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("mind-map")}>
-        <Network className="h-4 w-4 shrink-0" />
+        <GitFork className="h-4 w-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{t("diagram.mindMap")}</span>
       </DropdownMenuItem>
       <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("flowchart")}>
@@ -320,22 +321,18 @@ const CreateMemoTypeItems = ({ onCreateMemo }: { onCreateMemo: (kind?: NoteCreat
         <span className="min-w-0 flex-1 truncate">{t("diagram.flowchart")}</span>
       </DropdownMenuItem>
       <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("architecture")}>
-        <Boxes className="h-4 w-4 shrink-0" />
+        <Component className="h-4 w-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{t("diagram.architecture")}</span>
       </DropdownMenuItem>
       <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("infographic")}>
-        <Presentation className="h-4 w-4 shrink-0" />
+        <PieChart className="h-4 w-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{t("infographic.name")}</span>
-        <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 text-xs font-normal leading-5 text-emerald-700">
-          Beta
-        </span>
+        <span className={BETA_BADGE_CLASSNAME}>Beta</span>
       </DropdownMenuItem>
       <DropdownMenuItem className="gap-2 text-xs leading-5" onSelect={() => onCreateMemo("table")}>
-        <TableProperties className="h-4 w-4 shrink-0" />
+        <Table2 className="h-4 w-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{t("structuredTable.name")}</span>
-        <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 text-xs font-normal leading-5 text-emerald-700">
-          Beta
-        </span>
+        <span className={BETA_BADGE_CLASSNAME}>Beta</span>
       </DropdownMenuItem>
     </>
   );
@@ -415,7 +412,7 @@ const SyncStatusBar = ({
         )}
       </m.span>
       <button
-        className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+        className="min-w-0 flex-1 truncate text-left text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/15"
         type="button"
         onClick={() => setDetailsOpen(true)}
       >
@@ -713,7 +710,7 @@ export const NotebookPane = ({
             onClick={() => onCreateMemo()}
             disabled={!canCreateMemo || isCreatingMemo}
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_5px_12px_rgb(var(--brand-green-rgb)/0.22)] transition-transform duration-150 group-hover:scale-[1.03] group-focus-visible:ring-2 group-focus-visible:ring-emerald-500/70 group-focus-visible:ring-offset-2">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_5px_12px_rgb(var(--brand-green-rgb)/0.22)] transition-transform duration-150 group-hover:scale-[1.03] group-focus-visible:ring-2 group-focus-visible:ring-slate-900/20 group-focus-visible:ring-offset-2">
               <Plus className="h-5 w-5" />
             </span>
             <span className="whitespace-nowrap text-sm font-semibold text-slate-950">{t("notebookPane.newMemo")}</span>
@@ -721,7 +718,7 @@ export const NotebookPane = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="group relative flex h-12 min-w-9 flex-1 items-center justify-center gap-0.5 px-1.5 text-xs font-medium text-slate-600 transition-colors before:absolute before:inset-y-2.5 before:left-0 before:w-px before:bg-slate-200 hover:bg-slate-50 hover:text-slate-950 focus-visible:bg-slate-50 focus-visible:text-slate-950 focus-visible:outline-none data-[state=open]:bg-slate-100 data-[state=open]:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+                className="group relative flex h-12 min-w-9 flex-1 items-center justify-center gap-0.5 px-1.5 text-xs font-medium text-slate-600 transition-colors before:absolute before:inset-y-2.5 before:left-0 before:w-px before:bg-[var(--workspace-divider)] hover:bg-workspace-hover hover:text-slate-950 focus-visible:bg-workspace-hover focus-visible:text-slate-950 focus-visible:outline-none data-[state=open]:bg-workspace-selection data-[state=open]:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
                 aria-label={t("diagram.createType")}
                 disabled={!canCreateMemo || isCreatingMemo}
@@ -861,7 +858,7 @@ export const NotebookPane = ({
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_3px_8px_rgb(var(--brand-green-rgb)/0.24)] transition-transform duration-150 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_3px_8px_rgb(var(--brand-green-rgb)/0.24)] transition-transform duration-150 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={t("notebookPane.newMemo")}
                     onClick={() => onCreateMemo()}
                     disabled={!canCreateMemo || isCreatingMemo}
@@ -877,7 +874,7 @@ export const NotebookPane = ({
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label={t("diagram.createType")}
                         disabled={!canCreateMemo || isCreatingMemo}
                       >
@@ -942,7 +939,7 @@ export const NotebookPane = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-xs font-medium leading-5 text-slate-700 transition-colors duration-200 hover:bg-workspace-hover hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 data-[state=open]:bg-workspace-hover data-[state=open]:text-slate-950"
+                className="flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-xs font-medium leading-5 text-slate-700 transition-colors duration-200 hover:bg-workspace-hover hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 data-[state=open]:bg-workspace-hover data-[state=open]:text-slate-950"
                 type="button"
                 aria-label={t("pwa.sidebarDownloadsTitle") || "下载 EdgeEver 客户端与浏览器插件"}
               >
@@ -1065,7 +1062,7 @@ export const NotebookPane = ({
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
                       <BrandIconContainer>
-                        <Download className="h-3.5 w-3.5 text-emerald-600 " />
+                        <Download className="h-3.5 w-3.5 text-slate-700" />
                       </BrandIconContainer>
                       <span className="truncate font-medium">{t("pwa.sidebarAndroidApk") || "APK 下载"}</span>
                     </div>

@@ -1,4 +1,11 @@
-import { serializeDiagramDocument, type DiagramDocument } from "@edgeever/shared";
+import {
+  serializeDiagramDocument,
+  serializeInfographicDocument,
+  serializeTableDocument,
+  type DiagramDocument,
+  type InfographicDocument,
+  type TableDocument,
+} from "@edgeever/shared";
 import {
   decodeDemoAttachment,
   DEMO_ATTACHMENT_MARKDOWN_EN,
@@ -226,11 +233,197 @@ export const DEMO_MIND_MAP_DIAGRAM_EN: DiagramDocument = {
   ],
 };
 
+export const DEMO_INFOGRAPHIC_SYNTAX_ZH = `infographic sequence-timeline-rounded-rect-node
+data
+  title EdgeEver 演进里程碑
+  sequences
+    - label v1.0 架构奠基
+      desc 经典三栏美学、Serverless D1 存储与双向同步游标
+    - label v1.30 原生客户端
+      desc macOS 桌面端、Android (Expo) 与 iOS (SwiftUI) 全端覆盖
+    - label v1.50 AI 原生赋能
+      desc 原生 MCP 协议端点 (/mcp) 与端侧直连行内 AI 助手
+    - label v1.70 生产力矩阵
+      desc 浏览器剪藏扩展、可视化流程图、架构图与思维导图
+    - label v1.88 现代知识工作台
+      desc AI 智能信息图、多维结构化表格与全场景自建部署`;
+
+export const DEMO_INFOGRAPHIC_SYNTAX_EN = `infographic sequence-timeline-rounded-rect-node
+data
+  title EdgeEver Evolution Milestones
+  sequences
+    - label v1.0 Foundation
+      desc Classic three-pane layout, Serverless D1 storage & sync cursors
+    - label v1.30 Native Apps
+      desc macOS Desktop, Android (Expo) & iOS (SwiftUI) native clients
+    - label v1.50 AI Native
+      desc Native MCP endpoint (/mcp) & inline private AI writing assistant
+    - label v1.70 Productivity
+      desc Web Clipper extension, visual flowcharts, architectures & mind maps
+    - label v1.88 Modern Workbench
+      desc AI-driven infographics, structured tables & flexible self-hosting`;
+
+export const DEMO_INFOGRAPHIC_DOCUMENT_ZH: InfographicDocument = {
+  schemaVersion: 1,
+  syntax: DEMO_INFOGRAPHIC_SYNTAX_ZH,
+};
+
+export const DEMO_INFOGRAPHIC_DOCUMENT_EN: InfographicDocument = {
+  schemaVersion: 1,
+  syntax: DEMO_INFOGRAPHIC_SYNTAX_EN,
+};
+
+export const DEMO_TABLE_DOCUMENT_ZH: TableDocument = {
+  schemaVersion: 1,
+  fields: [
+    { id: "fld_feature", name: "功能特性", type: "text" },
+    { id: "fld_category", name: "模块分类", type: "select", options: ["AI 智能体", "多端客户端", "图表与可视化", "数据与架构"] },
+    { id: "fld_status", name: "交付状态", type: "select", options: ["已正式发布", "公测迭代中", "规划中"] },
+    { id: "fld_verified", name: "验收通过", type: "checkbox" },
+    { id: "fld_date", name: "发布日期", type: "date" },
+    { id: "fld_docs", name: "规格文档", type: "attachment" },
+  ],
+  records: [
+    {
+      id: "rec_infographic",
+      cells: {
+        fld_feature: "AntV AI 信息图笔记",
+        fld_category: "图表与可视化",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-09-15",
+        fld_docs: [{ resourceId: "res_demo_feature_matrix_csv", filename: "feature-matrix.csv", mimeType: "text/csv", byteSize: 99 }],
+      },
+    },
+    {
+      id: "rec_table",
+      cells: {
+        fld_feature: "多维结构化表格与表单",
+        fld_category: "图表与可视化",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-09-20",
+        fld_docs: [{ resourceId: "res_demo_product_brief_pdf", filename: "edgeever-product-brief.pdf", mimeType: "application/pdf", byteSize: 349 }],
+      },
+    },
+    {
+      id: "rec_mcp",
+      cells: {
+        fld_feature: "原生 MCP 端点 (/mcp)",
+        fld_category: "AI 智能体",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-08-10",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_clipper",
+      cells: {
+        fld_feature: "Web Clipper 网页与推文剪藏",
+        fld_category: "多端客户端",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-09-25",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_windows",
+      cells: {
+        fld_feature: "Windows x64 桌面端 Preview",
+        fld_category: "多端客户端",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-09-26",
+        fld_docs: [{ resourceId: "res_demo_attachment_bundle_zip", filename: "edgeever-attachment-demo.zip", mimeType: "application/zip", byteSize: 153 }],
+      },
+    },
+  ],
+  view: {
+    filters: [],
+    sort: null,
+  },
+};
+
+export const DEMO_TABLE_DOCUMENT_EN: TableDocument = {
+  schemaVersion: 1,
+  fields: [
+    { id: "fld_feature", name: "Feature", type: "text" },
+    { id: "fld_category", name: "Category", type: "select", options: ["AI Agents", "Cross-Platform", "Visuals & Data", "Data & Architecture"] },
+    { id: "fld_status", name: "Status", type: "select", options: ["Released", "Public Beta", "Planned"] },
+    { id: "fld_verified", name: "Verified", type: "checkbox" },
+    { id: "fld_date", name: "Release Date", type: "date" },
+    { id: "fld_docs", name: "Documents", type: "attachment" },
+  ],
+  records: [
+    {
+      id: "rec_infographic",
+      cells: {
+        fld_feature: "AntV AI Infographic Notes",
+        fld_category: "Visuals & Data",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-09-15",
+        fld_docs: [{ resourceId: "res_demo_feature_matrix_csv", filename: "feature-matrix.csv", mimeType: "text/csv", byteSize: 99 }],
+      },
+    },
+    {
+      id: "rec_table",
+      cells: {
+        fld_feature: "Structured Table & Forms",
+        fld_category: "Visuals & Data",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-09-20",
+        fld_docs: [{ resourceId: "res_demo_product_brief_pdf", filename: "edgeever-product-brief.pdf", mimeType: "application/pdf", byteSize: 349 }],
+      },
+    },
+    {
+      id: "rec_mcp",
+      cells: {
+        fld_feature: "Native MCP Endpoint (/mcp)",
+        fld_category: "AI Agents",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-08-10",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_clipper",
+      cells: {
+        fld_feature: "Web Clipper Page & Post Clips",
+        fld_category: "Cross-Platform",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-09-25",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_windows",
+      cells: {
+        fld_feature: "Windows x64 Desktop Preview",
+        fld_category: "Cross-Platform",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-09-26",
+        fld_docs: [{ resourceId: "res_demo_attachment_bundle_zip", filename: "edgeever-attachment-demo.zip", mimeType: "application/zip", byteSize: 153 }],
+      },
+    },
+  ],
+  view: {
+    filters: [],
+    sort: null,
+  },
+};
+
 export const DEMO_SEED_MEMOS_ZH = [
   {
     id: "memo_demo_overview",
     notebookId: "nb_demo_features",
-    title: "🌿 欢迎使用 EdgeEver：为极客与创作者打造的现代开源知识库",
+    title: "欢迎使用 EdgeEver：为极客与创作者打造的现代开源知识库",
     tags: ["overview", "guide", "features", "ai-agent"],
     isPinned: true,
     markdown:
@@ -238,7 +431,7 @@ export const DEMO_SEED_MEMOS_ZH = [
 
 ---
 
-## ⚡ 1. 为什么选择 EdgeEver？
+## 1. 为什么选择 EdgeEver？
 
 *提示：在编辑器模式下，你可以直接点击任意表格单元格进行行内编辑，或右键快捷插入/删除行列。*
 
@@ -247,15 +440,15 @@ export const DEMO_SEED_MEMOS_ZH = [
 | **源代码** | 闭源 | 核心闭源，文件开放 | **整栈开源 (AGPL-3.0)** |
 | **云端托管成本** | 商业订阅高昂（$10+/月） | 官方云同步收费（$5+/月） | **100% 永久免费 (Cloudflare 免费额度 / Docker 自建)** |
 | **数据资产所有权** | 专有格式封闭，导出困难 | 本地 Markdown，移动端同步繁琐 | **完全自主掌控 (D1 SQLite 数据库 / R2 / 无损 ZIP 导出)** |
-| **写作与编辑体验** | 仅富文本，排版易错乱 | 纯 Markdown，缺乏沉浸所见即所得 | **双视图自由切换 (所见即所得富文本 ⇄ Markdown 源码)** |
+| **写作与表达矩阵** | 仅富文本，排版易错乱 | 纯 Markdown，缺乏沉浸所见即所得 | **双视图自由切换 (所见即所得 ⇄ 源码) + 原生架构图/流程图/思维导图/AI信息图/多维结构化表格** |
 | **自媒体排版分发** | 无样式优化，格式丢失 | 需借助外部排版扩展或工具 | **一键复制到微信公众号 / Substack / Medium / WordPress** |
 | **社交卡片分享** | 截图粗糙或无排版设计 | 需第三方插件实现 | **内置 8 款精美海报主题，支持自定义字体与 PNG/JPEG 导出** |
 | **AI 原生集成生态** | 封闭收费，仅限特定功能 | 需配置复杂的第三方插件 | **原生内置 MCP 服务端点 (\`/mcp\`) 与行内 AI 智能体协同** |
-| **全平台多端覆盖** | 限制免费设备登录数量 | 多端同步与移动端体验门槛高 | **Web / PWA / Android / iOS / macOS / Windows (即将推出)** |
+| **全平台多端覆盖** | 限制免费设备登录数量 | 多端同步与移动端体验门槛高 | **Web / PWA / Android / iOS / macOS / Windows Preview** |
 
 ---
 
-## 🏗️ 2. 全景架构与生态联动
+## 2. 全景架构与生态联动
 
 通过下面的 Mermaid 架构图，你可以清晰了解 EdgeEver 如何将多端客户端、零成本云基础设施与 AI Agent 紧密串联：
 
@@ -264,9 +457,10 @@ flowchart TD
     subgraph MultiClients["全端客户端矩阵"]
         C1["Web / PWA (离线草稿 & 增量同步)"]
         C2["macOS 桌面端 (Electron + Rust Sidecar)"]
-        C3["Android 原生 App (Expo + SQLite)"]
-        C4["iOS 原生 App (SwiftUI + GRDB)"]
-        C5["浏览器剪藏插件 (Chrome / Edge / Firefox)"]
+        C3["Windows 桌面端 (Preview + 上下文集成)"]
+        C4["Android 原生 App (Expo + SQLite)"]
+        C5["iOS 原生 App (SwiftUI + GRDB)"]
+        C6["浏览器剪藏插件 (Chrome / Edge / Firefox)"]
     end
 
     subgraph CoreEngine["业务与数据服务层"]
@@ -292,39 +486,61 @@ flowchart TD
 
 ---
 
-## 🎨 3. 极致创作体验与排版美学
+## 3. 极致创作体验与排版美学
 
 EdgeEver 将高效与优雅融入每一处交互细节，助你专注于思考与表达：
 
-### 🖥️ 双视图编辑器与沉浸模式
+### 双视图编辑器与沉浸模式
 - **自由切换视图**：点击右上角 \`</>\` 按钮或使用快捷键，可在**所见即所得富文本**与 **Markdown 源码**间无缝切换，实时双向保真。
 - **左侧可折叠大纲**：自动解析文档 \`H1-H3\` 标题层级，支持点击平滑滚动跳转，助你轻松把控万字长文。
 - **Zen 专注模式**：按下 \`Cmd/Ctrl + Shift + F\`，隐藏所有侧边栏与干扰元素，进入纯粹写作心流。
 - **阅读保护模式 (Reading Protection)**：日常翻阅或查阅笔记时，按下 \`Cmd/Ctrl + E\` 即可一键开启只读保护，锁定当前编辑状态，避免沉浸阅读时误触键盘或意外改动笔记内容；再次按下即可随手切回编辑。
 
-### 🎭 精选排版主题与一键自媒体发布
-- **内置排版主题**：支持一键切换 \`微信新绿\`、\`薄荷清新\`、\`极简青翠\`、\`线描翠绿\`，以及日暖素笺、青页讲义、夜蓝制图等排版风格。
+### 精选排版主题与一键自媒体发布
+- **内置排版主题**：支持一键切换 \`微信新绿\`、\`薄荷清新\`、\`极简青翠\`、\`线描翠绿\`，以及日暖素笺、青页讲义、夜蓝制图等排版风格，并支持朱雀仿宋、霞鹜文楷等正文字体。
 - **一键排版复制**：专为内容创作者设计。点击顶部工具栏的**微信公众号图标**，系统自动将当前笔记转为内联 CSS 样式的优雅富文本，直接粘贴至微信公众号后台、Substack 或 WordPress，排版与代码高亮完美保真。
 
-### 🖼️ 8 套精美社交分享海报 (Poster Cards)
+### 8 套精美社交分享海报 (Poster Cards)
 点击右上角“分享为卡片”，即可将任意笔记或片段渲染为高清分享海报，支持：
 - **8 大主题风格**：\`Slate (岩灰)\`、\`Aurora (极光青)\`、\`Sunset (落日暖橙)\`、\`Midnight (暗夜极客)\`、\`Mint (清爽薄荷)\`、\`Notepad (复古便签)\`、\`Xuan (宣纸水墨)\`、\`Lavender (薰衣草紫)\`。
 - **排版定制**：支持无衬线 (Sans)、宋体/明朝 (Serif)、等宽代码 (Mono) 字体切换，自由选择紧凑、标准或宽幅卡片，一键导出为高清晰度 PNG 或 JPEG 图片。
 
 ---
 
-## ⌨️ 4. 效率工具箱：斜杠指令、双链与数学公式
+## 4. 丰富表达力：图表、AI 信息图与多维表格
 
-### 🪄 斜杠指令 (Slash Commands)
+EdgeEver 打破了传统笔记单一文本的局限，提供多种原生可视化与结构化数据载体：
+
+### 原生图表体系
+- **系统架构图 (Architecture)**：针对分布式系统与微服务设计，支持分层边界、图标元数据与自动拓扑排版；
+- **业务流程图 (Flowchart)**：标准起止框、判断节点与过程流动，清晰梳理业务链路；
+- **第二大脑思维导图 (Mind Map)**：树状辐射、主题归纳，一目了然梳理网状知识脉络。
+
+### AntV AI 智能信息图 (Infographic)
+集成 AntV 渲染引擎与 AI Agent：
+- 支持时间线 (Timeline)、步骤图 (Steps)、四象限 (Quadrant)、对比矩阵 (VS) 等多种精美模板；
+- **对话式智能修订**：直接在信息图面板用自然语言提需求（如“帮我把重点放在跨端上”或“转为时间线”），AI 自动匹配合适板式并完成调整，支持多轮对话与版本回退。
+
+### 多维结构化表格 (Structured Table)
+为项目规划、资产跟踪与表单收集而生：
+- **丰富字段类型**：原生支持文本、数字、状态单选 (Select)、日期 (Date)、复选框 (Checkbox)、超链接与**多类型附件 (Attachment)**；
+- **多条件筛选与排序**：支持动态组合过滤条件与字段升降序；
+- **公开表单收集**：可一键生成公开收集入口，外部填写即可实时入表。
+
+---
+
+## 5. 效率工具箱：斜杠指令、双链与数学公式
+
+### 斜杠指令 (Slash Commands)
 在正文空白行输入 \`/\` 或直接按下 \`空格键\`，即可呼出快捷指令菜单：
 - 快速插入 \`H1/H2/H3\` 标题、引用、分割线、代码块与富文本表格；
 - 输入 \`/date\`、\`/time\` 或 \`/now\` 快速插入当前标准时间戳；
 - 插入附件、图片或调起行内 AI 智能助手。
 
-### 🔗 知识双链与笔记引用
+### 知识双链与笔记引用
 在编辑器中输入 \`@\` 或插入 \`#memo=<笔记ID>\` 链接，即可建立笔记间的双向关联，点击即可在工作区内快速打开关联笔记，构建结构化网状知识库。
 
-### 📐 KaTeX 专业数学公式渲染
+### KaTeX 专业数学公式渲染
 EdgeEver 原生支持 LaTeX 数学表达式，无论是行内微积分还是多行物理方程，均可毫秒级高保真渲染：
 
 - **行内公式**：例如质能方程 $E = mc^2$，以及正态分布概率密度函数 $f(x) = \\frac{1}{\\sigma \\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}$。
@@ -333,16 +549,17 @@ $$
 \\oint_{\\partial \\Omega} \\mathbf{E} \\cdot d\\mathbf{S} = \\frac{1}{\\varepsilon_0} \\iiint_{\\Omega} \\rho \\, dV, \\quad \\oint_{\\partial \\Omega} \\mathbf{B} \\cdot d\\mathbf{S} = 0
 $$
 
-### ✅ 交互式待办清单 (Task Lists)
+### 交互式待办清单 (Task Lists)
 - [x] 体验 EdgeEver 双视图与大纲导航
 - [x] 探索 8 款编辑器主题与 8 套社交海报卡片
+- [x] 浏览最新【AI 信息图】演进里程碑与【多维结构化表格】交付追踪
 - [ ] 尝试使用斜杠指令 \`/\` 插入当前日期与结构化表格
 - [ ] 配置个人 AI API Key，体验行内智能总结与续写
 - [ ] 开启 MCP 协议，让 AI Agent 协助整理工作区
 
 ---
 
-## 🤖 5. AI 原生协同与 MCP 智能体生态
+## 6. AI 原生协同与 MCP 智能体生态
 
 EdgeEver 走在 AI 时代前沿，将大语言模型与智能体深度融入知识管理生命周期：
 
@@ -364,48 +581,51 @@ sequenceDiagram
     Client-->>User: 客户端毫秒级感知更新，笔记井井有条
 \`\`\`
 
-### 1️⃣ 行内 AI 助手 (Inline AI Assistant)
+### 1. 行内 AI 助手 (Inline AI Assistant)
 在正文空白行直接按下 **\`空格键 (Space)\`**、输入 **\`/ai\`**、通过 **\`/\`** 斜杠指令菜单，或选中文本点击浮动工具栏中的 **AI 按钮**，即可即时呼出 AI 写作助手面板：
 - **精炼总结与要点提取**：一键压缩提炼全文核心结论、提取待办事项与关键行动项；
 - **格式保真智能翻译**：在严格保留原有 Markdown、数学公式、链接与代码块的前提下，精准翻译多国语言；
 - **内容重塑与续写**：支持润色与精炼表达，或按上下文顺滑续写；
 - **BYOK 隐私直连 (Bring Your Own Key)**：支持直连 OpenAI、Anthropic Claude、Google Gemini、DeepSeek 及各类 OpenAI 兼容的中继 API，数据完全由端侧直发，不经过任何第三方中转。
 
-### 2️⃣ 开放 MCP 协议 (Model Context Protocol)
+### 2. 开放 MCP 协议 (Model Context Protocol)
 在**设置 → MCP 设置**中生成专属令牌，即可将 EdgeEver 接入 Claude Code、Cursor、Antigravity、OpenClaw 等主流 AI 编码助手与智能体平台：
 - **无缝读写**：支持标准 MCP 端点 \`/mcp\`（兼容最新的无状态 \`2026-07-28\` 协议与经典握手协议）；
 - **自动化流转**：AI Agent 可自动读取笔记、智能归档、批量打标，甚至与 Notion、飞书多维表格建立跨平台自动化同步。
 
 ---
 
-## 📱 6. 全平台原生覆盖、离线同步与智能剪藏
+## 7. 全平台原生覆盖、离线同步与智能剪藏
 
 - **多端原生支持**：
   - **Web / PWA**：支持现代浏览器全功能运行与离线安装；
   - **Android 原生客户端**：基于 Expo 与 SQLite 构建，已上架 Google Play，并提供签名 APK 下载；
   - **iOS 原生客户端**：基于 Swift / SwiftUI 与 GRDB 原生实现，流畅细腻，已上架 App Store（可使用非大陆区 Apple ID 下载）；
   - **macOS 桌面端**：Electron + Rust 高性能 Sidecar，支持 Apple Silicon 和 Intel Mac，内置静默后台更新；
-  - **Windows 桌面端**：已开发完毕，即将正式推出。
-- **浏览器网页剪藏 (Web Clipper)**：已在 Chrome、Edge 和 Firefox 官方扩展商店发布，一键剔除网页广告，将正文纯净沉淀为 Markdown 笔记。
-- **微信公众号一键剪藏**：在移动端系统分享菜单中，直接将微信文章分享到 EdgeEver，客户端将自动提取图文排版并转换为可编辑笔记。
+  - **Windows 桌面端**：已正式推出 x64 Preview 版本，支持开机启动、全局快捷键与系统右键上下文菜单将文件一键发送至笔记。
+- **浏览器网页剪藏 (Web Clipper)**：已在 Chrome、Edge 和 Firefox 官方扩展商店发布，支持页面纯净剪藏、右键菜单一键剪藏选中文字/高画质图片、以及一键提取 X (Twitter) 完整推文。
+- **微信生态与外部导入**：
+  - **微信文章一键剪藏**：在移动端系统分享菜单中，直接将微信文章分享到 EdgeEver，自动提取图文排版并转换为可编辑笔记；
+  - **微信聊天转发导入**：桌面端支持将微信合并转发的聊天记录一键导入为格式工整的结构化笔记；
+  - **一键排版复制**：点击顶部微信图标，即可将笔记转换为内联排版富文本，直接粘贴至微信公众号后台，排版完美保真。
 - **离线草稿与弹性同步**：地铁、飞行模式等无网络环境下自由编辑，重新联网后自动入队完成增量同步与冲突协调。
 
 ---
 
-## 📦 7. 多媒体管理、无损备份与零成本自建
+## 8. 多媒体管理、无损备份与零成本自建
 
-### 🖼️ 智能本地图片压缩
+### 智能本地图片压缩
 在笔记中粘贴或拖入高分辨率图片时，前端会在本地自动将其转码压缩为 WebP 格式，在保证视觉无损的前提下**减少 50% - 90% 的体积**，大幅降低云端存储占用并提升跨端加载速度。
 
 ![EdgeEver 官方 Logo](/api/v1/resources/res_demo_logo/blob)
 
-### 📎 多类型附件自由挂载
+### 多类型附件自由挂载
 支持在笔记中嵌入 PDF 文档、CSV 表格、压缩包及多媒体资源，点击即可在线预览或下载：
 - [📄 产品白皮书 PDF：edgeever-product-brief.pdf](/api/v1/resources/res_demo_product_brief_pdf/blob)
 - [📊 功能矩阵 CSV：feature-matrix.csv](/api/v1/resources/res_demo_feature_matrix_csv/blob)
 - [📦 示例附件压缩包：edgeever-attachment-demo.zip](/api/v1/resources/res_demo_attachment_bundle_zip/blob)
 
-### 🚀 两种自建部署方案：Serverless 与 Docker
+### 自建部署方案：Serverless 与 Docker
 1. **Cloudflare Serverless（推荐，永久 100% 免费）**：基于 Workers + D1 数据库 + R2 对象存储构建，完全处于 Cloudflare 免费额度内，无需采购服务器，免运维、免证书续期。
 2. **Docker 一键自建（VPS / NAS / 家用服务器）**：
    \`\`\`sh
@@ -414,24 +634,41 @@ sequenceDiagram
    \`\`\`
    单命令自动配置 Docker Compose 环境，并内置每日定时自动更新。部分中国大陆网络环境可能需要自行配置可用的网络代理或可信的镜像加速服务，才能正常访问 GHCR。
 
-### 💾 绝对的数据自由：无损 ZIP 导入与导出
+### 绝对的数据自由：无损 ZIP 导入与导出
 在**个人中心 → 导入与导出**中，可随时将完整笔记库打包导出为结构清晰的 ZIP 压缩包。解压后即为包含标准 YAML Front Matter、相对路径附件图片与完整修订版本的纯 Markdown 文件树，随时可在 Obsidian、VS Code 等任意工具中无缝打开，永不担心平台绑定！
 
 ---
 
 > 💡 **快速体验小贴士**：
 > 1. 点击右上角 **\`</>\`** 体验丝滑的双视图切换；
-> 2. 按下 **\`Cmd/Ctrl + E\`** 试一试阅读保护模式，锁定只读避免误改内容；
-> 3. 按下 **\`Cmd/Ctrl + O\`** 呼出快速切换器 (Quick Switcher)；
-> 4. 点击顶部 **微信图标**，体验一键带格式排版复制；
-> 5. 点击 **“分享为卡片”**，挑选一款你心仪的社交海报风格并导出；
-> 6. 随时在侧边栏或设置中点击 **“恢复 Demo 数据”**，一键重置演示工作区。
+> 2. 浏览侧边栏中的 **AI 信息图** 与 **多维结构化表格** 示例，感受下一代知识库形态；
+> 3. 按下 **\`Cmd/Ctrl + E\`** 试一试阅读保护模式，锁定只读避免误改内容；
+> 4. 按下 **\`Cmd/Ctrl + O\`** 呼出快速切换器 (Quick Switcher)；
+> 5. 点击顶部 **微信图标**，体验一键带格式排版复制；
+> 6. 点击 **“分享为卡片”**，挑选一款你心仪的社交海报风格并导出；
+> 7. 随时在侧边栏或设置中点击 **“恢复 Demo 数据”**，一键重置演示工作区。
 `,
+  },
+  {
+    id: "memo_demo_infographic",
+    notebookId: "nb_demo_features",
+    title: "演进里程碑：EdgeEver 全平台架构与版本演进史",
+    tags: ["infographic", "milestone", "timeline", "ai-agent"],
+    isPinned: false,
+    markdown: serializeInfographicDocument(DEMO_INFOGRAPHIC_DOCUMENT_ZH),
+  },
+  {
+    id: "memo_demo_table",
+    notebookId: "nb_demo_features",
+    title: "交付追踪：EdgeEver 核心产品特性规划与进度表",
+    tags: ["table", "roadmap", "project-management", "tracking"],
+    isPinned: false,
+    markdown: serializeTableDocument(DEMO_TABLE_DOCUMENT_ZH),
   },
   {
     id: "memo_demo_architecture",
     notebookId: "nb_demo_features",
-    title: "🏗️ 系统架构：EdgeEver 可移植全栈与 AI 协同",
+    title: "系统架构：EdgeEver 可移植全栈与 AI 协同",
     tags: ["architecture", "diagram", "portable-runtime", "cloud-native", "mcp"],
     isPinned: false,
     markdown: serializeDiagramDocument(DEMO_ARCHITECTURE_DIAGRAM_ZH),
@@ -439,7 +676,7 @@ sequenceDiagram
   {
     id: "memo_demo_flowchart",
     notebookId: "nb_demo_features",
-    title: "🔀 知识工作流：从捕捉灵感到发布分享的流程图",
+    title: "知识工作流：从捕捉灵感到发布分享的流程图",
     tags: ["flowchart", "diagram", "workflow", "knowledge-management"],
     isPinned: false,
     markdown: serializeDiagramDocument(DEMO_FLOWCHART_DIAGRAM_ZH),
@@ -447,7 +684,7 @@ sequenceDiagram
   {
     id: "memo_demo_mind_map",
     notebookId: "nb_demo_features",
-    title: "🧠 第二大脑：个人知识管理体系思维导图",
+    title: "第二大脑：个人知识管理体系思维导图",
     tags: ["mind-map", "diagram", "second-brain", "knowledge-management"],
     isPinned: false,
     markdown: serializeDiagramDocument(DEMO_MIND_MAP_DIAGRAM_ZH),
@@ -459,43 +696,71 @@ export const DEMO_SEED_REVISIONS = [
     id: "rev_demo_revision_1",
     memoId: "memo_demo_overview",
     revision: 1,
-    title: "🌿 欢迎使用 EdgeEver：为极客与创作者打造的现代开源知识库",
+    title: "欢迎使用 EdgeEver：为极客与创作者打造的现代开源知识库",
     markdown:
-      "## 🌿 欢迎使用 EdgeEver（初版草稿）\n\n- 印象笔记经典三栏与自建 Serverless\n- 可视化表格与 Markdown 源码双向切换\n- 原生 MCP 与 AI 智能体协同",
+      "## 欢迎使用 EdgeEver（初版草稿）\n\n- 印象笔记经典三栏与自建 Serverless\n- 可视化表格与 Markdown 源码双向切换\n- 原生 MCP 与 AI 智能体协同",
   },
   {
     id: "rev_demo_revision_1_en",
     memoId: "memo_demo_overview_en",
     revision: 1,
-    title: "🌿 Welcome to EdgeEver: Modern Open-Source Knowledge Base for Geeks & Creators",
+    title: "Welcome to EdgeEver: Modern Open-Source Knowledge Base for Geeks & Creators",
     markdown:
-      "## 🌿 Welcome to EdgeEver (Initial Draft)\n\n- Classic Evernote 3-pane layout & Serverless self-hosted\n- Visual table editing & Markdown source toggle\n- Native MCP & AI agent synergy",
+      "## Welcome to EdgeEver (Initial Draft)\n\n- Classic Evernote 3-pane layout & Serverless self-hosted\n- Visual table editing & Markdown source toggle\n- Native MCP & AI agent synergy",
+  },
+  {
+    id: "rev_demo_infographic_1",
+    memoId: "memo_demo_infographic",
+    revision: 1,
+    title: "演进里程碑：EdgeEver 全平台架构与版本演进史",
+    markdown: serializeInfographicDocument(DEMO_INFOGRAPHIC_DOCUMENT_ZH),
+  },
+  {
+    id: "rev_demo_infographic_1_en",
+    memoId: "memo_demo_infographic_en",
+    revision: 1,
+    title: "Evolution Milestones: EdgeEver Architecture & Release History",
+    markdown: serializeInfographicDocument(DEMO_INFOGRAPHIC_DOCUMENT_EN),
+  },
+  {
+    id: "rev_demo_table_1",
+    memoId: "memo_demo_table",
+    revision: 1,
+    title: "交付追踪：EdgeEver 核心产品特性规划与进度表",
+    markdown: serializeTableDocument(DEMO_TABLE_DOCUMENT_ZH),
+  },
+  {
+    id: "rev_demo_table_1_en",
+    memoId: "memo_demo_table_en",
+    revision: 1,
+    title: "Delivery Tracking: EdgeEver Product Roadmap & Release Status",
+    markdown: serializeTableDocument(DEMO_TABLE_DOCUMENT_EN),
   },
   {
     id: "rev_demo_architecture_1",
     memoId: "memo_demo_architecture",
     revision: 1,
-    title: "🏗️ 系统架构：EdgeEver 可移植全栈与 AI 协同",
+    title: "系统架构：EdgeEver 可移植全栈与 AI 协同",
     markdown: serializeDiagramDocument(DEMO_ARCHITECTURE_DIAGRAM_ZH),
   },
   {
     id: "rev_demo_architecture_1_en",
     memoId: "memo_demo_architecture_en",
     revision: 1,
-    title: "🏗️ System Architecture: EdgeEver Portable Full Stack & AI Collaboration",
+    title: "System Architecture: EdgeEver Portable Full Stack & AI Collaboration",
     markdown: serializeDiagramDocument(DEMO_ARCHITECTURE_DIAGRAM_EN),
   },
 ];
 
 export const DEMO_MEMO_ENGLISH = {
   memo_demo_overview: {
-    title: "🌿 Welcome to EdgeEver: Modern Open-Source Knowledge Base for Geeks & Creators",
+    title: "Welcome to EdgeEver: Modern Open-Source Knowledge Base for Geeks & Creators",
     markdown:
       `> **EdgeEver** is an open-source, AI-native, and portable serverless/containerized personal knowledge base that revives the beloved **Evernote-style three-pane layout**. Designed for geeks and content creators, it combines 100% free serverless hosting, absolute data ownership, native cross-platform clients, and seamless AI Agent (MCP) synergy to redefine your digital second brain.
 
 ---
 
-## ⚡ 1. Why Choose EdgeEver?
+## 1. Why Choose EdgeEver?
 
 *Tip: In editor mode, click any table cell to edit text directly, or right-click to insert/delete rows and columns.*
 
@@ -504,15 +769,15 @@ export const DEMO_MEMO_ENGLISH = {
 | **Source Code** | Closed source | Closed-source core, open files | **Full-stack open source (AGPL-3.0)** |
 | **Hosting Cost** | Costly commercial subscriptions ($10+/mo) | Official cloud sync subscription ($5+/mo) | **100% Free Forever (Cloudflare Free Tier / Docker Self-Hosted)** |
 | **Data Ownership** | Proprietary lock-in, hard to export | Local Markdown, cumbersome mobile sync | **Full Ownership (D1 SQLite, R2 Storage, Lossless ZIP Archives)** |
-| **Editing Experience** | Rich text only, fragile formatting | Plain Markdown, lacks WYSIWYG flow | **Seamless Dual-View (WYSIWYG Rich Text ⇄ Markdown Source)** |
+| **Writing & Expressive Matrix** | Rich text only, fragile formatting | Plain Markdown, lacks WYSIWYG flow | **Seamless Dual-View (WYSIWYG ⇄ Source) + Native Architecture/Flowchart/Mind-Map/AI Infographic/Structured Table** |
 | **Publishing Ready** | No typography styling, loses format | Requires 3rd-party plugins or scripts | **One-Click Rich Copy for WeChat, Substack, Medium & WordPress** |
 | **Social Poster Cards** | Basic screenshots without styling | Requires external tools or plugins | **8 Built-in Exquisite Poster Themes with Typography Options & PNG/JPEG Export** |
 | **Native AI Ecosystem** | Paywalled, limited features | Heavy plugin setup required | **Native MCP Server (\`/mcp\`) & Inline AI Agent Synergy** |
-| **Cross-Platform Matrix** | Restricts active free devices | Complex setup across platforms | **Web / PWA / Android / iOS / macOS / Windows (Coming Soon)** |
+| **Cross-Platform Matrix** | Restricts active free devices | Complex setup across platforms | **Web / PWA / Android / iOS / macOS / Windows Preview** |
 
 ---
 
-## 🏗️ 2. Architectural Overview & Ecosystem
+## 2. Architectural Overview & Ecosystem
 
 The Mermaid diagram below demonstrates how EdgeEver connects cross-platform clients, zero-cost cloud infrastructure, and AI Agents into a cohesive workflow:
 
@@ -521,9 +786,10 @@ flowchart TD
     subgraph MultiClients["Client Matrix"]
         C1["Web / PWA (Offline Drafts & Sync Queue)"]
         C2["macOS Desktop (Electron + Rust Sidecar)"]
-        C3["Android Native App (Expo + SQLite)"]
-        C4["iOS Native App (SwiftUI + GRDB)"]
-        C5["Web Clipper (Chrome / Edge / Firefox)"]
+        C3["Windows Desktop (Preview + Context Menu)"]
+        C4["Android Native App (Expo + SQLite)"]
+        C5["iOS Native App (SwiftUI + GRDB)"]
+        C6["Web Clipper (Chrome / Edge / Firefox)"]
     end
 
     subgraph CoreEngine["Service & Storage Core"]
@@ -549,39 +815,61 @@ flowchart TD
 
 ---
 
-## 🎨 3. Immersive Writing & Typography Aesthetics
+## 3. Immersive Writing & Typography Aesthetics
 
 EdgeEver is engineered to provide a distraction-free, elegant writing experience:
 
-### 🖥️ Dual-View Editor & Focus Modes
+### Dual-View Editor & Focus Modes
 - **Seamless Dual-View**: Click the \`</>\` button in the top-right corner (or use shortcuts) to instantly toggle between **WYSIWYG Rich Text** and **Markdown Source Code** with 100% fidelity.
 - **Collapsible Outline Navigation**: Automatically indexes \`H1-H3\` heading hierarchies with smooth jump scrolling, keeping lengthy documents organized.
 - **Zen Focus Mode**: Press \`Cmd/Ctrl + Shift + F\` to hide sidebars and distractions, immersing yourself in pure writing flow.
 - **Reading Protection Mode**: When reading or reviewing notes, press \`Cmd/Ctrl + E\` to toggle read-only protection, locking the editor to prevent accidental edits while browsing; press it again to seamlessly resume editing.
 
-### 🎭 Curated Typography Themes & Publishing Export
-- **Preset Editor Themes**: Switch effortlessly between \`WeChat Green\`, \`Fresh Mint\`, \`Minimal Jade\`, \`Lined Jade\`, and styles such as Warm Page, Lesson Page, and Navy Draft.
+### Curated Typography Themes & Publishing Export
+- **Preset Editor Themes**: Switch effortlessly between \`WeChat Green\`, \`Fresh Mint\`, \`Minimal Jade\`, \`Lined Jade\`, and styles such as Warm Page, Lesson Page, and Navy Draft, with custom Chinese and interface typography.
 - **One-Click Publishing Export**: Built for publishers and bloggers. Click the **WeChat Icon** in the top bar to format your note with inline CSS. Paste directly into WeChat Official Account editor, Substack, Medium, or WordPress while preserving layout and syntax highlighting.
 
-### 🖼️ 8 Exquisite Social Poster Themes
+### 8 Exquisite Social Poster Themes
 Click **"Share as Card"** in the top-right menu to turn any note into an eye-catching poster card:
 - **8 Themes**: \`Slate\`, \`Aurora\`, \`Sunset\`, \`Midnight\`, \`Mint\`, \`Notepad\` (skeuomorphic paper), \`Xuan\` (rice paper & Chinese ink), \`Lavender\`.
 - **Customizable Typography**: Switch between Sans, Serif (Songti/Ming), and Monospace fonts, select compact, standard, or wide card widths, and export as high-resolution PNG or JPEG.
 
 ---
 
-## ⌨️ 4. Power Productivity Toolbox: Slash Commands, Backlinks & Math
+## 4. Visual Richness: Diagrams, AI Infographics & Structured Tables
 
-### 🪄 Slash Commands
+EdgeEver transcends traditional plain text notes with native visual and structured data canvases:
+
+### Native Diagram Suite
+- **System Architecture (Architecture)**: Designed for microservices and cloud topologies with boundaries, icons, and automated layout;
+- **Business Workflows (Flowchart)**: Standard terminators, decisions, and process nodes to map workflows cleanly;
+- **Second Brain Mind Maps (Mind Map)**: Radial trees and grouped topics for interconnected thoughts.
+
+### AntV AI Infographic Engine (Infographic)
+Powered by AntV and AI Agents:
+- Select from Timelines, Steps, Quadrants, and Comparison matrices;
+- **Conversational Refinement**: Instruct the AI in natural language directly in the infographic editor (e.g. "focus on cross-platform milestones" or "convert to a chronological timeline") to adjust layouts with full history and undo support.
+
+### Multi-Dimensional Structured Tables (Structured Table)
+Engineered for roadmaps, asset tracking, and form collection:
+- **Rich Field Types**: Native support for Text, Number, Single Select, Date, Checkbox, URL, and **Multi-File Attachments**;
+- **Multi-Condition Filtering & Sorting**: Dynamically combine filters and field order;
+- **Public Form Collection**: Generate a public link for external input that writes directly back to your table in real time.
+
+---
+
+## 5. Power Productivity Toolbox: Slash Commands, Backlinks & Math
+
+### Slash Commands
 Type \`/\` or press \`Space\` on an empty line to invoke the command menu:
 - Insert \`H1/H2/H3\` headings, quotes, horizontal rules, code blocks, and rich tables;
 - Use \`/date\`, \`/time\`, or \`/now\` to insert current timestamps instantly;
 - Attach files, insert images, or summon the inline AI assistant.
 
-### 🔗 Bi-directional Note Links & Backlinks
+### Bi-directional Note Links & Backlinks
 Type \`@\` or insert \`#memo=<memoId>\` links to establish bi-directional references across your knowledge base, building an interconnected web of thoughts.
 
-### 📐 KaTeX Professional LaTeX Mathematics
+### KaTeX Professional LaTeX Mathematics
 Native support for KaTeX renders complex mathematical equations in milliseconds:
 
 - **Inline Math**: For instance, Einstein's mass-energy equivalence $E = mc^2$ or the Gaussian probability density function $f(x) = \\frac{1}{\\sigma \\sqrt{2\\pi}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}$.
@@ -590,16 +878,17 @@ $$
 \\oint_{\\partial \\Omega} \\mathbf{E} \\cdot d\\mathbf{S} = \\frac{1}{\\varepsilon_0} \\iiint_{\\Omega} \\rho \\, dV, \\quad \\oint_{\\partial \\Omega} \\mathbf{B} \\cdot d\\mathbf{S} = 0
 $$
 
-### ✅ Interactive Task Lists
+### Interactive Task Lists
 - [x] Explore EdgeEver's dual-view editing and outline navigation
 - [x] Experiment with 8 editor themes and 8 social poster card styles
+- [x] View the new 【AI Infographic】 evolution milestones and 【Structured Table】 delivery tracker
 - [ ] Try typing \`/\` on an empty line to insert current timestamp and tables
 - [ ] Connect your AI API Key to experience inline summarization and continuation
 - [ ] Connect AI Agents via MCP to automate note categorization
 
 ---
 
-## 🤖 5. Native AI Agent Synergy & MCP Protocol
+## 6. Native AI Agent Synergy & MCP Protocol
 
 EdgeEver is architected for the agentic AI era, weaving LLMs directly into the knowledge management lifecycle:
 
@@ -621,48 +910,51 @@ sequenceDiagram
     Client-->>User: Sub-second live updates in client UI
 \`\`\`
 
-### 1️⃣ Inline AI Assistant
+### 1. Inline AI Assistant
 Press the **\`Space\` bar** in an empty block, type **\`/ai\`**, use the **\`/\`** slash command menu, or select text and click the **AI button** on the floating toolbar to instantly summon the AI writing assistant:
 - **Summarization & Action Items**: Condense documents into key takeaways, conclusions, and actionable todos;
 - **Format-Preserving Translation**: Translate accurately into multiple languages while strictly preserving Markdown, math equations, links, and code blocks;
 - **Rewriting & Continuation**: Polish phrasing, make writing concise, or continue writing seamlessly;
 - **BYOK Direct Key (Bring Your Own Key)**: Direct client-side connection with OpenAI, Anthropic Claude, Google Gemini, DeepSeek, and OpenAI-compatible relays with zero third-party data transit.
 
-### 2️⃣ Model Context Protocol (MCP) Integration
+### 2. Model Context Protocol (MCP) Integration
 Generate an API token in **Settings → MCP Settings** to connect EdgeEver directly with Claude Code, Cursor, Antigravity, OpenClaw, and other agent platforms:
 - **Direct Reading & Writing**: Connect via the \`/mcp\` endpoint (supports stateless \`2026-07-28\` protocol and handshake-based 2025 specs);
 - **Automated Workflows**: Let AI Agents read, organize, summarize, tag, and synchronize notes with Notion databases and Feishu Bitable.
 
 ---
 
-## 📱 6. Multi-Platform Ecosystem, Offline Sync & Smart Clipping
+## 7. Multi-Platform Ecosystem, Offline Sync & Smart Clipping
 
 - **Cross-Platform Native Apps**:
   - **Web / PWA**: Full-featured in modern browsers with offline installation support;
   - **Android Native App**: Built with Expo & SQLite, available on Google Play and GitHub Releases;
   - **iOS Native App**: Native Swift / SwiftUI with GRDB local mirror, available on the App Store (requires a non-mainland China Apple ID);
   - **macOS Desktop App**: Electron + Rust Sidecar for Apple Silicon & Intel Mac with silent background updates;
-  - **Windows Desktop App**: Development is complete, coming soon.
-- **Browser Web Clipper**: Available on Chrome, Edge, and Firefox extension stores to extract clean, ad-free Markdown articles in one click.
-- **Mobile WeChat Article Clipper**: Share any WeChat article to EdgeEver on your phone to automatically extract and format it as an editable note.
+  - **Windows Desktop App**: Official x64 Preview released, featuring auto-launch, global hotkeys, and Windows Explorer context menu integration to send files to notes with one click.
+- **Browser Web Clipper**: Available on Chrome, Edge, and Firefox extension stores to extract clean, ad-free Markdown articles, selected text, high-res images, and full X (Twitter) posts directly from context menus.
+- **WeChat Ecosystem & External Imports**:
+  - **Mobile Article Clipper**: Share any WeChat article to EdgeEver on your phone to automatically extract and format it as an editable note;
+  - **WeChat Chat Forward Import**: Import forwarded chat records on the desktop client into cleanly formatted notes;
+  - **One-Click Publishing Export**: Click the WeChat icon in the toolbar to copy formatted rich text ready for publishing.
 - **Offline Drafts & Sync Queue**: Keep writing seamlessly without network connectivity; changes are queued locally and automatically synced once reconnected.
 
 ---
 
-## 📦 7. Rich Media, Lossless Portability & Zero-Cost Hosting
+## 8. Rich Media, Lossless Portability & Zero-Cost Hosting
 
-### 🖼️ Smart Client-Side Image Compression
+### Smart Client-Side Image Compression
 When pasting or dragging images into notes, EdgeEver compresses them to WebP locally in your browser before upload, **reducing file size by 50% - 90%** while preserving visual fidelity.
 
 ![EdgeEver Official Logo](/api/v1/resources/res_demo_logo/blob)
 
-### 📎 Universal File Attachments
+### Universal File Attachments
 Embed PDFs, spreadsheets, archives, and multimedia files directly in notes for preview or download:
 - [📄 Product brief PDF: edgeever-product-brief.pdf](/api/v1/resources/res_demo_product_brief_pdf/blob)
 - [📊 Feature matrix CSV: feature-matrix.csv](/api/v1/resources/res_demo_feature_matrix_csv/blob)
 - [📦 Sample attachment archive: edgeever-attachment-demo.zip](/api/v1/resources/res_demo_attachment_bundle_zip/blob)
 
-### 🚀 Zero-Cost Serverless & Docker Self-Hosting
+### Zero-Cost Serverless & Docker Self-Hosting
 1. **Cloudflare Serverless (Recommended, 100% Free Forever)**: Runs entirely within Cloudflare's free tier (Workers + D1 SQLite + R2 Storage). No server bills, no VPS maintenance.
 2. **Docker One-Command Deployment (VPS / NAS / Home Server)**:
    \`\`\`sh
@@ -671,30 +963,39 @@ Embed PDFs, spreadsheets, archives, and multimedia files directly in notes for p
    \`\`\`
    Configures Docker Compose and automated daily background updates with one command. Some network environments in mainland China may require an available network proxy or a trusted registry mirror to access GHCR.
 
-### 💾 Complete Data Freedom: Lossless ZIP Portability
+### Complete Data Freedom: Lossless ZIP Portability
 Export your entire library at any time from **Profile → Import and export**. The archive contains pure Markdown files with standard YAML Front Matter, relative media paths, and full revision histories—compatible with Obsidian, VS Code, and any plain text editor.
 
 ---
 
 > 💡 **Quick Exploration Tips**:
 > 1. Click **\`</>\`** in the top right to try seamless dual-view toggling;
-> 2. Press **\`Cmd/Ctrl + E\`** to test reading protection mode against accidental edits;
-> 3. Press **\`Cmd/Ctrl + O\`** to summon the Quick Switcher;
-> 4. Click the **WeChat Icon** to copy formatted rich text ready for publishing;
-> 5. Click **"Share as Card"** to export a stunning social poster card;
-> 6. Click **"Reset Demo Data"** in settings or the sidebar anytime to restore the demo workspace.
+> 2. Explore the new **AI Infographic** and **Structured Table** examples in the sidebar;
+> 3. Press **\`Cmd/Ctrl + E\`** to test reading protection mode against accidental edits;
+> 4. Press **\`Cmd/Ctrl + O\`** to summon the Quick Switcher;
+> 5. Click the **WeChat Icon** to copy formatted rich text ready for publishing;
+> 6. Click **"Share as Card"** to export a stunning social poster card;
+> 7. Click **"Reset Demo Data"** in settings or the sidebar anytime to restore the demo workspace.
 `,
   },
+  memo_demo_infographic: {
+    title: "Evolution Milestones: EdgeEver Architecture & Release History",
+    markdown: serializeInfographicDocument(DEMO_INFOGRAPHIC_DOCUMENT_EN),
+  },
+  memo_demo_table: {
+    title: "Delivery Tracking: EdgeEver Product Roadmap & Release Status",
+    markdown: serializeTableDocument(DEMO_TABLE_DOCUMENT_EN),
+  },
   memo_demo_architecture: {
-    title: "🏗️ System Architecture: EdgeEver Portable Full Stack & AI Collaboration",
+    title: "System Architecture: EdgeEver Portable Full Stack & AI Collaboration",
     markdown: serializeDiagramDocument(DEMO_ARCHITECTURE_DIAGRAM_EN),
   },
   memo_demo_flowchart: {
-    title: "🔀 Knowledge Workflow: From Capturing Ideas to Publishing",
+    title: "Knowledge Workflow: From Capturing Ideas to Publishing",
     markdown: serializeDiagramDocument(DEMO_FLOWCHART_DIAGRAM_EN),
   },
   memo_demo_mind_map: {
-    title: "🧠 Second Brain: A Personal Knowledge System Mind Map",
+    title: "Second Brain: A Personal Knowledge System Mind Map",
     markdown: serializeDiagramDocument(DEMO_MIND_MAP_DIAGRAM_EN),
   },
 } as const;

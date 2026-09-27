@@ -4,8 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 import {
+  SHARE_IMPORT_FILE_ID,
   WECHAT_INCOMING_DIRECTORY_NAME,
   createWeChatShareController,
+  isFileReferencePlaceholder,
   isPathInsideDirectory,
   wechatImportFilePath,
 } from "./wechat-share-import.mjs";
@@ -73,6 +75,9 @@ describe("WeChat share handoff", () => {
   test("accepts only an absolute file from the edgeever share URL", () => {
     expect(wechatImportFilePath("edgeever://wechat-import?path=/Users/me/Downloads/EdgeEver%20Incoming/a/chat.zip")).toBe(
       "/Users/me/Downloads/EdgeEver Incoming/a/chat.zip",
+    );
+    expect(wechatImportFilePath("edgeever://share-import?path=/Users/me/Downloads/EdgeEver%20Incoming/a/sheet.xlsx")).toBe(
+      "/Users/me/Downloads/EdgeEver Incoming/a/sheet.xlsx",
     );
     expect(wechatImportFilePath("edgeever://memo/memo_1")).toBeNull();
     expect(wechatImportFilePath("https://example.com/chat.zip")).toBeNull();
@@ -221,7 +226,12 @@ describe("WeChat share handoff", () => {
       sendToRenderer: (payload) => sent.push(payload),
     });
     await controller.importPending();
-    expect(sent).toEqual([{ ok: false, reason: "failed" }]);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].ok).toBe(true);
+    expect(sent[0].kind).toBe("file");
+    expect(sent[0].filename).toBe("broken.zip");
+    const media = await controller.readMedia(sent[0].importId, "file");
+    expect(Buffer.from(media.bytes).toString()).toBe("not a zip");
   });
 
   test("picks up a completed share without a protocol URL and ignores a duplicate URL", async () => {
@@ -318,5 +328,171 @@ describe("WeChat share handoff", () => {
     expect((await stat(join(batch, "second.zip"))).isFile()).toBe(true);
     await controller.finish(second.importId, true);
     await expect(stat(batch)).rejects.toThrow();
+  });
+
+  test("saves a shared spreadsheet as a file instead of a WeChat chat", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const batch = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME, "batch");
+    await mkdir(batch, { recursive: true });
+    const filePath = join(batch, "云晰科技爆单键盘项目功能梳理表.xlsx");
+    await writeFile(filePath, Buffer.from("spreadsheet"));
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importFromProtocolUrl(`edgeever://share-import?path=${encodeURIComponent(filePath)}`);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({
+      ok: true,
+      kind: "file",
+      filename: "云晰科技爆单键盘项目功能梳理表.xlsx",
+      mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      byteSize: Buffer.byteLength("spreadsheet"),
+    });
+    const media = await controller.readMedia(sent[0].importId, SHARE_IMPORT_FILE_ID);
+    expect(Buffer.from(media.bytes).toString()).toBe("spreadsheet");
+    await controller.finish(sent[0].importId, true);
+    await expect(stat(filePath)).rejects.toThrow();
+  });
+
+  test("still unpacks a WeChat chat when it arrives through the file share URL", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const batch = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME, "batch");
+    await mkdir(batch, { recursive: true });
+    const zipPath = join(batch, "聊天记录.zip");
+    await writeFile(zipPath, zipOf("聊天记录.txt", "·鱼\n2026年9月22日 22:15\n你好\n", "附件/readme.txt", "hello"));
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importFromProtocolUrl(`edgeever://share-import?path=${encodeURIComponent(zipPath)}`);
+    expect(sent).toHaveLength(1);
+    expect(sent[0].ok).toBe(true);
+    expect(sent[0].kind).toBeUndefined();
+    expect(sent[0].markdown).toContain("你好");
+  });
+
+  test("reports a Finder file-id placeholder instead of treating it as a chat", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const batch = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME, "batch");
+    await mkdir(batch, { recursive: true });
+    const zipPath = join(batch, "聊天记录.zip");
+    const placeholder = Buffer.from("file:///.file/id=6571367.1215912");
+    expect(isFileReferencePlaceholder(placeholder)).toBe(true);
+    await writeFile(zipPath, placeholder);
+    const sent = [];
+    const diagnostics = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+      writeDiagnostic: (event, details) => diagnostics.push({ event, details }),
+    });
+    await controller.importFromProtocolUrl(`edgeever://wechat-import?path=${encodeURIComponent(zipPath)}`);
+    expect(sent).toEqual([{ ok: false, kind: "file", reason: "unreadable" }]);
+    await expect(stat(zipPath)).rejects.toThrow();
+    expect(diagnostics).toContainEqual({ event: "share-import.rejected", details: { reason: "unreadable" } });
+  });
+
+  test("rejects a shared file larger than the configured limit", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const downloads = join(root, "Downloads");
+    const batch = join(downloads, WECHAT_INCOMING_DIRECTORY_NAME, "batch");
+    await mkdir(batch, { recursive: true });
+    const filePath = join(batch, "large.pdf");
+    await writeFile(filePath, Buffer.from("12345"));
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+      maxBytes: 4,
+    });
+    await controller.importFromProtocolUrl(`edgeever://share-import?path=${encodeURIComponent(filePath)}`);
+    expect(sent).toEqual([{ ok: false, kind: "file", reason: "too-large" }]);
+    expect((await stat(filePath)).isFile()).toBe(true);
+  });
+
+  test("does not read a shared file outside the incoming folder", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const outside = join(root, "secret.xlsx");
+    await writeFile(outside, Buffer.from("secret"));
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => join(root, "Downloads"),
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importFromProtocolUrl(`edgeever://share-import?path=${encodeURIComponent(outside)}`);
+    expect(sent).toHaveLength(0);
+    expect((await readFile(outside)).toString()).toBe("secret");
+  });
+
+  test("imports a local file from the Windows verb without deleting it", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const filePath = join(root, "功能梳理表.xlsx");
+    await writeFile(filePath, Buffer.from("spreadsheet"));
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => join(root, "Downloads"),
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importLocalFile(filePath);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({
+      ok: true,
+      kind: "file",
+      filename: "功能梳理表.xlsx",
+    });
+    const media = await controller.readMedia(sent[0].importId, SHARE_IMPORT_FILE_ID);
+    expect(Buffer.from(media.bytes).toString()).toBe("spreadsheet");
+    await controller.finish(sent[0].importId, true);
+    expect((await readFile(filePath)).toString()).toBe("spreadsheet");
+    await controller.importLocalFile(filePath);
+    expect(sent).toHaveLength(2);
+  });
+
+  test("keeps a local WeChat zip in place after preparing the chat", async () => {
+    const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
+    roots.push(root);
+    const zipPath = join(root, "聊天记录.zip");
+    await writeFile(zipPath, zipOf("聊天记录.txt", "·鱼\n2026年9月22日 22:15\n你好\n", "附件/readme.txt", "hello"));
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => join(root, "Downloads"),
+      tempPath: () => join(root, "temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importLocalFile(zipPath);
+    expect(sent[0].ok).toBe(true);
+    expect(sent[0].kind).toBeUndefined();
+    expect(sent[0].markdown).toContain("你好");
+    await controller.finish(sent[0].importId, true);
+    expect((await stat(zipPath)).isFile()).toBe(true);
+  });
+
+  test("ignores a relative local path", async () => {
+    const sent = [];
+    const controller = createWeChatShareController({
+      downloadsPath: () => "/tmp/unused-downloads",
+      tempPath: () => "/tmp/unused-temp",
+      sendToRenderer: (payload) => sent.push(payload),
+    });
+    await controller.importLocalFile("功能梳理表.xlsx");
+    expect(sent).toHaveLength(0);
   });
 });

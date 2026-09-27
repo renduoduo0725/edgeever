@@ -23,6 +23,7 @@ const environment = {
 
 const createDependencies = (overrides = {}) => ({
   clampNumber: (value, min, max) => Math.min(Math.max(value, min), max),
+  createImageResource: async () => ({ id: "res_1" }),
   createMemo: async () => ({ id: "memo_created" }),
   createMemoEditSession: async () => null,
   deleteMemo: async () => {},
@@ -50,6 +51,58 @@ const createApp = (dependencies, auth = agentAuth) => {
 };
 
 describe("memo route contracts", () => {
+  test("creates an image note with the resource id already in the markdown", async () => {
+    const calls = [];
+    const dependencies = createDependencies({
+      createMemo: async (_db, _workspaceId, input) => {
+        calls.push(["create", input.contentMarkdown]);
+        return { id: "memo_created" };
+      },
+      createImageResource: async (_context, input) => {
+        calls.push(["image", input.memoId, input.resourceId, input.bytes.byteLength]);
+        return { id: input.resourceId };
+      },
+    });
+    const form = new FormData();
+    form.set("notebookId", "nb_1");
+    form.set("title", "猫 - Google 搜索");
+    form.set("tags", JSON.stringify(["web-clip"]));
+    form.set("contentMarkdown", "![图片](/api/v1/resources/EDGEVERRESOURCEID/blob)\n\n来源: https://www.google.com/search?q=%E7%8C%AB&udm=2");
+    form.set("file", new File([Uint8Array.of(0xff, 0xd8, 0xff)], "cat.jpg", { type: "image/jpeg" }));
+    const response = await createApp(dependencies).request("/api/v1/memos/with-image", {
+      method: "POST",
+      body: form,
+    }, environment);
+    expect(response.status).toBe(201);
+    const body = await response.json();
+    expect(body.memo.id).toBe("memo_created");
+    expect(calls[0][1]).toBe(`![图片](/api/v1/resources/${body.resourceId}/blob)\n\n来源: https://www.google.com/search?q=%E7%8C%AB&udm=2`);
+    expect(calls[1]).toEqual(["image", "memo_created", body.resourceId, 3]);
+  });
+
+  test("deletes the new note when the image cannot be stored", async () => {
+    const deleted = [];
+    const dependencies = createDependencies({
+      createMemo: async () => ({ id: "memo_created" }),
+      createImageResource: async () => {
+        throw new AppError("unsupported_media_type", "Unsupported image type", 415);
+      },
+      deleteMemo: async (_env, _workspaceId, memoId) => {
+        deleted.push(memoId);
+      },
+    });
+    const form = new FormData();
+    form.set("notebookId", "nb_1");
+    form.set("contentMarkdown", "![图片](/api/v1/resources/EDGEVERRESOURCEID/blob)");
+    form.set("file", new File([Uint8Array.of(1)], "cat.jpg", { type: "image/jpeg" }));
+    const response = await createApp(dependencies).request("/api/v1/memos/with-image", {
+      method: "POST",
+      body: form,
+    }, environment);
+    expect(response.status).toBe(415);
+    expect(deleted).toEqual(["memo_created"]);
+  });
+
   test("maps list query parameters into the list service", async () => {
     let received;
     const dependencies = createDependencies({

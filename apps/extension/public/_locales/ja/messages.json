@@ -3,7 +3,7 @@
     "message": "EdgeEver Web Clipper"
   },
   "extensionDescription": {
-    "message": "表示中のページまたは選択した内容を、自分で運用する EdgeEver へ保存します。"
+    "message": "表示中のページ、選択した内容、または右クリックした画像を、自分で運用する EdgeEver に保存します。"
   },
   "actionTitle": {
     "message": "EdgeEver に保存"
@@ -12,7 +12,7 @@
     "message": "Web Clipper"
   },
   "popupDescription": {
-    "message": "表示中のページまたは選択した内容を EdgeEver に取り込みます。"
+    "message": "表示中のページや選択した内容を取り込みます。選択した文字の右クリックでその文章を、画像の右クリックで画像を、X 上の投稿の右クリックでその投稿を保存できます。"
   },
   "saveCurrentPage": {
     "message": "このページを取り込む"
@@ -195,5 +195,124 @@
   },
   "emptyPageContent": {
     "message": "（このページから読み取れる本文はありませんでした）"
+  },
+  "saveSelectionToEdgeEver": {
+    "message": "選択した文字を EdgeEver に保存"
+  },
+  "selectionSaveHint": {
+    "message": "ページ上の文字を選択して右クリックし、「選択した文字を EdgeEver に保存」を選びます。その文章は、上で選んだ既定のノートブックに 1 件のノートとして保存されます。"
+  },
+  "savingSelection": {
+    "message": "選択した文字を保存しています…"
+  },
+  "selectionSaved": {
+    "message": "選択した文字をノートとして保存しました。"
+  },
+  "selectionEmpty": {
+    "message": "選択された文字がないため、保存しませんでした。"
+  },
+  "selectionNoteFallbackTitle": {
+    "message": "選択した文字"
+  },
+  "saveImageToEdgeEver": {
+    "message": "画像を EdgeEver に保存"
+  },
+  "imageSaveHint": {
+    "message": "ウェブページ上の画像を右クリックし、「画像を EdgeEver に保存」を選ぶと、上で選んだ既定のノートブックに新しいノートとして保存されます。"
+  },
+  "savingImage": {
+    "message": "画像を保存しています…"
+  },
+  "imageSaved": {
+    "message": "新しいノートとして保存しました。"
+  },
+  "imageUnreadable": {
+    "message": "この画像のファイルを読み取れなかったため、保存していません。ページ上に描画された画像か、ログインしないとダウンロードできない画像の可能性があります。"
+  },
+  "imageTooLarge": {
+    "message": "この画像は 20 MB を超えているため、保存していません。"
+  },
+  "imageUnsupportedType": {
+    "message": "この画像形式はまだノートに保存できません。PNG、JPEG、GIF、WebP、AVIF に対応しています。"
+  },
+  "imagePermissionIntro": {
+    "message": "このページからは画像ファイルを読み取れません。画像のあるサイトへのアクセスを許可すると、クリップ拡張機能の既定ノートブックに新しいノートとして保存します。確認した画像だけを読み取ります。"
+  },
+  "imagePermissionHost": {
+    "message": "サイト: $HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "imagePermissionToast": {
+    "message": "保存するには、この画像があるサイトの読み取りを許可してください。"
+  },
+  "allowAndSaveImage": {
+    "message": "許可して保存"
+  },
+  "allowAllSitesAndSave": {
+    "message": "すべてのサイトを許可し、以後は右クリックで直接保存"
+  },
+  "imagePermissionDenied": {
+    "message": "サイトへのアクセスが許可されなかったため、画像は保存されていません。"
+  },
+  "imageResourceScopeRequired": {
+    "message": "この API トークンには添付ファイルの書き込み権限がありません。EdgeEver の設定でフルアクセスのトークンを作成してください。"
+  },
+  "imageNoteFallbackTitle": {
+    "message": "画像"
+  },
+  "imageAltFallback": {
+    "message": "画像"
+  },
+  "imageSaveWindowTitle": {
+    "message": "画像を EdgeEver に保存"
+  },
+  "imageSaveExpired": {
+    "message": "この保存は終了しています。画像を右クリックしてやり直してください。"
+  },
+  "saveTweetToEdgeEver": {
+    "message": "この投稿を EdgeEver に保存"
+  },
+  "tweetSaveHint": {
+    "message": "X で投稿を右クリックし、「この投稿を EdgeEver に保存」を選びます。本文は「さらに表示」で折りたたまれた部分も含めて保存され、表示中の画像とともに、上で選んだ既定のノートブックへ 1 件のノートになります。"
+  },
+  "savingTweet": {
+    "message": "この投稿を保存しています…"
+  },
+  "tweetSaved": {
+    "message": "この投稿をノートとして保存しました。"
+  },
+  "tweetNotFound": {
+    "message": "この投稿を特定できませんでした。投稿の上で直接右クリックしてください。"
+  },
+  "tweetPermissionIntro": {
+    "message": "タイムラインには複数の投稿があります。ポインタの下にある投稿を覚えるには、X へのアクセスを許可してください。許可したあと、同じ投稿をもう一度右クリックします。選んだ投稿だけを、クリップ拡張機能の既定ノートブックに保存します。"
+  },
+  "tweetPermissionToast": {
+    "message": "タイムラインで投稿を選ぶには、X へのアクセスを許可してください。そのあと、もう一度右クリックします。"
+  },
+  "tweetRightClickAgain": {
+    "message": "タイムラインの投稿を識別できるようになりました。その投稿をもう一度右クリックしてください。"
+  },
+  "allowTweetAccess": {
+    "message": "X へのアクセスを許可"
+  },
+  "tweetPermissionDenied": {
+    "message": "アクセスは許可されませんでした。投稿をもう一度右クリックしてやり直してください。"
+  },
+  "tweetPermissionReady": {
+    "message": "許可しました。ページに戻り、その投稿をもう一度右クリックしてください。"
+  },
+  "tweetNoteFallbackTitle": {
+    "message": "投稿"
+  },
+  "tweetSaveWindowTitle": {
+    "message": "この投稿を EdgeEver に保存"
+  },
+  "tweetTimeLabel": {
+    "message": "日時"
   }
 }

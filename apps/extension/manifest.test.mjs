@@ -12,8 +12,26 @@ describe("extension manifests", () => {
     for (const target of ["chromium", "firefox"]) {
       const manifest = buildExtensionManifest(target, extensionPackage.version);
       expect(manifest.version).toBe(extensionPackage.version);
-      expect(manifest.permissions).toEqual(["activeTab", "scripting", "storage"]);
-      expect(manifest.optional_host_permissions).toContain("https://*/*");
+      expect(manifest.permissions).toEqual(["activeTab", "contextMenus", "scripting", "storage"]);
+      expect(manifest.optional_host_permissions).toEqual([
+        "https://*/*",
+        "http://*/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+      ]);
+      expect(manifest.content_scripts).toEqual([
+        {
+          matches: [
+            "https://x.com/*",
+            "https://www.x.com/*",
+            "https://twitter.com/*",
+            "https://www.twitter.com/*",
+            "https://mobile.twitter.com/*",
+          ],
+          js: ["assets/tweet-target.js"],
+          run_at: "document_start",
+        },
+      ]);
     }
   });
 

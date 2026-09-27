@@ -83,8 +83,8 @@ export const MathFormulaDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
         <DialogHeader className="border-b border-slate-200 px-5 py-5 pr-12 text-left">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Sigma className="h-5 w-5 text-emerald-600" />
+          <DialogTitle className="flex items-center gap-2 text-sm leading-6">
+            <Sigma className="h-5 w-5 text-slate-700" />
             {editing ? t("mathFormulaDialog.editTitle") : t("mathFormulaDialog.title")}
           </DialogTitle>
           <DialogDescription className="pt-1 leading-5">
@@ -107,7 +107,7 @@ export const MathFormulaDialog = ({
                   type="button"
                   className={
                     kind === value
-                      ? "flex-1 rounded-sm bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800"
+                      ? "flex-1 rounded-sm bg-workspace-selection px-3 py-1.5 text-xs font-semibold text-slate-950"
                       : "flex-1 rounded-sm px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                   }
                   aria-pressed={kind === value}
@@ -129,7 +129,7 @@ export const MathFormulaDialog = ({
               value={latex}
               rows={3}
               spellCheck={false}
-              className="w-full resize-y rounded-md border border-slate-200 bg-card px-3 py-2 font-mono text-sm text-slate-900 outline-none ring-emerald-500/30 placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2"
+              className="w-full resize-y rounded-md border border-slate-200 bg-card px-3 py-2 font-mono text-sm text-slate-900 outline-none ring-slate-900/15 placeholder:text-slate-400 focus:border-slate-900 focus:ring-2"
               placeholder={t("mathFormulaDialog.latexPlaceholder")}
               aria-invalid={Boolean(error) || undefined}
               onChange={(event) => {
@@ -155,10 +155,10 @@ export const MathFormulaDialog = ({
                 previewHtml ? (
                   <span dangerouslySetInnerHTML={{ __html: previewHtml }} />
                 ) : (
-                  <p className="text-sm text-rose-700">{t("mathFormulaDialog.previewError")}</p>
+                  <p className="text-xs leading-5 text-rose-700">{t("mathFormulaDialog.previewError")}</p>
                 )
               ) : (
-                <p className="text-sm text-slate-400">{t("mathFormulaDialog.previewEmpty")}</p>
+                <p className="text-xs leading-5 text-slate-400">{t("mathFormulaDialog.previewEmpty")}</p>
               )}
             </div>
           </div>

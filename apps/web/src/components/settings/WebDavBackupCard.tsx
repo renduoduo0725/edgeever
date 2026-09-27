@@ -27,7 +27,7 @@ const Progress = ({ progress }: { progress: EdgeEverZipProgress }) => {
   const percentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
   return (
     <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-      <div className="h-full rounded-full bg-emerald-500 transition-[width]" style={{ width: `${percentage}%` }} />
+      <div className="h-full rounded-full bg-slate-600 transition-[width]" style={{ width: `${percentage}%` }} />
     </div>
   );
 };
@@ -122,16 +122,16 @@ export const WebDavBackupCard = () => {
           {WEBDAV_AUTO_BACKUP_ENABLED ? (
             <>
               <label className="grid gap-1.5 text-xs font-medium text-slate-700">{t("dataExport.webdavInterval")}
-                <select className="h-10 rounded-md border border-slate-200 bg-card px-3 text-sm text-slate-950 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" value={schedule.intervalDays} disabled={busy} onChange={(event) => updateSchedule({ intervalDays: Number(event.target.value) as WebDavBackupSchedule["intervalDays"] })}>
+                <select className="h-10 rounded-md border border-slate-200 bg-card px-3 text-sm text-slate-950 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" value={schedule.intervalDays} disabled={busy} onChange={(event) => updateSchedule({ intervalDays: Number(event.target.value) as WebDavBackupSchedule["intervalDays"] })}>
                   <option value={1}>{t("dataExport.webdavIntervals.daily")}</option><option value={7}>{t("dataExport.webdavIntervals.weekly")}</option><option value={14}>{t("dataExport.webdavIntervals.biweekly")}</option><option value={30}>{t("dataExport.webdavIntervals.monthly")}</option>
                 </select>
               </label>
-              <label className="flex items-center gap-2 self-end pb-2 text-xs font-medium text-slate-700"><input type="checkbox" className="h-4 w-4 accent-emerald-600" checked={schedule.enabled} disabled={busy} onChange={(event) => updateSchedule({ enabled: event.target.checked })} />{t("dataExport.webdavEnableAuto")}</label>
+              <label className="flex items-center gap-2 self-end pb-2 text-xs font-medium text-slate-700"><input type="checkbox" className="h-4 w-4 accent-[var(--checkbox-on)]" checked={schedule.enabled} disabled={busy} onChange={(event) => updateSchedule({ enabled: event.target.checked })} />{t("dataExport.webdavEnableAuto")}</label>
             </>
           ) : null}
         </div>
         <p className="text-xs leading-4 text-slate-500">{t(WEBDAV_AUTO_BACKUP_ENABLED ? "dataExport.webdavSecurityNote" : "dataExport.webdavManualSecurityNote")}</p>
-        {WEBDAV_AUTO_BACKUP_ENABLED && schedule.enabled ? <p className="text-xs leading-4 text-emerald-700">{schedule.lastSuccessAt ? t("dataExport.webdavLastSuccess", { time: new Date(schedule.lastSuccessAt).toLocaleString() }) : t("dataExport.webdavWaitingForFirstBackup")}</p> : null}
+        {WEBDAV_AUTO_BACKUP_ENABLED && schedule.enabled ? <p className="text-xs leading-4 text-slate-600">{schedule.lastSuccessAt ? t("dataExport.webdavLastSuccess", { time: new Date(schedule.lastSuccessAt).toLocaleString() }) : t("dataExport.webdavWaitingForFirstBackup")}</p> : null}
         {busy ? <div className="grid gap-1.5" aria-live="polite"><div className="flex items-center justify-between text-xs text-slate-500"><span>{t("dataExport.webdavWorking")}</span><span>{t("dataExport.progress", { completed: progress.completed, total: progress.total })}</span></div><Progress progress={progress} /></div> : null}
         {state === "complete" ? <p className="flex items-center gap-1.5 text-xs text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />{operation === "webdav-test" ? t("dataExport.webdavTestComplete") : message}</p> : null}
         {state === "error" ? <p className="flex items-center gap-1.5 text-xs text-red-600" role="alert"><AlertCircle className="h-3.5 w-3.5 shrink-0" />{message}</p> : null}

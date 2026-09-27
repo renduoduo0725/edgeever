@@ -6,10 +6,19 @@ import TurndownService from "turndown";
 // modules and cannot resolve imports from the extension bundle.
 const t = (key: string) => chrome.i18n.getMessage(key) || key;
 
+const root = globalThis as typeof globalThis & {
+  __edgeeverPageClipPayload?: { mode?: string };
+};
+const clipPayload = root.__edgeeverPageClipPayload;
+delete root.__edgeeverPageClipPayload;
+const selectionOnly = clipPayload?.mode === "selection";
+
 type CapturedPage = {
   title: string;
   url: string;
   markdown: string;
+  plainText?: string;
+  kind?: "page" | "selection";
 };
 
 const getSelectionHtml = () => {
@@ -27,6 +36,29 @@ const getSelectionHtml = () => {
 };
 
 const normalizeMarkdown = (value: string) => value.replace(/\n{3,}/g, "\n\n").trim();
+
+const markdownFromHtml = (html: string) => {
+  if (!html) return "";
+  const turndown = new TurndownService({
+    bulletListMarker: "-",
+    codeBlockStyle: "fenced",
+    headingStyle: "atx",
+    linkStyle: "inlined",
+  });
+  return normalizeMarkdown(turndown.turndown(html));
+};
+
+const captureSelection = (): CapturedPage => {
+  const plain = window.getSelection()?.toString().replace(/\u00a0/g, " ").trim() ?? "";
+  const html = getSelectionHtml();
+  return {
+    title: document.title.trim() || location.hostname,
+    url: location.href,
+    markdown: markdownFromHtml(html) || plain,
+    plainText: plain,
+    kind: "selection",
+  };
+};
 
 // Dynamic sites can contain very large inline SVGs, scripts, and embedded
 // documents. They are not article content, but cloning and parsing them makes
@@ -65,36 +97,35 @@ const capturePage = (): CapturedPage => {
   }
 
   const title = article?.title?.trim() || document.title.trim() || location.hostname;
-  let markdown = "";
-  if (sourceHtml) {
-    const turndown = new TurndownService({
-      bulletListMarker: "-",
-      codeBlockStyle: "fenced",
-      headingStyle: "atx",
-      linkStyle: "inlined",
-    });
-    markdown = normalizeMarkdown(turndown.turndown(sourceHtml));
-  }
-
   return {
     title,
     url: location.href,
-    markdown: markdown || textFallback(),
+    markdown: markdownFromHtml(sourceHtml) || textFallback(),
+    kind: "page",
   };
 };
 
+const sendCapturedPage = (page: CapturedPage) => {
+  void chrome.runtime.sendMessage({ type: "capturedPage", page });
+};
+
 try {
-  void chrome.runtime.sendMessage({ type: "capturedPage", page: capturePage() });
+  sendCapturedPage(selectionOnly ? captureSelection() : capturePage());
 } catch {
   // Keep the injected script from failing silently if a page exposes an
   // unusual DOM implementation. The background page will show its timeout
   // message, while ordinary pages still use the normal extraction path.
-  void chrome.runtime.sendMessage({
-    type: "capturedPage",
-    page: {
-      title: document.title.trim() || location.hostname,
-      url: location.href,
-      markdown: textFallback(),
-    },
+  // A selection save must not fall back to the whole page.
+  sendCapturedPage(selectionOnly ? {
+    title: document.title.trim() || location.hostname,
+    url: location.href,
+    markdown: "",
+    plainText: "",
+    kind: "selection",
+  } : {
+    title: document.title.trim() || location.hostname,
+    url: location.href,
+    markdown: textFallback(),
+    kind: "page",
   });
 }

@@ -3,7 +3,7 @@
     "message": "EdgeEver 网页剪藏"
   },
   "extensionDescription": {
-    "message": "将当前网页或选中的内容保存到你自托管的 EdgeEver 实例。"
+    "message": "将当前网页、选中内容，或右键图片保存到你自托管的 EdgeEver 实例。"
   },
   "actionTitle": {
     "message": "保存到 EdgeEver"
@@ -12,7 +12,7 @@
     "message": "网页剪藏"
   },
   "popupDescription": {
-    "message": "剪藏当前网页或选中的内容到你的 EdgeEver。"
+    "message": "剪藏当前网页或选中内容。选中文字后右键可以保存这段文字；在图片上右键可以保存图片；在 X 上右键可以保存这条推文。"
   },
   "saveCurrentPage": {
     "message": "剪藏当前网页"
@@ -195,5 +195,124 @@
   },
   "emptyPageContent": {
     "message": "（网页没有可提取的正文内容）"
+  },
+  "saveSelectionToEdgeEver": {
+    "message": "保存选中文字到 EdgeEver"
+  },
+  "selectionSaveHint": {
+    "message": "选中网页上的一段文字后右键，选择“保存选中文字到 EdgeEver”。这段文字会存成一条新笔记，放进上面选择的默认笔记本。"
+  },
+  "savingSelection": {
+    "message": "正在保存选中文字……"
+  },
+  "selectionSaved": {
+    "message": "已把选中文字存成一条笔记。"
+  },
+  "selectionEmpty": {
+    "message": "没有选中文字，没有保存。"
+  },
+  "selectionNoteFallbackTitle": {
+    "message": "选中文字"
+  },
+  "saveImageToEdgeEver": {
+    "message": "保存图片到 EdgeEver"
+  },
+  "imageSaveHint": {
+    "message": "在网页图片上右键，选择“保存图片到 EdgeEver”。图片会存成一条新笔记，放进上面选择的默认笔记本。"
+  },
+  "savingImage": {
+    "message": "正在保存图片……"
+  },
+  "imageSaved": {
+    "message": "已保存为一条新笔记。"
+  },
+  "imageUnreadable": {
+    "message": "读不到这张图片的文件，没有保存。它可能是页面画出来的，或者需要登录后才能下载。"
+  },
+  "imageTooLarge": {
+    "message": "这张图片超过 20 MB，没有保存。"
+  },
+  "imageUnsupportedType": {
+    "message": "这种图片格式暂时不能存进笔记。支持 PNG、JPEG、GIF、WebP 和 AVIF。"
+  },
+  "imagePermissionIntro": {
+    "message": "当前网页读不到这张图片的文件。允许访问图片所在网站后，会把它存成一条新笔记，放进剪藏插件的默认笔记本。只会读取你这次要保存的这一张。"
+  },
+  "imagePermissionHost": {
+    "message": "网站：$HOST$",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "imagePermissionToast": {
+    "message": "需要允许读取这个网站上的图片，才能保存。"
+  },
+  "allowAndSaveImage": {
+    "message": "允许并保存"
+  },
+  "allowAllSitesAndSave": {
+    "message": "允许所有网站，以后右键直接保存"
+  },
+  "imagePermissionDenied": {
+    "message": "没有获得网站访问权限，图片还没有保存。"
+  },
+  "imageResourceScopeRequired": {
+    "message": "这个 API Token 没有写入附件的权限。请在 EdgeEver 设置里创建一个完整访问的 Token。"
+  },
+  "imageNoteFallbackTitle": {
+    "message": "图片"
+  },
+  "imageAltFallback": {
+    "message": "图片"
+  },
+  "imageSaveWindowTitle": {
+    "message": "保存图片到 EdgeEver"
+  },
+  "imageSaveExpired": {
+    "message": "这次保存已经结束。请在图片上重新右键。"
+  },
+  "saveTweetToEdgeEver": {
+    "message": "保存这条推文到 EdgeEver"
+  },
+  "tweetSaveHint": {
+    "message": "在 X 上右键一条推文，选择“保存这条推文到 EdgeEver”。正文会完整保存，包括被「显示更多」折叠的部分；已经显示的图片也会放进同一条新笔记，笔记本与上面的默认笔记本相同。"
+  },
+  "savingTweet": {
+    "message": "正在保存这条推文……"
+  },
+  "tweetSaved": {
+    "message": "已把这条推文存成一条笔记。"
+  },
+  "tweetNotFound": {
+    "message": "没有定位到这条推文。请直接在推文上右键。"
+  },
+  "tweetPermissionIntro": {
+    "message": "时间线上有很多条推文。允许访问 X 之后，插件才能记住指针下的这一条。允许后，请再在同一条推文上右键一次。只会把你选中的这条存进剪藏插件的默认笔记本。"
+  },
+  "tweetPermissionToast": {
+    "message": "需要允许访问 X，才能在时间线上选中这条推文。允许后请再右键一次。"
+  },
+  "tweetRightClickAgain": {
+    "message": "已经可以识别时间线上的推文。请再在这条推文上右键一次。"
+  },
+  "allowTweetAccess": {
+    "message": "允许访问 X"
+  },
+  "tweetPermissionDenied": {
+    "message": "没有获得访问权限。请再在推文上右键一次来重新授权。"
+  },
+  "tweetPermissionReady": {
+    "message": "已允许。回到页面，再在这条推文上右键一次。"
+  },
+  "tweetNoteFallbackTitle": {
+    "message": "一条推文"
+  },
+  "tweetSaveWindowTitle": {
+    "message": "保存这条推文到 EdgeEver"
+  },
+  "tweetTimeLabel": {
+    "message": "时间"
   }
 }

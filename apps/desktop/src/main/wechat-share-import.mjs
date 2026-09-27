@@ -1,10 +1,57 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, realpath, readdir, rmdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, realpath, readdir, rmdir, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { WeChatArchiveError, wechatChatNoteFromArchive } from "./wechat-chat-archive.mjs";
 
 export const WECHAT_INCOMING_DIRECTORY_NAME = "EdgeEver Incoming";
+export const SHARE_IMPORT_FILE_ID = "file";
+export const MAX_SHARE_IMPORT_BYTES = 512 * 1024 * 1024;
 const SAFE_ID = /^[A-Za-z0-9_-]{1,80}$/;
+const MIME_TYPES = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  gif: "image/gif",
+  webp: "image/webp",
+  heic: "image/heic",
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  m4v: "video/mp4",
+  webm: "video/webm",
+  mp3: "audio/mpeg",
+  m4a: "audio/mp4",
+  wav: "audio/wav",
+  pdf: "application/pdf",
+  md: "text/markdown",
+  markdown: "text/markdown",
+  txt: "text/plain",
+  csv: "text/csv",
+  json: "application/json",
+  zip: "application/zip",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+};
+
+class ShareImportError extends Error {
+  constructor(code) {
+    super(code);
+    this.name = "ShareImportError";
+    this.code = code;
+  }
+}
+
+const extensionOf = (filename) => filename.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";
+
+export const mimeTypeForFilename = (filename) => MIME_TYPES[extensionOf(filename)] ?? "application/octet-stream";
+
+// Finder's share sheet sometimes delivers `file:///.file/id=…` instead of the file.
+export const isFileReferencePlaceholder = (bytes) => {
+  if (!bytes || bytes.length < 16 || bytes.length > 256) return false;
+  const text = Buffer.from(bytes).toString("utf8");
+  return text.startsWith("file:///.file/id=") && !text.includes("\n") && !text.includes("\0");
+};
 
 export const isPathInsideDirectory = (filePath, directory) => {
   if (!filePath || !directory) return false;
@@ -21,7 +68,7 @@ export const wechatImportFilePath = (value) => {
   } catch {
     return null;
   }
-  if (url.protocol !== "edgeever:" || url.hostname !== "wechat-import") return null;
+  if (url.protocol !== "edgeever:" || (url.hostname !== "wechat-import" && url.hostname !== "share-import")) return null;
   const filePath = url.searchParams.get("path");
   if (!filePath || !isAbsolute(filePath) || filePath.includes("\0")) return null;
   return filePath;
@@ -29,11 +76,8 @@ export const wechatImportFilePath = (value) => {
 
 const incomingDirectory = (downloadsPath) => join(downloadsPath, WECHAT_INCOMING_DIRECTORY_NAME);
 
-const assertIncomingZip = async (filePath, downloadsPath) => {
+const assertIncomingFile = async (filePath, downloadsPath) => {
   const root = incomingDirectory(downloadsPath);
-  if (!filePath.toLowerCase().endsWith(".zip")) {
-    throw new WeChatArchiveError("rejected-path");
-  }
   let realRoot;
   let realFile;
   try {
@@ -43,10 +87,35 @@ const assertIncomingZip = async (filePath, downloadsPath) => {
   }
   // The sandboxed share extension may name ~/Downloads through its container
   // symlink. Validate the resolved file against the resolved incoming directory.
-  if (!isPathInsideDirectory(realFile, realRoot) || !realFile.toLowerCase().endsWith(".zip")) {
+  if (!isPathInsideDirectory(realFile, realRoot)) {
+    throw new WeChatArchiveError("rejected-path");
+  }
+  const info = await stat(realFile).catch(() => null);
+  if (!info?.isFile()) throw new WeChatArchiveError("rejected-path");
+  return realFile;
+};
+
+const assertIncomingZip = async (filePath, downloadsPath) => {
+  if (!filePath.toLowerCase().endsWith(".zip")) {
+    throw new WeChatArchiveError("rejected-path");
+  }
+  const realFile = await assertIncomingFile(filePath, downloadsPath);
+  if (!realFile.toLowerCase().endsWith(".zip")) {
     throw new WeChatArchiveError("rejected-path");
   }
   return realFile;
+};
+
+const wechatNoteFromBytes = (bytes, filename) => {
+  if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4b) return null;
+  try {
+    return wechatChatNoteFromArchive(bytes, filename);
+  } catch (error) {
+    if (error instanceof WeChatArchiveError && (error.code === "invalid" || error.code === "unrecognized")) {
+      return null;
+    }
+    throw error;
+  }
 };
 
 const removeImportedZip = async (zipPath, downloadsPath) => {
@@ -67,6 +136,7 @@ export const createWeChatShareController = ({
   sendToRenderer,
   onActivity = () => {},
   writeDiagnostic = () => {},
+  maxBytes = MAX_SHARE_IMPORT_BYTES,
 }) => {
   const sessions = new Map();
   const preparedPaths = new Set();
@@ -80,17 +150,19 @@ export const createWeChatShareController = ({
     if (!session) return;
     if (!success) {
       session.failed = true;
-      failedPaths.add(session.zipPath);
-      void writeDiagnostic("wechat-import.save-failed");
+      if (!session.preserveSource) failedPaths.add(session.zipPath);
+      const failedEvent = session.payload?.kind === "file" ? "share-import.save-failed" : "wechat-import.save-failed";
+      void writeDiagnostic(failedEvent);
       return;
     }
     sessions.delete(importId);
     preparedPaths.delete(session.zipPath);
-    completedPaths.add(session.zipPath);
+    if (!session.preserveSource) completedPaths.add(session.zipPath);
     failedPaths.delete(session.zipPath);
-    await removeImportedZip(session.zipPath, downloadsPath());
-    await rm(session.directory, { recursive: true, force: true }).catch(() => {});
-    void writeDiagnostic("wechat-import.saved", { media: session.media.size });
+    if (!session.preserveSource) await removeImportedZip(session.zipPath, downloadsPath());
+    if (session.directory) await rm(session.directory, { recursive: true, force: true }).catch(() => {});
+    const savedEvent = session.payload?.kind === "file" ? "share-import.saved" : "wechat-import.saved";
+    void writeDiagnostic(savedEvent, { media: session.media.size });
   };
 
   const retry = (importId) => {
@@ -115,20 +187,45 @@ export const createWeChatShareController = ({
     return { filename: media.filename, mimeType: media.mimeType, bytes };
   };
 
-  const importFromProtocolUrl = async (value) => {
-    const requestedPath = wechatImportFilePath(value);
-    if (!requestedPath) return;
-    const downloads = downloadsPath();
-    let zipPath = null;
+  const prepareFileShare = (sourcePath, byteSize, { preserveSource = false } = {}) => {
+    const filename = basename(sourcePath);
+    const importId = randomUUID();
+    const mimeType = mimeTypeForFilename(filename);
+    const payload = {
+      ok: true,
+      kind: "file",
+      importId,
+      filename,
+      mimeType,
+      byteSize,
+    };
+    sessions.set(importId, {
+      directory: null,
+      media: new Map([[SHARE_IMPORT_FILE_ID, { filename, mimeType, byteSize, path: sourcePath }]]),
+      zipPath: sourcePath,
+      payload,
+      failed: false,
+      preserveSource,
+    });
+    if (!preserveSource) preparedPaths.add(sourcePath);
+    sendToRenderer(payload);
+    void writeDiagnostic("share-import.prepared", { bytes: byteSize });
+  };
+
+  const openSharedFile = async (sourcePath, { preserveSource }) => {
     let preparedDirectory = null;
     try {
-      zipPath = await assertIncomingZip(requestedPath, downloads);
-      if (inFlightPaths.has(zipPath) || preparedPaths.has(zipPath)
-        || completedPaths.has(zipPath) || failedPaths.has(zipPath)) return;
-      inFlightPaths.add(zipPath);
       onActivity();
-      const archive = await readFile(zipPath);
-      const note = wechatChatNoteFromArchive(archive, basename(zipPath));
+      const info = await stat(sourcePath);
+      if (!info.isFile() || info.size <= 0) throw new ShareImportError("empty");
+      if (info.size > maxBytes) throw new ShareImportError("too-large");
+      const bytes = await readFile(sourcePath);
+      if (isFileReferencePlaceholder(bytes)) throw new ShareImportError("unreadable");
+      const note = wechatNoteFromBytes(bytes, basename(sourcePath));
+      if (!note) {
+        prepareFileShare(sourcePath, bytes.length, { preserveSource });
+        return;
+      }
       const importId = randomUUID();
       const directory = join(tempPath(), "edgeever-wechat-import", importId);
       preparedDirectory = directory;
@@ -158,22 +255,87 @@ export const createWeChatShareController = ({
         markdown: note.markdown,
         media: listed,
       };
-      sessions.set(importId, { directory, media, zipPath, payload, failed: false });
-      preparedPaths.add(zipPath);
+      sessions.set(importId, { directory, media, zipPath: sourcePath, payload, failed: false, preserveSource });
+      if (!preserveSource) preparedPaths.add(sourcePath);
       preparedDirectory = null;
       sendToRenderer(payload);
-      void writeDiagnostic("wechat-import.prepared", { media: listed.length, bytes: archive.length });
+      void writeDiagnostic("wechat-import.prepared", { media: listed.length, bytes: bytes.length });
     } catch (error) {
       if (preparedDirectory) await rm(preparedDirectory, { recursive: true, force: true }).catch(() => {});
+      const reason = error instanceof WeChatArchiveError || error instanceof ShareImportError
+        ? error.code
+        : "failed";
+      if (reason === "unreadable" && sourcePath && !preserveSource) {
+        await removeImportedZip(sourcePath, downloadsPath());
+      } else if (sourcePath && reason !== "rejected-path" && !preserveSource) {
+        failedPaths.add(sourcePath);
+      }
+      if (reason === "rejected-path") {
+        void writeDiagnostic("wechat-import.rejected", { reason });
+        return;
+      }
+      if (reason === "unreadable" || reason === "too-large" || reason === "empty") {
+        sendToRenderer({
+          ok: false,
+          kind: "file",
+          reason: reason === "too-large" ? "too-large" : "unreadable",
+        });
+        void writeDiagnostic("share-import.rejected", { reason });
+        return;
+      }
+      sendToRenderer({ ok: false, reason: reason === "unrecognized" ? "unrecognized" : "failed" });
+      void writeDiagnostic("wechat-import.rejected", { reason });
+    }
+  };
+
+  const importFromProtocolUrl = async (value) => {
+    const requestedPath = wechatImportFilePath(value);
+    if (!requestedPath) return;
+    let shareFile = false;
+    try {
+      shareFile = new URL(value).hostname === "share-import";
+    } catch {
+      return;
+    }
+    const downloads = downloadsPath();
+    let sourcePath = null;
+    try {
+      sourcePath = shareFile
+        ? await assertIncomingFile(requestedPath, downloads)
+        : await assertIncomingZip(requestedPath, downloads);
+      if (inFlightPaths.has(sourcePath) || preparedPaths.has(sourcePath)
+        || completedPaths.has(sourcePath) || failedPaths.has(sourcePath)) return;
+      inFlightPaths.add(sourcePath);
+      await openSharedFile(sourcePath, { preserveSource: false });
+    } catch (error) {
       const reason = error instanceof WeChatArchiveError ? error.code : "failed";
-      if (zipPath) failedPaths.add(zipPath);
-      // A stale or malformed protocol URL is not a failed save attempt.
+      if (reason !== "rejected-path" && sourcePath) failedPaths.add(sourcePath);
       if (reason !== "rejected-path") {
-        sendToRenderer({ ok: false, reason: reason === "unrecognized" ? "unrecognized" : "failed" });
+        sendToRenderer({ ok: false, reason: "failed" });
       }
       void writeDiagnostic("wechat-import.rejected", { reason });
     } finally {
-      if (zipPath) inFlightPaths.delete(zipPath);
+      if (sourcePath) inFlightPaths.delete(sourcePath);
+    }
+  };
+
+  const localInFlight = new Set();
+  const importLocalFile = async (filePath) => {
+    if (typeof filePath !== "string" || !isAbsolute(filePath) || filePath.includes("\0")) return;
+    let sourcePath = null;
+    try {
+      sourcePath = await realpath(filePath);
+    } catch {
+      sendToRenderer({ ok: false, kind: "file", reason: "unreadable" });
+      void writeDiagnostic("share-import.rejected", { reason: "unreadable" });
+      return;
+    }
+    if (localInFlight.has(sourcePath)) return;
+    localInFlight.add(sourcePath);
+    try {
+      await openSharedFile(sourcePath, { preserveSource: true });
+    } finally {
+      localInFlight.delete(sourcePath);
     }
   };
 
@@ -185,13 +347,13 @@ export const createWeChatShareController = ({
       const directory = join(root, batch.name);
       const files = await readdir(directory, { withFileTypes: true }).catch(() => []);
       for (const file of files) {
-        if (!file.isFile() || !file.name.toLowerCase().endsWith(".zip")) continue;
-        const url = new URL("edgeever://wechat-import");
+        if (!file.isFile() || file.name.startsWith(".") || file.name.toLowerCase().endsWith(".partial")) continue;
+        const url = new URL(file.name.toLowerCase().endsWith(".zip") ? "edgeever://wechat-import" : "edgeever://share-import");
         url.searchParams.set("path", join(directory, file.name));
         await importFromProtocolUrl(url.href);
       }
     }
   };
 
-  return { importFromProtocolUrl, importPending, readMedia, finish, retry };
+  return { importFromProtocolUrl, importLocalFile, importPending, readMedia, finish, retry };
 };

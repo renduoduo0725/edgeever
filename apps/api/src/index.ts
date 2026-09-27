@@ -341,6 +341,7 @@ registerTemplateRoutes(app, {
 
 registerMemoRoutes(app, {
   clampNumber: (...args) => clampNumber(...args),
+  createImageResource: (...args) => createImageResource(...args),
   createMemo: (...args) => createMemoRecord(...args),
   createMemoEditSession: (...args) => createMemoEditSession(...args),
   deleteMemo: (...args) => deleteMemoRecord(...args),

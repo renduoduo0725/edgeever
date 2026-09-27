@@ -69,13 +69,13 @@ export const ExecutionHistoryDialog = ({
               <Loader2 className="h-5 w-5 animate-spin" aria-label={t("executionHistory.loading")} />
             </div>
           ) : historyQuery.isError ? (
-            <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+            <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-700">
               {historyQuery.error instanceof Error ? historyQuery.error.message : t("executionHistory.loadFailed")}
             </div>
           ) : items.length === 0 ? (
             <div className="flex min-h-40 flex-col items-center justify-center gap-2 text-center text-slate-400">
               <Clock3 className="h-6 w-6" />
-              <p className="text-sm">{t("executionHistory.empty")}</p>
+              <p className="text-xs leading-5">{t("executionHistory.empty")}</p>
             </div>
           ) : (
             <div className="grid gap-3">

@@ -88,8 +88,13 @@ const baseEditorTheme = EditorView.theme({
     fontFamily: "inherit",
   },
   ".cm-content": {
-    padding: "16px 24px 64px",
+    padding: "16px var(--editor-reading-gutter, 24px) 64px",
     minHeight: "100%",
+  },
+  "@media (min-width: 1024px)": {
+    ".cm-scroller": {
+      scrollbarGutter: "stable both-edges",
+    },
   },
   ".cm-line": {
     padding: "0",

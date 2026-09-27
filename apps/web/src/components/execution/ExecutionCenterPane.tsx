@@ -80,7 +80,7 @@ export const ExecutionCenterPane = ({
               <Loader2 className="h-5 w-5 animate-spin" aria-label={t("executionHistory.loading")} />
             </div>
           ) : historyQuery.isError ? (
-            <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-xs leading-5 text-rose-700">
               <p>{historyQuery.error instanceof Error ? historyQuery.error.message : t("executionHistory.loadFailed")}</p>
               <Button className="mt-3" size="sm" variant="outline" onClick={() => void historyQuery.refetch()}>
                 {t("executionHistory.retry")}
@@ -89,7 +89,7 @@ export const ExecutionCenterPane = ({
           ) : items.length === 0 ? (
             <div className="flex min-h-56 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-card text-center text-slate-400">
               <Clock3 className="h-7 w-7" />
-              <p className="text-sm">{t("executionHistory.empty")}</p>
+              <p className="text-xs leading-5">{t("executionHistory.empty")}</p>
             </div>
           ) : (
             <div className="grid gap-3">

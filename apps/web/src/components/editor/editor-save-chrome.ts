@@ -32,7 +32,7 @@ export const getEditorSaveChrome = ({
       : saveState === "queued"
         ? "bg-slate-50 text-slate-400"
         : saveState === "saving" || hasUnsavedChanges
-          ? "bg-emerald-50 text-emerald-700"
+          ? "bg-slate-100 text-slate-700"
           : "bg-slate-100 text-slate-500";
 
   return { saveLabel, saveStateClassName };

@@ -43,7 +43,7 @@ export const LoginSessionRevokeDialog = ({
             {t(revokeOthers ? "loginDevices.revokeOthersDescription" : "loginDevices.revokeDeviceDescription")}
           </DialogDescription>
         </DialogHeader>
-        {isError ? <p className="text-sm font-medium text-rose-600" role="alert">{t("loginDevices.revokeFailed")}</p> : null}
+        {isError ? <p className="text-xs font-medium leading-5 text-rose-600" role="alert">{t("loginDevices.revokeFailed")}</p> : null}
         <DialogFooter>
           <DialogClose asChild>
             <Button variant="outline" disabled={isPending}>{t("common.cancel")}</Button>

@@ -17,11 +17,32 @@ describe("application color system", () => {
     expect(contrastRatio("#11694a", "#f0f8f4")).toBeGreaterThanOrEqual(4.5);
   });
 
+  test("keeps menus, switches, and secondary icons in ink", () => {
+    const switchSource = readFileSync(new URL("../components/ui/switch.tsx", import.meta.url), "utf8");
+    const checkbox = readFileSync(new URL("../components/ui/checkbox.tsx", import.meta.url), "utf8");
+    const settings = readFileSync(new URL("../components/SettingsPane.tsx", import.meta.url), "utf8");
+
+    expect(globals).toContain("--accent: 210 16% 89%;");
+    expect(globals).toContain("--accent-foreground: 0 0% 7%;");
+    expect(globals).not.toContain("--accent-foreground: 158 70% 25%;");
+    expect(globals).toContain("--switch-track-on: #525252;");
+    expect(globals).toContain("--checkbox-on: #525252;");
+    expect(globals).toContain("--switch-track-on: #e7ebe8;");
+    expect(switchSource).toContain("data-[state=checked]:bg-[var(--switch-track-on)]");
+    expect(switchSource).not.toContain("bg-emerald-500");
+    expect(checkbox).toContain("data-[state=checked]:bg-[var(--checkbox-on)]");
+    expect(checkbox).not.toContain("bg-emerald-500");
+    expect(settings).not.toContain("text-emerald-");
+    expect(contrastRatio("#ffffff", "#525252")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#ffffff", "#1a1d21")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#101311", "#e7ebe8")).toBeGreaterThanOrEqual(4.5);
+  });
+
   test("keeps the light workspace on a cool gray palette while preserving text hierarchy", () => {
     expect(globals).toContain("--workspace-canvas: #eef1f4;");
     expect(globals).toContain("--workspace-sidebar: #e7ebef;");
     expect(globals).toContain("--workspace-memo-list: #f4f6f8;");
-    expect(globals).toContain("--workspace-editor: #ffffff;");
+    expect(globals).toContain("--workspace-editor: #f8fafb;");
     expect(globals).toContain("--workspace-selection: #dde3e9;");
     expect(globals).toContain("--color-workspace-canvas: var(--workspace-canvas);");
     expect(globals).toContain("--workspace-hover: color-mix(in srgb, var(--workspace-sidebar) 40%, white);");
@@ -37,6 +58,8 @@ describe("application color system", () => {
     expect(globals).not.toContain("--slate-500-rgb: 100 116 139;");
     expect(contrastRatio("#222222", "#ffffff")).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio("#737373", "#ffffff")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#27272a", "#f8fafb")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#737373", "#f8fafb")).toBeGreaterThanOrEqual(4.5);
   });
 
   test("keeps dark workspace surfaces distinct without blue-black color casts", () => {

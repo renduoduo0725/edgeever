@@ -104,7 +104,7 @@ export const PluginPanelEmpty = ({ chrome }: { chrome: PluginPanelChrome }) => {
   return (
     <div className="flex min-h-40 flex-1 flex-col items-center justify-center gap-2 px-6 py-16 text-center">
       <p className="text-sm font-medium text-slate-800">{chrome.empty.title}</p>
-      {chrome.empty.description ? <p className="max-w-md text-sm text-slate-500">{chrome.empty.description}</p> : null}
+      {chrome.empty.description ? <p className="max-w-md text-xs leading-5 text-slate-500">{chrome.empty.description}</p> : null}
       {chrome.empty.action ? <ActionButton action={chrome.empty.action} onAction={chrome.onAction} /> : null}
     </div>
   );

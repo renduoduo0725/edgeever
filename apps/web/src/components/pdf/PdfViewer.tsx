@@ -140,7 +140,7 @@ const PdfDocument = ({ url, active, fitWidth, zoom, onError }: PdfDocumentProps)
   if (!document) {
     return (
       <span className="flex min-h-72 items-center justify-center gap-2 text-sm text-slate-500">
-        <Loader2 className="h-5 w-5 animate-spin text-emerald-600" aria-hidden="true" />
+        <Loader2 className="h-5 w-5 animate-spin text-slate-500" aria-hidden="true" />
         {t("pdfViewer.loading")}
       </span>
     );

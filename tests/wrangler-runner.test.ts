@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { globSync, readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, globSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve, sep } from "node:path";
 import {
   buildLocalDevEnvironmentFile,
@@ -12,6 +14,7 @@ import {
   normalizeD1MigrationSql,
   productionVersionIds,
   LOCAL_DEV_CREDENTIALS_ENCRYPTION_KEY,
+  resolveWranglerAssetsDirectory,
   resolveWranglerCliPath,
   resolveWranglerRuntimeExecutable,
   runWranglerSync,
@@ -71,6 +74,62 @@ describe("cross-platform Wrangler runner", () => {
     );
     expect(envFile).not.toContain("EDGE_EVER_AUTH_PASSWORD=");
     expect(envFile).not.toContain("EDGE_EVER_AUTH_PASSWORD_HASH=");
+  });
+
+  test("resolves the configured assets directory so local dev can create it", () => {
+    const config = '[vars]\ndirectory = "wrong"\n\n[assets]\ndirectory = "public"\n';
+
+    expect(resolveWranglerAssetsDirectory(config, "/repo")).toBe(resolve("/repo", "public"));
+    expect(resolveWranglerAssetsDirectory('name = "x"\n', "/repo")).toBeNull();
+  });
+
+  test("prepares missing dev assets before Wrangler starts and preserves existing files", () => {
+    const workingDirectory = mkdtempSync(resolve(tmpdir(), "edgeever-dev-assets-"));
+    const assetsDirectory = resolve(workingDirectory, "custom-assets", "dist");
+    const configPath = resolve(workingDirectory, "custom.toml");
+    const cliDirectory = resolve(workingDirectory, "node_modules", "wrangler", "bin");
+    const env = Object.fromEntries(
+      ["PATH", "Path", "PATHEXT", "SystemRoot", "ComSpec", "TEMP", "TMP"]
+        .map((name) => [name, process.env[name]])
+        .filter((entry): entry is [string, string] => Boolean(entry[1])),
+    );
+    const run = (...args: string[]) => spawnSync(
+      "node",
+      [resolve(import.meta.dir, "../scripts/run-wrangler.mjs"), ...args],
+      {
+        cwd: workingDirectory,
+        encoding: "utf8",
+        env: { ...env, WRANGLER_CONFIG: configPath },
+      },
+    );
+
+    try {
+      mkdirSync(cliDirectory, { recursive: true });
+      writeFileSync(configPath, 'name = "dev-assets-test"\n[assets]\ndirectory = "custom-assets/dist"\n');
+      writeFileSync(resolve(cliDirectory, "wrangler.js"), [
+        'const { statSync } = require("node:fs");',
+        'if (process.argv.includes("dev") && !statSync("custom-assets/dist").isDirectory()) process.exit(1);',
+      ].join("\n"));
+
+      // Non-dev commands must not manufacture a missing build directory.
+      const nonDev = run("d1", "execute", "DB", "--local", "--command", "SELECT 1");
+      expect(nonDev.error).toBeUndefined();
+      expect(nonDev.status).toBe(0);
+      expect(existsSync(assetsDirectory)).toBe(false);
+
+      const firstStart = run("dev", "--local");
+      expect(firstStart.error).toBeUndefined();
+      expect(firstStart.status).toBe(0);
+      expect(existsSync(assetsDirectory)).toBe(true);
+
+      const existingAsset = resolve(assetsDirectory, "index.html");
+      writeFileSync(existingAsset, "existing build must survive dev startup");
+      const secondStart = run("dev", "--local");
+      expect(secondStart.status).toBe(0);
+      expect(readFileSync(existingAsset, "utf8")).toBe("existing build must survive dev startup");
+    } finally {
+      rmSync(workingDirectory, { recursive: true, force: true });
+    }
   });
 
   test("resolves an exact D1 database name from Wrangler JSON", () => {

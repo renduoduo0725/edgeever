@@ -66,6 +66,7 @@ import {
   MIN_MEMO_LIST_WIDTH_PX,
   MAX_MEMO_LIST_WIDTH_PX,
   DEFAULT_MEMO_LIST_WIDTH_PX,
+  EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY,
   isTextEntryTarget,
   getSearchShortcutScope,
   getShortcutActionForEvent,
@@ -133,6 +134,7 @@ import { EditorPaneErrorBoundary, EditorRecoveryPane } from "./EditorPaneErrorBo
 import { isMarkdownFile, readMarkdownFile } from "@/lib/markdown-file-import";
 import { compressImageForUpload } from "@/lib/image-compression";
 import { createScreenshotMemo, screenshotFileFromImportPayload, screenshotImportDedupeKey, screenshotImportGate } from "@/lib/screenshot-import";
+import { createSharedFileMemo, sharedFileTitle } from "@/lib/shared-file-import";
 import { createWeChatChatMemo } from "@/lib/wechat-chat-import";
 import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceUrl } from "@/lib/desktop-resources";
 import { findMatchingMemoResource } from "@/lib/staged-resource-repair";
@@ -265,6 +267,7 @@ export const WorkspaceApp = ({
   const [appNoticeDialog, setAppNoticeDialog] = useState<AppNoticeDialogState | null>(null);
   const [wechatImportFailureId, setWeChatImportFailureId] = useState<string | null>(null);
   const [wechatImportsInProgress, setWeChatImportsInProgress] = useState(0);
+  const [sharedFileImportsInProgress, setSharedFileImportsInProgress] = useState(0);
   const [pendingCatalogTrustPluginIds, setPendingCatalogTrustPluginIds] = useState<string[]>([]);
   const [isExportingSelectedMemos, setIsExportingSelectedMemos] = useState(false);
   const [selectedMarkdownExportProgress, setSelectedMarkdownExportProgress] = useState<MarkdownExportProgress>({
@@ -472,6 +475,11 @@ export const WorkspaceApp = ({
       return { previousSelectedMemoId };
     },
     onSuccess: async () => {
+      try {
+        window.localStorage.removeItem(EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY);
+      } catch {
+        // Local storage can be unavailable in private or restricted browser contexts.
+      }
       setDemoResetConfirmationOpen(false);
       queryClient.removeQueries({ queryKey: ["memo"] });
       await Promise.all([
@@ -1780,21 +1788,135 @@ export const WorkspaceApp = ({
 
   const pendingWeChatImportsRef = useRef<Array<{
     ok: boolean;
+    kind?: "file";
     reason?: string;
     importId?: string;
     title?: string;
+    filename?: string;
+    mimeType?: string;
+    byteSize?: number;
     markdown?: string;
     media?: Array<{ id: string; filename: string; mimeType: string; byteSize: number }>;
   }>>([]);
 
-  const handleImportWeChatChat = useCallback(async (payload: {
+  const handleImportSharedFile = useCallback(async (payload: {
     ok: boolean;
     reason?: string;
     importId?: string;
+    filename?: string;
+    mimeType?: string;
+  }) => {
+    const bridge = window.edgeeverDesktop;
+    if (!payload.ok || !payload.importId || !payload.filename) {
+      setAppNoticeDialog({
+        title: t("memoList.importSharedFileFailedTitle"),
+        description: payload.reason === "too-large"
+          ? t("memoList.importSharedFileTooLarge")
+          : payload.reason === "unreadable"
+            ? t("memoList.importSharedFileUnreadable")
+            : t("memoList.importSharedFileFailed"),
+      });
+      return;
+    }
+    const notebookId = selectedNotebookId && notebooks.some((notebook) => notebook.id === selectedNotebookId) && memoView !== "trash"
+      ? selectedNotebookId
+      : defaultMemoNotebookId;
+    if (!notebookId) {
+      pendingWeChatImportsRef.current.push({ ...payload, kind: "file" });
+      return;
+    }
+    const importId = payload.importId;
+    const filename = payload.filename;
+    setTemplatesOpen(false);
+    setMobileBottomNavActive("home");
+    creatingMemoSelectionRef.current = true;
+    setSharedFileImportsInProgress((count) => count + 1);
+    let savedMemo: MemoDetail | null = null;
+    let resumeDesktopSync: (() => void) | null = null;
+    try {
+      if (isDesktopResourceRuntime()) {
+        resumeDesktopSync = await (await import("@/lib/desktop-sync")).pauseDesktopSyncForImport();
+      }
+      const memo = await createSharedFileMemo({
+        notebookId,
+        filename,
+        file: await (async () => {
+          const shared = await bridge?.readWeChatImportMedia?.(importId, "file");
+          if (!shared?.bytes?.byteLength) throw new Error("Missing shared file");
+          const bytes = shared.bytes;
+          const copy = new ArrayBuffer(bytes.byteLength);
+          new Uint8Array(copy).set(bytes);
+          return new File([copy], shared.filename || filename, { type: shared.mimeType || payload.mimeType || "application/octet-stream" });
+        })(),
+        createMemo: (input) => repository.createMemo(input),
+        prepareFile: async (file) => (imageCompressionEnabled && file.type.startsWith("image/")
+          ? (await compressImageForUpload(file)).file
+          : file),
+        uploadResource: async (memoId, uploadFile) => {
+          try {
+            const { resource } = await repository.uploadMemoResource(memoId, uploadFile);
+            return { url: toDesktopResourceUrl(resource.url), filename: resource.filename };
+          } catch (error) {
+            if (!isDesktopResourceRuntime()) throw error;
+            const listed = await repository.listResources().catch(() => ({ resources: [] as Array<{ memoId?: string; url: string; filename?: string | null; kind?: string | null }> }));
+            const existing = findMatchingMemoResource(
+              listed.resources.filter((resource) => resource.memoId === memoId),
+              uploadFile.name,
+              uploadFile.type.startsWith("image/") ? "image" : "attachment",
+            );
+            if (existing) return { url: toDesktopResourceUrl(existing.url), filename: existing.filename };
+            const staged = await stageDesktopResource(memoId, uploadFile);
+            if (!staged) throw error;
+            return { url: `edgeever-staged://${staged.id}`, filename: uploadFile.name };
+          }
+        },
+        updateMemo: (created, content) => repository.updateMemo(created, {
+          expectedRevision: created.revision,
+          expectedContentHash: created.contentHash,
+          editSessionId: `share:${created.id}`,
+          title: created.title ?? sharedFileTitle(filename),
+          contentJson: content.contentJson,
+          contentMarkdown: content.contentMarkdown,
+          tags: created.tags,
+        }),
+        deleteMemo: (memoId) => isDesktopResourceRuntime()
+          ? import("@/lib/desktop-repository").then(({ cancelPendingDesktopImportMemo }) => cancelPendingDesktopImportMemo(memoId))
+          : repository.deleteMemo(memoId, true),
+      });
+      savedMemo = memo;
+      await bridge?.finishWeChatImport?.(importId, true).catch(() => undefined);
+      await putLocalMemo(localDataScope, memo).catch(() => undefined);
+      revealCreatedMemo(memo);
+    } catch {
+      if (!savedMemo) {
+        await bridge?.finishWeChatImport?.(importId, false).catch(() => undefined);
+        setAppNoticeDialog({
+          title: t("memoList.importSharedFileFailedTitle"),
+          description: t("memoList.importSharedFileFailed"),
+        });
+      }
+      creatingMemoSelectionRef.current = false;
+    } finally {
+      resumeDesktopSync?.();
+      setSharedFileImportsInProgress((count) => Math.max(0, count - 1));
+    }
+  }, [defaultMemoNotebookId, imageCompressionEnabled, localDataScope, memoView, notebooks, repository, selectedNotebookId, t]);
+
+  const handleImportWeChatChat = useCallback(async (payload: {
+    ok: boolean;
+    kind?: "file";
+    reason?: string;
+    importId?: string;
     title?: string;
+    filename?: string;
+    mimeType?: string;
     markdown?: string;
     media?: Array<{ id: string; filename: string; mimeType: string; byteSize: number }>;
   }) => {
+    if (payload.kind === "file") {
+      await handleImportSharedFile(payload);
+      return;
+    }
     const bridge = window.edgeeverDesktop;
     if (!payload.ok || !payload.importId || !payload.markdown) {
       setAppNoticeDialog({
@@ -1886,7 +2008,7 @@ export const WorkspaceApp = ({
       resumeDesktopSync?.();
       setWeChatImportsInProgress((count) => Math.max(0, count - 1));
     }
-  }, [defaultMemoNotebookId, imageCompressionEnabled, localDataScope, memoView, notebooks, repository, selectedNotebookId, t]);
+  }, [defaultMemoNotebookId, handleImportSharedFile, imageCompressionEnabled, localDataScope, memoView, notebooks, repository, selectedNotebookId, t]);
 
   const handleImportWeChatChatRef = useRef(handleImportWeChatChat);
   handleImportWeChatChatRef.current = handleImportWeChatChat;
@@ -3035,10 +3157,10 @@ export const WorkspaceApp = ({
   return (
     <WorkspaceMotionProvider>
       <div className="edgeever-workspace-shell flex h-[100dvh] overflow-hidden text-slate-950">
-      {wechatImportsInProgress > 0 && (
+      {(wechatImportsInProgress > 0 || sharedFileImportsInProgress > 0) && (
         <div className="pointer-events-none fixed inset-x-0 top-3 z-50 flex justify-center" role="status" aria-live="polite">
           <div className="rounded-full border border-slate-200 bg-card px-4 py-2 text-sm font-medium text-slate-700 shadow-lg">
-            {t("memoList.importWeChatInProgress")}
+            {wechatImportsInProgress > 0 ? t("memoList.importWeChatInProgress") : t("memoList.importSharedFileInProgress")}
           </div>
         </div>
       )}
@@ -3347,7 +3469,7 @@ export const WorkspaceApp = ({
                   ) : rendererRecoveryMode ? (
                     <EditorRecoveryPane />
                   ) : memoSelectionModeActive ? (
-                    <div className="flex h-full min-w-0 flex-col bg-card">
+                    <div className="flex h-full min-w-0 flex-col bg-transparent">
                       {memoSelectionActionBar}
                     </div>
                   ) : (
@@ -3397,12 +3519,16 @@ export const WorkspaceApp = ({
                         <InfographicEditorPane
                           key={selectedMemo.id}
                           memo={selectedMemo}
+                          notebooks={notebooks}
                           repository={repository}
                           readOnly={memoView === "trash" || selectedMemo.isDeleted}
+                          desktopFocusMode={desktopFocusModeActive}
                           onBackToList={() => {
                             clearPendingCreatedMemo();
                             setActivePane("memos");
                           }}
+                          onOpenExecutionCenter={handleOpenExecutionCenter}
+                          onToggleDesktopFocusMode={toggleDesktopFocusMode}
                           onSaved={async (memo) => {
                             await putLocalMemo(localDataScope, memo);
                             cacheMemoDetail(queryClient, memo, memoView);
@@ -3435,6 +3561,7 @@ export const WorkspaceApp = ({
                         />
                       ) : (
                       <EditorPane
+                      demoMode={demoMode}
                       onOpenExecutionCenter={handleOpenExecutionCenter}
                       memo={selectedMemo}
                       repository={repository}

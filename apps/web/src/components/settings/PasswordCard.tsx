@@ -71,7 +71,7 @@ export const PasswordCard = ({ authRequired, demoMode }: PasswordCardProps) => {
       </CardHeader>
       <CardContent className="p-4 pt-0">
         {demoMode ? (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900" role="status">
             {t("password.demoReadOnly")}
           </p>
         ) : (

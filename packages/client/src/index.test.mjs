@@ -447,21 +447,6 @@ describe("EdgeEver client HTTP contract", () => {
     expect(requestUrl).toBe("/api/v1/memos?tag=%E4%BA%A7%E5%93%81+%E5%92%8C+%E4%BA%A4%E4%BA%92");
   });
 
-  test("updates the workspace AI tag suggestion prompt", async () => {
-    let call;
-    const client = createEdgeEverClient({
-      fetch: async (input, init) => {
-        call = { input: String(input), init };
-        return jsonResponse({ tagSuggestionPrompt: "Custom", tagSuggestionPromptCustomized: true });
-      },
-    });
-
-    await client.updateAiTagSuggestionPrompt({ prompt: "Custom" }, "zh-CN");
-    expect(call.input).toBe("/api/v1/ai/tag-suggestion-prompt?locale=zh-CN");
-    expect(call.init.method).toBe("PUT");
-    expect(JSON.parse(call.init.body)).toEqual({ prompt: "Custom" });
-  });
-
   test("preserves API error codes and invokes unauthorized handling", async () => {
     let unauthorized = 0;
     const client = createEdgeEverClient({

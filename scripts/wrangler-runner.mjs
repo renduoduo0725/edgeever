@@ -116,6 +116,13 @@ export const shouldCaptureDeploymentTargets = (env = process.env) =>
 export const LOCAL_DEV_CREDENTIALS_ENCRYPTION_KEY =
   "edgeever-local-development-credentials-key-v1";
 
+// Wrangler refuses to start `dev` when the assets directory is missing and has no
+// option to create it. Like Wrangler, resolve `[assets].directory` from the config's directory.
+export const resolveWranglerAssetsDirectory = (config, configDirectory) => {
+  const match = config.match(/^\s*\[assets\][^[]*?^\s*directory\s*=\s*["']([^"']+)["']/m);
+  return match ? resolve(configDirectory, match[1]) : null;
+};
+
 export const buildLocalDevEnvironmentFile = () => [
   "# Local-only values. Remote instance secrets are intentionally excluded.",
   `EDGE_EVER_CREDENTIALS_ENCRYPTION_KEY=${LOCAL_DEV_CREDENTIALS_ENCRYPTION_KEY}`,

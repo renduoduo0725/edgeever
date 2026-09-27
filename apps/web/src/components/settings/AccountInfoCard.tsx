@@ -22,11 +22,11 @@ export const AccountInfoCard = ({ user }: { user: AuthUser | null }) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex items-center gap-3 p-4 pt-0">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-800">
           <UserRound className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-800">
+          <p className="truncate text-xs font-normal text-slate-800">
             {user.displayName || user.username}
           </p>
           <p className="truncate text-xs text-slate-500">

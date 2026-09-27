@@ -176,7 +176,6 @@ export const TemplatesPane = ({
               <LayoutList className="h-4 w-4 text-slate-900" />
               {t("templates.title")}
             </h1>
-            <p className="mt-0.5 text-xs text-slate-500">{t("templates.description")}</p>
           </div>
         </div>
         <ExecutionCenterButton onClick={onOpenExecutionCenter} />
@@ -186,7 +185,6 @@ export const TemplatesPane = ({
       <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 lg:px-8 lg:py-8">
         <div className="mx-auto w-full max-w-5xl space-y-8">
 
-          {/* Every template is workspace-owned and fully editable. */}
           <section>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -196,7 +194,6 @@ export const TemplatesPane = ({
                     {savedTemplates.length}
                   </span>
                 </h2>
-                <p className="mt-0.5 text-xs text-slate-500">{t("templates.myTemplatesSubtitle")}</p>
               </div>
               {!creatingTemplate && !editingTemplate && (
                 <Button
@@ -425,7 +422,7 @@ export const TemplatesPane = ({
 
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-3 py-1.5 text-xs font-semibold text-slate-50 transition-colors hover:bg-slate-800 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-card px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs transition-colors hover:bg-slate-50 hover:text-slate-950 disabled:opacity-50"
                         disabled={!canCreateMemo || isCreating}
                         onClick={(e) => {
                           e.stopPropagation();

@@ -254,7 +254,7 @@ html.dark[data-edgeever-environment="demo"] body::after {
 }
 
 .ProseMirror .tiptap-mathematics-render--editable:hover {
-  background: rgb(22 160 110 / 0.08);
+  background: rgb(var(--slate-900-rgb) / 0.06);
 }
 
 .ProseMirror .inline-math-error,
@@ -294,7 +294,7 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --workspace-canvas: #eef1f4;
     --workspace-sidebar: #e7ebef;
     --workspace-memo-list: #f4f6f8;
-    --workspace-editor: #ffffff;
+    --workspace-editor: #f8fafb;
     --workspace-divider: #e1e5ea;
     --workspace-memo-divider: #e6eaee;
     --workspace-selection: #dde3e9;
@@ -308,6 +308,10 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --search-match: rgb(254 240 138 / 0.8);
     --search-match-active: rgb(251 191 36 / 0.9);
     --switch-thumb: #ffffff;
+    --switch-track-on: #525252;
+    --switch-thumb-on: #ffffff;
+    --checkbox-on: #525252;
+    --checkbox-mark: #ffffff;
     --slate-50-rgb: 250 250 250;
     --slate-100-rgb: 245 245 245;
     --slate-200-rgb: 229 229 229;
@@ -356,24 +360,24 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 13%;
 
-    --primary: 158 76% 36%;
-    --primary-foreground: 80 11% 96%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 158 32% 94%;
-    --secondary-foreground: 158 70% 25%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 15%;
 
     --muted: 0 0% 95%;
     --muted-foreground: 0 0% 40%;
 
-    --accent: 158 32% 94%;
-    --accent-foreground: 158 70% 25%;
+    --accent: 210 16% 89%;
+    --accent-foreground: 0 0% 7%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 0 0% 88%;
     --input: 0 0% 88%;
-    --ring: 158 76% 36%;
+    --ring: 0 0% 15%;
 
     --radius: 0.5rem;
   }
@@ -395,19 +399,19 @@ html.dark[data-edgeever-environment="demo"] body::after {
   --card-foreground: 144 9% 88%;
   --popover: 150 10% 14%;
   --popover-foreground: 144 9% 88%;
-  --primary: 160 76% 36%;
-  --primary-foreground: 150 33% 97%;
-  --secondary: 150 10% 18%;
-  --secondary-foreground: 160 35% 72%;
+  --primary: 140 10% 92%;
+  --primary-foreground: 150 12% 8%;
+  --secondary: 150 8% 18%;
+  --secondary-foreground: 140 10% 90%;
   --muted: 150 8% 18%;
   --muted-foreground: 145 8% 62%;
-  --accent: 150 10% 20%;
-  --accent-foreground: 160 40% 75%;
+  --accent: 140 8% 18%;
+  --accent-foreground: 140 10% 93%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 144 12% 96%;
   --border: 150 10% 23%;
   --input: 150 10% 23%;
-  --ring: 160 76% 36%;
+  --ring: 140 8% 75%;
   --workspace-canvas: #101311;
   --workspace-sidebar: #121612;
   --workspace-memo-list: #151a17;
@@ -426,6 +430,10 @@ html.dark[data-edgeever-environment="demo"] body::after {
   --search-match: rgb(22 160 110 / 0.32);
   --search-match-active: rgb(36 185 134 / 0.48);
   --switch-thumb: #eef2ef;
+  --switch-track-on: #e7ebe8;
+  --switch-thumb-on: #101311;
+  --checkbox-on: #e7ebe8;
+  --checkbox-mark: #101311;
   --slate-50-rgb: 15 20 17;
   --slate-100-rgb: 21 28 24;
   --slate-200-rgb: 38 49 43;
@@ -1703,10 +1711,10 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 
 .ProseMirror .edgeever-code-copy-button:hover,
 .ProseMirror .edgeever-code-copy-button:focus-visible {
-  border-color: var(--brand-green);
-  color: var(--brand-green-text);
+  border-color: #1a1d21;
+  color: #1a1d21;
   background: rgb(255 255 255 / 0.96);
-  box-shadow: 0 1px 4px rgb(var(--brand-green-rgb) / 0.12);
+  box-shadow: 0 1px 4px rgb(26 29 33 / 0.08);
   outline: none;
 }
 

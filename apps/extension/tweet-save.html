@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title data-i18n="tweetSaveWindowTitle">Save this post to EdgeEver</title>
+  </head>
+  <body>
+    <main class="image-save-shell">
+      <h1 data-i18n="tweetSaveWindowTitle">Save this post to EdgeEver</h1>
+      <p class="hint" data-i18n="tweetPermissionIntro">A timeline has many posts. Allow access to X so the clipper can remember the post under the pointer. After that, right-click the same post once more. Only the post you choose is saved to the clipper's default notebook.</p>
+      <div class="image-save-actions">
+        <button id="allow" type="button" data-i18n="allowTweetAccess">Allow access to X</button>
+      </div>
+      <p id="status" class="status" role="status"></p>
+    </main>
+    <script type="module" src="/src/tweet-save.ts"></script>
+  </body>
+</html>

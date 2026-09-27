@@ -202,8 +202,6 @@ export type AiProviderConfig = {
 export type AiSettings = {
   providers: AiProviderConfig[];
   defaultModelId: string | null;
-  tagSuggestionPrompt: string;
-  tagSuggestionPromptCustomized: boolean;
   encryptionConfigured: boolean;
   readOnly: boolean;
 };

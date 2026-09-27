@@ -184,7 +184,7 @@ export const EditorTagPicker = ({ contentMarkdown, disabled, loadTags, title, va
                 className={aiStatus.kind === "error"
                   ? "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-rose-700 outline-none transition hover:bg-rose-50 focus-visible:ring-2 focus-visible:ring-rose-500/20 disabled:opacity-50"
                   : aiStatus.kind === "success"
-                    ? "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700 outline-none transition focus-visible:ring-2 focus-visible:ring-slate-400/30 disabled:opacity-50"
+                    ? "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-900 outline-none transition focus-visible:ring-2 focus-visible:ring-slate-400/30 disabled:opacity-50"
                     : "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-600 outline-none transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-400/30 disabled:opacity-50"}
                 aria-label={aiDescription}
                 onClick={() => void generateAndApplyTags()}
@@ -258,7 +258,7 @@ export const EditorTagPicker = ({ contentMarkdown, disabled, loadTags, title, va
                     onClick={() => toggleTag(tag.name)}
                     aria-pressed={selected}
                   >
-                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${selected ? "border-slate-950 bg-slate-950 text-slate-50" : "border-slate-300 bg-card text-transparent"}`}>
+                    <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${selected ? "border-[var(--checkbox-on)] bg-[var(--checkbox-on)] text-[var(--checkbox-mark)]" : "border-slate-300 bg-card text-transparent"}`}>
                       {selected && <Check className="h-3.5 w-3.5" />}
                     </span>
                     <span className="min-w-0 flex-1 truncate font-medium">#{tag.name}</span>

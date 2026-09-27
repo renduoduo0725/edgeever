@@ -51,7 +51,7 @@ export const MemoEditorMetadataRow = ({
     <>
       <div className={cn("flex flex-wrap items-center gap-1.5 sm:gap-2", rowClassName)}>
         <button
-          className="flex h-7 min-w-0 max-w-full items-center gap-1 rounded-md border border-transparent bg-transparent px-1.5 text-xs font-medium text-slate-600 outline-none transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:opacity-50 sm:hidden"
+          className="flex h-7 min-w-0 max-w-full items-center gap-1 rounded-md border border-transparent bg-transparent px-1.5 text-xs font-medium text-slate-600 outline-none transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 focus-visible:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-900/10 disabled:opacity-50 sm:hidden"
           type="button"
           disabled={disabled || notebookUpdatePending}
           aria-label={t("editor.currentNotebookAria", { name: currentNotebookLabel })}

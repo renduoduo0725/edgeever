@@ -219,7 +219,7 @@ export const EditorOutline = ({ editor, scrollContainer, collapsed, shortcutLabe
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-7 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-200/70 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+                      className="flex h-7 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-200/70 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
                       onClick={() => toggleItem(item.pos)}
                       aria-label={toggleLabel}
                       aria-expanded={!itemCollapsed}
@@ -239,7 +239,7 @@ export const EditorOutline = ({ editor, scrollContainer, collapsed, shortcutLabe
 
               <button
                 type="button"
-                className="min-w-0 flex-1 truncate py-1 text-left font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60"
+                className="min-w-0 flex-1 truncate py-1 text-left font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
                 onClick={() => jumpToHeading(item)}
                 aria-current={isActive ? "location" : undefined}
               >
@@ -282,7 +282,7 @@ export const EditorOutline = ({ editor, scrollContainer, collapsed, shortcutLabe
               <button
                 type="button"
                 className={cn(
-                  "group flex items-center text-left text-xs font-bold uppercase tracking-wider text-slate-500 transition-colors hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60",
+                  "group flex items-center text-left text-xs font-bold uppercase tracking-wider text-slate-500 transition-colors hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20",
                   collapsed ? "h-7 w-7 justify-center rounded-md hover:bg-slate-100" : "gap-1.5 rounded-sm"
                 )}
                 onClick={() => onCollapsedChange(!collapsed)}
