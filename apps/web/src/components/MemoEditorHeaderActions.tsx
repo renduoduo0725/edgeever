@@ -5,7 +5,7 @@ import { ExecutionCenterButton } from "@/components/execution/ExecutionCenterBut
 import { GitHubRepositoryLink } from "@/components/GitHubRepositoryLink";
 import { SystemInfoDialog } from "@/components/SystemInfoDialog";
 import { useAppearanceTheme } from "@/components/ThemeProvider";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +48,13 @@ export const MemoEditorHeaderActions = ({
   return (
     <>
       {textNoteActions}
+      <GitHubRepositoryLink
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "icon" }),
+          "hidden text-slate-500 hover:text-slate-950 sm:inline-flex",
+        )}
+        iconClassName="h-4 w-4"
+      />
       <ExecutionCenterButton className="h-8 w-8" onClick={onOpenExecutionCenter} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

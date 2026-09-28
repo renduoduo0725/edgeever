@@ -1047,10 +1047,12 @@ const baseWorkspaceStyles = StyleSheet.create({
     padding: 14,
   },
   systemInfoRows: {
+    backgroundColor: "#ffffff",
     borderColor: "#e2e8f0",
     borderRadius: 8,
     borderWidth: 1,
-    overflow: "hidden",
+    gap: 12,
+    padding: 12,
   },
   systemInfoSection: {
     gap: 9,
@@ -1090,29 +1092,29 @@ const baseWorkspaceStyles = StyleSheet.create({
     lineHeight: 15,
   },
   systemInfoRow: {
-    borderBottomColor: "#e2e8f0",
-    borderBottomWidth: 1,
     flexDirection: "row",
-  },
-  systemInfoRowLast: {
-    borderBottomWidth: 0,
+    gap: 12,
   },
   systemInfoCell: {
     flex: 1,
-    gap: 3,
     minWidth: 0,
-    paddingHorizontal: 8,
-    paddingVertical: 9,
+    gap: 2,
   },
-  systemInfoCellDivider: {
-    borderRightColor: "#e2e8f0",
-    borderRightWidth: 1,
+  systemInfoWideCell: {
+    flex: 2,
+  },
+  systemInfoItemLabel: {
+    color: "#64748b",
+    fontSize: 12,
+    fontWeight: "500",
   },
   systemInfoListValue: {
     color: "#0f172a",
-    fontFamily: "monospace",
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "400",
+  },
+  systemInfoMonoValue: {
+    fontFamily: "monospace",
   },
   panelLinkRow: {
     alignItems: "center",

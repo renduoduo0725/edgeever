@@ -134,6 +134,9 @@ describe("mind map presentation", () => {
     expect(styled.visual.underline.stroke).toBe(mindMapBranchTint(0, "light", "sun")?.edge);
     const brandNested = resolveMindMapNodeStyle(nodes, "one-a", palette, "brand", "light", { width: 96, height: 32 });
     expect(brandNested.visual.underline.stroke).toBe(palette.mindMapEdge);
+    const plainNested = resolveMindMapNodeStyle(nodes, "one-a", palette, "plain", "light", { width: 96, height: 32 });
+    expect(plainNested.tint).toBeUndefined();
+    expect(resolveMindMapNodeStyle(nodes, "one", palette, undefined, "light", { width: 96, height: 36 }).tint).toBeUndefined();
   });
 
   test("builds a closed horizontal cubic ribbon that is thicker at the source", () => {

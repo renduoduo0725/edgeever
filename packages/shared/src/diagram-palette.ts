@@ -1,3 +1,4 @@
+import { DIAGRAM_CANVAS_DARK, DIAGRAM_CANVAS_LIGHT } from "./diagram-canvas";
 import type { DiagramTheme } from "./diagram";
 import { resolveDiagramTheme } from "./diagram";
 
@@ -13,99 +14,83 @@ type DiagramThemeDefinition = {
   id: Exclude<ReturnType<typeof resolveDiagramTheme>, never>;
   group: "vivid" | "classic";
   colors: readonly [string, string, string, string, string, string];
-  lightCanvas: string;
-  darkCanvas: string;
   accent: string;
 };
 
 export const DIAGRAM_THEME_DEFINITIONS: Record<
-  "brand" | "cosmos" | "dune" | "slate" | "prism" | "sunrise" | "marine" | "blossom" | "mint" | "macaron",
+  "plain" | "brand" | "cosmos" | "dune" | "slate" | "prism" | "sunrise" | "marine" | "blossom" | "mint" | "macaron",
   DiagramThemeDefinition
 > = {
+  plain: {
+    id: "plain",
+    group: "classic",
+    colors: ["#707070", "#8A8A8A", "#A3A3A3", "#BDBDBD", "#D4D4D4", "#FFFFFF"],
+    accent: "#707070",
+  },
   brand: {
     id: "brand",
     group: "classic",
     colors: ["#16A06E", "#059669", "#0D9488", "#10B981", "#047857", "#065F46"],
-    lightCanvas: "#F8FAF9",
-    darkCanvas: "#101311",
     accent: "#16A06E",
   },
   cosmos: {
     id: "cosmos",
     group: "classic",
     colors: ["#2563EB", "#0284C7", "#4F46E5", "#0D9488", "#3B82F6", "#1D4ED8"],
-    lightCanvas: "#F8FAFC",
-    darkCanvas: "#0F1318",
     accent: "#2563EB",
   },
   dune: {
     id: "dune",
     group: "classic",
     colors: ["#C2410C", "#D97706", "#B45309", "#A16207", "#78350F", "#9A3412"],
-    lightCanvas: "#FAF8F5",
-    darkCanvas: "#151311",
     accent: "#B45309",
   },
   slate: {
     id: "slate",
     group: "classic",
     colors: ["#475569", "#52525B", "#4B5563", "#334155", "#64748B", "#1E293B"],
-    lightCanvas: "#F8F9FA",
-    darkCanvas: "#121416",
     accent: "#475569",
   },
   prism: {
     id: "prism",
     group: "vivid",
     colors: ["#E11D48", "#EA580C", "#D97706", "#059669", "#2563EB", "#7C3AED"],
-    lightCanvas: "#FAFAFA",
-    darkCanvas: "#111215",
     accent: "#6366F1",
   },
   sunrise: {
     id: "sunrise",
     group: "vivid",
     colors: ["#E11D48", "#F97316", "#F59E0B", "#D97706", "#DC2626", "#EA580C"],
-    lightCanvas: "#FFFDF7",
-    darkCanvas: "#16130E",
     accent: "#EA580C",
   },
   marine: {
     id: "marine",
     group: "vivid",
     colors: ["#0284C7", "#06B6D4", "#0D9488", "#2563EB", "#0891B2", "#1D4ED8"],
-    lightCanvas: "#F5FAFD",
-    darkCanvas: "#0C1318",
     accent: "#0284C7",
   },
   blossom: {
     id: "blossom",
     group: "vivid",
     colors: ["#DB2777", "#C026D3", "#9333EA", "#E11D48", "#BE185D", "#7C3AED"],
-    lightCanvas: "#FDF8FA",
-    darkCanvas: "#160F14",
     accent: "#DB2777",
   },
   mint: {
     id: "mint",
     group: "vivid",
     colors: ["#0D9488", "#059669", "#10B981", "#0891B2", "#16A34A", "#047857"],
-    lightCanvas: "#F5FAF8",
-    darkCanvas: "#0D1512",
     accent: "#0D9488",
   },
   macaron: {
     id: "macaron",
     group: "vivid",
     colors: ["#EC4899", "#FB923C", "#EAB308", "#10B981", "#38BDF8", "#8B5CF6"],
-    lightCanvas: "#FAF9F8",
-    darkCanvas: "#131316",
     accent: "#EC4899",
   },
 };
 
 export const DIAGRAM_COLOR_STRIPS: Record<
-  "brand" | "cosmos" | "dune" | "slate" | "prism" | "sunrise" | "marine" | "blossom" | "mint" | "macaron",
+  "plain" | "brand" | "cosmos" | "dune" | "slate" | "prism" | "sunrise" | "marine" | "blossom" | "mint" | "macaron",
   DiagramColorStrip
 > = Object.fromEntries(
   Object.entries(DIAGRAM_THEME_DEFINITIONS).map(([id, def]) => [
@@ -113,13 +98,13 @@ export const DIAGRAM_COLOR_STRIPS: Record<
     { id: def.id, group: def.group, colors: def.colors },
   ]),
 ) as Record<
-  "brand" | "cosmos" | "dune" | "slate" | "prism" | "sunrise" | "marine" | "blossom" | "mint" | "macaron",
+  "plain" | "brand" | "cosmos" | "dune" | "slate" | "prism" | "sunrise" | "marine" | "blossom" | "mint" | "macaron",
   DiagramColorStrip
 >;
 
 export const DIAGRAM_THEME_GROUPS = {
   vivid: ["prism", "sunrise", "marine", "blossom", "mint", "macaron"],
-  classic: ["brand", "cosmos", "dune", "slate"],
+  classic: ["plain", "brand", "cosmos", "dune", "slate"],
 } as const;
 
 const hexToRgb = (hex: string) => {
@@ -154,7 +139,10 @@ const readableText = (fill: string) => (luminance(fill) > 0.35 ? "#1C1917" : "#F
 export const diagramThemeSwatches = (theme?: DiagramTheme) =>
   DIAGRAM_COLOR_STRIPS[resolveDiagramTheme(theme)].colors;
 
-export const diagramThemeUsesBranchColors = (theme?: DiagramTheme) => resolveDiagramTheme(theme) !== "brand";
+export const diagramThemeUsesBranchColors = (theme?: DiagramTheme) => {
+  const resolved = resolveDiagramTheme(theme);
+  return resolved !== "brand" && resolved !== "plain";
+};
 
 const resolveBranchEdge = (color: string, appearance: DiagramAppearance) => {
   const lum = luminance(color);
@@ -182,6 +170,32 @@ export const buildDiagramPalette = (theme: DiagramTheme | undefined, appearance:
   const resolved = resolveDiagramTheme(theme);
   const def = DIAGRAM_THEME_DEFINITIONS[resolved];
   const accent = def.accent;
+  if (resolved === "plain") {
+    if (appearance === "dark") {
+      return {
+        topicFill: "#F5F5F5",
+        topicText: "#212121",
+        nodeFill: "#1C1C1C",
+        nodeText: "#F4F4F5",
+        nodeStroke: "#3A3A3A",
+        topicStroke: "#F5F5F5",
+        mindMapEdge: "#A3A3A3",
+        flowEdge: "#A3A3A3",
+        canvas: DIAGRAM_CANVAS_DARK,
+      };
+    }
+    return {
+      topicFill: "#707070",
+      topicText: "#FFFFFF",
+      nodeFill: "#FFFFFF",
+      nodeText: "#212121",
+      nodeStroke: "#D4D4D4",
+      topicStroke: "#707070",
+      mindMapEdge: "#737373",
+      flowEdge: "#737373",
+      canvas: DIAGRAM_CANVAS_LIGHT,
+    };
+  }
   if (resolved === "brand") {
     if (appearance === "dark") {
       return {
@@ -193,7 +207,7 @@ export const buildDiagramPalette = (theme: DiagramTheme | undefined, appearance:
         topicStroke: "#58CDA4",
         mindMapEdge: "#4DB58B",
         flowEdge: "#72B99B",
-        canvas: "#101311",
+        canvas: DIAGRAM_CANVAS_DARK,
       };
     }
     return {
@@ -205,7 +219,7 @@ export const buildDiagramPalette = (theme: DiagramTheme | undefined, appearance:
       topicStroke: "#12845B",
       mindMapEdge: "#55B891",
       flowEdge: "#408A6D",
-      canvas: "#F8FAF9",
+      canvas: DIAGRAM_CANVAS_LIGHT,
     };
   }
   if (appearance === "dark") {
@@ -219,7 +233,7 @@ export const buildDiagramPalette = (theme: DiagramTheme | undefined, appearance:
       topicStroke: mix(accent, "#FFFFFF", 0.25),
       mindMapEdge: edge,
       flowEdge: mix(accent, "#FFFFFF", 0.15),
-      canvas: def.darkCanvas,
+      canvas: DIAGRAM_CANVAS_DARK,
     };
   }
   const edge = resolveBranchEdge(accent, "light");
@@ -232,6 +246,6 @@ export const buildDiagramPalette = (theme: DiagramTheme | undefined, appearance:
     topicStroke: mix(accent, "#1C1917", 0.15),
     mindMapEdge: edge,
     flowEdge: mix(accent, "#1C1917", 0.15),
-    canvas: def.lightCanvas,
+    canvas: DIAGRAM_CANVAS_LIGHT,
   };
 };

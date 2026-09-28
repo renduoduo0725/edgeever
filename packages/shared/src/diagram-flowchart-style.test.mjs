@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { DIAGRAM_CANVAS_DARK, DIAGRAM_CANVAS_LIGHT } from "./diagram-canvas.ts";
 import { flowchartNodePresentation } from "./diagram-node-presentation.ts";
 import {
   DIAGRAM_READABLE_MIN_SCALE,
@@ -60,22 +61,31 @@ describe("flowchart semantic paint", () => {
   });
 
   test("uses outlined capsules and Inter for terminator labels", () => {
-    const visual = flowchartNodeVisual("terminator", "light", { width: 116, height: 40 });
+    const visual = flowchartNodeVisual("terminator", "light", { width: 116, height: 40 }, "brand");
     expect(visual.body.rx).toBe(20);
     expect(visual.body.fill).toBe(FLOWCHART_SURFACES.brand.light.terminator.fill);
     expect(visual.label.fontFamily).toContain("Inter");
   });
 
-  test("offers ten flowchart surfaces and maps leftover ids onto them", () => {
-    expect(FLOWCHART_SELECTABLE_THEMES).toHaveLength(10);
+  test("offers flowchart surfaces and maps leftover ids onto them", () => {
+    expect(FLOWCHART_SELECTABLE_THEMES).toHaveLength(11);
     expect([...FLOWCHART_THEME_GROUPS.classic, ...FLOWCHART_THEME_GROUPS.vivid]).toEqual([...FLOWCHART_SELECTABLE_THEMES]);
+    expect(resolveFlowchartTheme()).toBe("plain");
     expect(resolveFlowchartTheme("mint")).toBe("mint");
+    expect(resolveFlowchartTheme("brand")).toBe("brand");
     expect(resolveFlowchartTheme("classic")).toBe("paper");
     expect(resolveFlowchartTheme("naive")).toBe("brand");
+    expect(FLOWCHART_SURFACES.plain.light.canvas).toBe(DIAGRAM_CANVAS_LIGHT);
+    expect(FLOWCHART_SURFACES.plain.dark.canvas).toBe(DIAGRAM_CANVAS_DARK);
+    expect(new Set(FLOWCHART_SELECTABLE_THEMES.flatMap((theme) => [
+      FLOWCHART_SURFACES[theme].light.canvas,
+      FLOWCHART_SURFACES[theme].dark.canvas,
+    ]))).toEqual(new Set([DIAGRAM_CANVAS_LIGHT, DIAGRAM_CANVAS_DARK]));
+    expect(FLOWCHART_SURFACES.plain.light.terminator.fill).toBe("#707070");
     expect(FLOWCHART_SURFACES.brand.light.terminator.stroke).toBe("#16A06E");
-    expect(new Set(FLOWCHART_SELECTABLE_THEMES.map((theme) => FLOWCHART_SURFACES[theme].light.terminator.stroke)).size).toBe(10);
+    expect(new Set(FLOWCHART_SELECTABLE_THEMES.map((theme) => FLOWCHART_SURFACES[theme].light.terminator.stroke)).size).toBe(11);
     expect(resolveFlowchartSurface("light", "ink").terminator.stroke).toBe("#3A4656");
-    expect(resolveFlowchartSurface("light", "paper").canvas).toBe("#F6F1E8");
+    expect(resolveFlowchartSurface("light", "paper").process.fill).toBe("#FFFCF6");
     expect(resolveFlowchartSurface("light", "mint").terminator.stroke).toBe("#1A7A70");
   });
 
@@ -84,6 +94,8 @@ describe("flowchart semantic paint", () => {
     for (const theme of ["ink", "paper", "island", "tea", "sun", "wa", "rose"]) {
       expect(resolveFlowchartTheme(theme)).toBe(theme);
     }
+    expect(resolveDiagramTheme()).toBe("plain");
+    expect(resolveDiagramTheme("brand")).toBe("brand");
     expect(resolveDiagramTheme("ink")).toBe("brand");
     expect(resolveDiagramTheme("paper")).toBe("brand");
     expect(resolveDiagramTheme("island")).toBe("dune");

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { DIAGRAM_CANVAS_DARK, DIAGRAM_CANVAS_LIGHT } from "./diagram-canvas.ts";
 import { createDefaultDiagramDocument, DIAGRAM_SELECTABLE_STRUCTURES, DIAGRAM_SELECTABLE_THEMES, diagramDocumentToMermaid, diagramFallbackMarkdown, hasDiagramDocumentMarker, parseDiagramDocument, serializeDiagramDocument, stripDiagramDocumentMarker } from "./diagram.ts";
 import { diagramDocumentToX6Cells } from "./diagram-view.ts";
 import { markdownToDoc } from "./content.ts";
@@ -12,12 +13,13 @@ describe("diagram document", () => {
     expect(parseDiagramDocument(serializeDiagramDocument(document))).toEqual(document);
   });
 
-  test("offers selectable mind-map layouts and ten color schemes", () => {
+  test("offers selectable mind-map layouts and color schemes", () => {
     expect(DIAGRAM_SELECTABLE_STRUCTURES).toEqual([
       "map", "line", "capsule", "box", "circle", "ellipse", "hexagon",
       "logic", "tree", "brace", "org", "timeline", "fishbone",
     ]);
-    expect(DIAGRAM_SELECTABLE_THEMES).toHaveLength(10);
+    expect(DIAGRAM_SELECTABLE_THEMES[0]).toBe("plain");
+    expect(DIAGRAM_SELECTABLE_THEMES).toHaveLength(11);
     const document = createDefaultDiagramDocument("mind-map");
     document.theme = "mint";
     document.structure = "fishbone";
@@ -70,7 +72,8 @@ describe("diagram document", () => {
     expect(markdown).toContain("# 流程图");
     expect(markdown).toContain("```mermaid\nflowchart TD");
     expect(markdown).toContain('n1["处理步骤"]');
-    expect(markdown).toContain("classDef flowProcess fill:#FFFFFF,stroke:#6F9B88");
+    expect(markdown).toContain("classDef flowProcess fill:#FFFFFF,stroke:#D4D4D4,color:#212121");
+    expect(markdown).toContain("classDef flowTerminator fill:#707070,stroke:#707070,color:#FFFFFF");
     expect(markdown).toContain("class n1 flowProcess");
     expect(markdown).toContain("class n0 flowTerminator");
 
@@ -93,18 +96,31 @@ describe("diagram document", () => {
     document.theme = "paper";
     expect(parseDiagramDocument(serializeDiagramDocument(document))?.theme).toBe("paper");
     const paper = diagramDocumentToX6Cells(document, "light");
-    expect(paper.canvas).toBe("#F6F1E8");
+    expect(paper.canvas).toBe(DIAGRAM_CANVAS_LIGHT);
     expect(paper.nodes.find((node) => node.id === "flow-start").attrs.body.stroke).toBe("#7A5230");
     document.theme = "ink";
     const ink = diagramDocumentToX6Cells(document, "light");
-    expect(ink.canvas).toBe("#F3F5F7");
+    expect(ink.canvas).toBe(DIAGRAM_CANVAS_LIGHT);
     expect(ink.nodes.find((node) => node.id === "flow-start").attrs.body.stroke).toBe("#3A4656");
   });
 
   test("projects native viewers into the same branded X6 palette", () => {
     const document = createDefaultDiagramDocument("mind-map");
+    expect(document.theme).toBe("plain");
+    const plain = diagramDocumentToX6Cells(document, "light");
+    expect(plain.canvas).toBe(DIAGRAM_CANVAS_LIGHT);
+    expect(plain.nodes[0].attrs.body.fill).toBe("#707070");
+    expect(plain.nodes[0].attrs.label.fill).toBe("#FFFFFF");
+    expect(plain.nodes[1].attrs.body.fill).toBe("#FFFFFF");
+    expect(plain.nodes[1].attrs.body.stroke).toBe(plain.nodes[2].attrs.body.stroke);
+    expect(plain.nodes.find((node) => node.id === "topic-1-a").attrs.underline.stroke).toBe("#737373");
+    const unset = structuredClone(document);
+    delete unset.theme;
+    expect(diagramDocumentToX6Cells(unset, "light").nodes[0].attrs.body.fill).toBe("#707070");
+
+    document.theme = "brand";
     const light = diagramDocumentToX6Cells(document, "light");
-    expect(light.canvas).toBe("#F8FAF9");
+    expect(light.canvas).toBe(DIAGRAM_CANVAS_LIGHT);
     expect(light.nodes[0].attrs.body.fill).toBe("#16A06E");
     expect(light.nodes[0].attrs.body.rx).toBe(23);
     expect(light.nodes[1].attrs.body.fill).toBe("#F0F8F4");
@@ -132,7 +148,7 @@ describe("diagram document", () => {
       .toBe(classic.edges.find((edge) => edge.target.cell === "topic-1").attrs.line.stroke);
 
     const dark = diagramDocumentToX6Cells(document, "dark");
-    expect(dark.canvas).toBe("#101311");
+    expect(dark.canvas).toBe(DIAGRAM_CANVAS_DARK);
     expect(dark.nodes[1].attrs.body.fill).toBe("#18211D");
   });
 
@@ -144,6 +160,7 @@ describe("diagram document", () => {
     expect(source).toContain("核心 &lt;主题&gt; &quot;A&amp;B&quot;");
     expect(source).toContain("n0 --- n1");
     expect(source).toContain("class n0 mindRoot");
+    expect(source).toContain("classDef mindRoot fill:#707070,stroke:#707070,color:#FFFFFF");
   });
 
   test("round-trips architecture components, boundaries, and semantic connections", () => {

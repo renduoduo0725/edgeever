@@ -144,7 +144,7 @@ const MCP_TOOL_DEFINITIONS = [
         notebookId: { type: "string", minLength: 1 },
         title: { type: "string", maxLength: 160 },
         kind: { type: "string", enum: ["mind-map", "flowchart", "architecture"] },
-        theme: { type: "string", enum: ["brand", "sun", "wa", "island", "rose", "mint", "cosmos", "tea", "naive", "macaron", "ocean", "ink", "classic", "paper"] },
+        theme: { type: "string", enum: ["plain", "brand", "sun", "wa", "island", "rose", "mint", "cosmos", "tea", "naive", "macaron", "ocean", "ink", "classic", "paper"] },
         structure: { type: "string", enum: ["map", "line", "capsule", "box", "circle", "ellipse", "hexagon", "logic", "tree", "brace", "org", "timeline", "fishbone"] },
         layout: {
           type: "object",

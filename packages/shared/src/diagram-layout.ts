@@ -22,6 +22,7 @@ export { compactMindMapNodeSize } from "./diagram-mindmap-style";
 import { graphlib, layout as runDagreLayout } from "@dagrejs/dagre";
 import {
   ARCHITECTURE_DIAGRAM_SCHEMA_VERSION,
+  DIAGRAM_DEFAULT_THEME,
   DIAGRAM_SCHEMA_VERSION,
   type ArchitectureResourceIcon,
   type DiagramDocument,
@@ -1020,7 +1021,11 @@ export const compileDiagramIr = (ir: DiagramIr): DiagramDocument => {
   const document: DiagramDocument = {
     schemaVersion: ir.kind === "architecture" ? ARCHITECTURE_DIAGRAM_SCHEMA_VERSION : DIAGRAM_SCHEMA_VERSION,
     kind: ir.kind,
-    ...(ir.theme ? { theme: ir.theme } : {}),
+    ...(ir.theme
+      ? { theme: ir.theme }
+      : ir.kind === "architecture"
+        ? {}
+        : { theme: DIAGRAM_DEFAULT_THEME }),
     ...(ir.kind === "mind-map" && ir.structure ? { structure: ir.structure } : {}),
     nodes,
     edges,

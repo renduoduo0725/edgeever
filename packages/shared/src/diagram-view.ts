@@ -50,7 +50,7 @@ export type DiagramPalette = {
 };
 
 export const resolvePortableDiagramPalette = (
-  theme: DiagramTheme = "brand",
+  theme?: DiagramTheme,
   appearance: DiagramAppearance = "light",
 ) => buildDiagramPalette(theme, appearance);
 
@@ -59,7 +59,10 @@ export const diagramDocumentToX6Cells = (
   document: DiagramDocument,
   appearance: DiagramAppearance,
 ) => {
-  const palette = resolvePortableDiagramPalette(document.theme ?? "brand", appearance);
+  const palette = resolvePortableDiagramPalette(
+    document.kind === "architecture" ? (document.theme ?? "brand") : document.theme,
+    appearance,
+  );
   const flowchartSurface = document.kind === "flowchart" ? resolveFlowchartSurface(appearance, document.theme) : null;
   const architectureSurface = document.kind === "architecture" ? resolveArchitectureSurface(appearance) : null;
   const nodes = document.nodes.map((node) => {

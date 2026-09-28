@@ -14,8 +14,8 @@ export const ClipboardCopyNotice = ({
   return createPortal(
     <div
       className={cn(
-        "fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[120] inline-flex max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md px-3 py-2 text-sm font-medium text-white shadow-lg sm:max-w-xl",
-        status === "copied" ? "bg-emerald-700" : "bg-rose-600",
+        "fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] left-1/2 z-[120] inline-flex max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md px-3 py-2 text-sm font-medium shadow-lg sm:max-w-xl",
+        status === "copied" ? "bg-slate-900 text-slate-50" : "bg-rose-600 text-rose-50",
       )}
       role={status === "copied" ? "status" : "alert"}
     >

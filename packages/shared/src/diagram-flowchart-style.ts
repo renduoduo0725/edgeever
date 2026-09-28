@@ -1,3 +1,4 @@
+import { DIAGRAM_CANVAS_DARK, DIAGRAM_CANVAS_LIGHT } from "./diagram-canvas";
 import type { DiagramNodeShape, DiagramTheme } from "./diagram";
 
 export const FLOWCHART_LABEL_FONT =
@@ -66,11 +67,11 @@ export const flowchartFitsReadableViewport = (
 
 export type FlowchartAppearance = "light" | "dark";
 export const FLOWCHART_SELECTABLE_THEMES = [
-  "brand", "ink", "paper", "island", "tea", "cosmos", "sun", "wa", "rose", "mint",
+  "plain", "brand", "ink", "paper", "island", "tea", "cosmos", "sun", "wa", "rose", "mint",
 ] as const;
 export type FlowchartTheme = (typeof FLOWCHART_SELECTABLE_THEMES)[number];
 export const FLOWCHART_THEME_GROUPS = {
-  classic: ["brand", "ink", "paper", "island", "tea", "cosmos"],
+  classic: ["plain", "brand", "ink", "paper", "island", "tea", "cosmos"],
   vivid: ["sun", "wa", "rose", "mint"],
 } as const;
 
@@ -102,20 +103,38 @@ const FLOWCHART_THEME_ALIASES: Partial<Record<DiagramTheme, FlowchartTheme>> = {
 
 export const resolveFlowchartTheme = (theme?: DiagramTheme): FlowchartTheme => {
   if (theme && (FLOWCHART_SELECTABLE_THEMES as readonly string[]).includes(theme)) return theme as FlowchartTheme;
-  return FLOWCHART_THEME_ALIASES[theme ?? "brand"] ?? "brand";
+  // A stored legacy id keeps its alias. Only a missing theme uses the plain default.
+  if (theme) return FLOWCHART_THEME_ALIASES[theme] ?? "brand";
+  return "plain";
 };
 
 export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearance, FlowchartSurface>> = {
+  plain: {
+    light: {
+      canvas: DIAGRAM_CANVAS_LIGHT,
+      edge: "#737373",
+      process: { fill: "#FFFFFF", stroke: "#D4D4D4", text: "#212121" },
+      decision: { fill: "#F4F4F5", stroke: "#737373", text: "#212121" },
+      terminator: { fill: "#707070", stroke: "#707070", text: "#FFFFFF" },
+    },
+    dark: {
+      canvas: DIAGRAM_CANVAS_DARK,
+      edge: "#A3A3A3",
+      process: { fill: "#1C1C1C", stroke: "#3A3A3A", text: "#F4F4F5" },
+      decision: { fill: "#262626", stroke: "#A3A3A3", text: "#F4F4F5" },
+      terminator: { fill: "#F5F5F5", stroke: "#F5F5F5", text: "#212121" },
+    },
+  },
   brand: {
     light: {
-      canvas: "#F5F8F6",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#5C7166",
       process: { fill: "#FFFFFF", stroke: "#6F9B88", text: "#1C3D31" },
       decision: { fill: "#FFF6E5", stroke: "#D4A24A", text: "#7A4A12" },
       terminator: { fill: "#E7F6EF", stroke: "#16A06E", text: "#145C40" },
     },
     dark: {
-      canvas: "#101311",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#8CA397",
       process: { fill: "#1B2420", stroke: "#5B7569", text: "#E8F2ED" },
       decision: { fill: "#2A2316", stroke: "#E0B35C", text: "#F8E4B8" },
@@ -124,14 +143,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   ink: {
     light: {
-      canvas: "#F3F5F7",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#64748B",
       process: { fill: "#FFFFFF", stroke: "#7D8794", text: "#1C232C" },
       decision: { fill: "#E8EDF3", stroke: "#6E7C8F", text: "#243044" },
       terminator: { fill: "#E6EAEF", stroke: "#3A4656", text: "#1A222C" },
     },
     dark: {
-      canvas: "#101214",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#94A3B8",
       process: { fill: "#1B1E23", stroke: "#6B7380", text: "#E8ECF1" },
       decision: { fill: "#222830", stroke: "#8B9BB0", text: "#D5DDE8" },
@@ -140,14 +159,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   paper: {
     light: {
-      canvas: "#F6F1E8",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#78716C",
       process: { fill: "#FFFCF6", stroke: "#C4B396", text: "#3A3126" },
       decision: { fill: "#F4E4CC", stroke: "#C08A48", text: "#6A3F14" },
       terminator: { fill: "#F0E4D0", stroke: "#7A5230", text: "#3F2A16" },
     },
     dark: {
-      canvas: "#161310",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#A8A29E",
       process: { fill: "#221E19", stroke: "#7A6A56", text: "#F3EBE0" },
       decision: { fill: "#2C2418", stroke: "#D4A06A", text: "#F6E2C4" },
@@ -156,14 +175,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   island: {
     light: {
-      canvas: "#F6EEE8",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#7C6F68",
       process: { fill: "#FFF8F3", stroke: "#C4A090", text: "#3A2A22" },
       decision: { fill: "#F3D8C8", stroke: "#C46A48", text: "#6A3220" },
       terminator: { fill: "#EBD0C0", stroke: "#8B4A32", text: "#3F2418" },
     },
     dark: {
-      canvas: "#161210",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#ABA09A",
       process: { fill: "#231C18", stroke: "#8A6A56", text: "#F3E8E0" },
       decision: { fill: "#2C2018", stroke: "#D49070", text: "#F6D8C4" },
@@ -172,14 +191,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   tea: {
     light: {
-      canvas: "#F4F6EE",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#657361",
       process: { fill: "#FFFFFF", stroke: "#8A9A72", text: "#2A3420" },
       decision: { fill: "#E8EED4", stroke: "#8A9A48", text: "#3F4A18" },
       terminator: { fill: "#DCE6C8", stroke: "#4F6A32", text: "#243018" },
     },
     dark: {
-      canvas: "#121410",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#97A693",
       process: { fill: "#1C2018", stroke: "#6A7A56", text: "#E8F0DC" },
       decision: { fill: "#222618", stroke: "#B8C46A", text: "#E8F0C4" },
@@ -188,14 +207,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   cosmos: {
     light: {
-      canvas: "#F2F5F8",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#5C6D7E",
       process: { fill: "#FFFFFF", stroke: "#7A94A8", text: "#1C2A38" },
       decision: { fill: "#E4EEF5", stroke: "#5A82A0", text: "#1E3A52" },
       terminator: { fill: "#D8E6F0", stroke: "#2A5470", text: "#163044" },
     },
     dark: {
-      canvas: "#101218",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#8EA0B2",
       process: { fill: "#181E26", stroke: "#5A7088", text: "#E0E8F0" },
       decision: { fill: "#1C2834", stroke: "#7AA0C0", text: "#D0E4F4" },
@@ -204,14 +223,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   sun: {
     light: {
-      canvas: "#F8F6EC",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#736B5E",
       process: { fill: "#FFFEF6", stroke: "#D4C47A", text: "#3A3418" },
       decision: { fill: "#FFF0C4", stroke: "#E0B040", text: "#6A4A08" },
       terminator: { fill: "#F8E8B0", stroke: "#C09020", text: "#4A3808" },
     },
     dark: {
-      canvas: "#16140C",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#A8A092",
       process: { fill: "#242018", stroke: "#8A7A48", text: "#F6F0D8" },
       decision: { fill: "#2C2410", stroke: "#E0B848", text: "#F8E8B8" },
@@ -220,14 +239,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   wa: {
     light: {
-      canvas: "#F4F7F9",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#5B6F7D",
       process: { fill: "#FFFFFF", stroke: "#8AA8C0", text: "#1C2C3A" },
       decision: { fill: "#FCE8DC", stroke: "#E09070", text: "#7A3A24" },
       terminator: { fill: "#DCE8F4", stroke: "#2A5A88", text: "#1A3858" },
     },
     dark: {
-      canvas: "#101418",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#8EA3B3",
       process: { fill: "#182028", stroke: "#5A7088", text: "#E0E8F0" },
       decision: { fill: "#2C2018", stroke: "#E0A080", text: "#F8DCC8" },
@@ -236,14 +255,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   rose: {
     light: {
-      canvas: "#F8F3F5",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#75646B",
       process: { fill: "#FFFFFF", stroke: "#C49AAC", text: "#3A2430" },
       decision: { fill: "#F8E4EC", stroke: "#D0809A", text: "#7A3048" },
       terminator: { fill: "#F0D8E2", stroke: "#A04060", text: "#4A2030" },
     },
     dark: {
-      canvas: "#161014",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#A8969D",
       process: { fill: "#24181C", stroke: "#8A5A6A", text: "#F4E4EA" },
       decision: { fill: "#2C1A22", stroke: "#E090A8", text: "#F8D8E4" },
@@ -252,14 +271,14 @@ export const FLOWCHART_SURFACES: Record<FlowchartTheme, Record<FlowchartAppearan
   },
   mint: {
     light: {
-      canvas: "#F2F8F7",
+      canvas: DIAGRAM_CANVAS_LIGHT,
       edge: "#5A736F",
       process: { fill: "#FFFFFF", stroke: "#7AB0A8", text: "#1C3A38" },
       decision: { fill: "#E4F4F0", stroke: "#4AA89A", text: "#1A5A52" },
       terminator: { fill: "#D4EEE8", stroke: "#1A7A70", text: "#145048" },
     },
     dark: {
-      canvas: "#101614",
+      canvas: DIAGRAM_CANVAS_DARK,
       edge: "#8EA8A4",
       process: { fill: "#182422", stroke: "#4A786E", text: "#DCF0EC" },
       decision: { fill: "#1A2C28", stroke: "#6AC4B4", text: "#D0F0E8" },

@@ -20,6 +20,9 @@ describe("copy current note ID", () => {
     expect(webEditorSource).toContain("<ClipboardCopyNotice");
     expect(webCopyNoticeSource).toContain("createPortal(");
     expect(webCopyNoticeSource).toContain("document.body");
+    expect(webCopyNoticeSource).toContain('status === "copied" ? "bg-slate-900 text-slate-50" : "bg-rose-600 text-rose-50"');
+    expect(webCopyNoticeSource).not.toContain("bg-emerald-");
+    expect(webCopyNoticeSource).not.toContain("text-white");
   });
 
   test("copies the raw memo ID from both native mobile clients", () => {

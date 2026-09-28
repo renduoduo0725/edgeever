@@ -19,6 +19,21 @@ test("font wrapping and compact rendering do not create a content edit", () => {
   expect(snapshot(rendered)).toBe(snapshot(document));
 });
 
+test("an unthemed mind map matches the plain default without matching forest green", () => {
+  const mindMap = {
+    schemaVersion: 1,
+    kind: "mind-map",
+    nodes: [{ id: "root", label: "Root", shape: "topic", x: 0, y: 0, width: 120, height: 46 }],
+    edges: [],
+  };
+  const plain = structuredClone(mindMap);
+  plain.theme = "plain";
+  const forest = structuredClone(mindMap);
+  forest.theme = "brand";
+  expect(snapshot(plain)).toBe(snapshot(mindMap));
+  expect(snapshot(forest)).not.toBe(snapshot(mindMap));
+});
+
 test("authored geometry, text, connections and theme remain editable", () => {
   for (const change of [
     (d) => { d.nodes[0].width += 10; },

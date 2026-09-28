@@ -26,10 +26,11 @@ export type DiagramNodeShape =
   | "boundary";
 export type DiagramEdgeKind = "dependency" | "request" | "async" | "data";
 export const DIAGRAM_SELECTABLE_THEMES = [
-  "brand", "cosmos", "dune", "slate", "prism", "sunrise", "marine", "blossom", "mint", "macaron",
+  "plain", "brand", "cosmos", "dune", "slate", "prism", "sunrise", "marine", "blossom", "mint", "macaron",
 ] as const;
+export const DIAGRAM_DEFAULT_THEME = "plain" as const;
 export const DIAGRAM_THEMES = [
-  "brand", "ocean", "ink", "classic", "sky", "sunset", "violet", "rose", "sand", "slate", "aurora", "mono",
+  "plain", "brand", "ocean", "ink", "classic", "sky", "sunset", "violet", "rose", "sand", "slate", "aurora", "mono",
   "sun", "wa", "island", "mint", "cosmos", "tea", "naive", "macaron", "paper",
   "dune", "prism", "sunrise", "marine", "blossom",
 ] as const;
@@ -80,7 +81,9 @@ const THEME_ALIASES: Partial<Record<DiagramTheme, typeof DIAGRAM_SELECTABLE_THEM
 
 export const resolveDiagramTheme = (theme?: DiagramTheme): typeof DIAGRAM_SELECTABLE_THEMES[number] => {
   if (theme && (DIAGRAM_SELECTABLE_THEMES as readonly string[]).includes(theme)) return theme as typeof DIAGRAM_SELECTABLE_THEMES[number];
-  return THEME_ALIASES[theme ?? "brand"] ?? "brand";
+  // A stored legacy id keeps its alias. Only a missing theme uses the plain default.
+  if (theme) return THEME_ALIASES[theme] ?? "brand";
+  return DIAGRAM_DEFAULT_THEME;
 };
 
 export const resolveDiagramStructure = (structure?: DiagramStructure): DiagramStructure => (
@@ -371,7 +374,10 @@ export const diagramDocumentToMermaid = (document: DiagramDocument) => {
     const root = document.nodes.find((node) => node.shape === "topic" && !node.parentId);
     const rootId = root ? nodeIds.get(root.id) : undefined;
     if (rootId) {
-      lines.push("  classDef mindRoot fill:#16A06E,stroke:#12845B,color:#fff,stroke-width:1.5px");
+      const rootStyle = resolveDiagramTheme(document.theme) === "plain"
+        ? "fill:#707070,stroke:#707070,color:#FFFFFF,stroke-width:1.5px"
+        : "fill:#16A06E,stroke:#12845B,color:#fff,stroke-width:1.5px";
+      lines.push(`  classDef mindRoot ${rootStyle}`);
       lines.push(`  class ${rootId} mindRoot`);
     }
   }
@@ -387,6 +393,7 @@ export const createDefaultDiagramDocument = (kind: DiagramKind): DiagramDocument
     return {
       schemaVersion: DIAGRAM_SCHEMA_VERSION,
       kind,
+      theme: DIAGRAM_DEFAULT_THEME,
       nodes: [
         { id: "topic-root", label: "核心主题", x: 72, y: 168, width: 124, height: 46, shape: "topic" },
         { id: "topic-1", label: "采集想法", x: 268, y: 117, width: 96, height: 36, shape: "topic", parentId: "topic-root" },
@@ -429,6 +436,7 @@ export const createDefaultDiagramDocument = (kind: DiagramKind): DiagramDocument
   return {
     schemaVersion: DIAGRAM_SCHEMA_VERSION,
     kind,
+    theme: DIAGRAM_DEFAULT_THEME,
     nodes: [
       { id: "flow-start", label: "开始", x: 98, y: 48, width: 140, height: 44, shape: "terminator" },
       { id: "flow-process", label: "处理步骤", x: 80, y: 140, width: 176, height: 56, shape: "process" },

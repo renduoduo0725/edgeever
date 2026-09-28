@@ -284,7 +284,7 @@ export default defineConfig({
       ? false
       : {
           resolveDependencies: (_filename, dependencies) => dependencies.filter((dependency) =>
-            !/(?:vendor-code-highlight|vendor-(?:mermaid|D3|tiptap|prosemirror|floating|codemirror|x6|zod)|vendor~(?:wasm|emacs-lisp)-|vendor-radix(?!-slot)|ui-primitives|ui-button-tooltip|i18n-ja-)/.test(dependency),
+            !/(?:vendor-code-highlight|vendor-(?:mermaid|D3|tiptap|prosemirror|floating|codemirror|x6|infographic|zod)|vendor~(?:wasm|emacs-lisp)-|vendor-radix(?!-slot)|ui-primitives|ui-button-tooltip|i18n-ja-)/.test(dependency),
           ),
         },
     rolldownOptions: {
@@ -336,6 +336,16 @@ export default defineConfig({
               // Keep the graph atomic and defer the resulting chunk instead.
             },
             {
+              name: "vendor-infographic",
+              test: /node_modules[\\/]@antv[\\/]infographic[\\/]/,
+              priority: 39,
+              // AntV Infographic registers its template and shape catalogs through
+              // internal registries. Size-based splitting across chunks breaks
+              // initialization order, causing registry map lookups (e.g. .set)
+              // to fail on undefined during chunk evaluation. Keep this graph
+              // atomic and leave the resulting chunk off the initial modulepreload.
+            },
+            {
               name: "vendor-prosemirror",
               test: /node_modules[\\/](prosemirror-|orderedmap|rope-sequence)[\\/]/,
               priority: 38,
@@ -344,6 +354,17 @@ export default defineConfig({
               name: "vendor-codemirror",
               test: /[\\/]node_modules[\\/](?:@codemirror|@lezer|@uiw[\\/](?:react-)?codemirror|@uiw[\\/]codemirror-themes|codemirror)[\\/]/,
               priority: 37,
+            },
+            {
+              name: "vendor-streamdown",
+              test: /node_modules[\\/](?:streamdown|@streamdown|micromark|mdast|unist|remark|rehype|vfile|zwitch|longest-streak|character-entities|property-information|space-separated-tokens|comma-separated-tokens|html-void-elements|ccount|devlop|bail|trough|unified)[\\/]/,
+              priority: 35,
+              // Streamdown and the unified/micromark/mdast parser stack rely on
+              // tight cross-module references and top-level initializer functions
+              // (e.g. unist-util-is convert() called at import time by mdast-util-phrasing).
+              // Splitting these modules across chunks via maxSize or entriesAware causes
+              // circular chunk evaluation order issues where convert() is undefined.
+              // Keep the entire Streamdown parsing graph atomic.
             },
             {
               name: "vendor-tiptap-pm",

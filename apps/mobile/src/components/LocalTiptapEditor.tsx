@@ -37,6 +37,8 @@ import {
   getImageReferrerPolicy,
   ImageGallery,
   getResourceIdFromUrl,
+  DIAGRAM_CANVAS_DARK,
+  DIAGRAM_CANVAS_LIGHT,
   diagramDocumentToX6Cells,
   attachDiagramReader,
   MIND_MAP_CONNECTOR_NAME,
@@ -3224,7 +3226,7 @@ const getEditorStyles = (theme: "light" | "dark", options?: { viewer?: boolean }
   .edgeever-editor-scroll:has(.edgeever-x6-document) { display: flex; flex-direction: column; overflow: hidden; }
   .edgeever-x6-document, .edgeever-diagram-reader-host { display: flex; flex-direction: column; height: 100%; min-height: 100%; padding: 8px 12px 12px; background: ${theme === "dark" ? "#0f172a" : "#fff"}; }
   .edgeever-diagram-reader-controls { flex: 0 0 auto; }
-  .edgeever-x6-diagram { flex: 1 1 auto; width: 100%; height: auto; min-height: 240px; overflow: hidden; border: 1px solid ${theme === "dark" ? "#26382f" : "#e3ece7"}; border-radius: 14px; background: ${theme === "dark" ? "#101311" : "#f8faf9"}; touch-action: none; }
+  .edgeever-x6-diagram { flex: 1 1 auto; width: 100%; height: auto; min-height: 240px; overflow: hidden; border: 1px solid ${theme === "dark" ? "#26382f" : "#e3ece7"}; border-radius: 14px; background: ${theme === "dark" ? DIAGRAM_CANVAS_DARK : DIAGRAM_CANVAS_LIGHT}; touch-action: none; }
   .edgeever-x6-diagram .x6-graph-svg { overflow: hidden; }
   .edgeever-x6-diagram .x6-node { cursor: pointer; }
   .edgeever-mermaid-code-block > pre { display: none; margin: 8px 0 0; }

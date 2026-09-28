@@ -329,10 +329,14 @@ export default function InfographicEditorPane({
           setRenderError(null);
           setPreviewReady(true);
         } catch (caught) {
+          console.error("Failed to render infographic", caught);
           setRenderError(caught instanceof Error ? caught.message : t("infographic.renderError"));
           instanceRef.current = null;
         }
-      }).catch(() => { if (!cancelled) setRenderError(t("infographic.renderError")); });
+      }).catch((caught) => {
+        console.error("Failed to load @antv/infographic", caught);
+        if (!cancelled) setRenderError(t("infographic.renderError"));
+      });
     }, 250);
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [syntax, readOnly, t]);

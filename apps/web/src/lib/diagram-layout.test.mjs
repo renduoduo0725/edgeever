@@ -97,6 +97,23 @@ describe("diagram auto layout", () => {
     expect(positions.detached.y).toBeGreaterThan(positions["flow-end"].y + 44);
   });
 
+  test("writes the plain theme on new mind maps and flowcharts", () => {
+    expect(compileDiagramIr({ kind: "mind-map", nodes: [{ id: "root", label: "Root" }] }).theme).toBe("plain");
+    expect(compileDiagramIr({
+      kind: "flowchart",
+      nodes: [{ id: "start", label: "Start", type: "start" }],
+    }).theme).toBe("plain");
+    expect(compileDiagramIr({
+      kind: "architecture",
+      nodes: [{ id: "api", label: "API", type: "service" }],
+    }).theme).toBeUndefined();
+    expect(compileDiagramIr({
+      kind: "mind-map",
+      theme: "brand",
+      nodes: [{ id: "root", label: "Root" }],
+    }).theme).toBe("brand");
+  });
+
   test("aligns a sequential flowchart spine even when a loop returns from below", () => {
     const document = compileDiagramIr({
       kind: "flowchart",

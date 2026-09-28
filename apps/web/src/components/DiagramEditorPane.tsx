@@ -1647,9 +1647,11 @@ export const DiagramEditorPane = ({
   const editSessionRef = useRef<MemoEditSession | null>(null);
   const saveRef = useRef<() => void>(() => undefined);
   const document = parseDiagramDocument(memo.contentMarkdown);
-  const documentTheme = document?.kind === "flowchart"
-    ? resolveFlowchartTheme(document.theme)
-    : resolveDiagramTheme(document?.theme);
+  const documentTheme = document?.kind === "architecture"
+    ? resolveDiagramTheme(document.theme ?? "brand")
+    : document?.kind === "flowchart"
+      ? resolveFlowchartTheme(document.theme)
+      : resolveDiagramTheme(document?.theme);
   const documentStructure = resolveDiagramStructure(document?.structure);
   const [title, setTitle] = useState(memo.title ?? "");
   const [tagsText, setTagsText] = useState(memo.tags.join(", "));

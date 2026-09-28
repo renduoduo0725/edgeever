@@ -26,7 +26,6 @@ import {
   Printer,
   Image as ImageIcon,
   Share2,
-  Search,
   Copy,
   Lock,
   LockOpen,
@@ -3785,18 +3784,6 @@ const RichEditorPane = ({
                 </Button>
               </IconTooltip>
             )}
-            <IconTooltip label={t("editor.searchCurrentMemo")}>
-              <Button
-                className="hidden h-8 w-8 text-slate-500 sm:inline-flex"
-                size="icon"
-                variant="ghost"
-                type="button"
-                aria-label={t("editor.searchCurrentMemo")}
-                onClick={() => openNoteSearch()}
-              >
-                <Search className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </IconTooltip>
             {mobileEditingActive && !readOnly && (
               <button
                 className="inline-flex h-8 items-center justify-center rounded-full bg-slate-700 px-3 text-xs font-semibold text-slate-50 transition hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-500 sm:hidden"
@@ -4321,6 +4308,12 @@ const RichEditorPane = ({
       {memoIdCopyNotice && (
         <ClipboardCopyNotice status={memoIdCopyNotice.status}>
           {t(memoIdCopyNotice.status === "copied" ? "editor.noteIdCopied" : "editor.noteIdCopyFailed", { id: memoIdCopyNotice.id })}
+        </ClipboardCopyNotice>
+      )}
+
+      {(wechatCopyState === "copied" || wechatCopyState === "error") && (
+        <ClipboardCopyNotice status={wechatCopyState === "copied" ? "copied" : "error"}>
+          {t(wechatCopyState === "copied" ? "editor.copiedToWeChat" : "editor.copyToWeChatFailed")}
         </ClipboardCopyNotice>
       )}
 

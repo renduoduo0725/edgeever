@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { Graph } from "@antv/x6";
 import {
   attachDiagramReader,
+  DIAGRAM_CANVAS_DARK,
+  DIAGRAM_CANVAS_LIGHT,
   diagramDocumentToX6Cells,
   MIND_MAP_CONNECTOR_NAME,
   mindMapConnector,
@@ -102,7 +104,7 @@ export const ReadOnlyX6Diagram = ({
           overflow: hidden;
           border: 1px solid ${theme === "dark" ? "#26382f" : "#e3ece7"};
           border-radius: 14px;
-          background: ${theme === "dark" ? "#101311" : "#f8faf9"};
+          background: ${theme === "dark" ? DIAGRAM_CANVAS_DARK : DIAGRAM_CANVAS_LIGHT};
           touch-action: none;
         }
         .edgeever-x6-diagram .x6-graph-svg { overflow: hidden; }

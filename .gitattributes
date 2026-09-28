@@ -1,1 +1,4 @@
 *.sql text eol=lf
+
+# GitHub Linguist overrides: exclude built bundles from language statistics
+apps/ios/**/EditorBundle/** linguist-vendored

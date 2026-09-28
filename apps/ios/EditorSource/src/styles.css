@@ -886,7 +886,7 @@ html[data-theme="dark"] .ProseMirror pre code {
   overflow: hidden;
   border: 1px solid #e3ece7;
   border-radius: 14px;
-  background: #f8faf9;
+  background: #f8fafb;
   touch-action: none;
 }
 
@@ -896,7 +896,7 @@ html[data-theme="dark"] .ProseMirror pre code {
 
 html[data-theme="dark"] .edgeever-x6-diagram {
   border-color: #26382f;
-  background: #101311;
+  background: #191e1b;
 }
 
 /* Viewer: no toolbar band, full-area scroll still via #editor */

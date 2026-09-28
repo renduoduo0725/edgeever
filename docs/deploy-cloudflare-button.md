@@ -64,7 +64,7 @@ Return to the build history and retry. Confirm the build and live health check s
 
 ### Step 5: Verify Deployment, Login & Automatic Updates
 
-1. After deployment completes, Cloudflare will assign a default domain (e.g., `https://edgeever.your-subdomain.workers.dev`).
+1. After deployment completes, Cloudflare will assign a default domain (e.g., `https://edgeever.your-subdomain.workers.dev`). You can also attach your own custom domain in the Worker settings under **Settings → Domains & Routes**.
 2. Visit the health check endpoint in your browser: `https://<your-domain>/api/health`, and confirm it returns HTTP `200` with:
    ```json
    { "ok": true }
