@@ -1,5 +1,7 @@
 import type {
   CompanionEvent,
+  CompanionModelContentPart,
+  CompanionPreparedMessage,
   CompanionPreparedTurn,
   CompanionQuestion,
   CompanionTodo,
@@ -8,6 +10,7 @@ import type {
   CompanionTurn,
   CompanionTurnCompleteInput,
 } from "@edgeever/shared";
+import type { ModelMessage } from "ai";
 import { sealCompanionProcess } from "@edgeever/shared";
 import { isAiCorsFailure } from "./ai-direct-stream";
 import { createClientAiModel } from "./ai-model";
@@ -16,6 +19,35 @@ const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === "object" ? value as Record<string, unknown> : null;
 
 const asString = (value: unknown) => typeof value === "string" ? value : null;
+
+const contentPart = (value: unknown): CompanionModelContentPart | null => {
+  const part = asRecord(value);
+  if (!part || Array.isArray(value)) return null;
+  if (part.type === "text" && typeof part.text === "string") return { type: "text", text: part.text };
+  if (part.type === "image" && typeof part.image === "string" && typeof part.mediaType === "string") {
+    return { type: "image", image: part.image, mediaType: part.mediaType };
+  }
+  if (part.type === "file" && typeof part.data === "string" && typeof part.mediaType === "string"
+    && (part.filename === undefined || typeof part.filename === "string")) {
+    return {
+      type: "file", data: part.data, mediaType: part.mediaType,
+      ...(typeof part.filename === "string" ? { filename: part.filename } : {}),
+    };
+  }
+  return null;
+};
+
+const messageContent = (role: string, content: unknown): CompanionPreparedMessage["content"] | null => {
+  if (typeof content === "string") return content;
+  if (role !== "user" || !Array.isArray(content) || content.length === 0) return null;
+  const parts: CompanionModelContentPart[] = [];
+  for (const item of content) {
+    const part = contentPart(item);
+    if (!part) return null;
+    parts.push(part);
+  }
+  return parts;
+};
 
 export const parsePreparedCompanion = (value: unknown): CompanionPreparedTurn | null => {
   const record = asRecord(value);
@@ -36,13 +68,15 @@ export const parsePreparedCompanion = (value: unknown): CompanionPreparedTurn | 
   ) {
     return null;
   }
-  const messages = record.messages.flatMap((item) => {
+  const messages: CompanionPreparedMessage[] = [];
+  for (const item of record.messages) {
     const message = asRecord(item);
-    if (!message || (message.role !== "user" && message.role !== "assistant") || typeof message.content !== "string") {
-      return [];
-    }
-    return [{ role: message.role as "user" | "assistant", content: message.content }];
-  });
+    const content = message && (message.role === "user" || message.role === "assistant")
+      ? messageContent(message.role, message.content)
+      : null;
+    if (!message || (message.role !== "user" && message.role !== "assistant") || content === null) return null;
+    messages.push({ role: message.role, content });
+  }
   const tools = record.tools.flatMap((item) => {
     const tool = asRecord(item);
     const inputSchema = asRecord(tool?.inputSchema);
@@ -176,8 +210,23 @@ export const streamDirectCompanion = async (
       maxOutputTokens: prepared.maxOutputTokens,
       maxRetries: 0,
     });
+    const messages: ModelMessage[] = prepared.messages.map((message) => {
+      if (message.role === "assistant") {
+        if (typeof message.content !== "string") throw new Error("Assistant content must be a string.");
+        return { role: "assistant", content: message.content };
+      }
+      if (typeof message.content === "string") return { role: "user", content: message.content };
+      return {
+        role: "user",
+        content: message.content.map((part) => {
+          if (part.type === "text") return { type: "text" as const, text: part.text };
+          if (part.type === "image") return { type: "image" as const, image: part.image, mediaType: part.mediaType };
+          return { type: "file" as const, data: part.data, mediaType: part.mediaType, ...(part.filename ? { filename: part.filename } : {}) };
+        }),
+      };
+    });
     const result = await agent.stream({
-      messages: prepared.messages,
+      messages,
       abortSignal: options.signal,
     });
     for await (const part of result.fullStream) {

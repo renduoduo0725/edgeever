@@ -22,7 +22,7 @@ import {
   writeMobileMemoDraft,
   type MobileMemoDraft,
 } from "../lib/mobile-drafts";
-import { useMobileLocale } from "../lib/mobile-locale";
+import { localizeMissingNotebookName, useMobileLocale } from "../lib/mobile-locale";
 import { useSession } from "../lib/session";
 import { queueMobileMemoCreate, queueMobileMemoUpdate } from "../lib/sync-queue";
 import { createMobileDataScope, upsertLocalMemo } from "../lib/local-mirror";
@@ -867,7 +867,7 @@ export const RichEditorModal = ({
   const [resourceTarget, setResourceTarget] = useState<MobileResourceTarget | null>(null);
   const editorStartup = useMobileEditorStartupGuard({ active: Boolean(memo && baseUrl), ready });
   const { pickUploadAssets, uploadSourcePicker } = useMobileEditorUploadAsset();
-  const notebookLabel = notebooks.find((notebook) => notebook.id === notebookId)?.name ?? "未分类";
+  const notebookLabel = notebooks.find((notebook) => notebook.id === notebookId)?.name ?? localizeMissingNotebookName(resolvedLocale);
   const saveLabel = error ? "保存失败" : saving ? "保存中" : uploading ? "上传中" : dirty ? (draftRestored ? "本地草稿" : "未保存") : ready ? "已保存" : "加载中";
   const titleRef = useRef(title);
   const tagsTextRef = useRef(tagsText);

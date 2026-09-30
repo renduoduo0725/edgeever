@@ -64,7 +64,7 @@
 
 ### 步骤 5：验证部署、登录与自动更新
 
-1. 构建完成后，Cloudflare 会为您生成一个二级域名（如 `https://edgeever.your-subdomain.workers.dev`）。您也可以在 Worker 的 **Settings → Domains & Routes** 中绑定自己的自定义域名。
+1. 构建完成后，Cloudflare 会为您生成一个二级域名（如 `https://edgeever.your-subdomain.workers.dev`）。您也可以在 Worker 的 **Settings → Domains & Routes** 中绑定自己的自定义域名（强烈建议绑定自定义域名以保障国内直连稳定性并提升访问速度）。
 2. 在浏览器打开该域名下的健康检查接口：`https://你的域名/api/health`，确认返回 `200` 及 JSON：
    ```json
    { "ok": true }

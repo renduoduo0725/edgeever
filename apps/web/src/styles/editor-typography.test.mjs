@@ -34,12 +34,15 @@ describe("editor typography contract", () => {
     expect(markdownRules).toMatch(/font-feature-settings\s*:\s*["']chws["']\s*1/);
   });
 
-  test("keeps compact rhythm unless a paper editor theme is selected", () => {
+  test("keeps the native editor and applies account prose instead of paper themes", () => {
     const editorPane = readStyle("../components/EditorPane.tsx");
     const publishLayout = readStyle("./publish-layout.css");
 
-    expect(editorPane).toContain("isPaperEditorTheme(editorTheme)");
-    expect(editorPane).toContain("MEMO_CONTENT_STYLE.body.lineHeight");
+    expect(editorPane).toContain('data-editor-theme="default"');
+    expect(editorPane).toContain("data-note-palette={noteProse.palette}");
+    expect(editorPane).toContain("noteProseCssVariables(noteProse)");
+    expect(editorPane).not.toContain("isPaperEditorTheme");
+    expect(editorPane).toContain("MEMO_CONTENT_STYLE.divider");
     expect(publishLayout).toContain('[data-editor-theme="letter"]');
     expect(publishLayout).toContain("[data-paper-theme]");
     expect(publishLayout).not.toContain("[data-publish-layout]");
@@ -67,6 +70,32 @@ describe("editor typography contract", () => {
     expect(placeholderRules).toMatch(/font-weight\s*:\s*inherit/);
     expect(placeholderRules).toMatch(/line-height\s*:\s*inherit/);
     expect(placeholderRules).toMatch(/color\s*:\s*#a8b5c4/);
+  });
+
+  test("paints bold text with the palette accent", () => {
+    const prose = readStyle("./note-prose.css");
+    const boldRules = declarationsForSelector(prose, ".ProseMirror strong");
+
+    expect(boldRules).toMatch(/color:\s*var\(--note-palette-accent\)/);
+    expect(prose).not.toMatch(/--note-palette-dark-accent/);
+    expect(prose).not.toContain('data-note-palette="custom"');
+  });
+
+  test("named palettes recolor links, inline code, bold, and checked task boxes", () => {
+    const prose = readStyle("./note-prose.css");
+
+    expect(prose).toMatch(/color:\s*var\(--note-palette-link\)/);
+    expect(prose).toMatch(/color:\s*var\(--note-palette-code-text\)/);
+    expect(prose).toMatch(/color:\s*var\(--note-palette-accent\)/);
+    expect(prose).toMatch(/accent-color:\s*var\(--note-palette-accent\)/);
+    expect(prose).toMatch(/ul\[data-type="taskList"\] li\[data-checked\] > label input/);
+    expect(prose).toMatch(/\.edgeever-code-block code/);
+    expect(prose).not.toMatch(/--note-palette-text/);
+    expect(prose).not.toMatch(/--note-palette-surface/);
+    expect(prose).not.toMatch(/--note-palette-muted/);
+    expect(prose).not.toMatch(/--note-palette-divider/);
+    expect(prose).not.toMatch(/--note-palette-code-bg/);
+    expect(prose).not.toMatch(/blockquote/);
   });
 
   test("keeps bold and italic text visible across platform font fallbacks", () => {

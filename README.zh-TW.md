@@ -1,6 +1,6 @@
 <div align="center">
   <h1>
-    <img src="assets/brand/edgeever-icon.svg" alt="EdgeEver Logo" width="40" align="absmiddle" /> EdgeEver
+    <img src="assets/brand/edgeever-icon.svg" alt="EdgeEver Logo" width="48" align="absmiddle" /> EdgeEver
   </h1>
   <p>
     <b>開源、原生支援 AI、可自由部署的自行託管知識庫與 Evernote（印象筆記）替代方案</b>
@@ -10,6 +10,7 @@
     <a href="https://github.com/tianma-if/edgeever/network/members"><img src="https://img.shields.io/github/forks/tianma-if/edgeever?style=social" alt="GitHub Forks" /></a>
     <a href="https://github.com/tianma-if/edgeever/pkgs/container/edgeever"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls" alt="Docker Pulls" /></a>
     <a href="https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social"><img src="https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt" alt="Product Hunt" /></a>
+    <a href="https://hellogithub.com/repository/tianma-if/edgeever" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=150fee4403f6433880bda91e9576ac06&claim_uid=TWNAjisURpnhL1l&theme=small" alt="Featured｜HelloGitHub" /></a>
     <a href="https://afdian.com/a/tianma-if"><img src="https://img.shields.io/badge/愛發電-946ce6?style=social&logo=github-sponsors" alt="愛發電贊助" /></a>
   </p>
   <p>
@@ -144,8 +145,9 @@ Cloudflare 線上部署可以選擇以下兩種方式之一：
 curl -fsSL https://edgeever.org/install.sh | bash
 ```
 
-此指令會自動拉取最新映像、產生管理員密碼、使用 Docker Compose 啟動
-EdgeEver，並設定每日自動更新。手動部署與設定說明見 [Docker 部署文件](docs/deploy-docker.zh-CN.md)。
+此指令會自動拉取最新映像、產生管理員密碼，並使用 Docker Compose 啟動 EdgeEver。手動部署與設定說明見 [Docker 部署文件](docs/deploy-docker.zh-CN.md)。
+
+安裝後預設每日自動更新。如需手動更新，請在部署伺服器上執行 `~/edgeever/update.sh`。
 
 ---
 
@@ -157,13 +159,16 @@ EdgeEver，並設定每日自動更新。手動部署與設定說明見 [Docker 
 
 ## 瀏覽器網頁擷取擴充功能
 
-網頁擷取擴充功能已在 Chrome、Microsoft Edge 與 Firefox 正式上架。請從對應的瀏覽器商店安裝（Edge 瀏覽器亦可直接安裝 Chrome Web Store 版本）：
-
 <p>
   <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/chrome/chrome.svg" alt="為 Google Chrome 安裝 EdgeEver 網頁擷取擴充功能" width="36" height="36" /></a>&nbsp;&nbsp;
   <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/edge/edge.svg" alt="為 Microsoft Edge 安裝 EdgeEver 網頁擷取擴充功能" width="36" height="36" /></a>&nbsp;&nbsp;
   <a href="https://addons.mozilla.org/zh-TW/firefox/addon/edgeever-web-clipper/"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/firefox/firefox.svg" alt="為 Firefox 安裝 EdgeEver 網頁擷取擴充功能" width="36" height="36" /></a>
 </p>
+
+- **智慧內文擷取**：自動擷取網頁文章正文並轉為純淨 Markdown，完整保留來源網址與擷取時間。
+- **選取與右鍵擷取**：反白選取文字或右鍵任意圖片直接儲存為獨立筆記，無需抓取整頁多餘內容。
+- **X (Twitter) 推文擷取**：右鍵單則推文自動展開長文全文，連同作者、發布時間與附圖完整歸檔。
+- **自託管隱私直連**：擷取內容直傳個人自託管執行個體，不經過任何第三方伺服器轉發。
 
 ## 社群與回饋
 

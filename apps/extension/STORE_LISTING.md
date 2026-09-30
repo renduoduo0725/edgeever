@@ -18,7 +18,7 @@ Select the matching language in the Chrome Web Store developer dashboard and ent
 
 ## Upload files
 
-- Package: `store-assets/edgeever-web-clipper-v0.1.7.zip`
+- Package: `store-assets/edgeever-web-clipper-v0.1.8.zip`
 - Store icon: `public/icons/icon-128.png`
 - Screenshot: `store-assets/screenshot-options-1280x800.jpg`
 - Small promo tile: `store-assets/promo-small-440x280.jpg`
@@ -40,7 +40,7 @@ EdgeEver Web Clipper 可以把当前网页、选中的文字、右键选中的�
 - 在图片上右键，选择“保存图片到 EdgeEver”，把图片文件存成一条新笔记。
 - 在 X 上右键推文正文，选择“保存这条推文到 EdgeEver”。长文会先展开“显示更多”，再保存全文和已经显示的图片。
 - 这几项命令直接出现在右键菜单的第一级。
-- 在笔记中保留来源网址和剪藏时间。
+- 在笔记中保留来源和剪藏时间。从 Google 搜索保存的图片记录“Google 搜索”和关键词。
 - 可选择默认笔记本，并自动添加 `web-clip` 标签。
 - 网页内容直接发送到你配置的 EdgeEver 实例，不经过开发者的中转服务器。
 
@@ -65,7 +65,7 @@ Key features:
 - Right-click an image and choose “Save image to EdgeEver” to store the image file as a new note.
 - On X, right-click the post text and choose “Save this post to EdgeEver”. Long posts are expanded before saving, so the full text and already shown photos go into one note.
 - These commands stay on the top-level right-click menu.
-- Preserve the source URL and clipping time in the note.
+- Preserve the source and clipping time in the note. An image saved from Google Search records “Google Search” and the keyword.
 - Select a default notebook and add the `web-clip` tag automatically.
 - Send webpage content directly to your configured EdgeEver instance without a developer-operated relay server.
 

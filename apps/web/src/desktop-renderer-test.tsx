@@ -22,7 +22,7 @@ import { loadPluginMarketplace } from "@/lib/plugins/plugin-marketplace";
 
 const BubbleMenuTransactionRegression = () => {
   const [transactionCount, setTransactionCount] = useState(0);
-  const aiBubbleMenu = useAiBubbleMenu(false);
+  const aiBubbleMenu = useAiBubbleMenu();
   const editor = useEditor({
     extensions: [StarterKit],
     content: "<p>Bubble menu regression</p>",

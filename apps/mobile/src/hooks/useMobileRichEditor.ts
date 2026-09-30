@@ -20,7 +20,7 @@ import {
 } from "../lib/mobile-editor-controller";
 import { clearMobileMemoDraft, writeMobileMemoDraft, type MobileMemoDraft } from "../lib/mobile-drafts";
 import { prepareUploadAsset } from "../lib/mobile-image-upload";
-import { useMobileLocale } from "../lib/mobile-locale";
+import { localizeMissingNotebookName, useMobileLocale } from "../lib/mobile-locale";
 import { useSession } from "../lib/session";
 import { recordEditorStartup } from "../lib/startup-performance";
 import { safeDomCall } from "../lib/safe-dom-call";
@@ -144,7 +144,7 @@ export const useMobileRichEditor = ({
   const [error, setError] = useState<string | null>(null);
   const [resourceTarget, setResourceTarget] = useState<MobileResourceTarget | null>(null);
   const { pickUploadAssets, uploadSourcePicker } = useMobileEditorUploadAsset();
-  const notebookLabel = notebooks.find((notebook) => notebook.id === notebookId)?.name ?? "未分类";
+  const notebookLabel = notebooks.find((notebook) => notebook.id === notebookId)?.name ?? localizeMissingNotebookName(resolvedLocale);
   const saveLabel = error
     ? "保存失败"
     : saving

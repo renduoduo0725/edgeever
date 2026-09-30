@@ -1,7 +1,9 @@
-import { AlignHorizontalJustifyCenter, AppWindow, BookOpenText, ChartNoAxesCombined, Image, Keyboard, Languages, MousePointerClick, Palette, Sparkles, SunMoon } from "lucide-react";
+import { AlignHorizontalJustifyCenter, AlignVerticalSpaceAround, AppWindow, BookOpenText, ChartNoAxesCombined, Code2, Image, Keyboard, Languages, MousePointerClick, Palette, Sparkles, SunMoon, Type } from "lucide-react";
 import { useState, useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { EditorContentAlignment } from "@/lib/app-helpers";
+import type { EditorContentWidth } from "@/lib/editor-content-width";
+import type { NoteProsePatch, NoteProsePaletteChoice, ResolvedNoteProse } from "@edgeever/shared";
+import { DEFAULT_NOTE_PROSE_CSS, MAX_NOTE_PROSE_CSS_BYTES, NOTE_PROSE_FONT_SIZES, NOTE_PROSE_PALETTE_CHOICES, NOTE_PROSE_PALETTES, noteProseCssDropsDeclarations } from "@edgeever/shared";
 import {
   EDITOR_LINK_OPEN_MODE_CHANGED_EVENT,
   getStoredEditorLinkOpenMode,
@@ -19,10 +21,12 @@ import {
   writeAiSpaceShortcutPreference,
 } from "@/lib/ai-space-shortcut-preference";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SETTINGS_ITEM_TITLE_CLASSNAME } from "./settings-ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   changeAppLocalePreference,
   getAppLocalePreference,
@@ -40,7 +44,8 @@ import {
 } from "@/lib/editor-body-font";
 import { applyUiFontPreference, readUiFontPreference, writeUiFontPreference } from "@/lib/ui-font";
 import { syncPublishedNoteBodyFont } from "@/lib/published-note-body-font";
-import { CustomEditorThemeDialog } from "./CustomEditorThemeDialog";
+import { NoteProseCssEditor } from "./NoteProseCssEditor";
+import { NoteProseCssPreview } from "./NoteProseCssPreview";
 
 const PreferenceSection = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="grid gap-2">
@@ -53,12 +58,7 @@ const PreferenceSection = ({ title, children }: { title: string; children: React
 import {
   MERMAID_THEME_PREFERENCES,
   useAppearanceTheme,
-  useEditorTheme,
   useMermaidTheme,
-  DEFAULT_CUSTOM_LIGHT_COLORS,
-  DEFAULT_CUSTOM_DARK_COLORS,
-  localizeStoredCustomThemeName,
-  type CustomEditorTheme,
   type ThemePreference,
 } from "../ThemeProvider";
 
@@ -178,45 +178,49 @@ const FontChoiceFields = ({
   );
 };
 
+const NoteProsePaletteSwatch = ({ paletteId }: { paletteId: NoteProsePaletteChoice }) => (
+  <span
+    aria-hidden
+    className={`h-3 w-6 shrink-0 rounded-[2px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.14)] ${paletteId === "native" ? "bg-foreground" : ""}`}
+    style={paletteId === "native" ? undefined : { backgroundColor: NOTE_PROSE_PALETTES[paletteId].accent }}
+  />
+);
+
+const NOTE_PROSE_LINE_HEIGHT_OPTIONS = [
+  { value: "1.5", labelKey: "settings.editorBodyLineHeights.compact" },
+  { value: "1.65", labelKey: "settings.editorBodyLineHeights.standard" },
+  { value: "2", labelKey: "settings.editorBodyLineHeights.relaxed" },
+] as const;
+
 interface PreferenceCardProps {
   imageCompressionEnabled: boolean;
   onImageCompressionChange: (enabled: boolean) => void;
-  editorContentAlignment: EditorContentAlignment;
-  onEditorContentAlignmentChange: (alignment: EditorContentAlignment) => void;
+  editorContentWidth: EditorContentWidth;
+  onEditorContentWidthChange: (width: EditorContentWidth) => void;
+  noteProse: ResolvedNoteProse;
+  onNoteProseChange: (patch: NoteProsePatch) => void;
 }
 
 export const PreferenceCard = ({
   imageCompressionEnabled,
   onImageCompressionChange,
-  editorContentAlignment,
-  onEditorContentAlignmentChange,
+  editorContentWidth,
+  onEditorContentWidthChange,
+  noteProse,
+  onNoteProseChange,
 }: PreferenceCardProps) => {
   const { t } = useTranslation();
-  const {
-    editorTheme,
-    customEditorThemes,
-    setCustomEditorThemes,
-    setEditorTheme,
-  } = useEditorTheme();
-  const { preference: appearancePreference, setPreference: setAppearancePreference } = useAppearanceTheme();
+  const { preference: appearancePreference, resolvedTheme, setPreference: setAppearancePreference } = useAppearanceTheme();
   const { mermaidThemePreference, setMermaidTheme } = useMermaidTheme();
-  const [customThemeDialogOpen, setCustomThemeDialogOpen] = useState(false);
-  const [editingTheme, setEditingTheme] = useState<CustomEditorTheme | null>(null);
+  const [cssDialogOpen, setCssDialogOpen] = useState(false);
+  const [cssDraft, setCssDraft] = useState(noteProse.customCss);
+  const [cssPreviewTheme, setCssPreviewTheme] = useState<"light" | "dark">("light");
   const [activeLocalePreference, setActiveLocalePreference] = useState<AppLocalePreference>(() => getAppLocalePreference());
-  const [isMobile, setIsMobile] = useState(false);
   const [linkOpenMode, setLinkOpenMode] = useState<EditorLinkOpenMode>(() => getStoredEditorLinkOpenMode());
   const [aiSelectionMenuEnabled, setAiSelectionMenuEnabled] = useState(readAiSelectionMenuPreference);
   const [aiSpaceShortcutEnabled, setAiSpaceShortcutEnabled] = useState(readAiSpaceShortcutPreference);
   const [editorBodyFont, setEditorBodyFont] = useState(readEditorBodyFontPreference);
   const [uiFont, setUiFont] = useState(readUiFontPreference);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 640px)");
-    setIsMobile(mediaQuery.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
-  }, []);
 
   useEffect(() => {
     const syncPreference = () => setAiSpaceShortcutEnabled(readAiSpaceShortcutPreference());
@@ -272,47 +276,21 @@ export const PreferenceCard = ({
     };
   }, []);
 
-  const activeCustom = customEditorThemes.find((t) => t.id === editorTheme);
-  const customThemeLabel = (name: string) =>
-    localizeStoredCustomThemeName(name, {
-      defaultName: t("settings.customEditorTheme.defaultName"),
-      newName: (index) => t("settings.customEditorTheme.newName", { n: index }),
-    });
+  const cssDraftBytes = new TextEncoder().encode(cssDraft).byteLength;
 
-  const handleEditClick = () => {
-    const target = activeCustom ?? customEditorThemes[0];
-    if (target) {
-      setEditingTheme({ ...target, name: customThemeLabel(target.name) });
-    } else {
-      const newTheme: CustomEditorTheme = {
-        id: `custom-${Date.now()}`,
-        name: t("settings.customEditorTheme.newName", { n: customEditorThemes.length + 1 }),
-        light: DEFAULT_CUSTOM_LIGHT_COLORS,
-        dark: DEFAULT_CUSTOM_DARK_COLORS,
-      };
-      setEditingTheme(newTheme);
-    }
-    setCustomThemeDialogOpen(true);
+  const openCssDialog = () => {
+    setCssDraft(noteProse.customCss.trim() ? noteProse.customCss : DEFAULT_NOTE_PROSE_CSS);
+    setCssPreviewTheme("light");
+    setCssDialogOpen(true);
   };
 
-  const handleSaveTheme = (saved: CustomEditorTheme) => {
-    const exists = customEditorThemes.some((t) => t.id === saved.id);
-    let nextThemes: CustomEditorTheme[];
-    if (exists) {
-      nextThemes = customEditorThemes.map((t) => (t.id === saved.id ? saved : t));
-    } else {
-      nextThemes = [...customEditorThemes, saved];
-    }
-    setCustomEditorThemes(nextThemes);
-    setEditorTheme(saved.id);
+  const resetCssDraft = () => {
+    setCssDraft(DEFAULT_NOTE_PROSE_CSS);
   };
 
-  const handleDeleteTheme = (idToDelete: string) => {
-    const nextThemes = customEditorThemes.filter((t) => t.id !== idToDelete);
-    setCustomEditorThemes(nextThemes);
-    if (editorTheme === idToDelete) {
-      setEditorTheme("default");
-    }
+  const saveCssDraft = () => {
+    onNoteProseChange({ customCss: cssDraft });
+    setCssDialogOpen(false);
   };
 
   const handleLocalePreferenceChange = (preference: AppLocalePreference) => {
@@ -407,20 +385,21 @@ export const PreferenceCard = ({
           <div className="flex min-w-0 items-center gap-3">
             <AlignHorizontalJustifyCenter className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
-              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorContentAlignmentTitle")}</div>
+              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorContentWidthTitle")}</div>
+              <p className="text-xs leading-5 text-slate-500">{t("settings.editorContentWidthDescription")}</p>
             </div>
           </div>
           <div className="w-full shrink-0 sm:w-80">
             <Select
-              value={editorContentAlignment}
-              onValueChange={(value) => onEditorContentAlignmentChange(value as EditorContentAlignment)}
+              value={editorContentWidth}
+              onValueChange={(value) => onEditorContentWidthChange(value as EditorContentWidth)}
             >
-              <SelectTrigger aria-label={t("settings.editorContentAlignmentTitle")} className="h-9 bg-card">
+              <SelectTrigger aria-label={t("settings.editorContentWidthTitle")} className="h-9 bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="start">{t("settings.editorContentAlignments.start")}</SelectItem>
-                <SelectItem value="center">{t("settings.editorContentAlignments.center")}</SelectItem>
+                <SelectItem value="standard">{t("settings.editorContentWidths.standard")}</SelectItem>
+                <SelectItem value="wide">{t("settings.editorContentWidths.wide")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -440,23 +419,106 @@ export const PreferenceCard = ({
           />
         </div>
 
-        {!isMobile && (
-          <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Palette className="h-4 w-4 shrink-0 text-slate-500" />
-              <div className="min-w-0">
-                <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.customEditorTheme.settingsTitle")}</div>
-              </div>
-            </div>
-            <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
-              <Button variant="outline" className="h-9 shrink-0 px-3 text-xs" onClick={handleEditClick}>
-                {activeCustom || customEditorThemes.length > 0
-                  ? t("settings.customEditorTheme.edit")
-                  : t("settings.customEditorTheme.create")}
-              </Button>
+        <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <Type className="h-4 w-4 shrink-0 text-slate-500" />
+            <div className="min-w-0">
+              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorBodyFontSizeTitle")}</div>
             </div>
           </div>
-        )}
+          <div className="w-full shrink-0 sm:w-80">
+            <Select
+              value={String(noteProse.fontSize)}
+              onValueChange={(value) => onNoteProseChange({ fontSize: Number(value) as ResolvedNoteProse["fontSize"] })}
+            >
+              <SelectTrigger aria-label={t("settings.editorBodyFontSizeTitle")} className="h-9 bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {NOTE_PROSE_FONT_SIZES.map((size) => (
+                  <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <AlignVerticalSpaceAround className="h-4 w-4 shrink-0 text-slate-500" />
+            <div className="min-w-0">
+              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorBodyLineHeightTitle")}</div>
+            </div>
+          </div>
+          <div className="w-full shrink-0 sm:w-80">
+            <Select
+              value={String(noteProse.lineHeight)}
+              onValueChange={(value) => onNoteProseChange({ lineHeight: Number(value) as ResolvedNoteProse["lineHeight"] })}
+            >
+              <SelectTrigger aria-label={t("settings.editorBodyLineHeightTitle")} className="h-9 bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {NOTE_PROSE_LINE_HEIGHT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{t(option.labelKey)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <Palette className="h-4 w-4 shrink-0 text-slate-500" />
+            <div className="min-w-0">
+              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorBodyPaletteTitle")}</div>
+            </div>
+          </div>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-80">
+            <Select
+              value={noteProse.palette}
+              onValueChange={(value) => onNoteProseChange({ palette: value as NoteProsePaletteChoice })}
+            >
+              <SelectTrigger aria-label={t("settings.editorBodyPaletteTitle")} className="h-9 bg-card">
+                <SelectValue>
+                  <span className="flex items-center gap-2">
+                    <NoteProsePaletteSwatch paletteId={noteProse.palette} />
+                    <span>{t(`settings.editorBodyPalettes.${noteProse.palette}`)}</span>
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {NOTE_PROSE_PALETTE_CHOICES.map((paletteId) => (
+                  <SelectItem
+                    key={paletteId}
+                    value={paletteId}
+                    className="pr-2.5 [&>span:last-child]:flex [&>span:last-child]:min-w-0 [&>span:last-child]:flex-1"
+                  >
+                    <span className="flex w-full items-center justify-between gap-3">
+                      <span>{t(`settings.editorBodyPalettes.${paletteId}`)}</span>
+                      <NoteProsePaletteSwatch paletteId={paletteId} />
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="hidden min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 lg:flex">
+          <div className="flex min-w-0 items-center gap-3">
+            <Code2 className="h-4 w-4 shrink-0 text-slate-500" />
+            <div className="min-w-0">
+              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorBodyCssTitle")}</div>
+              <p className="text-xs leading-5 text-slate-500">{t("settings.accountSyncDescription")}</p>
+            </div>
+          </div>
+          <div className="w-full shrink-0 sm:w-auto">
+            <Button variant="outline" className="h-9 px-3 text-xs" onClick={openCssDialog}>
+              {t("settings.editorBodyCssEdit")}
+            </Button>
+          </div>
+        </div>
 
         <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -558,16 +620,66 @@ export const PreferenceCard = ({
           </div>
         </div>
       </PreferenceSection>
-      {!isMobile && editingTheme && (
-        <CustomEditorThemeDialog
-          open={customThemeDialogOpen}
-          theme={editingTheme}
-          onOpenChange={setCustomThemeDialogOpen}
-          onSave={handleSaveTheme}
-          onDelete={handleDeleteTheme}
-          isDefaultTheme={editingTheme.id === "custom-default"}
-        />
-      )}
+      <Dialog open={cssDialogOpen} onOpenChange={setCssDialogOpen}>
+        <DialogContent className="flex h-[min(44rem,calc(100dvh-2rem))] max-w-2xl flex-col gap-4 overflow-hidden">
+          <DialogHeader className="shrink-0 pr-8">
+            <DialogTitle>{t("settings.editorBodyCssTitle")}</DialogTitle>
+            <DialogDescription className="leading-5">{t("settings.editorBodyCssDescription")}</DialogDescription>
+          </DialogHeader>
+          <div className="shrink-0 overflow-hidden rounded-md border border-slate-200">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-1.5">
+              <span className="text-xs text-slate-500">{t("settings.editorBodyCssPreviewLabel")}</span>
+              <ToggleGroup
+                type="single"
+                value={cssPreviewTheme}
+                onValueChange={(value) => {
+                  if (value === "light" || value === "dark") setCssPreviewTheme(value);
+                }}
+                aria-label={t("settings.editorBodyCssPreviewLabel")}
+                className="rounded-md bg-muted p-0.5"
+              >
+                <ToggleGroupItem value="light" size="sm" className="h-7 rounded px-2.5 text-xs data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm">
+                  {t("settings.editorBodyCssPreviewLight")}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="dark" size="sm" className="h-7 rounded px-2.5 text-xs data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm">
+                  {t("settings.editorBodyCssPreviewDark")}
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            <NoteProseCssPreview
+              css={cssDraft}
+              dark={cssPreviewTheme === "dark"}
+              fontSize={noteProse.fontSize}
+              lineHeight={noteProse.lineHeight}
+            />
+          </div>
+          {noteProseCssDropsDeclarations(cssDraft) ? (
+            <p className="shrink-0 text-xs text-amber-700 dark:text-amber-400">{t("settings.editorBodyCssDropped")}</p>
+          ) : null}
+          <div className="relative min-h-0 flex-1">
+            <div className="absolute inset-0">
+              <NoteProseCssEditor
+                value={cssDraft}
+                dark={resolvedTheme === "dark"}
+                ariaLabel={t("settings.editorBodyCssTitle")}
+                placeholder={t("settings.editorBodyCssPlaceholder")}
+                onChange={setCssDraft}
+              />
+            </div>
+          </div>
+          <p className={cssDraftBytes > MAX_NOTE_PROSE_CSS_BYTES ? "shrink-0 text-xs text-rose-600" : "shrink-0 text-xs text-slate-500"}>
+            {cssDraftBytes} / {MAX_NOTE_PROSE_CSS_BYTES}
+          </p>
+          <DialogFooter className="shrink-0 sm:justify-between">
+            <Button type="button" variant="outline" onClick={resetCssDraft}>
+              {t("settings.editorBodyCssReset")}
+            </Button>
+            <Button type="button" onClick={saveCssDraft} disabled={cssDraftBytes > MAX_NOTE_PROSE_CSS_BYTES}>
+              {t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

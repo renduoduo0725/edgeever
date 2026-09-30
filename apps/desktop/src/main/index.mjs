@@ -48,6 +48,7 @@ import {
 import electronUpdater from "electron-updater";
 import { createPluginPublicNetworkRuntime } from "./plugin-public-network.mjs";
 import { createAiDirectRuntime } from "./ai-direct.mjs";
+import { createAcpHostRuntime, registerAcpIpc } from "./acp-host.mjs";
 import { shouldQuitAfterAllWindowsClosed } from "./window-lifecycle.mjs";
 import {
   RENDERER_HIBERNATE_PREPARE_TIMEOUT_MS,
@@ -1593,6 +1594,15 @@ const startApplication = async () => {
   ipcMain.on("desktop:ai-direct-cancel", (event, requestId) => {
     if (event.sender === mainWindow?.webContents && typeof requestId === "string") aiDirect.cancel(requestId);
   });
+  const acpRuntime = registerAcpIpc(ipcMain, createAcpHostRuntime({
+    adapterStore: join(app.getPath("userData"), "acp-adapters"),
+  }), { allowInstall: (sender) => sender === mainWindow?.webContents });
+  await acpRuntime.pruneAdapters().catch(() => {});
+  const refreshAdapters = () => { void acpRuntime.installDetected().catch(() => []).then(() => acpRuntime.updateInstalled()).catch(() => {}); };
+  const firstAdapterRefresh = setTimeout(refreshAdapters, 10_000);
+  firstAdapterRefresh.unref?.();
+  const adapterRefreshInterval = setInterval(refreshAdapters, 24 * 60 * 60 * 1000);
+  adapterRefreshInterval.unref?.();
   ipcMain.handle("desktop:sync-scheduled-tasks", async (event, tasks) => {
     if (event.sender !== mainWindow?.webContents) throw new Error("Scheduled tasks must come from the main window");
     if (!Array.isArray(tasks) || tasks.length > 1_000) throw new Error("Invalid scheduled task list");

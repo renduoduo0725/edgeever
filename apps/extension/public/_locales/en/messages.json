@@ -159,6 +159,12 @@
   "capturedAtLabel": {
     "message": "Captured at"
   },
+  "googleSearchLabel": {
+    "message": "Google Search"
+  },
+  "searchKeywordLabel": {
+    "message": "Keyword"
+  },
   "noAvailableNotebooks": {
     "message": "No notebooks are available in EdgeEver."
   },

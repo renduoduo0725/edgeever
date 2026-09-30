@@ -1,103 +1,126 @@
 import type { Editor } from "@tiptap/react";
-import { flattenDetailsForLinearHtml, MEMO_CONTENT_STYLE } from "@edgeever/shared";
+import {
+  DEFAULT_NOTE_PROSE_FONT_SIZE,
+  DEFAULT_NOTE_PROSE_LINE_HEIGHT,
+  flattenDetailsForLinearHtml,
+  NOTE_PROSE_HEADING_SCALE,
+  NOTE_PROSE_PARAGRAPH_SPACING_PX,
+  noteProseCodeFontSize,
+  parseNoteProseLineHeight,
+  type NoteProsePaletteColors,
+} from "@edgeever/shared";
 import { marked } from "marked";
 import { MERMAID_THEME_PALETTES } from "@/components/ThemeProvider";
 import { copyHtmlToClipboard } from "@/lib/clipboard";
 import { parseCustomCssToStyles } from "@/lib/css-sandbox";
-import { applyPublishLayout, resolvePaperEditorTheme } from "@/lib/publish-layout";
 
-const BODY_LINE_HEIGHT = MEMO_CONTENT_STYLE.body.lineHeight / MEMO_CONTENT_STYLE.body.fontSize;
-const BODY_FONT_SIZE = `${MEMO_CONTENT_STYLE.body.fontSize}px`;
-const PARAGRAPH_SPACING = `${MEMO_CONTENT_STYLE.body.paragraphSpacing}px`;
+const PARAGRAPH_SPACING = `${NOTE_PROSE_PARAGRAPH_SPACING_PX}px`;
 
-const WECHAT_STYLES: Record<string, string> = {
-  p: `margin: 0 0 ${PARAGRAPH_SPACING}; padding: 0; line-height: ${BODY_LINE_HEIGHT}; font-size: ${BODY_FONT_SIZE}; color: #333;`,
-  h1: "margin: 1.2em 0 0.6em; font-size: 24px; line-height: 1.35; font-weight: 700; color: #1f2937;",
-  h2: "margin: 1.1em 0 0.55em; font-size: 21px; line-height: 1.4; font-weight: 700; color: #1f2937;",
-  h3: "margin: 1em 0 0.5em; font-size: 18px; line-height: 1.45; font-weight: 700; color: #1f2937;",
-  h4: "margin: 0.95em 0 0.45em; font-size: 16px; line-height: 1.5; font-weight: 700; color: #1f2937;",
-  h5: "margin: 0.9em 0 0.4em; font-size: 15px; line-height: 1.5; font-weight: 700; color: #1f2937;",
-  h6: "margin: 0.85em 0 0.35em; font-size: 14px; line-height: 1.5; font-weight: 700; color: #1f2937;",
-  blockquote: `margin: 1em 0; padding: 0.6em 1em; border-left: 4px solid #10b981; background: #f0fdf4; color: #4b5563; line-height: ${BODY_LINE_HEIGHT};`,
-  ul: `margin: 0 0 1em; padding-left: 1.6em; line-height: ${BODY_LINE_HEIGHT};`,
-  ol: `margin: 0 0 1em; padding-left: 1.6em; line-height: ${BODY_LINE_HEIGHT};`,
-  li: `margin: 0.25em 0; line-height: ${BODY_LINE_HEIGHT};`,
-  a: "color: #059669; text-decoration: underline;",
-  strong: "font-weight: 700;",
-  em: "font-style: italic;",
-  del: "text-decoration: line-through;",
-  code: "padding: 0.15em 0.35em; border-radius: 3px; background: #f3f4f6; color: #be123c; font-family: Menlo, Consolas, monospace; font-size: 0.9em;",
-  pre: "margin: 1em 0; padding: 12px 14px; overflow: hidden; border-radius: 6px; background: #f6f8fa; color: #24292f; line-height: 1.6; text-align: left;",
-  hr: "margin: 1.5em 0; border: 0; border-top: 1px solid #e5e7eb;",
-  table: "width: 100%; margin: 1em 0; border-collapse: collapse; font-size: 14px; line-height: 1.6;",
-  th: "padding: 8px; border: 1px solid #d1d5db; background: #f3f4f6; font-weight: 700; text-align: left;",
-  td: "padding: 8px; border: 1px solid #d1d5db; text-align: left;",
-  img: "display: block; max-width: 100%; height: auto; margin: 1em auto;",
+const HEADING_LAYOUT = {
+  h1: { margin: "1.2em 0 0.6em", lineHeight: 1.35 },
+  h2: { margin: "1.1em 0 0.55em", lineHeight: 1.4 },
+  h3: { margin: "1em 0 0.5em", lineHeight: 1.45 },
+  h4: { margin: "0.95em 0 0.45em", lineHeight: 1.5 },
+  h5: { margin: "0.9em 0 0.4em", lineHeight: 1.5 },
+  h6: { margin: "0.85em 0 0.35em", lineHeight: 1.5 },
+} as const;
+
+type WeChatMetrics = {
+  fontSize: number;
+  lineHeight: number;
+};
+
+const headingStyle = (tag: keyof typeof HEADING_LAYOUT, metrics: WeChatMetrics, color: string) => {
+  const layout = HEADING_LAYOUT[tag];
+  const size = Math.round(metrics.fontSize * NOTE_PROSE_HEADING_SCALE[tag]);
+  return `margin: ${layout.margin}; font-size: ${size}px; line-height: ${layout.lineHeight}; font-weight: 700; color: ${color};`;
 };
 
 const applyLegacyWeChatStyles = (
   root: HTMLElement,
-  customColors?: { bg: string; text: string; accent: string; soft: string; codeBackground: string; border: string } | null,
+  metrics: WeChatMetrics,
+  colors: NoteProsePaletteColors | null,
+  accentOnly = false,
 ) => {
-  const textColor = customColors ? customColors.text : "#333";
-  const bgColors = customColors ? customColors.bg : "#ffffff";
-  const accent = customColors ? customColors.accent : "#059669";
-  const soft = customColors ? customColors.soft : "#f0fdfa";
-  const codeBackground = customColors ? customColors.codeBackground : "#f6f8fa";
-  const border = customColors ? customColors.border : "#e5e7eb";
+  const fontSize = `${metrics.fontSize}px`;
+  const lineHeight = String(metrics.lineHeight);
+  const codeSize = `${noteProseCodeFontSize(metrics.fontSize)}px`;
+  // Named hues move link, inline-code, and bold ink. The rest stays on the WeChat defaults.
+  const painted = accentOnly ? null : colors;
+  const text = painted?.text ?? "#333";
+  const headingColor = painted?.text ?? "#1f2937";
+  const background = painted?.background ?? "#ffffff";
+  const accent = colors?.accent ?? "#059669";
+  const quoteBorder = painted?.accent ?? "#10b981";
+  const quoteBackground = painted?.surface ?? "#f0fdf4";
+  const quoteColor = painted?.muted ?? "#4b5563";
+  const link = colors?.link ?? "#059669";
+  const inlineCodeBackground = painted?.codeBackground ?? "#f3f4f6";
+  const inlineCodeColor = (accentOnly ? colors?.codeText : painted?.codeText) ?? "#be123c";
+  const preBackground = painted?.codeBackground ?? "#f6f8fa";
+  const preColor = painted?.codeText ?? "#24292f";
+  const ruleColor = painted?.divider ?? "#e5e7eb";
+  const cellBorder = painted?.divider ?? "#d1d5db";
+  const headBackground = painted?.surface ?? "#f3f4f6";
+  const cellColor = painted ? ` color: ${text};` : "";
+  const bold = colors ? `font-weight: 700; color: ${accent};` : "font-weight: 700;";
+  const styles: Record<string, string> = {
+    p: `margin: 0 0 ${PARAGRAPH_SPACING}; padding: 0; line-height: ${lineHeight}; font-size: ${fontSize}; color: ${text};`,
+    h1: headingStyle("h1", metrics, headingColor),
+    h2: headingStyle("h2", metrics, headingColor),
+    h3: headingStyle("h3", metrics, headingColor),
+    h4: headingStyle("h4", metrics, headingColor),
+    h5: headingStyle("h5", metrics, headingColor),
+    h6: headingStyle("h6", metrics, headingColor),
+    blockquote: `margin: 1em 0; padding: 0.6em 1em; border-left: 4px solid ${quoteBorder}; background: ${quoteBackground}; color: ${quoteColor}; line-height: ${lineHeight};`,
+    ul: `margin: 0 0 1em; padding-left: 1.6em; line-height: ${lineHeight};`,
+    ol: `margin: 0 0 1em; padding-left: 1.6em; line-height: ${lineHeight};`,
+    li: `margin: 0.25em 0; line-height: ${lineHeight};`,
+    a: `color: ${link}; text-decoration: underline;`,
+    strong: bold,
+    b: bold,
+    em: "font-style: italic;",
+    del: "text-decoration: line-through;",
+    code: `padding: 0.15em 0.35em; border-radius: 3px; background: ${inlineCodeBackground}; color: ${inlineCodeColor}; font-family: Menlo, Consolas, monospace; font-size: ${codeSize};`,
+    pre: `margin: 1em 0; padding: 12px 14px; overflow: hidden; border-radius: 6px; background: ${preBackground}; color: ${preColor}; line-height: 1.6; text-align: left;`,
+    hr: `margin: 1.5em 0; border: 0; border-top: 1px solid ${ruleColor};`,
+    table: `width: 100%; margin: 1em 0; border-collapse: collapse; font-size: ${fontSize}; line-height: 1.6;`,
+    th: `padding: 8px; border: 1px solid ${cellBorder}; background: ${headBackground}; font-weight: 700; text-align: left;${cellColor}`,
+    td: `padding: 8px; border: 1px solid ${cellBorder}; text-align: left;${cellColor}`,
+    img: "display: block; max-width: 100%; height: auto; margin: 1em auto;",
+  };
 
-  root.style.cssText = `font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${BODY_FONT_SIZE}; line-height: ${BODY_LINE_HEIGHT}; color: ${textColor}; background-color: ${bgColors}; word-break: break-word;`;
+  root.style.cssText = `font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: ${fontSize}; line-height: ${lineHeight}; color: ${text}; background-color: ${background}; word-break: break-word;`;
 
   root.querySelectorAll<HTMLElement>("*").forEach((element) => {
     const tagName = element.tagName.toLowerCase();
-    let style = WECHAT_STYLES[tagName] || "";
     const isMergeDivider =
       tagName === "hr" && element.matches("[data-edgeever-merge-divider], .edgeever-merge-divider");
-
-    if (isMergeDivider) {
-      style = `margin: 1.75em 0; border: 0; border-top: 2px solid ${accent};`;
-    } else if (customColors) {
-      if (tagName === "p") {
-        style = `margin: 0 0 ${PARAGRAPH_SPACING}; padding: 0; line-height: ${BODY_LINE_HEIGHT}; font-size: ${BODY_FONT_SIZE}; color: ${textColor};`;
-      } else if (tagName === "h1" || tagName === "h2" || tagName === "h3" || tagName === "h4" || tagName === "h5" || tagName === "h6") {
-        style = style.replace("color: #1f2937;", `color: ${textColor};`);
-      } else if (tagName === "blockquote") {
-        style = `margin: 1em 0; padding: 0.6em 1em; border-left: 4px solid ${accent}; background: ${soft}; color: ${textColor}; line-height: ${BODY_LINE_HEIGHT};`;
-      } else if (tagName === "a") {
-        style = `color: ${accent}; text-decoration: underline;`;
-      } else if (tagName === "code") {
-        style = `padding: 0.15em 0.35em; border-radius: 3px; background: ${codeBackground}; color: ${textColor}; font-family: Menlo, Consolas, monospace; font-size: 0.9em;`;
-      } else if (tagName === "pre") {
-        style = `margin: 1em 0; padding: 12px 14px; overflow: hidden; border-radius: 6px; background: ${codeBackground}; color: ${textColor}; line-height: 1.6; text-align: left;`;
-      } else if (tagName === "hr") {
-        style = `margin: 1.5em 0; border: 0; border-top: 1px solid ${border};`;
-      } else if (tagName === "th") {
-        style = `padding: 8px; border: 1px solid ${border}; background: ${soft}; font-weight: 700; text-align: left; color: ${textColor};`;
-      } else if (tagName === "td") {
-        style = `padding: 8px; border: 1px solid ${border}; text-align: left; color: ${textColor};`;
-      }
-    }
-
+    const style = isMergeDivider
+      ? `margin: 1.75em 0; border: 0; border-top: 2px solid ${accent};`
+      : styles[tagName] || "";
     if (style) element.style.cssText = `${style}${element.style.cssText}`;
   });
 
   root.querySelectorAll<HTMLElement>("pre code").forEach((element) => {
-    element.style.cssText = "padding: 0; background: transparent; color: inherit; font-family: Menlo, Consolas, monospace; font-size: 13px; white-space: pre-wrap;";
+    element.style.cssText = `padding: 0; background: transparent; color: inherit; font-family: Menlo, Consolas, monospace; font-size: ${codeSize}; white-space: pre-wrap;`;
   });
+
+  if (colors?.accent) {
+    root.querySelectorAll<HTMLElement>('ul[data-type="taskList"] li[data-checked] > label input').forEach((element) => {
+      element.style.accentColor = colors.accent;
+    });
+  }
 };
 
 const applyInlineStyles = (
   root: HTMLElement,
-  editorTheme?: string,
-  customColors?: { bg: string; text: string; accent: string; soft: string; codeBackground: string; border: string } | null,
+  metrics: WeChatMetrics,
+  colors: NoteProsePaletteColors | null,
   customCss?: string,
+  accentOnly = false,
 ) => {
-  const paperTheme = resolvePaperEditorTheme(editorTheme);
-  if (paperTheme) {
-    applyPublishLayout(root, paperTheme.layout, paperTheme.palette, "phone");
-  } else {
-    applyLegacyWeChatStyles(root, customColors);
-  }
+  applyLegacyWeChatStyles(root, metrics, colors, accentOnly);
 
   const customStyles = customCss ? parseCustomCssToStyles(customCss) : null;
   if (!customStyles) return;
@@ -452,26 +475,46 @@ const convertImageGalleriesForWeChat = (root: HTMLElement) => {
   });
 };
 
+const readCssNumber = (value: string | undefined, fallback: number) => {
+  const parsed = Number.parseFloat(value ?? "");
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const readPaletteColor = (style: CSSStyleDeclaration, name: string) => style.getPropertyValue(name).trim();
+
 export const readEditorCopyContext = (from?: HTMLElement | null) => {
-  const closestContainer = from?.closest<HTMLElement>("[data-editor-theme]")
-    ?? document.querySelector<HTMLElement>("[data-editor-theme]");
-  const editorTheme = closestContainer?.dataset.editorTheme;
-  let customColors: { bg: string; text: string; accent: string; soft: string; codeBackground: string; border: string } | null = null;
-  if (closestContainer && editorTheme === "custom") {
-    const colors = getComputedStyle(closestContainer);
-    customColors = {
-      bg: colors.getPropertyValue("--editor-theme-bg") || "#ffffff",
-      text: colors.getPropertyValue("--editor-theme-text") || "#1f2937",
-      accent: colors.getPropertyValue("--editor-theme-accent") || "#059669",
-      soft: colors.getPropertyValue("--editor-theme-soft") || "#ecfdf5",
-      codeBackground: colors.getPropertyValue("--editor-theme-code-bg") || "#e0ece9",
-      border: colors.getPropertyValue("--editor-theme-border") || "#a7f3d0",
-    };
+  const container = from?.closest<HTMLElement>("[data-note-palette]")
+    ?? from?.closest<HTMLElement>("[data-editor-theme]")
+    ?? document.querySelector<HTMLElement>("[data-note-palette], [data-editor-theme]");
+  const style = container ? getComputedStyle(container) : null;
+  const fontSize = readCssNumber(style?.getPropertyValue("--editor-body-font-size"), DEFAULT_NOTE_PROSE_FONT_SIZE);
+  const lineHeight = parseNoteProseLineHeight(style?.getPropertyValue("--editor-body-line-height").trim())
+    ?? DEFAULT_NOTE_PROSE_LINE_HEIGHT;
+  const palette = container?.dataset.notePalette;
+  let colors: NoteProsePaletteColors | null = null;
+  if (style && palette && palette !== "native") {
+    const accent = readPaletteColor(style, "--note-palette-accent");
+    const text = readPaletteColor(style, "--note-palette-text");
+    if (accent && text) {
+      colors = {
+        accent,
+        text,
+        muted: readPaletteColor(style, "--note-palette-muted") || text,
+        surface: readPaletteColor(style, "--note-palette-surface") || "#f8fafc",
+        divider: readPaletteColor(style, "--note-palette-divider") || "#e5e7eb",
+        link: readPaletteColor(style, "--note-palette-link") || accent,
+        codeBackground: readPaletteColor(style, "--note-palette-code-bg") || "#f6f8fa",
+        codeText: readPaletteColor(style, "--note-palette-code-text") || text,
+        background: readPaletteColor(style, "--note-palette-bg") || "#ffffff",
+      };
+    }
   }
-  const customStyleTag = closestContainer?.querySelector<HTMLStyleElement>("style[data-theme-custom-css]");
+  const customStyleTag = container?.querySelector<HTMLStyleElement>("style[data-theme-custom-css]");
   return {
-    editorTheme,
-    customColors,
+    fontSize,
+    lineHeight,
+    colors,
+    accentOnly: Boolean(palette && palette !== "native"),
     customCss: customStyleTag?.dataset.originalCss || "",
   };
 };
@@ -479,16 +522,16 @@ export const readEditorCopyContext = (from?: HTMLElement | null) => {
 export const preparePublishArticle = (
   html: string,
   from?: HTMLElement | null,
-  editorThemeOverride?: string,
 ) => {
   const root = document.createElement("div");
   root.innerHTML = html;
   const context = readEditorCopyContext(from);
   applyInlineStyles(
     root,
-    editorThemeOverride ?? context.editorTheme,
-    context.customColors,
+    { fontSize: context.fontSize, lineHeight: context.lineHeight },
+    context.colors,
     context.customCss,
+    context.accentOnly,
   );
   flattenDetailsForLinearHtml(root);
   convertImageGalleriesForWeChat(root);

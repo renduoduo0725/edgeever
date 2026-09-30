@@ -159,6 +159,12 @@
   "capturedAtLabel": {
     "message": "抓取时间"
   },
+  "googleSearchLabel": {
+    "message": "Google 搜索"
+  },
+  "searchKeywordLabel": {
+    "message": "关键词"
+  },
   "noAvailableNotebooks": {
     "message": "EdgeEver 中没有可用的笔记本。"
   },

@@ -159,6 +159,12 @@
   "capturedAtLabel": {
     "message": "取り込み日時"
   },
+  "googleSearchLabel": {
+    "message": "Google 検索"
+  },
+  "searchKeywordLabel": {
+    "message": "キーワード"
+  },
   "noAvailableNotebooks": {
     "message": "EdgeEver に使えるノートブックがありません。"
   },

@@ -11,6 +11,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
+import { useDeployedUpdateNotice } from "@/hooks/useDeployedUpdateNotice";
 import { BETA_BADGE_CLASSNAME } from "@/lib/workspace-ui";
 import type { NoteCreateKind, Notebook } from "@edgeever/shared";
 import type { MobileBottomNavItem, NotebookNode } from "@/lib/app-helpers";
@@ -26,11 +27,13 @@ const MobileBottomNavButton = ({
   active = false,
   icon,
   label,
+  notice = false,
   onClick,
 }: {
   active?: boolean;
   icon: ReactNode;
   label: string;
+  notice?: boolean;
   onClick: () => void;
 }) => (
   <button
@@ -46,7 +49,10 @@ const MobileBottomNavButton = ({
     onClick={onClick}
   >
     {active ? <span aria-hidden="true" className="absolute top-0 h-0.5 w-5 rounded-full bg-slate-950" /> : null}
-    {icon}
+    <span className="relative">
+      {icon}
+      {notice ? <span className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-card" /> : null}
+    </span>
     <span>{label}</span>
   </button>
 );
@@ -67,6 +73,7 @@ export const MobileBottomNav = ({
   onOpenSettings: () => void;
 }) => {
   const { t } = useTranslation();
+  const { unseen: deployedUpdateUnseen } = useDeployedUpdateNotice();
   const createMemoLabel = !canCreateMemo ? t("nav.createDisabled") : isCreating ? t("nav.creating") : t("nav.createMemo");
 
   return (
@@ -117,7 +124,7 @@ export const MobileBottomNav = ({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <MobileBottomNavButton active={activeItem === "settings"} icon={<UserRound className="h-5 w-5" />} label={t("nav.mine")} onClick={onOpenSettings} />
+        <MobileBottomNavButton active={activeItem === "settings"} icon={<UserRound className="h-5 w-5" />} label={t("nav.mine")} notice={deployedUpdateUnseen} onClick={onOpenSettings} />
       </div>
     </nav>
   );

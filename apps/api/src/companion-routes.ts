@@ -1,6 +1,6 @@
-import { CompanionDiscoveryCompleteSchema, CompanionDiscoverySettingsInputSchema, CompanionIdSchema, CompanionMemoryImportSchema, CompanionMemoryInputSchema, CompanionMemoryUpdateSchema,
+import { AiAttachmentSchema, CompanionDiscoveryCompleteSchema, CompanionDiscoverySettingsInputSchema, CompanionIdSchema, CompanionMemoryImportSchema, CompanionMemoryInputSchema, CompanionMemoryUpdateSchema,
   CompanionToolExecuteSchema, CompanionTurnCheckpointSchema, CompanionTurnCompleteSchema,
-  CompanionTurnInputSchema, CompanionTurnResumeSchema, sealCompanionProcess, type CompanionEvent, type CompanionSource, type CompanionToolCall, type CompanionTurnInput } from "@edgeever/shared";
+  CompanionTurnInputSchema, CompanionTurnResumeSchema, sealCompanionProcess, type AiProvider, type CompanionEvent, type CompanionSource, type CompanionToolCall, type CompanionTurnInput } from "@edgeever/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -15,6 +15,7 @@ import { beginCompanionTurn, checkpointCompanionTurn, clearCompanionHistory, com
 import { parseJsonArray, parseJsonObject } from "./companion-tool-receipts";
 import type { streamCompanion } from "./companion-runtime";
 import { prepareCompanionTurn, type CompanionRunState } from "./companion-prepare";
+import { assertCompanionAttachmentsSupported, bindCompanionTurnAttachments, storeCompanionAttachment } from "./companion-attachments";
 import { executeCompanionTurnTool, parseCompanionAgentSession } from "./companion-agent-tools";
 import { applyCompanionAction, dismissCompanionAction, listCompanionActions } from "./companion-actions";
 import { acknowledgeDiscovery, rememberDiscoveryFeedback, checkDiscoveries, completeDiscoveryGeneration, discoveryPreparePayload, getDiscoverySettings, listDiscoveries, saveDiscoverySettings, startDiscoveryCheck } from "./companion-discovery";
@@ -43,10 +44,11 @@ export const companionGenerationFailure = (error: unknown): { code: string } => 
 
 const streamCompanionTurn = (
   c: AppContext,
-  dependencies: { stream?: typeof streamCompanion },
+  dependencies: { stream?: typeof streamCompanion; loadCredentials?: typeof loadDefaultAiModelCredentials },
   args: {
     db: AppContext["env"]["storage"]["db"]; scope: CompanionScope; row: TurnRow; input: CompanionTurnInput;
-    model: Awaited<ReturnType<typeof loadDefaultAiModel>>; resume?: { response?: string; answers?: import("@edgeever/shared").CompanionAnswer[] };
+    model: Awaited<ReturnType<typeof loadDefaultAiModel>>; provider?: AiProvider;
+    resume?: { response?: string; answers?: import("@edgeever/shared").CompanionAnswer[] };
   },
 ) => {
   const { db, scope, row, input, model } = args;
@@ -98,9 +100,13 @@ const streamCompanionTurn = (
         const [memories, history] = await Promise.all([listCompanionMemories(db, scope), listCompanionTurns(db, scope, input.threadId)]);
         const stream = dependencies.stream ?? (await import("./companion-runtime")).streamCompanion;
         await assertActive();
+        let provider = args.provider;
+        if (!provider && parseJsonArray(row.attachment_meta_json).length) {
+          provider = (await (dependencies.loadCredentials ?? loadDefaultAiModelCredentials)(db, scope.workspaceId, c.env)).provider;
+        }
         const result = await stream({
           db, scope, input, model, memories, history, revision: row.memory_revision, signal, sources, assertActive, context: c, run,
-          resume: args.resume,
+          resume: args.resume, provider,
         });
         for await (const part of result.fullStream) {
           signal.throwIfAborted();
@@ -155,7 +161,12 @@ export const registerCompanionRoutes = (parent: Hono<AppEnv>, dependencies: {
 }) => {
   const app = new Hono<AppEnv>();
   app.onError((error, c) => fail(c, error));
-  app.use("/api/v1/companion/*", bodyLimit({ maxSize: 128 * 1024 }));
+  // Upload bodies exceed the JSON limit used by the rest of the companion API.
+  const limitCompanionBody = bodyLimit({ maxSize: 128 * 1024 });
+  app.use("/api/v1/companion/*", (c, next) => {
+    if (c.req.path.endsWith("/companion/attachments") && c.req.method === "POST") return next();
+    return limitCompanionBody(c, next);
+  });
   app.use("/api/v1/companion/*", async (c, next) => {
     const denied = requireUser(c);
     if (denied) return denied;
@@ -430,12 +441,33 @@ export const registerCompanionRoutes = (parent: Hono<AppEnv>, dependencies: {
     return c.json({ memories: await importCompanionMemories(c.env.storage.db, scope, c.req.valid("json").memories, c.req.valid("json").controls) });
   });
 
+  const cancelTurn = async (db: AppContext["env"]["storage"]["db"], scope: CompanionScope, id: string) => {
+    await db.prepare("UPDATE companion_turns SET status = 'cancelled' WHERE id = ? AND workspace_id = ? AND owner_id = ?")
+      .bind(id, scope.workspaceId, scope.ownerId).run();
+  };
+  const bindTurnAttachments = async (db: AppContext["env"]["storage"]["db"], scope: CompanionScope, turnId: string, ids?: string[]) => {
+    try {
+      await bindCompanionTurnAttachments(db, scope, turnId, ids);
+    } catch (error) {
+      await cancelTurn(db, scope, turnId);
+      throw error;
+    }
+  };
+  app.post("/api/v1/companion/attachments", bodyLimit({ maxSize: 7 * 1024 * 1024 }), zValidator("json", AiAttachmentSchema), async c => {
+    return c.json(await storeCompanionAttachment(c.env.storage.db, scopeFor(c), c.req.valid("json")));
+  });
   app.post("/api/v1/companion/turns", zValidator("json", CompanionTurnInputSchema), async c => {
     const input = c.req.valid("json");
     const db = c.env.storage.db;
     const scope = scopeFor(c);
     const duplicate = await getCompanionTurn(db, scope, input.id);
     if (duplicate) return apiError(c, "companion_request_exists", "This request already exists. Recover it by its ID; it will not be billed again.", 409);
+    let provider: AiProvider | undefined;
+    if (input.attachmentIds?.length) {
+      const credentials = await (dependencies.loadCredentials ?? loadDefaultAiModelCredentials)(db, scope.workspaceId, c.env);
+      provider = credentials.provider;
+      await assertCompanionAttachmentsSupported(db, scope, credentials.provider, input.attachmentIds);
+    }
     const model = await (dependencies.loadModel ?? loadDefaultAiModel)(db, scope.workspaceId, c.env);
     await listCompanionMemories(db, scope);
     const expectedRevision = await companionRevision(db, scope);
@@ -443,10 +475,11 @@ export const registerCompanionRoutes = (parent: Hono<AppEnv>, dependencies: {
     input.useMemory = input.useMemory && settings.useMemory === true;
     const row = await beginCompanionTurn(db, scope, input, model.modelId);
     if (row.memory_revision !== expectedRevision) {
-      await db.prepare("UPDATE companion_turns SET status = 'cancelled' WHERE id = ? AND workspace_id = ? AND owner_id = ?").bind(row.id, scope.workspaceId, scope.ownerId).run();
+      await cancelTurn(db, scope, row.id);
       throw new AppError("companion_context_changed", "Memory settings changed. Retry with current settings.", 409);
     }
-    return streamCompanionTurn(c, dependencies, { db, scope, row, input, model });
+    await bindTurnAttachments(db, scope, row.id, input.attachmentIds);
+    return streamCompanionTurn(c, dependencies, { db, scope, row, input, model, provider });
   });
   app.post("/api/v1/companion/turns/prepare", zValidator("json", CompanionTurnInputSchema), async c => {
     const input = c.req.valid("json");
@@ -455,15 +488,19 @@ export const registerCompanionRoutes = (parent: Hono<AppEnv>, dependencies: {
     const duplicate = await getCompanionTurn(db, scope, input.id);
     if (duplicate) return apiError(c, "companion_request_exists", "This request already exists. Recover it by its ID; it will not be billed again.", 409);
     const credentials = await (dependencies.loadCredentials ?? loadDefaultAiModelCredentials)(db, scope.workspaceId, c.env);
+    if (input.attachmentIds?.length) {
+      await assertCompanionAttachmentsSupported(db, scope, credentials.provider, input.attachmentIds);
+    }
     await listCompanionMemories(db, scope);
     const expectedRevision = await companionRevision(db, scope);
     const settings = await getDiscoverySettings(db, scope);
     input.useMemory = input.useMemory && settings.useMemory === true;
     const row = await beginCompanionTurn(db, scope, input, credentials.modelId);
     if (row.memory_revision !== expectedRevision) {
-      await db.prepare("UPDATE companion_turns SET status = 'cancelled' WHERE id = ? AND workspace_id = ? AND owner_id = ?").bind(row.id, scope.workspaceId, scope.ownerId).run();
+      await cancelTurn(db, scope, row.id);
       throw new AppError("companion_context_changed", "Memory settings changed. Retry with current settings.", 409);
     }
+    await bindTurnAttachments(db, scope, row.id, input.attachmentIds);
     return c.json(await prepareCompanionTurn({ db, scope, input, row, credentials }));
   });
   parent.route("/", app);

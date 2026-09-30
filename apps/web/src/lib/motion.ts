@@ -14,6 +14,8 @@ export const paneEnterMotion: MotionProps = {
   transition: transition(0.18),
 };
 
+export const sidebarRevealTransition: Transition = transition(0.32);
+
 export const contentEnterMotion: MotionProps = {
   initial: { opacity: 0, y: 4 },
   animate: { opacity: 1, y: 0 },

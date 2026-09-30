@@ -146,17 +146,33 @@ describe("shared companion MCP adapter", () => {
   test("create_memo, update_memo and trash_memos execute immediately", async () => {
     const f = await setup();
     const tools = createCompanionTools({ ...f, scope, signal: new AbortController().signal, assertActive: async () => {}, sources: [] });
+    await expect(tools.update_memo.execute({ memoId: f.notes[0].id, contentMarkdown: "unread" })).rejects.toMatchObject({ code: "companion_action_unread" });
     const created = await tools.create_memo.execute({ notebookId: "ideas", title: "New", contentMarkdown: "Exact new body" });
     expect(created).toMatchObject({ applied: true });
     const createdId = created.memo?.id ?? created.id;
     expect(createdId).toBeTruthy();
     expect(await getMemoDetail(f.db, scope.workspaceId, createdId)).toMatchObject({ title: "New", contentMarkdown: "Exact new body" });
+    expect(await tools.trash_memos.execute({ memoIds: [createdId] })).toMatchObject({ applied: true });
+    expect((await getMemoDetail(f.db, scope.workspaceId, createdId, true)).isDeleted).toBe(true);
+    await tools.get_memo.execute({ memoId: f.notes[1].id });
+    expect(await tools.update_memo.execute({ memoId: f.notes[1].id, title: "Title only" })).toMatchObject({ applied: true });
+    expect(await getMemoDetail(f.db, scope.workspaceId, f.notes[1].id)).toMatchObject({ title: "Title only", contentMarkdown: "Two original content" });
     await tools.get_memo.execute({ memoId: f.notes[0].id });
-    expect(await tools.update_memo.execute({ memoId: f.notes[0].id, title: "Changed", contentMarkdown: "Exact replacement" })).toMatchObject({ applied: true });
+    const proposed = await tools.update_memo.execute({ memoId: f.notes[0].id, title: "Changed", contentMarkdown: "Exact replacement" });
+    const proposalId = proposed.proposalId;
+    expect(proposed).toMatchObject({ status: "awaiting_user_confirmation", proposalId: expect.any(String) });
+    expect(await getMemoDetail(f.db, scope.workspaceId, f.notes[0].id)).toMatchObject({ title: "One", contentMarkdown: "One original content" });
+    expect((await getCompanionAction(f.db, scope, proposalId))?.preview?.baseContentMarkdown).toBe("One original content");
+    const fresh = await getMemoDetail(f.db, scope.workspaceId, f.notes[1].id);
+    const conflictId = await f.propose("update_memo", { memoId: f.notes[1].id, contentMarkdown: "Should not land" }, new Map([[f.notes[1].id, fresh.revision]]));
+    f.sqlite.query("UPDATE memo_contents SET revision = revision + 1 WHERE memo_id = ?").run(f.notes[1].id);
+    await f.complete();
+    expect((await f.request(`actions/${proposalId}/apply`)).status).toBe(200);
     expect(await getMemoDetail(f.db, scope.workspaceId, f.notes[0].id)).toMatchObject({ title: "Changed", contentMarkdown: "Exact replacement" });
-    expect(await tools.trash_memos.execute({ memoIds: [f.notes[0].id] })).toMatchObject({ applied: true });
-    expect((await getMemoDetail(f.db, scope.workspaceId, f.notes[0].id, true)).isDeleted).toBe(true);
-    expect(f.sqlite.query("SELECT COUNT(*) AS n FROM companion_actions").get().n).toBe(0);
+    const conflict = await f.request(`actions/${conflictId}/apply`);
+    expect(conflict.status).toBe(409);
+    expect(await conflict.json()).toMatchObject({ error: { code: "companion_action_conflict" } });
+    expect(await getMemoDetail(f.db, scope.workspaceId, f.notes[1].id)).toMatchObject({ title: "Title only", contentMarkdown: "Two original content" });
   });
   test("move, tag, and notebook writes execute immediately without a confirmation card", async () => {
     const f = await setup();
@@ -199,6 +215,10 @@ describe("shared companion MCP adapter", () => {
     });
     expect(JSON.stringify(diagramMemo)).not.toContain("edgeever-diagram-v1");
     expect(diagramMemo.content).toBeUndefined();
+    await expect(tools.update_memo.execute({ memoId: created.id, contentMarkdown: "# no" })).rejects.toThrow(
+      "This is an editable diagram. Change it with update_diagram, not update_memo.",
+    );
+    expect(f.sqlite.query("SELECT COUNT(*) AS n FROM companion_actions").get().n).toBe(0);
     expect(() => validateCompanionTool("update_diagram", {
       memoId: created.id, expectedRevision: 0,
       operations: [{ op: "add_node", node: { id: "eval", label: "评估", parentId: "root" } }],

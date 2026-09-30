@@ -23,7 +23,8 @@ import {
   ChevronUp,
   FileCode2,
   FileText,
-  Palette,
+  Heading,
+  Paintbrush,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MEMO_EDITOR_TOOLBAR_COLLAPSED_CLASS_NAME } from "@/components/MemoEditorChromeDensity";
@@ -35,7 +36,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -52,10 +52,7 @@ import { CODE_BLOCK_LANGUAGES, getCodeBlockLanguageValue } from "@/lib/code-bloc
 import { EditorTableMenu } from "@/components/EditorTableMenu";
 import { wrapIndentedParagraphInList } from "@/lib/editor-shortcuts";
 import {
-  EDITOR_THEME_NAMES,
   MARKDOWN_THEME_PREFERENCES,
-  localizeStoredCustomThemeName,
-  useEditorTheme,
   useMarkdownTheme,
 } from "@/components/ThemeProvider";
 
@@ -199,8 +196,6 @@ export const EditorToolbar = ({
 }) => {
   const { t } = useTranslation();
   const { markdownThemePreference, setMarkdownTheme } = useMarkdownTheme();
-  const { editorTheme, setEditorTheme, customEditorThemes } = useEditorTheme();
-  const namedEditorThemes = EDITOR_THEME_NAMES.filter((theme) => theme !== "custom");
   const controlsRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(readEditorToolbarExpandedPreference);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -422,16 +417,23 @@ export const EditorToolbar = ({
             </>
           )}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
-                type="button"
-                aria-label={t("editorToolbar.appearance")}
-                onMouseDown={(event) => event.preventDefault()}
-              >
-                <Palette className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                    type="button"
+                    aria-label={markdownMode ? t("editorToolbar.markdownTheme") : t("editorToolbar.blockStyle")}
+                    onMouseDown={(event) => event.preventDefault()}
+                  >
+                    {markdownMode ? <Paintbrush className="h-4 w-4" /> : <Heading className="h-4 w-4" />}
+                  </button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {markdownMode ? t("editorToolbar.markdownTheme") : t("editorToolbar.blockStyle")}
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="start" className="max-h-80 w-52 overflow-y-auto border border-slate-200 bg-card py-1 shadow-md">
               {markdownMode ? (
                 <>
@@ -449,23 +451,6 @@ export const EditorToolbar = ({
                 </>
               ) : (
                 <>
-                  <DropdownMenuLabel className="text-xs text-slate-500">{t("editorToolbar.editorTheme")}</DropdownMenuLabel>
-                  <DropdownMenuRadioGroup value={editorTheme} onValueChange={(value) => setEditorTheme(value)}>
-                    {namedEditorThemes.map((theme) => (
-                      <DropdownMenuRadioItem key={theme} value={theme} className="text-xs leading-5">
-                        {t(`settings.editorThemes.${theme}`)}
-                      </DropdownMenuRadioItem>
-                    ))}
-                    {customEditorThemes.map((theme) => (
-                      <DropdownMenuRadioItem key={theme.id} value={theme.id} className="text-xs leading-5">
-                        {localizeStoredCustomThemeName(theme.name, {
-                          defaultName: t("settings.customEditorTheme.defaultName"),
-                          newName: (index) => t("settings.customEditorTheme.newName", { n: index }),
-                        })}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                  <DropdownMenuSeparator />
                   <DropdownMenuLabel className="text-xs text-slate-500">{t("editorToolbar.blockStyle")}</DropdownMenuLabel>
                   <DropdownMenuRadioGroup value={blockValue} onValueChange={(value) => setBlock(value)}>
                     <DropdownMenuRadioItem value="paragraph" className="text-xs leading-5" disabled={disabled}>

@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { sanitizeAndScopeCss } from "@/lib/css-sandbox";
 import {
   CustomEditorThemeFileError,
   DEFAULT_CUSTOM_LIGHT_COLORS,
@@ -217,18 +216,6 @@ export const CustomEditorThemeDialog = ({
           ) : null}
           {importError ? <p className="rounded-md bg-red-50 px-2.5 py-2 text-xs leading-4 text-red-700" role="alert">{importError}</p> : null}
 
-          {/* Custom CSS Textarea */}
-          <label className="grid gap-1 text-xs font-semibold text-slate-700">
-            {t("settings.customEditorTheme.customCss", "Custom CSS (高级自定义样式表)")}
-            <textarea
-              value={draft.customCss || ""}
-              onChange={(event) => setDraft((current) => ({ ...current, customCss: event.target.value }))}
-              placeholder="e.g. h1 { font-style: italic; } blockquote { border-radius: 6px; }"
-              className="min-h-[72px] w-full rounded-md border border-slate-200 bg-card p-2 font-mono text-xs focus:border-slate-900 focus:outline-none"
-              maxLength={2000}
-            />
-          </label>
-
           {/* Preview Panel */}
           <div
             className="edgeever-editor rounded-lg border transition-all"
@@ -244,9 +231,6 @@ export const CustomEditorThemeDialog = ({
                 padding: "0.75rem",
               }}
             >
-              {draft.customCss && (
-                <style dangerouslySetInnerHTML={{ __html: sanitizeAndScopeCss(draft.customCss) }} />
-              )}
               <div className="text-sm font-semibold mb-0.5" style={{ color: activeColors.heading }}>
                 {t("settings.customEditorTheme.previewTitle")}
               </div>

@@ -1,6 +1,6 @@
 <div align="center">
   <h1>
-    <img src="assets/brand/edgeever-icon.svg" alt="EdgeEver のロゴ" width="40" align="absmiddle" /> EdgeEver
+    <img src="assets/brand/edgeever-icon.svg" alt="EdgeEver のロゴ" width="48" align="absmiddle" /> EdgeEver
   </h1>
   <p>
     <b>オープンソース、AI ネイティブ、Cloudflare 無料枠 / Docker で自前運用できる Evernote 代替ノート</b>
@@ -10,6 +10,7 @@
     <a href="https://github.com/tianma-if/edgeever/network/members"><img src="https://img.shields.io/github/forks/tianma-if/edgeever?style=social" alt="GitHub Forks" /></a>
     <a href="https://github.com/tianma-if/edgeever/pkgs/container/edgeever"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls" alt="Docker Pulls" /></a>
     <a href="https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social"><img src="https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt" alt="Product Hunt" /></a>
+    <a href="https://hellogithub.com/repository/tianma-if/edgeever" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=150fee4403f6433880bda91e9576ac06&claim_uid=TWNAjisURpnhL1l&theme=small" alt="Featured｜HelloGitHub" /></a>
     <a href="https://afdian.com/a/tianma-if"><img src="https://img.shields.io/badge/Afdian-946ce6?style=social&logo=github-sponsors" alt="Sponsor on Afdian" /></a>
   </p>
   <p>
@@ -145,9 +146,11 @@ GitHub ホストのインストーラと公式 GHCR イメージを使います�
 curl -fsSL https://edgeever.org/install.sh | bash
 ```
 
-このコマンドは最新イメージを引き、管理者パスワードを生成し、Docker Compose で EdgeEver を起動し、毎日の自動更新を設定します。
+このコマンドは最新イメージを引き、管理者パスワードを生成し、Docker Compose で EdgeEver を起動します。
 
 手動導入と設定は [Docker deployment guide](docs/deploy-docker.md) を見てください。
+
+インストール後は既定で毎日自動更新されます。手動で更新する場合は、導入先のサーバーで `~/edgeever/update.sh` を実行してください。
 
 ---
 
@@ -159,13 +162,16 @@ curl -fsSL https://edgeever.org/install.sh | bash
 
 ## ブラウザ Web Clipper
 
-Web Clipper は Chrome、Microsoft Edge、Firefox の公式ストアにあります。使っているブラウザのストアから入れてください（Microsoft Edge は Chrome Web Store 版を直接入れられます）。
-
 <p>
   <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/chrome/chrome.svg" alt="Google Chrome 向け EdgeEver Web Clipper を入れる" width="36" height="36" /></a>&nbsp;&nbsp;
   <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/edge/edge.svg" alt="Microsoft Edge 向け EdgeEver Web Clipper を入れる" width="36" height="36" /></a>&nbsp;&nbsp;
   <a href="https://addons.mozilla.org/ja/firefox/addon/edgeever-web-clipper/"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/firefox/firefox.svg" alt="Firefox 向け EdgeEver Web Clipper を入れる" width="36" height="36" /></a>
 </p>
+
+- **スマートな本文抽出**：Web ページの本文を自動抽出し、クリーンな Markdown に変換。元記事の URL とクリップ日時を保持します。
+- **選択テキストと画像のクリップ**：テキストを選択するか画像を右クリックして、ページ全体を保存することなく直接ノートとして保存できます。
+- **X（旧 Twitter）ポストの保存**：ポストを右クリックして長文を自動展開し、投稿者、日時、添付画像とともに完全な形で保存します。
+- **セルフホストへのプライベート直接通信**：クリップした内容は個人の EdgeEver インスタンスに直接送信され、第三者の中継サーバーを経由しません。
 
 ## コミュニティとフィードバック
 

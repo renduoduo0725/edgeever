@@ -24,6 +24,8 @@ export * from "./memo-content-style";
 export * from "./memo-timestamps";
 export * from "./memo-template-seeds";
 export * from "./note-links";
+export * from "./note-prose";
+export * from "./note-prose-css";
 export * from "./notebooks";
 export * from "./revision-diff";
 export * from "./resource-links";

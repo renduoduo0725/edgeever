@@ -35,6 +35,30 @@ describe("companion prepare payload", () => {
   test("rejects a payload that would send the API key as a target probe", () => {
     expect(parsePreparedCompanion({ ...preparedTurn, apiKey: undefined })).toBeNull();
     expect(parsePreparedCompanion(preparedTurn)?.modelId).toBe("openai/gpt-4o-mini");
+    expect(parsePreparedCompanion(preparedTurn)?.messages).toEqual([{ role: "user", content: "hi" }]);
+  });
+
+  test("keeps user attachment parts and rejects a malformed message", () => {
+    const parts = [
+      { type: "text", text: "hi" },
+      { type: "image", image: "aaaa", mediaType: "image/png" },
+      { type: "file", data: "bbbb", mediaType: "application/pdf", filename: "a.pdf" },
+    ];
+    expect(parsePreparedCompanion({
+      ...preparedTurn,
+      messages: [{ role: "user", content: parts }, { role: "assistant", content: "ok" }],
+    })?.messages).toEqual([
+      { role: "user", content: parts },
+      { role: "assistant", content: "ok" },
+    ]);
+    expect(parsePreparedCompanion({
+      ...preparedTurn,
+      messages: [{ role: "assistant", content: [{ type: "text", text: "no" }] }],
+    })).toBeNull();
+    expect(parsePreparedCompanion({
+      ...preparedTurn,
+      messages: [{ role: "user", content: "hi" }, { role: "user", content: [{ type: "image" }] }],
+    })).toBeNull();
   });
 });
 

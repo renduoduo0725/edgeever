@@ -151,9 +151,9 @@ test.describe("AI custom prompts", () => {
   test("keeps secondary content out of AI integration settings", async ({ page }) => {
     await ensureAuthenticatedPage(page);
     await page.getByRole("button", { name: "个人中心", exact: true }).click();
-    await page.getByRole("button", { name: "AI集成", exact: true }).click();
+    await page.getByRole("button", { name: "模型与代理", exact: true }).click();
 
-    await expect(page.getByRole("heading", { name: "外部 AI 模型", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI 模型服务", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "API Token 与 MCP 配置", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI 指令", exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "进阶玩法", exact: true })).toHaveCount(0);

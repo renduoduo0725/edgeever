@@ -1,6 +1,7 @@
-import { isStepCount, jsonSchema, tool, ToolLoopAgent, type LanguageModel } from "ai";
+import { isStepCount, jsonSchema, tool, ToolLoopAgent, type LanguageModel, type ModelMessage } from "ai";
 import type {
-  CompanionAnswer, CompanionMemory, CompanionSource, CompanionTurnInput,
+  AiProvider, CompanionAnswer, CompanionMemory, CompanionModelContentPart, CompanionPreparedMessage,
+  CompanionSource, CompanionTurnInput,
 } from "@edgeever/shared";
 import type { DatabaseAdapter } from "./storage-contract";
 import type { CompanionScope, TurnRow } from "./companion-service";
@@ -9,7 +10,7 @@ import { companionToolDefinitions, createCompanionTools } from "./companion-agen
 import {
   companionAgentInstructions,
   companionExecutionReceipts,
-  companionResumeMessages,
+  companionModelMessages,
   COMPANION_MAX_OUTPUT_TOKENS,
   COMPANION_MAX_STEPS,
   type CompanionRunState,
@@ -31,10 +32,26 @@ export {
   type CompanionRunState,
 } from "./companion-prepare";
 
+const toModelMessages = (messages: CompanionPreparedMessage[]): ModelMessage[] => messages.map((message): ModelMessage => {
+  if (message.role === "assistant") {
+    if (typeof message.content !== "string") throw new Error("Assistant content must be a string.");
+    return { role: "assistant", content: message.content };
+  }
+  if (typeof message.content === "string") return { role: "user", content: message.content };
+  return {
+    role: "user",
+    content: message.content.map((part: CompanionModelContentPart) => {
+      if (part.type === "text") return { type: "text" as const, text: part.text };
+      if (part.type === "image") return { type: "image" as const, image: part.image, mediaType: part.mediaType };
+      return { type: "file" as const, data: part.data, mediaType: part.mediaType, ...(part.filename ? { filename: part.filename } : {}) };
+    }),
+  };
+});
+
 export const streamCompanion = async (args: {
   db: DatabaseAdapter; scope: CompanionScope; input: CompanionTurnInput; model: LanguageModel;
   memories: CompanionMemory[]; history: TurnRow[]; revision: number; signal: AbortSignal;
-  sources: CompanionSource[]; assertActive: () => Promise<void>;
+  sources: CompanionSource[]; assertActive: () => Promise<void>; provider?: AiProvider;
   context?: AppContext; run?: CompanionRunState; resume?: { response?: string; answers?: CompanionAnswer[] };
 }) => {
   const run = args.run ?? { tools: [], todos: [], questions: [], pause: { ask: false } };
@@ -64,5 +81,9 @@ export const streamCompanion = async (args: {
     maxOutputTokens: COMPANION_MAX_OUTPUT_TOKENS,
     maxRetries: 0,
   });
-  return agent.stream({ messages: companionResumeMessages(args.input, args.history, args.revision, args.resume), abortSignal: args.signal });
+  const messages = await companionModelMessages({
+    db: args.db, scope: args.scope, input: args.input, history: args.history, revision: args.revision,
+    resume: args.resume, provider: args.provider ?? "openai-compatible", turnId: args.input.id,
+  });
+  return agent.stream({ messages: toModelMessages(messages), abortSignal: args.signal });
 };

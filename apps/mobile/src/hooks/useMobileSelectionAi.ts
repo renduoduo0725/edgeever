@@ -65,8 +65,8 @@ export const useMobileSelectionAi = ({
       if (controller.signal.aborted) return;
       const message = requestError instanceof ApiRequestError && requestError.code === "ai_not_configured"
         ? (resolvedLocale === "en-US"
-            ? "Configure a model in AI Integrations on the web or desktop app first."
-            : "请先在 Web 或桌面端的“AI 集成”中配置模型。")
+            ? "Configure a model in Models and agents on the web or desktop app first."
+            : "请先在 Web 或桌面端的“模型与代理”中配置模型。")
         : requestError instanceof Error
           ? requestError.message
           : resolvedLocale !== "zh-CN" ? "AI generation failed." : "AI 生成失败。";

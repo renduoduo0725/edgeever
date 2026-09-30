@@ -140,6 +140,16 @@ html[data-theme="dark"] body {
   color: var(--toolbar-active-fg);
 }
 
+#toolbar button:disabled {
+  opacity: 0.38;
+}
+
+#toolbar button:disabled:active {
+  border-color: transparent;
+  background: transparent;
+  color: var(--toolbar-fg);
+}
+
 /* Scrollable editor body — only this region pans, toolbar stays put. */
 #editor {
   flex: 1 1 auto;

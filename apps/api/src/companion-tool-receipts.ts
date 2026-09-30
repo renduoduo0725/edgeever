@@ -26,6 +26,7 @@ export function describeCompanionTool(
   previous?: Map<string, { revision: number; title?: string }>,
 ): CompanionToolEffect[] {
   const record = asRecord(result);
+  if (record?.status === "awaiting_user_confirmation") return [];
   const memo = asMemo(record?.memo) ?? asMemo(result);
   const prior = (id: string) => previous?.get(id);
   if (name === "search_memos" || name === "list_memos") {

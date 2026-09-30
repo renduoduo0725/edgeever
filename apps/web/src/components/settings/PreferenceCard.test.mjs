@@ -36,13 +36,18 @@ describe("editor body font preference", () => {
   });
 });
 
-describe("editor content alignment preference", () => {
-  test("is configured from settings instead of the per-note toolbar", () => {
+describe("editor content width preference", () => {
+  test("is a device-local reading setting instead of a per-note toolbar control", () => {
     const preferenceCard = readFileSync(new URL("./PreferenceCard.tsx", import.meta.url), "utf8");
     const editorPane = readFileSync(new URL("../EditorPane.tsx", import.meta.url), "utf8");
 
-    expect(preferenceCard).toContain('t("settings.editorContentAlignmentTitle")');
-    expect(preferenceCard).toContain('onEditorContentAlignmentChange(value as EditorContentAlignment)');
+    expect(preferenceCard).toContain('t("settings.editorContentWidthTitle")');
+    expect(preferenceCard).toContain('t("settings.editorContentWidthDescription")');
+    expect(preferenceCard).toContain("onEditorContentWidthChange(value as EditorContentWidth)");
+    expect(preferenceCard).toContain('hidden min-h-16 flex-col');
+    expect(preferenceCard).toContain("lg:flex");
+    expect(editorPane).toContain('window.matchMedia("(min-width: 1024px)")');
+    expect(editorPane).toContain("editorContentColumnMaxWidth");
     expect(editorPane).not.toContain("onToggleEditorContentAlignment");
   });
 });
@@ -59,16 +64,37 @@ describe("appearance preference", () => {
   });
 });
 
-describe("paper editor themes", () => {
-  test("keeps theme switching in the editor toolbar instead of settings", () => {
+describe("reading typography settings", () => {
+  test("offers size, line height, palette, and CSS without an editor theme menu", () => {
     const preferenceCard = readFileSync(new URL("./PreferenceCard.tsx", import.meta.url), "utf8");
     const editorToolbar = readFileSync(new URL("../EditorToolbar.tsx", import.meta.url), "utf8");
 
+    expect(preferenceCard).toContain('t("settings.editorBodyFontSizeTitle")');
+    expect(preferenceCard).not.toContain('t("settings.editorBodyFontSizeDescription")');
+    expect(preferenceCard).toContain('t("settings.editorBodyLineHeightTitle")');
+    expect(preferenceCard).not.toContain('t("settings.editorBodyLineHeightDescription")');
+    expect(preferenceCard).toContain('t("settings.editorContentWidthDescription")');
+    expect(preferenceCard).toContain('t("settings.editorBodyPaletteTitle")');
+    expect(preferenceCard).toContain("NoteProsePaletteSwatch");
+    expect(preferenceCard).toContain("NOTE_PROSE_PALETTES[paletteId].accent");
+    expect(preferenceCard).toContain('t("settings.editorBodyCssTitle")');
+    expect(preferenceCard.slice(preferenceCard.indexOf("editorBodyCssTitle") - 500, preferenceCard.indexOf("editorBodyCssTitle"))).toContain("lg:flex");
+    expect(preferenceCard).toContain('t("settings.editorBodyCssDescription")');
+    expect(preferenceCard).toContain('t("settings.editorBodyCssReset")');
+    expect(preferenceCard).toContain("DEFAULT_NOTE_PROSE_CSS");
+    expect(preferenceCard.match(/t\("settings\.accountSyncDescription"\)/g)).toHaveLength(1);
+    expect(preferenceCard).toContain("NoteProseCssEditor");
+    expect(preferenceCard).toContain("NoteProseCssPreview");
+    expect(preferenceCard).toContain("noteProseCssDropsDeclarations");
+    expect(preferenceCard).toContain("overflow-hidden");
+    expect(readFileSync(new URL("./NoteProseCssEditor.tsx", import.meta.url), "utf8")).toContain("@codemirror/lang-css");
+    expect(preferenceCard).toContain('t("common.save")');
     expect(preferenceCard).not.toContain('t("settings.publishLayoutTitle")');
     expect(preferenceCard).not.toContain('t("settings.editorThemeTitle")');
     expect(preferenceCard).not.toContain('t("settings.markdownThemeTitle")');
-    expect(preferenceCard).toContain('t("settings.customEditorTheme.settingsTitle")');
-    expect(editorToolbar).toContain('t(`settings.editorThemes.${theme}`)');
+    expect(editorToolbar).not.toContain('t("editorToolbar.editorTheme")');
+    expect(editorToolbar).not.toContain("useEditorTheme");
+    expect(editorToolbar).toContain('t("editorToolbar.blockStyle")');
     expect(editorToolbar).toContain("markdownThemePreference");
   });
 });

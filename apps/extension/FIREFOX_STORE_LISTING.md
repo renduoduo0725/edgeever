@@ -14,7 +14,7 @@
 EdgeEver Web Clipper saves the current webpage, selected text, a right-clicked image, or an X post directly to the self-hosted EdgeEver instance you configure.
 
 - Extract readable article content, or right-click selected text and save that passage only.
-- Right-click an image and save that image file as a new note.
+- Right-click an image and save that image file as a new note. From Google Search, the note records Google Search and the keyword.
 - On X, right-click the post text and save the full post, including text behind Show more, plus photos already shown.
 - These commands stay on the top-level right-click menu.
 - Convert captured HTML to Markdown locally.
@@ -69,7 +69,7 @@ The reviewable source is the repository source before Vite bundling. Third-party
 EdgeEver 网页剪藏插件可将当前网页、选中的文字、右键选中的图片，或 X 上的一条推文直接保存到用户配置的自托管 EdgeEver 实例。
 
 - 提取适合阅读的文章正文。选中文字后右键，只保存这一段。
-- 在图片上右键，把图片文件存成一条新笔记。
+- 在图片上右键，把图片文件存成一条新笔记。从 Google 搜索保存时，笔记记录“Google 搜索”和关键词。
 - 在 X 上右键推文正文。长文会先展开“显示更多”，再保存全文和已经显示的图片。
 - 这些命令直接出现在右键菜单的第一级。
 - 在浏览器本地将 HTML 转换为 Markdown。

@@ -636,8 +636,8 @@ struct AiAssistantSheet: View {
                 // User stopped generation.
             } catch let apiError as APIError where apiError.code == "ai_not_configured" {
                 error = env.preferences.t(
-                    "请先在 Web 或桌面端的“AI 集成”中配置模型。",
-                    en: "Configure a model in AI Integrations on the web or desktop app first."
+                    "请先在 Web 或桌面端的“模型与代理”中配置模型。",
+                    en: "Configure a model in Models and agents on the web or desktop app first."
                 )
             } catch {
                 self.error = error.localizedDescription

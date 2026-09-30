@@ -3,6 +3,7 @@
 @import "highlight.js/styles/github.css";
 @import "./editor-themes/index.css";
 @import "./publish-layout.css";
+@import "./note-prose.css";
 @import "./code-highlight-dark.css";
 
 @source "../../node_modules/streamdown/dist";
@@ -197,46 +198,8 @@
   animation: edgeever-token-created 2.2s ease-out;
 }
 
-html[data-edgeever-environment="local"] body::after,
-html[data-edgeever-environment="demo"] body::after {
-  position: fixed;
-  right: 12px;
-  bottom: 12px;
-  z-index: 2147483647;
-  border-radius: 9999px;
-  padding: 4px 9px;
-  font: 600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  letter-spacing: 0.08em;
-  pointer-events: none;
-  box-shadow: 0 2px 8px rgb(15 23 42 / 10%);
-}
-
-html[data-edgeever-environment="local"] body::after {
-  content: "LOCAL DEV";
-  border: 1px solid rgb(16 185 129 / 45%);
-  background: rgb(236 253 245 / 94%);
-  color: rgb(4 120 87);
-}
-
-html[data-edgeever-environment="demo"] body::after {
-  content: "LOCAL DEMO";
-  border: 1px solid rgb(245 158 11 / 50%);
-  background: rgb(255 251 235 / 96%);
-  color: rgb(180 83 9);
-}
-
-html.dark[data-edgeever-environment="local"] body::after {
-  border-color: rgb(22 160 110 / 42%);
-  background: rgb(18 42 36 / 92%);
-  color: #9ee0c8;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 28%);
-}
-
-html.dark[data-edgeever-environment="demo"] body::after {
-  border-color: rgb(217 119 6 / 48%);
-  background: rgb(69 26 3 / 88%);
-  color: #fde68a;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 28%);
+.ProseMirror .tiptap-mathematics-render {
+  font-size: var(--editor-code-font-size, 0.875em);
 }
 
 .ProseMirror .tiptap-mathematics-render[data-type="block-math"] {
@@ -347,7 +310,7 @@ html.dark[data-edgeever-environment="demo"] body::after {
     --dark-surface-rgb: 255 255 255;
     --editor-body-font-size: 1rem;
     --edgeever-system-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", Inter, ui-sans-serif, system-ui, sans-serif;
-    --editor-body-line-height: 1.625;
+    --editor-body-line-height: 1.65;
     --editor-paragraph-spacing: 0.35rem;
     --memo-content-divider-color: #1a1d21;
     --memo-content-divider-spacing: 1.5rem;
@@ -1275,7 +1238,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 .ProseMirror h1 {
-  font-size: 1.5rem;
+  font-size: 1.5em;
   font-weight: 650;
   line-height: 1.28;
   letter-spacing: -0.02em;
@@ -1284,7 +1247,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 .ProseMirror h2 {
-  font-size: 1.25rem;
+  font-size: 1.25em;
   font-weight: 600;
   line-height: 1.32;
   letter-spacing: -0.015em;
@@ -1293,7 +1256,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 .ProseMirror h3 {
-  font-size: 1.125rem;
+  font-size: 1.125em;
   font-weight: 600;
   line-height: 1.38;
   letter-spacing: -0.01em;
@@ -1302,7 +1265,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 .ProseMirror h4 {
-  font-size: 1.0625rem;
+  font-size: 1.0625em;
   font-weight: 600;
   line-height: 1.4;
   letter-spacing: -0.006em;
@@ -1311,7 +1274,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 .ProseMirror h5 {
-  font-size: 1rem;
+  font-size: 1em;
   font-weight: 600;
   line-height: 1.42;
   margin: 0.95rem 0 0.4rem;
@@ -1319,7 +1282,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 .ProseMirror h6 {
-  font-size: 0.9375rem;
+  font-size: 0.9375em;
   font-weight: 600;
   line-height: 1.45;
   margin: 0.85rem 0 0.35rem;
@@ -1660,7 +1623,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   border-radius: 4px;
   background: #f3f5f7;
   padding: 0.12rem 0.38rem;
-  font-size: 0.875em;
+  font-size: var(--editor-code-font-size, 0.875em);
   font-weight: 550;
   color: #3d4450;
   font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

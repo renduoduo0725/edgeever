@@ -11,8 +11,10 @@ import {
 } from "./mobile-editor.ts";
 
 describe("mobile editor contract", () => {
-  test("keeps the core toolbar compact and ordered by editing frequency", () => {
+  test("keeps undo and redo at the start of the mobile toolbar", () => {
     expect(MOBILE_EDITOR_TOOLBAR_ACTIONS.map(({ id }) => id)).toEqual([
+      "undo",
+      "redo",
       "image",
       "bold",
       "bulletList",
@@ -31,6 +33,9 @@ describe("mobile editor contract", () => {
     expect(getMobileEditorPlaceholder("zh-CN")).toBe("开始记录...");
     expect(getMobileEditorPlaceholder("en-US")).toBe("Start writing...");
     expect(getMobileEditorToolbarLabel("zh-CN")).toBe("编辑器工具栏");
+    expect(getMobileEditorToolbarActionLabel("undo", "zh-CN")).toBe("撤销");
+    expect(getMobileEditorToolbarActionLabel("redo", "en-US")).toBe("Redo");
+    expect(getMobileEditorToolbarActionLabel("undo", "ja")).toBe("元に戻す");
     expect(getMobileEditorToolbarActionLabel("bulletList", "en-US")).toBe("Bullet list");
     expect(getMobileEditorToolbarActionLabel("taskList", "zh-CN")).toBe("任务清单");
     expect(getMobileEditorToolbarActionLabel("increaseListIndent", "zh-CN")).toBe("增加列表层级（Tab）");

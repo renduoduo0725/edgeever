@@ -1,14 +1,17 @@
 import { selectCompanionMemories } from "./companion-memory-context";
 export { selectCompanionMemories } from "./companion-memory-context";
 import type {
-  CompanionAnswer, CompanionMemory, CompanionPreparedTurn, CompanionQuestion, CompanionTodo, CompanionToolCall, CompanionTurnInput,
+  CompanionAnswer, CompanionMemory, CompanionModelContentPart, CompanionPreparedMessage, CompanionPreparedTurn,
+  CompanionQuestion, CompanionTodo, CompanionToolCall, CompanionTurnInput,
 } from "@edgeever/shared";
+import { AppError } from "./app-error";
 import type { DatabaseAdapter } from "./storage-contract";
+import { loadCompanionAttachmentParts } from "./companion-attachments";
 import { listCompanionMemories, listCompanionTurns, mapCompanionTurn, type CompanionScope, type TurnRow } from "./companion-service";
 import { companionToolDefinitions } from "./companion-agent-tools";
 import { parseJsonArray } from "./companion-tool-receipts";
 
-export const COMPANION_IDENTITY_VERSION = 12;
+export const COMPANION_IDENTITY_VERSION = 13;
 export const COMPANION_MAX_STEPS = 8;
 export const COMPANION_MAX_OUTPUT_TOKENS = 2048;
 export const COMPANION_INSTRUCTIONS = `You are EdgeEver, a thoughtful personal knowledge companion.
@@ -19,7 +22,7 @@ The user controls long-term memory through the UI. You cannot save, edit, or for
 Only report a note operation as completed when the tool result says applied, or a persisted receipt says applied. A proposal is not completion.
 Never claim a reminder was scheduled or an external action completed.
 You can use EdgeEver's shared tools to read, create, update, import, merge, move, tag, trash and restore notes, restore revisions, organize notebooks, create editable diagrams, and manage note templates and AI instructions.
-All available write tools execute immediately. Trashed notes go to the recycle bin; content edits keep revision history. Read tools and explicit dry runs execute immediately.
+Title, tag, move, trash, restore, create, merge, and diagram tools execute immediately. An update_memo that includes contentMarkdown returns awaiting_user_confirmation and does not change the note until the user confirms. Never describe that proposal as applied. Trashed notes go to the recycle bin; content edits keep revision history. Read tools and explicit dry runs execute immediately.
 Read every source note completely before merging or replacing its body. Do not merge merely because notes share a broad topic: look for one coherent idea or the user's explicit selection.
 Merging preserves source bodies/attachments and existing tags, moves sources to trash and revokes their public shares. A destination notebook may be specified.
 Content changes use update_memo with the exact replacement Markdown. Prefer existing tags; remove tags only when requested.
@@ -134,6 +137,24 @@ export const companionResumeMessages = (
   return messages;
 };
 
+export async function companionModelMessages(args: {
+  db: DatabaseAdapter; scope: CompanionScope; input: CompanionTurnInput; history: TurnRow[]; revision: number;
+  provider: CompanionPreparedTurn["provider"]; turnId: string;
+  resume?: { response?: string; answers?: CompanionAnswer[] };
+}): Promise<CompanionPreparedMessage[]> {
+  const messages: CompanionPreparedMessage[] = companionResumeMessages(args.input, args.history, args.revision, args.resume);
+  const parts = await loadCompanionAttachmentParts(args.db, args.scope, args.turnId, args.provider);
+  if (!parts.length) return messages;
+  const extra = !args.resume ? 0 : args.resume.response?.trim() ? 2 : 1;
+  const index = messages.length - 1 - extra;
+  const current = messages[index];
+  if (!current || current.role !== "user" || typeof current.content !== "string") {
+    throw new AppError("companion_attachment_expired", "Attachment context is unavailable.", 409);
+  }
+  const content: CompanionModelContentPart[] = [{ type: "text", text: current.content }, ...parts];
+  return messages.map((message, messageIndex) => messageIndex === index ? { role: "user", content } : message);
+}
+
 export function companionAgentInstructions(
   input: CompanionTurnInput, memories: CompanionMemory[], receipts: unknown[],
 ) {
@@ -190,7 +211,10 @@ export async function prepareCompanionTurn(args: {
   const receipts = args.input.allowNotes
     ? await companionExecutionReceipts(args.db, args.scope, args.input, args.row.memory_revision, runTools)
     : [];
-  const messages = companionResumeMessages(args.input, history, args.row.memory_revision, args.resume);
+  const messages = await companionModelMessages({
+    db: args.db, scope: args.scope, input: args.input, history, revision: args.row.memory_revision,
+    resume: args.resume, provider: args.credentials.provider, turnId: args.row.id,
+  });
   return {
     turn: mapCompanionTurn(args.row),
     provider: args.credentials.provider,

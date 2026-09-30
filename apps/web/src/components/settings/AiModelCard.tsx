@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AiProvider } from "@edgeever/shared";
-import { ChevronDown, Loader2, Plus, Server, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react";
+import { ChevronDown, Loader2, Plus, Server, Sparkles, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { AiProviderCard } from "@/components/settings/AiProviderCard";
 import {
@@ -146,35 +146,30 @@ export const AiModelCard = () => {
                   </p>
                 ) : null}
 
-                <section className="grid gap-2">
-                  <span className="text-xs font-normal text-slate-500">
-                    {t("aiModel.defaultSettingsTitle")}
-                  </span>
-                  <div className="overflow-hidden rounded-lg border border-slate-200/70 bg-slate-50/50 divide-y divide-slate-200/70">
-                    <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
-                      <div className="min-w-0">
-                        <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("aiModel.defaultModel")}</div>
-                      </div>
-                      <div className="w-56 max-w-[60%] shrink-0 sm:w-72">
-                        <Select
-                          value={settings?.defaultModelId ?? "none"}
-                          onValueChange={(value) => defaultMutation.mutate(value === "none" ? null : value)}
-                          disabled={readOnly || defaultMutation.isPending}
-                        >
-                          <SelectTrigger className="h-8 bg-card text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">{t("aiModel.noDefaultModel")}</SelectItem>
-                            {allModels.map((model) => (
-                              <SelectItem key={model.id} value={model.id} disabled={!model.providerEnabled}>
-                                {model.displayName} · {model.providerName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                <div className="overflow-hidden rounded-lg border border-slate-200/70 bg-slate-50/50 divide-y divide-slate-200/70">
+                  <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
+                    <div className="min-w-0">
+                      <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("aiModel.defaultModel")}</div>
+                    </div>
+                    <div className="w-56 max-w-[60%] shrink-0 sm:w-72">
+                      <Select
+                        value={settings?.defaultModelId ?? "none"}
+                        onValueChange={(value) => defaultMutation.mutate(value === "none" ? null : value)}
+                        disabled={readOnly || defaultMutation.isPending}
+                      >
+                        <SelectTrigger className="h-8 bg-card text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t("aiModel.noDefaultModel")}</SelectItem>
+                          {allModels.map((model) => (
+                            <SelectItem key={model.id} value={model.id} disabled={!model.providerEnabled}>
+                              {model.displayName} · {model.providerName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </section>
+                </div>
                 {!defaultModelAvailable ? (
                   <p className="flex items-center gap-1.5 text-xs text-amber-700">
                     <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
@@ -183,10 +178,7 @@ export const AiModelCard = () => {
                 ) : null}
 
                 <section className="grid gap-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-normal text-slate-500">
-                      {t("aiModel.servicesTitle")}
-                    </span>
+                  <div className="flex items-center justify-end">
                     <DisabledActionTooltip label={!canAddProvider ? addDisabledReason : undefined}>
                       <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 bg-card text-xs font-normal" disabled={!canAddProvider} onClick={openAddDialog}>
                         <Plus className="h-3.5 w-3.5" />{t("aiModel.addProvider")}
@@ -211,13 +203,6 @@ export const AiModelCard = () => {
                     <p className="rounded-lg border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">{t("aiModel.noProviders")}</p>
                   )}
                 </section>
-
-                <div className="flex items-start gap-2 border-t border-slate-200/60 pt-3 ">
-                  <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-900" />
-                  <p className="text-xs leading-relaxed text-slate-500 ">
-                    {t("aiModel.privacyNotice")}
-                  </p>
-                </div>
 
                 <Dialog open={showAdd} onOpenChange={handleAddDialogChange}>
                   <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-2xl">

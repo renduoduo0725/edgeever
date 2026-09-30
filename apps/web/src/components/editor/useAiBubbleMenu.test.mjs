@@ -7,7 +7,6 @@ import { ImageGallery, IMAGE_GALLERY_NODE_TYPE } from "@edgeever/shared";
 import { hasAiTextSelection, shouldShowAiBubbleMenu } from "./useAiBubbleMenu.ts";
 
 const visibleState = {
-  assistantOpen: false,
   editable: true,
   enabled: true,
   selectionEmpty: false,
@@ -19,11 +18,10 @@ describe("AI bubble menu visibility", () => {
     expect(shouldShowAiBubbleMenu(visibleState)).toBe(true);
   });
 
-  test("stays hidden when disabled, read-only, empty, or already open", () => {
+  test("stays hidden when disabled, read-only, empty, or without text", () => {
     expect(shouldShowAiBubbleMenu({ ...visibleState, enabled: false })).toBe(false);
     expect(shouldShowAiBubbleMenu({ ...visibleState, editable: false })).toBe(false);
     expect(shouldShowAiBubbleMenu({ ...visibleState, selectionEmpty: true })).toBe(false);
-    expect(shouldShowAiBubbleMenu({ ...visibleState, assistantOpen: true })).toBe(false);
     expect(shouldShowAiBubbleMenu({ ...visibleState, selectionHasText: false })).toBe(false);
   });
 

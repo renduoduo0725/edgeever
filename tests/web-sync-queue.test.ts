@@ -15,6 +15,7 @@ const {
 } = await import("../apps/web/src/lib/sync-queue");
 const { formatLocalDraftClipboardText } = await import("../apps/web/src/lib/memo-save-conflict");
 const originalFetch = globalThis.fetch;
+const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
 
 const payload = (title: string, revision = 0): MemoUpdateSyncPayload => ({
   memoId: "memo_sync_test",
@@ -76,6 +77,11 @@ beforeEach(async () => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  if (originalNavigator) {
+    Object.defineProperty(globalThis, "navigator", originalNavigator);
+  } else {
+    delete globalThis.navigator;
+  }
 });
 
 describe("web sync queue concurrency", () => {

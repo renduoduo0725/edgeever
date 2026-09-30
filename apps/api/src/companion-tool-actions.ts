@@ -16,7 +16,8 @@ export const companionWorkspaceCursor = async (db: DatabaseAdapter, workspaceId:
 const stale = () => new AppError("companion_action_conflict", "Notes changed or the suggestion is no longer eligible. Request a fresh suggestion.", 409);
 
 export async function proposeCompanionToolAction(db: DatabaseAdapter, scope: CompanionScope, turnId: string,
-  toolName: string, input: Record<string, unknown>, reason: string, cursor: number, inspected: ReadonlyMap<string, number>, evidenceIds: string[] = []) {
+  toolName: string, input: Record<string, unknown>, reason: string, cursor: number, inspected: ReadonlyMap<string, number>, evidenceIds: string[] = [],
+  previewExtras?: { baseContentMarkdown?: string }) {
   const { definition, args } = validateCompanionTool(toolName, input);
   if (definition.annotations.readOnlyHint || args.dryRun === true) throw new AppError("invalid_params", "This call does not need approval.", 400);
   const plan = CompanionToolPlanSchema.parse({ kind: "tool", toolName, arguments: args, reason });
@@ -46,13 +47,18 @@ export async function proposeCompanionToolAction(db: DatabaseAdapter, scope: Com
   if (toolName === "update_memo") plan.arguments.expectedRevision = notes[0].revision;
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
+  const preview = {
+    notebooks,
+    affectedCount: tagPreview?.updated ?? notes.length,
+    ...(previewExtras?.baseContentMarkdown !== undefined ? { baseContentMarkdown: previewExtras.baseContentMarkdown } : {}),
+  };
   const result = await db.prepare(`INSERT INTO companion_actions(id, turn_id, workspace_id, owner_id, payload_json, created_at, expires_at, workspace_cursor)
     SELECT ?, t.id, t.workspace_id, t.owner_id, ?, ?, ?, ? FROM companion_turns t
     JOIN companion_state s ON s.workspace_id = t.workspace_id AND s.owner_id = t.owner_id
     WHERE t.id = ? AND t.workspace_id = ? AND t.owner_id = ? AND t.status = 'running' AND t.allow_notes = 1
       AND t.memory_revision = s.memory_revision AND t.expires_at > ?
       AND (${workspaceCursorSql}) = ? AND (SELECT COUNT(*) FROM companion_actions WHERE turn_id = t.id) < 3`)
-    .bind(id, JSON.stringify({ plan, notes, preview: { notebooks, affectedCount: tagPreview?.updated ?? notes.length } }), now, new Date(Date.now() + 86400000).toISOString(), cursor,
+    .bind(id, JSON.stringify({ plan, notes, preview }), now, new Date(Date.now() + 86400000).toISOString(), cursor,
       turnId, scope.workspaceId, scope.ownerId, now, scope.workspaceId, cursor).run();
   if (Number(result.meta.changes) !== 1) throw stale();
   return { proposalId: id, status: "awaiting_user_confirmation", message: "Nothing was changed. Review and confirm the exact operation in its card." };

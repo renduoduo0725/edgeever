@@ -8,7 +8,7 @@ Chrome, Edge, and Firefox Manifest V3 extension for saving the current webpage, 
 - Test the connection and select a default notebook.
 - Click the extension action to capture the selected content, or extract the article body with Mozilla Readability when there is no selection.
 - Convert the extracted article HTML into Markdown with Turndown before uploading it.
-- Right-click an image and choose **Save image to EdgeEver**. The image file is uploaded into a new note in the default notebook, with the source page linked underneath.
+- Right-click an image and choose **Save image to EdgeEver**. The image file is uploaded into a new note in the default notebook, with the source page linked underneath. An image saved from Google Search records “Google Search” and the search keyword instead of the results URL.
 - Select text on a page, right-click, and choose **Save selection to EdgeEver**. That passage is saved as a new note in the default notebook, with the source page linked underneath. The rest of the page is not included.
 - On X, right-click the post text and choose **Save this post to EdgeEver**. The post text, author, time, and photos already shown in that post are saved into one note. Text folded behind Show more is expanded first, so a long post is saved in full. Right-clicking a photo saves that image instead, so the command stays on the top-level menu. A single-post page can be saved immediately. On a timeline, the extension asks once for access to X so it can remember the post under the pointer.
 - When the page cannot hand over the image bytes, the extension asks once for access to that image's site. After that, later images from the same site save directly.

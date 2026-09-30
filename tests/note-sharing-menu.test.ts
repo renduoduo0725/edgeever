@@ -18,7 +18,8 @@ describe("note sharing menu", () => {
     expect(editorSource).toContain("canShareMemo: Boolean(memo && !readOnly)");
     expect(editorSource).toContain("{!readOnly && (\n                  <DropdownMenuItem");
     expect(editorSource).toContain('{!readOnly && (!mobileEditingActive || isMemoShared) && (');
-    expect(editorSource).toContain('className={cn("h-8 w-8", isMemoShared ? "text-slate-700" : "text-slate-500")}');
+    expect(editorSource).toContain('isMemoShared\n                      ? "bg-[#d4d4d4] text-[#2a2a2a] hover:bg-[#e4e4e4] hover:text-[#2a2a2a]"');
+    expect(editorSource).toContain("aria-pressed={isMemoShared}");
     expect(editorSource).toContain('aria-label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : isMemoShared ? "sharing.manage" : "sharing.action")}');
   });
 

@@ -214,7 +214,7 @@ export const MobileAiAssistantModal = ({
       if (controller.signal.aborted) return;
       setError(
         caught instanceof ApiRequestError && caught.code === "ai_not_configured"
-          ? tr("请先在 Web 或桌面端的“AI 集成”中配置模型。", "Configure a model in AI Integrations on the web or desktop app first.")
+          ? tr("请先在 Web 或桌面端的“模型与代理”中配置模型。", "Configure a model in Models and agents on the web or desktop app first.")
           : caught instanceof Error ? caught.message : tr("AI 生成失败。", "AI generation failed.")
       );
     } finally {

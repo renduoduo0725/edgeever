@@ -498,6 +498,9 @@ const isDemoMode = (env: Bindings) => isDemoModeEnabled(env.EDGE_EVER_DEMO_MODE)
 const isLocalDemoSeedEnabled = (env: Bindings) =>
   env.EDGE_EVER_LOCAL_DEMO_SEED?.trim().toLowerCase() === "true";
 
+const rotateWorkspaceSyncIdentity = (db: Bindings["storage"]["db"], at: string) =>
+  db.prepare(`UPDATE workspaces SET created_at = ?`).bind(at).run();
+
 let localDemoSeedPromise: Promise<void> | null = null;
 
 const ensureLocalDemoSeed = (env: Bindings) => {
@@ -513,6 +516,10 @@ const ensureLocalDemoSeed = (env: Bindings) => {
     ]);
 
     await ensureDemoSeed(env, { overwriteExisting: true, refreshResources: true });
+    // The wipe deletes the changelog before the memo deletes, so a browser
+    // already caught up never sees those deletes. A new sync identity forces
+    // that browser to rebuild from this snapshot instead of keeping the old notes.
+    await rotateWorkspaceSyncIdentity(env.storage.db, isoNow());
     await audit(env.storage.db, "system", null, "demo.local_seed", "demo", "edgeever-local", {
       seedMemoCount: DEMO_SEED_MEMOS.length,
       mode: "sync-seed",
@@ -918,6 +925,7 @@ const resetDemoData = async (
     await db.batch(resetStatements);
 
     await ensureDemoSeed(env, { overwriteExisting: true, refreshResources: true });
+    await rotateWorkspaceSyncIdentity(db, isoNow());
     await audit(db, "system", null, "demo.reset", "demo", "edgeever-demo", {
       scheduledTime: new Date(scheduledTime).toISOString(),
       seedMemoCount: DEMO_SEED_MEMOS.length,

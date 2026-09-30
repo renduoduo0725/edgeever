@@ -527,7 +527,9 @@ describe("companion client-direct HTTP contracts", () => {
 
 describe("actual AI SDK companion runtime", () => {
   test("proposal reasons contain evidence instead of card boilerplate", () => {
-    expect(COMPANION_INSTRUCTIONS).toContain("All available write tools execute immediately");
+    expect(COMPANION_INSTRUCTIONS).toContain("awaiting_user_confirmation");
+    expect(COMPANION_INSTRUCTIONS).toContain("Never describe that proposal as applied");
+    expect(COMPANION_INSTRUCTIONS).not.toContain("All available write tools execute immediately");
     expect(COMPANION_INSTRUCTIONS).not.toContain("user must confirm the suggestion card");
     expect(COMPANION_INSTRUCTIONS).toContain("[Note title](#memo=memo_abc123)");
     expect(COMPANION_INSTRUCTIONS).toContain("Do not drop memo_");

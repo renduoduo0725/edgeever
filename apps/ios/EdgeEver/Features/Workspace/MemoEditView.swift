@@ -808,8 +808,8 @@ struct MemoEditView: View {
                 isSuggestingTags = false
                 smartTagAlertTitle = env.preferences.t("智能标签生成失败", en: "Couldn't generate smart tags")
                 smartTagAlertMessage = env.preferences.t(
-                    "请先在“AI 集成”中配置默认模型。",
-                    en: "Configure a model in AI Integrations first."
+                    "请先在“模型与代理”中配置默认模型。",
+                    en: "Configure a model in Models and agents first."
                 )
                 showSmartTagAlert = true
                 smartTagTask = nil

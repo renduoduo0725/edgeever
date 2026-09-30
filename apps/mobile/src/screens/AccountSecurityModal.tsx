@@ -25,8 +25,8 @@ export const AccountSecurityPanel = ({
   const passwordMutation = useMutation({
     mutationFn: async () => {
       if (!client) throw new Error("Client is not ready");
-      if (newPassword.length < 8) throw new Error("新密码至少需要 8 个字符");
-      if (newPassword !== confirmPassword) throw new Error("两次输入的新密码不一致");
+      if (newPassword.length < 8) throw new Error("新密码至少需要 8 个字符。");
+      if (newPassword !== confirmPassword) throw new Error("两次输入的新密码不一致。");
       return client.changePassword({ currentPassword, newPassword, confirmPassword });
     },
     onSuccess: () => {
@@ -43,7 +43,7 @@ export const AccountSecurityPanel = ({
   }, [active]);
 
   const errorMessage = (error: unknown) => {
-    if (error instanceof ApiRequestError && error.code === "invalid_current_password") return "当前密码不正确";
+    if (error instanceof ApiRequestError && error.code === "invalid_current_password") return "当前密码不正确。";
     return error instanceof Error ? error.message : "操作失败，请稍后再试";
   };
 
@@ -63,7 +63,7 @@ export const AccountSecurityPanel = ({
       {passwordMutation.isSuccess ? <Text accessibilityLiveRegion="polite" style={styles.success}>密码已修改成功。</Text> : null}
       <PrimaryButton
         disabled={passwordMutation.isPending}
-        label={passwordMutation.isPending ? "正在修改…" : "修改密码"}
+        label={passwordMutation.isPending ? "修改中..." : "修改密码"}
         onPress={() => passwordMutation.mutate()}
       />
     </View>

@@ -123,6 +123,59 @@ describe("public memo shares", () => {
     sqlite.close();
   });
 
+  test("publishes account prose with the public share", async () => {
+    const { sqlite, environment } = createDatabaseEnvironment();
+    sqlite.query("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)")
+      .run("usr_author", "author", "hash");
+    sqlite.query("UPDATE memo_shares SET created_by = ? WHERE id = ?")
+      .run("usr_author", "share_source");
+    const app = new Hono();
+    app.use("*", async (c, next) => {
+      c.set("auth", { kind: "user", actorType: "user", actorId: "usr_author", username: "author", displayName: null, scopes: [], workspaceId: "ws_member", role: "owner" });
+      await next();
+    });
+    registerMemoShareRoutes(app);
+    registerPublicShareRoutes(app);
+
+    const before = await app.request(`/api/public/shares/${sourceToken}`, {}, environment);
+    expect((await before.json()).share.prose).toEqual({
+      fontSize: 16,
+      lineHeight: 1.65,
+      palette: "native",
+      customCss: "",
+      customColors: null,
+    });
+
+    const saved = await app.request("/api/v1/me/note-prose", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        fontSize: 18,
+        lineHeight: 2,
+        palette: "clay",
+        customCss: "p { color: red; font-size: 40px; line-height: 3; background: url(https://evil.test/a.png); }",
+      }),
+    }, environment);
+    expect(saved.status).toBe(200);
+    const body = await saved.json();
+    expect(body.fontSize).toBe(18);
+    expect(body.lineHeight).toBe(2);
+    expect(body.palette).toBe("clay");
+    expect(body.customCss).toContain("color: red");
+    expect(body.customCss).not.toContain("font-size");
+    expect(body.customCss).not.toContain("line-height");
+    expect(body.customCss).not.toContain("url(");
+
+    const published = await (await app.request(`/api/public/shares/${sourceToken}`, {}, environment)).json();
+    expect(published.share.prose).toMatchObject({
+      fontSize: 18,
+      lineHeight: 2,
+      palette: "clay",
+    });
+    expect(published.share.prose.customCss).not.toContain("font-size");
+    sqlite.close();
+  });
+
   test("saves a signed-in user's published note font", async () => {
     const { sqlite, environment } = createDatabaseEnvironment();
     sqlite.query("INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)")

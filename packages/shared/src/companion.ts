@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isAiTextAttachment, type AiAttachmentMediaType } from "./ai-assistant";
 
 export const CompanionIdSchema = z.string().uuid();
 export const CompanionMemoryInputSchema = z.object({
@@ -36,8 +37,26 @@ export const CompanionTurnInputSchema = z.object({
   locale: z.enum(["zh-CN", "en-US", "ja"]).default("en-US"),
   focus: CompanionTurnFocusSchema.optional(),
   mentions: z.array(CompanionMentionSchema).max(8).optional(),
+  attachmentIds: z.array(z.string().uuid()).max(4).optional(),
 }).strict();
 export type CompanionTurnInput = z.infer<typeof CompanionTurnInputSchema>;
+
+export type CompanionModelContentPart =
+  | { type: "text"; text: string }
+  | { type: "image"; image: string; mediaType: string }
+  | { type: "file"; data: string; mediaType: string; filename?: string };
+
+export const COMPANION_NOTE_EDIT_MAX_CHARS = 200_000;
+
+export const companionSupportsAttachment = (
+  provider: "openai-compatible" | "anthropic" | "google",
+  mediaType: string,
+) => {
+  if (isAiTextAttachment(mediaType as AiAttachmentMediaType)) return true;
+  if (mediaType === "image/jpeg" || mediaType === "image/png" || mediaType === "image/webp" || mediaType === "image/gif") return true;
+  if (mediaType === "application/pdf") return provider === "anthropic" || provider === "google";
+  return false;
+};
 
 export const CompanionQuestionSchema = z.object({
   id: z.string().trim().min(1).max(80),
@@ -87,7 +106,7 @@ export type CompanionToolDefinition = {
 };
 export type CompanionPreparedMessage = {
   role: "user" | "assistant";
-  content: string;
+  content: string | CompanionModelContentPart[];
 };
 export type CompanionPreparedTurn = {
   turn: CompanionTurn;
@@ -142,6 +161,12 @@ export type CompanionMemory = {
   updatedAt: string;
 };
 export type CompanionSource = { id: string; title: string; revision: number; notebookId?: string };
+export type CompanionTurnAttachmentMeta = {
+  id: string;
+  filename: string;
+  mediaType: string;
+  byteLength: number;
+};
 
 export const CompanionDiscoverySettingsInputSchema = z.object({
   enabled: z.boolean(),
@@ -229,7 +254,7 @@ export type CompanionAction = {
   resultMemoId: string | null;
   resultNotebookId?: string | null;
   result?: unknown;
-  preview?: { notebooks: Array<{ id: string; name: string }>; affectedCount?: number };
+  preview?: { notebooks: Array<{ id: string; name: string }>; affectedCount?: number; baseContentMarkdown?: string };
   createdAt: string;
 };
 export type CompanionTurn = {
@@ -244,6 +269,7 @@ export type CompanionTurn = {
   todos: CompanionTodo[];
   questions: CompanionQuestion[];
   mentions: CompanionMention[];
+  attachments?: CompanionTurnAttachmentMeta[];
   model: string;
   inputTokens: number | null;
   outputTokens: number | null;

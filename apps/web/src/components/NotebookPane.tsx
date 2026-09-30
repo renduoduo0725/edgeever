@@ -67,6 +67,7 @@ import type { EdgeEverRepository } from "@/lib/repository";
 import type { EdgeEverPluginHost } from "@/lib/plugins/plugin-host";
 import { statusSettleMotion } from "@/lib/motion";
 import { DesktopUpdateNotice } from "./DesktopUpdateNotice";
+import { useDeployedUpdateNotice } from "@/hooks/useDeployedUpdateNotice";
 import { PluginToolbarMenu } from "./plugins/PluginToolbarMenu";
 
 const DesktopSyncIssuesDialog = lazy(() => import("./DesktopSyncIssuesDialog").then((module) => ({ default: module.DesktopSyncIssuesDialog })));
@@ -274,12 +275,14 @@ const SidebarRailButton = ({
   active = false,
   icon,
   label,
+  notice = false,
   onClick,
   disabled = false,
 }: {
   active?: boolean;
   icon: ReactNode;
   label: string;
+  notice?: boolean;
   onClick: () => void;
   disabled?: boolean;
 }) => (
@@ -292,11 +295,12 @@ const SidebarRailButton = ({
         aria-label={label}
         onClick={onClick}
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-50",
+          "relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20 disabled:cursor-not-allowed disabled:opacity-50",
           active && "edgeever-workspace-selection text-slate-950"
         )}
       >
         {icon}
+        {notice ? <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-[var(--workspace-sidebar)]" /> : null}
       </button>
     </TooltipTrigger>
     <TooltipContent side="right">{label}</TooltipContent>
@@ -538,6 +542,7 @@ export const NotebookPane = ({
   onToggleCollapsed?: () => void;
 }) => {
   const { t } = useTranslation();
+  const { unseen: deployedUpdateUnseen } = useDeployedUpdateNotice();
   // Temporarily keep template actions out of the primary workspace navigation.
   const showTemplateEntry = true;
   const notebookScrollRef = useRef<HTMLDivElement | null>(null);
@@ -926,6 +931,7 @@ export const NotebookPane = ({
                 <SidebarRailButton
                   icon={<CircleUserRound className="h-4 w-4" />}
                   label={t("notebookPane.profile")}
+                  notice={deployedUpdateUnseen}
                   onClick={onOpenSettings}
                 />
                 <SidebarCollapseButton collapsed onToggle={onToggleCollapsed} className="h-9 w-9" tooltipSide="right" />
@@ -1153,8 +1159,9 @@ export const NotebookPane = ({
               type="button"
               aria-label={t("notebookPane.profile")}
             >
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+              <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
                 <CircleUserRound className="h-4 w-4" />
+                {deployedUpdateUnseen ? <span className="absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-[var(--workspace-sidebar)]" /> : null}
               </span>
               <span className="min-w-0 flex-1 truncate">{t("notebookPane.profile")}</span>
             </button>

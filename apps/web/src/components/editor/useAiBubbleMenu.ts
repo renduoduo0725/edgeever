@@ -19,21 +19,20 @@ export const hasAiTextSelection = ({ doc, selection }: Pick<EditorState, "doc" |
   ))
 );
 
+// The sidebar can stay open. A later selection still needs these actions.
 export const shouldShowAiBubbleMenu = ({
-  assistantOpen,
   editable,
   enabled,
   selectionEmpty,
   selectionHasText,
 }: {
-  assistantOpen: boolean;
   editable: boolean;
   enabled: boolean;
   selectionEmpty: boolean;
   selectionHasText: boolean;
-}): boolean => enabled && editable && !selectionEmpty && selectionHasText && !assistantOpen;
+}): boolean => enabled && editable && !selectionEmpty && selectionHasText;
 
-export const useAiBubbleMenu = (assistantOpen: boolean) => {
+export const useAiBubbleMenu = () => {
   const [enabled, setEnabled] = useState(readAiSelectionMenuPreference);
 
   useEffect(() => {
@@ -59,13 +58,12 @@ export const useAiBubbleMenu = (assistantOpen: boolean) => {
   // toolbar refresh cannot feed back into another BubbleMenu update.
   const shouldShow = useCallback<BubbleMenuShouldShow>(
     ({ editor }) => shouldShowAiBubbleMenu({
-      assistantOpen,
       editable: editor.isEditable,
       enabled,
       selectionEmpty: editor.state.selection.empty,
       selectionHasText: hasAiTextSelection(editor.state),
     }),
-    [assistantOpen, enabled],
+    [enabled],
   );
 
   return {

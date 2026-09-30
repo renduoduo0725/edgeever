@@ -1,0 +1,102 @@
+export type DesktopAcpAdapterId = "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
+export type DesktopAcpAdapterState = "not_installed" | "installing" | "needs_login" | "available" | "failed";
+
+export type DesktopAcpPromptCapabilities = {
+  image?: boolean;
+  embeddedContext?: boolean;
+};
+
+export type DesktopAcpAdapter = {
+  id: DesktopAcpAdapterId;
+  label: string;
+  state: DesktopAcpAdapterState;
+  detail?: string;
+  promptCapabilities?: DesktopAcpPromptCapabilities;
+  version?: string;
+  managed?: boolean;
+  updateError?: string;
+  authMethods?: Array<{ id: string; name: string }>;
+};
+
+export type DesktopAcpAttachment = {
+  filename: string;
+  mediaType: string;
+  dataBase64: string;
+};
+
+export type DesktopAcpPromptInput = {
+  adapterId: DesktopAcpAdapterId;
+  path?: string;
+  prompt: string;
+  contextText?: string;
+  attachments?: DesktopAcpAttachment[];
+};
+
+export type DesktopAcpPromptResult = {
+  requestId: string;
+  rejectedAttachments?: Array<{ filename: string; reason: string }>;
+};
+
+export type DesktopAcpEvent =
+  | { requestId: string; type: "text-delta"; text: string }
+  | { requestId: string; type: "reasoning"; text: string }
+  | { requestId: string; type: "tool"; name: string; status: string; title?: string }
+  | { requestId: string; type: "done" }
+  | { requestId: string; type: "error"; message: string };
+
+export const AI_SIDEBAR_WIDTH_KEY = "edgeever.aiSidebar.width";
+export const AI_SIDEBAR_OPEN_KEY = "edgeever.aiSidebar.open";
+export const AI_SIDEBAR_THREAD_KEY = "edgeever.aiSidebar.thread";
+export const AI_SIDEBAR_SOURCE_KEY = "edgeever.aiSidebar.source";
+export const AI_SIDEBAR_ADAPTER_KEY = "edgeever.aiSidebar.adapterId";
+export const AI_SIDEBAR_ADAPTER_PATH_KEY = "edgeever.aiSidebar.adapterPath";
+
+export type AiSidebarSource = "builtin" | "local";
+
+const bridge = () => (typeof window === "undefined" ? undefined : window.edgeeverDesktop);
+
+export const desktopAcpAvailable = () => Boolean(bridge()?.listAcpAdapters);
+
+export const listDesktopAcpAdapters = async (): Promise<DesktopAcpAdapter[]> => {
+  const desktop = bridge();
+  if (!desktop?.listAcpAdapters) return [];
+  return desktop.listAcpAdapters();
+};
+
+export const probeDesktopAcpAdapter = async (input: { id: DesktopAcpAdapterId; path?: string }): Promise<DesktopAcpAdapter> => {
+  const desktop = bridge();
+  if (!desktop?.probeAcpAdapter) {
+    return { id: input.id, label: input.id, state: "failed", detail: "desktop_unavailable" };
+  }
+  return desktop.probeAcpAdapter(input);
+};
+
+export const installDesktopAcpAdapter = async (id: Extract<DesktopAcpAdapterId, "codex" | "antigravity" | "piAgent">) => {
+  const desktop = bridge();
+  if (!desktop?.installAcpAdapter) throw new Error("desktop_acp_unavailable");
+  return desktop.installAcpAdapter(id);
+};
+
+export const authenticateDesktopAcpAdapter = async (input: { id: DesktopAcpAdapterId; path?: string; methodId: string }): Promise<DesktopAcpAdapter> => {
+  const desktop = bridge();
+  if (!desktop?.authenticateAcpAdapter) throw new Error("desktop_acp_unavailable");
+  return desktop.authenticateAcpAdapter(input);
+};
+
+export const promptDesktopAcp = async (input: DesktopAcpPromptInput): Promise<DesktopAcpPromptResult> => {
+  const desktop = bridge();
+  if (!desktop?.promptAcp) throw new Error("desktop_acp_unavailable");
+  return desktop.promptAcp(input);
+};
+
+export const cancelDesktopAcp = async (requestId: string) => {
+  const desktop = bridge();
+  if (!desktop?.cancelAcp) return { ok: true as const };
+  return desktop.cancelAcp(requestId);
+};
+
+export const subscribeDesktopAcp = (callback: (event: DesktopAcpEvent) => void) => {
+  const desktop = bridge();
+  if (!desktop?.onAcpEvent) return () => undefined;
+  return desktop.onAcpEvent(callback);
+};

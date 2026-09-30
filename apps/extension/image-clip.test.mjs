@@ -10,7 +10,7 @@ import {
   MAX_IMAGE_BYTES,
   noteTitleForImage,
   preferredImageUrls,
-  readableClipSourceUrl,
+  googleSearchKeyword,
   saveCapturedImageNote,
   sniffImageMimeType,
 } from "./src/image-clip.ts";
@@ -20,6 +20,8 @@ const source = {
   capturedAt: "2026-09-26T00:00:00.000Z",
   sourceLabel: "来源",
   capturedAtLabel: "抓取时间",
+  googleSearchLabel: "Google 搜索",
+  keywordLabel: "关键词",
 };
 
 describe("preferred image URLs", () => {
@@ -108,11 +110,51 @@ describe("image bytes", () => {
 });
 
 describe("image clip sources", () => {
-  test("keeps a Google image search readable and leaves other pages unchanged", () => {
-    expect(readableClipSourceUrl(
+  test("records a Google image search as the search and its keyword", () => {
+    const pageUrl = "https://www.google.com/search?newwindow=1&sca_esv=080dae4805299e94&sxsrf=APpeTracking&udm=2&fbs=ABfTracking&q=cat&sa=X&ved=2ahUK&biw=1920&bih=836&dpr=2";
+    expect(googleSearchKeyword(pageUrl)).toBe("cat");
+    const markdown = imageMemoMarkdown({
+      ...source,
+      pageUrl,
+      resourceId: "res_google",
+      alt: "cat",
+      altFallback: "图片",
+    });
+    expect(markdown).toContain("来源: Google 搜索\n关键词: cat");
+    expect(markdown).not.toContain("google.com");
+    expect(markdown).not.toContain("fbs=");
+    expect(markdown).not.toContain("sxsrf=");
+  });
+
+  test("decodes the keyword and keeps an image-viewer query without the tracking URL", () => {
+    expect(googleSearchKeyword(
       "https://www.google.com/search?newwindow=1&q=%E7%8C%AB&udm=2&fbs=ABfTracking&biw=1920#sv=viewer",
-    )).toBe("https://www.google.com/search?q=%E7%8C%AB&udm=2");
-    expect(readableClipSourceUrl("https://example.com/cats#photo")).toBe("https://example.com/cats#photo");
+    )).toBe("猫");
+    expect(googleSearchKeyword(
+      "https://www.google.com/imgres?imgurl=https%3A%2F%2Fexample.com%2Fcat.jpg&q=white+kitten&tbnid=abc",
+    )).toBe("white kitten");
+    const markdown = imageMemoMarkdown({
+      ...source,
+      pageUrl: "https://www.google.com/search?udm=2",
+      resourceId: "res_google",
+      alt: "",
+      altFallback: "图片",
+    });
+    expect(markdown).toContain("来源: Google 搜索");
+    expect(markdown).not.toContain("关键词");
+    expect(markdown).not.toContain("http");
+    expect(googleSearchKeyword("https://example.com/cats#photo")).toBeNull();
+  });
+
+  test("escapes markdown characters in the keyword", () => {
+    const markdown = imageMemoMarkdown({
+      ...source,
+      pageUrl: "https://www.google.com.hk/search?q=cat%5B1%5D*%60",
+      resourceId: "res_google",
+      alt: "",
+      altFallback: "图片",
+    });
+    expect(markdown).toContain("关键词: cat\\[1\\]\\*\\`");
   });
 
   test("reads a right-clicked data URL image", () => {

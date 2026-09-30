@@ -320,7 +320,7 @@ export const SmartTagButton = ({
       Alert.alert(
         translate("智能标签生成失败"),
         error instanceof ApiRequestError && error.code === "ai_not_configured"
-          ? translate("请先在“AI 集成”中配置默认模型。")
+          ? translate("请先在“模型与代理”中配置默认模型。")
           : error instanceof Error
             ? error.message
             : translate("AI 标签建议生成失败。")

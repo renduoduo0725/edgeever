@@ -29,6 +29,7 @@ import {
   type TiptapDoc,
   type DiagramDocument,
 } from "@edgeever/shared";
+import { clearMobileEditorUndoHistory } from "@edgeever/shared/mobile-editor";
 import {
   type NoteImageTheme,
   type NoteImageFontStyle,
@@ -1116,6 +1117,8 @@ function setToolbarVisible(visible: boolean) {
   toolbarEl.innerHTML = "";
   if (!visible) return;
   const actions: Array<{ id: string; label: string; run: () => void }> = [
+    { id: "undo", label: "↩", run: () => editor.chain().focus().undo().run() },
+    { id: "redo", label: "↪", run: () => editor.chain().focus().redo().run() },
     {
       id: "image",
       label: "▧+",
@@ -1159,6 +1162,8 @@ function setToolbarVisible(visible: boolean) {
     btn.textContent = action.label;
     btn.dataset.action = action.id;
     const labels: Record<string, [string, string]> = {
+      undo: ["撤销", "Undo"],
+      redo: ["重做", "Redo"],
       image: ["插入图片", "Insert image"],
       bold: ["粗体", "Bold"],
       bullet: ["项目符号列表", "Bullet list"],
@@ -1186,8 +1191,21 @@ function refreshToolbarState() {
     task: editor.isActive("taskList"),
     quote: editor.isActive("blockquote"),
   };
+  const historyEnabled = (command: "undo" | "redo") => {
+    try {
+      return editor.can().chain().focus()[command]().run();
+    } catch {
+      return false;
+    }
+  };
+  const enabled: Record<string, boolean> = {
+    undo: historyEnabled("undo"),
+    redo: historyEnabled("redo"),
+  };
   toolbarEl.querySelectorAll<HTMLButtonElement>("button[data-action]").forEach((button) => {
-    button.classList.toggle("is-active", active[button.dataset.action ?? ""] ?? false);
+    const actionId = button.dataset.action ?? "";
+    button.classList.toggle("is-active", active[actionId] ?? false);
+    if (actionId in enabled) button.disabled = !enabled[actionId];
   });
 }
 
@@ -1393,6 +1411,8 @@ const api: EdgeEverEditorAPI = {
     // Keep editability. Do NOT focus("end") here — native re-pushes content on SwiftUI
     // updates while typing; focusing would yank the caret to the document bottom mid-edit.
     editor.setEditable(mode === "editor");
+    clearMobileEditorUndoHistory(editor);
+    refreshToolbarState();
     suppressChange = false;
     void afterContentSet((document.documentElement.dataset.theme as "light" | "dark") || "light");
   },
@@ -1411,6 +1431,8 @@ const api: EdgeEverEditorAPI = {
       editor.commands.setContent({ type: "doc", content: [{ type: "paragraph" }] });
     }
     editor.setEditable(mode === "editor");
+    clearMobileEditorUndoHistory(editor);
+    refreshToolbarState();
     suppressChange = false;
     void afterContentSet((document.documentElement.dataset.theme as "light" | "dark") || "light");
   },

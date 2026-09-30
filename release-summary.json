@@ -1,29 +1,20 @@
 {
-  "version": "1.90.0",
+  "version": "1.93.0",
   "changes": {
     "en-US": [
-      "Mind maps and flowcharts default to the Plain theme, with medium-gray emphasis. Diagrams without a saved theme use that look, and every diagram canvas uses the note editor surface.",
-      "The infographic editor opens without getting stuck, and updating its registry no longer breaks rendering.",
-      "The note header shows a GitHub link in place of the search button.",
-      "Copying a note as rich text shows a near-black success toast. The menu is now labeled Copy as Rich Text.",
-      "The mobile system info screen is more compact, and its text stays readable.",
-      "The settings tab for tokens is labeled API / MCP."
+      "Desktop users can connect and manage local Agents through ACP, including DeepSeek Harness and pi.",
+      "Double-click an image in a shared note to enlarge it.",
+      "AI settings use clearer service and local Agent labels."
     ],
     "zh-CN": [
-      "思维导图和流程图默认使用素简主题，强调色改为中灰。未保存主题的图也按素简显示，所有图的画布都使用笔记编辑器的底色。",
-      "信息图编辑器可以正常打开，更新注册表也不会再导致渲染失败。",
-      "笔记顶栏用 GitHub 链接替换了搜索按钮。",
-      "把笔记复制到公众号或博客后，会看到近黑的成功提示。菜单名称改为「复制到公众号 / 博客」。",
-      "手机上的系统信息页更紧凑，文字保持可读。",
-      "设置里的令牌页签改名为 API / MCP。"
+      "桌面端可通过 ACP 连接和管理本机 Agent，包括 DeepSeek Harness 和 pi。",
+      "在分享的笔记中双击图片即可放大查看。",
+      "AI 设置中的服务与本机 Agent 说明更清晰。"
     ],
     "ja": [
-      "マインドマップとフローチャートの初期テーマを「素」にし、強調色をミディアムグレーにしました。テーマを保存していない図もこの見た目になり、図のキャンバスはノート編集画面の背景色を使います。",
-      "インフォグラフィック編集画面が途中で止まらなくなり、レジストリを更新しても描画に失敗しなくなりました。",
-      "ノート上部の検索ボタンを GitHub リンクに置き換えました。",
-      "書式付きでコピーすると、ほぼ黒の成功表示が出ます。メニュー名は「書式付きコピー」になりました。",
-      "モバイルのシステム情報画面をよりコンパクトにし、文字サイズは読みやすさを保ちました。",
-      "設定のトークンタブの名前を API / MCP に変更しました。"
+      "デスクトップ版で ACP 経由のローカル Agent の接続と管理に対応し、DeepSeek Harness と pi も利用できます。",
+      "共有ノートの画像をダブルクリックして拡大表示できます。",
+      "AI 設定のサービスとローカル Agent の表記を分かりやすくしました。"
     ]
   }
 }

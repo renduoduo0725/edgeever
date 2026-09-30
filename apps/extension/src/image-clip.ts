@@ -194,27 +194,25 @@ export const imageAltText = (alt: string, fallback: string) => {
 const escapeMarkdownLabel = (value: string) =>
   value.replace(/[\r\n]+/g, " ").replace(/\\/g, "\\\\").replace(/\[/g, "\\[").replace(/\]/g, "\\]");
 
+const escapeMarkdownText = (value: string) =>
+  value.replace(/[\r\n]+/g, " ").replace(/[\\[\]*`]/g, (char) => `\\${char}`);
+
 const markdownDestination = (value: string) =>
   value.replace(/\\/g, "%5C").replace(/ /g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29");
 
-const GOOGLE_SEARCH_PARAMS = ["q", "udm", "tbm", "hl"] as const;
+const GOOGLE_SEARCH_PATHS = new Set(["/search", "/imgres"]);
 
-// Google image results put the viewer state and tracking tokens in the tab URL.
-// Keeping those turns the note source into a wall of text instead of a link back to the search.
-export const readableClipSourceUrl = (pageUrl: string) => {
+// A Google results tab URL is mostly viewer state and tracking tokens.
+// The useful part is that the image was found there, plus the search keyword.
+export const googleSearchKeyword = (pageUrl: string) => {
   try {
     const url = new URL(pageUrl);
     const host = url.hostname.toLowerCase();
-    const googleSearch = /(^|\.)google\./.test(host) && url.pathname === "/search";
-    if (!googleSearch) return pageUrl;
-    const next = new URL(`${url.origin}${url.pathname}`);
-    for (const key of GOOGLE_SEARCH_PARAMS) {
-      const value = url.searchParams.get(key);
-      if (value) next.searchParams.set(key, value);
-    }
-    return next.toString();
+    const googleSearch = /(^|\.)google\./.test(host) && GOOGLE_SEARCH_PATHS.has(url.pathname);
+    if (!googleSearch) return null;
+    return (url.searchParams.get("q") ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
   } catch {
-    return pageUrl;
+    return null;
   }
 };
 
@@ -229,11 +227,17 @@ export const imageSourceMarkdown = (input: {
   capturedAt: string;
   sourceLabel: string;
   capturedAtLabel: string;
-}) => [
-  `${input.sourceLabel}: [${escapeMarkdownLabel(input.pageUrl)}](${markdownDestination(input.pageUrl)})`,
-  "",
-  `${input.capturedAtLabel}: ${input.capturedAt}`,
-].join("\n");
+  googleSearchLabel: string;
+  keywordLabel: string;
+}) => {
+  const keyword = googleSearchKeyword(input.pageUrl);
+  const sourceLine = keyword === null
+    ? `${input.sourceLabel}: [${escapeMarkdownLabel(input.pageUrl)}](${markdownDestination(input.pageUrl)})`
+    : keyword
+      ? `${input.sourceLabel}: ${input.googleSearchLabel}\n${input.keywordLabel}: ${escapeMarkdownText(keyword)}`
+      : `${input.sourceLabel}: ${input.googleSearchLabel}`;
+  return [sourceLine, "", `${input.capturedAtLabel}: ${input.capturedAt}`].join("\n");
+};
 
 export const imageMemoMarkdown = (input: {
   resourceId: string;
@@ -243,6 +247,8 @@ export const imageMemoMarkdown = (input: {
   capturedAt: string;
   sourceLabel: string;
   capturedAtLabel: string;
+  googleSearchLabel: string;
+  keywordLabel: string;
 }) => [
   `![${imageAltText(input.alt, input.altFallback)}](/api/v1/resources/${encodeURIComponent(input.resourceId)}/blob)`,
   "",
@@ -298,6 +304,8 @@ export const saveCapturedImageNote = async (
     capturedAt: string;
     sourceLabel: string;
     capturedAtLabel: string;
+    googleSearchLabel: string;
+    keywordLabel: string;
     altFallback: string;
   },
 ) => {
@@ -310,7 +318,6 @@ export const saveCapturedImageNote = async (
 
   const contentMarkdown = imageMemoMarkdown({
     ...input,
-    pageUrl: readableClipSourceUrl(input.pageUrl),
     resourceId: "EDGEVERRESOURCEID",
   });
   return client.createWithImage({

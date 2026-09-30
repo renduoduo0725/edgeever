@@ -15,7 +15,8 @@ describe("shared memo editor header actions", () => {
   test("owns every action shared by text and diagram notes", () => {
     expect(actionsSource).toContain("<Search");
     expect(actionsSource).toContain("<GitHubRepositoryLink");
-    expect(actionsSource).toContain("<SystemInfoDialog");
+    expect(actionsSource).not.toContain("SystemInfoDialog");
+    expect(actionsSource).not.toContain("systemInfo.title");
     expect(actionsSource).toContain("<ExecutionCenterButton");
     expect(actionsSource).toContain("setPreference(nextTheme)");
     expect(actionsSource).toContain("<MoreHorizontal");
@@ -24,9 +25,11 @@ describe("shared memo editor header actions", () => {
   test("is reused by both editors while text-only actions remain explicit slots", () => {
     expect(editorSource).toContain("<MemoEditorHeaderActions");
     expect(diagramSource).toContain("<MemoEditorHeaderActions");
-    expect(editorSource).toContain("textNoteActions={(\n");
     expect(editorSource).toContain("textNoteMenuItems=");
+    expect(editorSource).toContain("data-ai-assistant-launcher");
+    expect(editorSource).not.toContain("textNoteActions=");
     expect(diagramSource).not.toContain("textNoteActions=");
+    expect(diagramSource).not.toContain("data-ai-assistant-launcher");
     expect(diagramSource).not.toContain("<WeChatIcon");
   });
 

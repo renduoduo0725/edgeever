@@ -309,6 +309,7 @@ input {
 
 .mobile-editor-tool-button:disabled {
   border-color: transparent;
+  opacity: 0.38;
 }
 
 .mobile-editor-tool-button:disabled:active {

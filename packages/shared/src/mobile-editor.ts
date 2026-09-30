@@ -1,8 +1,12 @@
+import type { Editor } from "@tiptap/core";
+import { EditorState } from "@tiptap/pm/state";
 import type { ImageWidthPresetId } from "./image-display";
 
 export type MobileEditorLocale = "zh-CN" | "en-US" | "ja";
 
 export type MobileEditorToolbarActionId =
+  | "undo"
+  | "redo"
   | "image"
   | "bold"
   | "bulletList"
@@ -20,6 +24,8 @@ export const MOBILE_EDITOR_ACTIVE_FLAGS = {
 } as const;
 
 export const MOBILE_EDITOR_TOOLBAR_ACTIONS = [
+  { id: "undo", activeFlag: 0 },
+  { id: "redo", activeFlag: 0 },
   { id: "image", activeFlag: 0 },
   { id: "bold", activeFlag: MOBILE_EDITOR_ACTIVE_FLAGS.bold },
   { id: "bulletList", activeFlag: MOBILE_EDITOR_ACTIVE_FLAGS.bulletList },
@@ -38,6 +44,8 @@ const MOBILE_EDITOR_COPY = {
     placeholder: "开始记录...",
     toolbar: "编辑器工具栏",
     actions: {
+      undo: "撤销",
+      redo: "重做",
       image: "上传图片",
       bold: "加粗",
       bulletList: "无序列表",
@@ -59,6 +67,8 @@ const MOBILE_EDITOR_COPY = {
     placeholder: "Start writing...",
     toolbar: "Editor toolbar",
     actions: {
+      undo: "Undo",
+      redo: "Redo",
       image: "Upload image",
       bold: "Bold",
       bulletList: "Bullet list",
@@ -80,6 +90,8 @@ const MOBILE_EDITOR_COPY = {
     placeholder: "書き始める...",
     toolbar: "エディタのツールバー",
     actions: {
+      undo: "元に戻す",
+      redo: "やり直す",
       image: "画像をアップロード",
       bold: "太字",
       bulletList: "箇条書き",
@@ -117,6 +129,38 @@ export const getMobileEditorImageWidthPresetLabel = (
   preset: ImageWidthPresetId,
   locale: MobileEditorLocale
 ): string => MOBILE_EDITOR_COPY[locale].imageSizes[preset];
+
+/**
+ * Opening a note, restoring a draft, or applying a template replaces the
+ * document. That replacement must not become an undo step, or the first undo
+ * would wipe the note back to the previous document.
+ */
+export const clearMobileEditorUndoHistory = (editor: Editor): void => {
+  try {
+    const state = editor.state;
+    editor.view.updateState(EditorState.create({
+      doc: state.doc,
+      plugins: state.plugins,
+      schema: state.schema,
+      selection: state.selection,
+    }));
+    // updateState does not emit a transaction, so toolbar subscribers would
+    // keep the pre-reset undo flag. A no-step transaction refreshes them
+    // without recording a new history event or a save.
+    editor.view.dispatch(editor.state.tr.setMeta("addToHistory", false).setMeta("preventUpdate", true));
+  } catch {
+    try {
+      const state = editor.state;
+      editor.view.updateState(EditorState.create({
+        doc: state.doc,
+        plugins: state.plugins,
+        schema: state.schema,
+      }));
+    } catch {
+      // The view is not mounted yet. The next user edit still starts a new history.
+    }
+  }
+};
 
 export const getMobileEditorInputAttributes = (className: string): Record<string, string> => ({
   autocapitalize: "sentences",

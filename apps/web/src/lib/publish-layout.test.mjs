@@ -159,15 +159,18 @@ describe("publish layout CSS", () => {
 });
 
 describe("copy pipeline wiring", () => {
-  test("wechat copy follows paper editor themes and keeps compact copy for other themes", () => {
+  test("wechat copy uses account prose and no longer applies paper layouts", () => {
     const source = readFileSync(new URL("./wechat-copy.ts", import.meta.url), "utf8");
     const preferenceCard = readFileSync(new URL("../components/settings/PreferenceCard.tsx", import.meta.url), "utf8");
 
-    expect(source).toContain("resolvePaperEditorTheme");
-    expect(source).toContain("applyPublishLayout");
-    expect(source).toContain('"phone"');
-    expect(source).toContain("MEMO_CONTENT_STYLE");
+    expect(source).not.toContain("resolvePaperEditorTheme");
+    expect(source).not.toContain("applyPublishLayout");
+    expect(source).toContain("noteProseCodeFontSize");
+    expect(source).toContain("NOTE_PROSE_HEADING_SCALE");
+    expect(source).toContain("NOTE_PROSE_PARAGRAPH_SPACING_PX");
+    expect(source).toContain("[data-note-palette]");
     expect(source).toContain("preparePublishArticle");
+    expect(source).not.toContain("editorThemeOverride");
     expect(source).toContain("ProseMirror-separator");
     expect(source).toContain("findOriginalImage");
     expect(source).toContain("svgToWeChatImage");
@@ -179,7 +182,7 @@ describe("copy pipeline wiring", () => {
     expect(preferenceCard).not.toContain('t("settings.editorThemeTitle")');
   });
 
-  test("drives the rich editor rhythm from paper editor themes", () => {
+  test("keeps paper layout styles available without applying them in the editor", () => {
     const editorPane = readFileSync(new URL("../components/EditorPane.tsx", import.meta.url), "utf8");
     const css = readFileSync(new URL("../styles/publish-layout.css", import.meta.url), "utf8");
     const vars = publishEditorCssVars("letter", "dawn");
@@ -197,10 +200,10 @@ describe("copy pipeline wiring", () => {
     expect(vars["--publish-ornament-brush"]).toContain("url(\"data:image/svg+xml");
     expect(css).toContain("--editor-theme-accent: var(--publish-accent)");
     expect(css).toContain("--brand-green: var(--publish-accent)");
-    expect(editorPane).toContain("isPaperEditorTheme(editorTheme)");
-    expect(editorPane).toContain('data-paper-theme={isPaperEditorTheme(editorTheme) ? "true" : undefined}');
-    expect(editorPane).toContain("publishEditorCssVars");
-    expect(editorPane).toContain('data-publish-surface={isMobileViewport ? "phone" : "desktop"}');
+    expect(editorPane).toContain('data-editor-theme="default"');
+    expect(editorPane).not.toContain("isPaperEditorTheme");
+    expect(editorPane).not.toContain("publishEditorCssVars");
+    expect(editorPane).not.toContain("data-paper-theme");
     expect(css).toContain("counter-increment: publish-h2");
     expect(css).toContain("[data-paper-theme]");
     expect(css).toContain('[data-editor-theme="letter"]');
@@ -209,14 +212,19 @@ describe("copy pipeline wiring", () => {
     expect(css).toContain("line-height: var(--editor-body-line-height)");
   });
 
-  test("phone preview markup applies the paper layout instead of raw editor chrome", () => {
+  test("phone preview markup follows account prose instead of a paper layout", () => {
     const source = readFileSync(new URL("./wechat-copy.ts", import.meta.url), "utf8");
     const preview = readFileSync(new URL("../components/EditorPhonePreview.tsx", import.meta.url), "utf8");
     expect(source).toContain("export const preparePublishArticle");
-    expect(source).toContain('applyPublishLayout(root, paperTheme.layout, paperTheme.palette, "phone")');
-    expect(source).toContain("editorThemeOverride");
-    expect(preview).toContain("preparePublishArticle(editor.getHTML(), editor.view.dom, editorTheme)");
+    expect(source).not.toContain("applyPublishLayout");
+    expect(source).toContain("applyLegacyWeChatStyles");
+    expect(source).toContain("const bold = colors ? `font-weight: 700; color: ${accent};` : \"font-weight: 700;\"");
+    expect(source).toContain("accentOnly");
+    expect(source).toContain('palette !== "native"');
+    expect(source).not.toContain('palette !== "custom"');
+    expect(preview).toContain("preparePublishArticle(editor.getHTML(), editor.view.dom)");
     expect(preview).toContain("previewRef.current?.setAttribute(\"style\", markup.style)");
-    expect(preview).toContain("key={editorTheme}");
+    expect(preview).toContain("noteProse");
+    expect(preview).not.toContain("key={editorTheme}");
   });
 });

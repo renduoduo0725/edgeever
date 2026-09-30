@@ -12,7 +12,7 @@ import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import { NEW_IMAGE_WIDTH_PERCENT } from "@edgeever/shared/image-display";
 import { insertUploadedResources } from "@/lib/resource-insertion";
 import { getResourceInsertionTarget } from "@/lib/resource-insertion-target";
-import { getMobileEditorInputAttributes, getMobileEditorPlaceholder } from "@edgeever/shared/mobile-editor";
+import { clearMobileEditorUndoHistory, getMobileEditorInputAttributes, getMobileEditorPlaceholder } from "@edgeever/shared/mobile-editor";
 import { EdgeEverLink } from "@edgeever/shared/editor-link";
 import { createInlineFieldExtension } from "@/components/editor/InlineField";
 import {
@@ -789,6 +789,7 @@ export const MobileStandaloneTiptapEditor = ({
           tagsTextRef.current = draft.tagsText || "";
           contentJsonRef.current = draft.contentJson || emptyDoc();
           editor.commands.setContent(contentJsonRef.current, { emitUpdate: false });
+          clearMobileEditorUndoHistory(editor);
           dirtyRef.current = true;
           setSaveStateStable("local-draft");
           scheduleMetadataSave();
@@ -802,6 +803,7 @@ export const MobileStandaloneTiptapEditor = ({
           tagsTextRef.current = queuedTagsText;
           contentJsonRef.current = queuedPayload.contentJson || emptyDoc();
           editor.commands.setContent(contentJsonRef.current, { emitUpdate: false });
+          clearMobileEditorUndoHistory(editor);
           lastSavedSnapshotRef.current = JSON.stringify({
             title: queuedTitle,
             tagsText: queuedTagsText,
@@ -817,6 +819,7 @@ export const MobileStandaloneTiptapEditor = ({
           tagsTextRef.current = nextTagsText;
           contentJsonRef.current = nextContentJson;
           editor.commands.setContent(nextContentJson, { emitUpdate: false });
+          clearMobileEditorUndoHistory(editor);
           lastSavedSnapshotRef.current = JSON.stringify({
             title: nextTitle,
             tagsText: nextTagsText,
@@ -933,6 +936,14 @@ export const MobileStandaloneTiptapEditor = ({
   const currentNotebookLabel =
     notebookOptions.find((notebook) => notebook.id === memo?.notebookId)?.name ?? t("editor.notebookFallback");
   const activeListItemType = editor?.isActive("taskItem") ? "taskItem" : "listItem";
+  const historyAvailable = (command: "undo" | "redo") => {
+    if (!editor || editor.isDestroyed) return false;
+    try {
+      return editor.can().chain().focus()[command]().run();
+    } catch {
+      return false;
+    }
+  };
   const canWrapIndentedParagraph = Boolean(editor && wrapIndentedParagraphInList(editor.state, undefined));
 
   const fallbackMarkdown = memo ? docToMarkdown(contentJsonRef.current) : "";
@@ -978,6 +989,8 @@ export const MobileStandaloneTiptapEditor = ({
 
         <MobileEditorToolbar
           disabled={editorActionDisabled}
+          undoAvailable={historyAvailable("undo")}
+          redoAvailable={historyAvailable("redo")}
           boldActive={Boolean(editor?.isActive("bold"))}
           bulletListActive={Boolean(editor?.isActive("bulletList"))}
           taskListActive={Boolean(editor?.isActive("taskList"))}
@@ -985,6 +998,8 @@ export const MobileStandaloneTiptapEditor = ({
           decreaseListIndentAvailable={Boolean(editor?.can().chain().focus().liftListItem(activeListItemType).run())}
           blockquoteActive={Boolean(editor?.isActive("blockquote"))}
           locale={locale}
+          onUndo={() => runEditorCommand(() => editor?.chain().focus().undo().run() ?? false)}
+          onRedo={() => runEditorCommand(() => editor?.chain().focus().redo().run() ?? false)}
           onPickImage={() => imageInputRef.current?.click()}
           onToggleBold={() => runEditorCommand(() => editor?.chain().focus().toggleBold().run() ?? false)}
           onToggleBulletList={() => runEditorCommand(() => (

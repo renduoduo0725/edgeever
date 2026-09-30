@@ -1,3 +1,4 @@
+import { DEFAULT_MEMO_TITLE } from "@edgeever/shared";
 import { enUS, ja, zhCN } from "@edgeever/shared/i18n";
 import { resolveSupportedLocale } from "@edgeever/shared/i18n/locales";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -165,6 +166,21 @@ const mobileOnlyTranslations = new Map<string, string>([
   ["当前内容将被模板内容替换。", "The current content will be replaced by the template."],
   ["替换", "Replace"],
   ["关闭", "Close"],
+  ["修改后会保留当前设备登录，并退出其他设备上的登录会话。", "Keeps this device signed in and signs out other sessions."],
+  ["添加标签", "Add tags"],
+  ["正在生成智能标签", "Generating smart tags"],
+  ["智能标签生成失败", "Could not generate smart tags"],
+  ["智能标签已添加", "Smart tags added"],
+  ["没有找到适合这篇笔记的新标签。", "No new tags fit this note."],
+  ["没有匹配的笔记本", "No matching notebooks"],
+  ["偏好设置", "Preferences"],
+  ["切换产品界面的显示语言。", "Choose the language used in the app."],
+  ["上传大图时在本地压缩，节省资源占用。", "Compress large images on this device before upload."],
+  ["已恢复上次未完成的本地草稿", "Restored your unfinished local draft"],
+  ["连接你的自托管笔记空间", "Connect to your self-hosted notes"],
+  ["首次登录密码", "Password for first sign-in"],
+  ["GitHub 仓库", "GitHub repository"],
+  ["操作失败，请稍后再试", "Something went wrong. Please try again."],
 ]);
 
 const mobileOnlyJapanese = new Map<string, string>([
@@ -314,6 +330,21 @@ const mobileOnlyJapanese = new Map<string, string>([
   ["当前内容将被模板内容替换。", "現在の内容はテンプレートの内容に置き換わります。"],
   ["替换", "置き換え"],
   ["关闭", "閉じる"],
+  ["修改后会保留当前设备登录，并退出其他设备上的登录会话。", "この端末のログインは維持し、他の端末のセッションは終了します。"],
+  ["添加标签", "タグを追加"],
+  ["正在生成智能标签", "スマートタグを生成しています"],
+  ["智能标签生成失败", "スマートタグを生成できませんでした"],
+  ["智能标签已添加", "スマートタグを追加しました"],
+  ["没有找到适合这篇笔记的新标签。", "このノートに合う新しいタグはありません。"],
+  ["没有匹配的笔记本", "一致するノートブックはありません"],
+  ["偏好设置", "環境設定"],
+  ["切换产品界面的显示语言。", "アプリの表示言語を切り替えます。"],
+  ["上传大图时在本地压缩，节省资源占用。", "大きな画像はアップロード前にこの端末で圧縮し、容量を抑えます。"],
+  ["已恢复上次未完成的本地草稿", "前回の未完成の下書きを復元しました"],
+  ["连接你的自托管笔记空间", "セルフホストのノートスペースに接続"],
+  ["首次登录密码", "初回ログインのパスワード"],
+  ["GitHub 仓库", "GitHub リポジトリ"],
+  ["操作失败，请稍后再试", "操作に失敗しました。しばらくしてから再試行してください。"],
 ]);
 
 const flattenStrings = (value: unknown, prefix = "", output = new Map<string, string>()) => {
@@ -415,6 +446,23 @@ export const translateMobileText = (value: string, locale: SupportedMobileLocale
 
 let currentResolvedMobileLocale: SupportedMobileLocale = resolveSystemLocale();
 export const translateCurrentMobileText = (value: string) => translateMobileText(value, currentResolvedMobileLocale);
+
+export const localizeUntitledMemoTitle = (
+  title: string | null | undefined,
+  locale: SupportedMobileLocale,
+) => {
+  const trimmed = title?.trim() ?? "";
+  if (trimmed && trimmed !== DEFAULT_MEMO_TITLE) {
+    return trimmed;
+  }
+  return translateMobileText(DEFAULT_MEMO_TITLE, locale);
+};
+
+export const localizeMissingNotebookName = (locale: SupportedMobileLocale) => {
+  if (locale === "en-US") return "Uncategorized";
+  if (locale === "ja") return "未分類";
+  return "未分类";
+};
 
 const MobileLocaleContext = createContext<MobileLocaleContextValue>({
   preference: "system",

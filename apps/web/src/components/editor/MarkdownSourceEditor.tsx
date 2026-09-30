@@ -37,6 +37,8 @@ export interface MarkdownSourceEditorRef {
   setSelection: (from: number, to: number) => void;
   focus: () => void;
   insertText: (text: string, from?: number, to?: number) => void;
+  sliceText: (from: number, to: number) => string;
+  getDocumentLength: () => number;
   getSelectionCoordinates: () => { top: number; left: number; bottom: number; right: number } | null;
 }
 
@@ -52,6 +54,7 @@ export interface MarkdownSourceEditorProps {
   ariaLabel?: string;
   onSlashCommandTrigger?: (commandStart: number) => void;
   onLinkShortcut?: () => void;
+  onSelectionChange?: () => void;
 }
 
 export const CODE_MIRROR_THEME_MAP: Record<MarkdownThemeName, Extension> = {
@@ -77,7 +80,7 @@ const baseEditorTheme = EditorView.theme({
   "&": {
     height: "100%",
     width: "100%",
-    fontSize: "14px",
+    fontSize: "var(--editor-body-font-size, 16px)",
     fontFamily:
       'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   },
@@ -122,6 +125,7 @@ export const MarkdownSourceEditor = forwardRef<MarkdownSourceEditorRef, Markdown
       ariaLabel,
       onSlashCommandTrigger,
       onLinkShortcut,
+      onSelectionChange,
     },
     ref,
   ) => {
@@ -129,6 +133,8 @@ export const MarkdownSourceEditor = forwardRef<MarkdownSourceEditorRef, Markdown
     const memoIdRef = useRef(memoId);
     memoIdRef.current = memoId;
     const pendingPastesRef = useRef(new Set<PendingPaste>());
+    const onSelectionChangeRef = useRef(onSelectionChange);
+    onSelectionChangeRef.current = onSelectionChange;
 
     useImperativeHandle(
       ref,
@@ -170,6 +176,15 @@ export const MarkdownSourceEditor = forwardRef<MarkdownSourceEditorRef, Markdown
             scrollIntoView: true,
           });
         },
+        sliceText: (from: number, to: number) => {
+          const view = cmRef.current?.view;
+          if (!view) return "";
+          const length = view.state.doc.length;
+          const safeFrom = Math.max(0, Math.min(from, length));
+          const safeTo = Math.max(safeFrom, Math.min(to, length));
+          return view.state.doc.sliceString(safeFrom, safeTo);
+        },
+        getDocumentLength: () => cmRef.current?.view?.state.doc.length ?? 0,
         getSelectionCoordinates: () => {
           const view = cmRef.current?.view;
           if (!view) return null;
@@ -197,11 +212,13 @@ export const MarkdownSourceEditor = forwardRef<MarkdownSourceEditorRef, Markdown
         EditorView.lineWrapping,
         baseEditorTheme,
         EditorView.updateListener.of((update) => {
-          if (!update.docChanged) return;
-          for (const pending of pendingPastesRef.current) {
-            pending.from = update.changes.mapPos(pending.from, -1);
-            pending.to = update.changes.mapPos(pending.to, 1);
+          if (update.docChanged) {
+            for (const pending of pendingPastesRef.current) {
+              pending.from = update.changes.mapPos(pending.from, -1);
+              pending.to = update.changes.mapPos(pending.to, 1);
+            }
           }
+          if (update.selectionSet || update.docChanged) onSelectionChangeRef.current?.();
         }),
       ];
     }, []);

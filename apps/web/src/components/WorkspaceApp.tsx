@@ -117,6 +117,7 @@ import { useWorkspaceSyncLifecycle } from "@/hooks/useWorkspaceSyncLifecycle";
 import { paneEnterMotion } from "@/lib/motion";
 import { WorkspaceMotionProvider } from "./WorkspaceMotionProvider";
 import { useWorkspaceRoute } from "@/hooks/useWorkspaceRoute";
+import { useNoteProse } from "@/hooks/useNoteProse";
 import { useWorkspacePreferences } from "@/hooks/useWorkspacePreferences";
 import { useWorkspaceSelection } from "@/hooks/useWorkspaceSelection";
 import { useWorkspaceQueuedSync } from "@/hooks/useWorkspaceQueuedSync";
@@ -508,19 +509,20 @@ export const WorkspaceApp = ({
   const [multiSelectKeyDown, setMultiSelectKeyDown] = useState(false);
   const {
     desktopFocusMode,
-    editorContentAlignment,
+    editorContentWidth,
     imageCompressionEnabled,
     memoListWidth,
     notebookSidebarCollapsed,
     resetMemoListWidth,
     setDesktopFocusMode,
-    setEditorContentAlignment,
+    setEditorContentWidth,
     setImageCompressionEnabled,
     setMemoListWidth,
     setNotebookSidebarCollapsed,
     setShortcutSettings,
     shortcutSettings,
   } = useWorkspacePreferences();
+  const { noteProse, updateNoteProse } = useNoteProse();
   const [rightView, setRightView] = useState<"editor" | "settings" | "plugins" | "assets" | "tags" | "templates" | "ai-prompts" | "execution-center" | "evernote-migration">(() =>
     isInitialSettingsRoute
       ? "settings"
@@ -3426,8 +3428,10 @@ export const WorkspaceApp = ({
                     onImageCompressionChange={setImageCompressionEnabled}
                     shortcutSettings={shortcutSettings}
                     onShortcutSettingsChange={setShortcutSettings}
-                    editorContentAlignment={editorContentAlignment}
-                    onEditorContentAlignmentChange={setEditorContentAlignment}
+                    editorContentWidth={editorContentWidth}
+                    onEditorContentWidthChange={setEditorContentWidth}
+                    noteProse={noteProse}
+                    onNoteProseChange={updateNoteProse}
                     onLogout={onLogout}
                     isLoggingOut={isLoggingOut}
                     authRequired={authRequired}
@@ -3580,7 +3584,8 @@ export const WorkspaceApp = ({
                     onOpenCompanionNote={handleOpenPluginNote}
                     desktopFocusMode={desktopFocusModeActive}
                     onToggleDesktopFocusMode={toggleDesktopFocusMode}
-                    editorContentAlignment={editorContentAlignment}
+                    editorContentWidth={editorContentWidth}
+                    noteProse={noteProse}
                     mobileDefaultEditMemoId={createdMemoEditId}
                     isTrashView={memoView === "trash"}
                     notebooks={notebooks}
