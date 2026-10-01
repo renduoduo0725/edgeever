@@ -33,6 +33,12 @@ describe("mobile locale translation", () => {
     expect(translateMobileText("切换产品界面的显示语言。", "en-US")).toBe("Choose the language used in the app.");
     expect(translateMobileText("当前密码不正确。", "en-US")).toBe("The current password is incorrect.");
     expect(translateMobileText("修改中...", "ja")).toBe("変更中...");
+    expect(translateMobileText("正在剪藏文章", "en-US")).toBe("Clipping article");
+    expect(translateMobileText("剪藏失败", "ja")).toBe("ページを取り込めませんでした");
+    expect(translateMobileText("正文剪藏失败", "en-US")).toBe("Article extraction failed");
+    expect(translateMobileText("微信文章请求失败（HTTP 404）。", "en-US")).toBe("The WeChat article request failed (HTTP 404).");
+    expect(translateMobileText("分享的图片（2 张）", "ja")).toBe("共有された画像（2 枚）");
+    expect(translateMobileText("来源：https://example.com", "en-US")).toBe("来源：https://example.com");
   });
 
   test("localizes only the default untitled title and the missing-notebook fallback", () => {

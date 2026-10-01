@@ -106,6 +106,40 @@ describe("mobile web clip", () => {
       },
     });
     expect(draft.contentMarkdown).toContain("https://mp.weixin.qq.com/s/offline");
+    expect(draft.contentMarkdown).toContain("来源：");
+    expect(draft.contentMarkdown).toContain("剪藏时间：");
     expect(draft.contentMarkdown).toContain("正文暂时无法抓取");
+  });
+
+  test("writes English source labels into a new clip", () => {
+    const draft = buildMobileWebClipDraftFromRenderedPage(
+      "https://example.com/story",
+      {
+        title: "Story",
+        finalUrl: "https://example.com/story",
+        contentHtml: "<p>Body</p><img src=\"https://example.com/a.png\">",
+      },
+      { capturedAt: new Date("2026-07-31T00:00:00.000Z"), locale: "en-US" },
+    );
+
+    expect(draft.contentMarkdown).toContain("Source: [https://example.com/story](https://example.com/story)");
+    expect(draft.contentMarkdown).toContain("Captured at: 2026-07-31T00:00:00.000Z");
+    expect(draft.contentMarkdown).toContain("![Image](https://example.com/a.png)");
+    expect(draft.contentMarkdown).not.toContain("来源");
+  });
+
+  test("writes Japanese labels when the page cannot be fetched", async () => {
+    const draft = await buildMobileWebClipDraft("notaurl", {
+      capturedAt: new Date("2026-07-31T00:00:00.000Z"),
+      fetcher: async () => {
+        throw new Error("offline");
+      },
+      locale: "ja",
+    });
+
+    expect(draft.title).toBe("ウェブクリップ");
+    expect(draft.contentMarkdown).toContain("出典: [notaurl](notaurl)");
+    expect(draft.contentMarkdown).toContain("取り込み日時: 2026-07-31T00:00:00.000Z");
+    expect(draft.contentMarkdown).toContain("本文を取り込めませんでした。出典リンクは残してあるので、あとからやり直せます。");
   });
 });

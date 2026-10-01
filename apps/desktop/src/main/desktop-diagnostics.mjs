@@ -1,4 +1,9 @@
 const GITHUB_NEW_ISSUE_URL = "https://github.com/tianma-if/edgeever/issues/new";
+const DESKTOP_CLIENT_BY_PLATFORM = {
+  darwin: "macOS",
+  win32: "Windows",
+  linux: "Linux",
+};
 // Keep the prefilled GitHub URL below common browser/server URL limits while
 // retaining the first useful frames from renderer stacks.
 const MAX_DIAGNOSTIC_TEXT_LENGTH = 1_200;
@@ -45,21 +50,20 @@ export const buildDesktopDiagnosticIssueUrl = ({ diagnostic, systemInfo }) => {
     gpuFeatures: sanitizeDesktopDiagnosticText(systemInfo.gpuFeatures),
   };
   const title = `[Crash] Desktop renderer failure (${safeSystemInfo.platform} ${safeSystemInfo.architecture})`;
+  const systemInfoText = Object.entries(safeSystemInfo)
+    .filter(([, value]) => value)
+    .map(([key, value]) => `- ${key}: ${value}`)
+    .join("\n");
+  const client = DESKTOP_CLIENT_BY_PLATFORM[safeSystemInfo.platform] ?? "";
   const makeUrl = (reportDiagnostic) => {
-    const body = [
-      "## What happened",
-      "",
-      "<!-- Please describe what you were doing immediately before EdgeEver showed the recovery screen. -->",
-      "",
-      "## Automatically captured diagnostics",
-      "",
-      "```json",
-      JSON.stringify({ diagnostic: reportDiagnostic, systemInfo: safeSystemInfo }, null, 2),
-      "```",
-      "",
-      "> This report was generated locally and common URLs, credentials, and home-directory names were redacted. GitHub Issues are public; please review the report before submitting it and do not add private note content, passwords, tokens, or instance URLs.",
-    ].join("\n");
-    return `${GITHUB_NEW_ISSUE_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+    const params = new URLSearchParams({
+      template: "bug.yml",
+      title,
+      "system-info": systemInfoText,
+      diagnostics: JSON.stringify({ diagnostic: reportDiagnostic, systemInfo: safeSystemInfo }, null, 2),
+    });
+    if (client) params.set("client", client);
+    return `${GITHUB_NEW_ISSUE_URL}?${params.toString()}`;
   };
 
   const fullUrl = makeUrl(normalized);

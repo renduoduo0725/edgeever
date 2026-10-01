@@ -13,7 +13,6 @@ export const NOTE_PROSE_PALETTE_IDS = [
   "teal",
   "azure",
   "violet",
-  "plum",
   "pink",
   "slate",
 ] as const;
@@ -166,7 +165,7 @@ export const NOTE_PROSE_PALETTES: Record<NoteProsePaletteId, NoteProsePaletteCol
     background: "#FFFFFF",
   }),
   violet: palette({
-    accent: "#7567F8",
+    accent: "#656FE6",
     text: "#3F3F46",
     muted: "#3F3F46",
     surface: "#F4F4F5",
@@ -174,17 +173,6 @@ export const NOTE_PROSE_PALETTES: Record<NoteProsePaletteId, NoteProsePaletteCol
     link: "#5B4EE0",
     codeBackground: "#F3F1FF",
     codeText: "#5B4EE0",
-    background: "#FFFFFF",
-  }),
-  plum: palette({
-    accent: "#7A4E6E",
-    text: "#3A2E36",
-    muted: "#746068",
-    surface: "#FBF7F9",
-    divider: "#E8D7E0",
-    link: "#5E3A54",
-    codeBackground: "#F4ECF1",
-    codeText: "#5E3A54",
     background: "#FFFFFF",
   }),
   pink: palette({
@@ -262,8 +250,8 @@ export const parseNoteProseLineHeight = (value: unknown): NoteProseLineHeight | 
 };
 
 export const parseNoteProsePalette = (value: unknown): NoteProsePaletteChoice | null => {
-  // Green and the custom color editor were removed. Stored rows read as native.
-  if (value === "emerald" || value === "custom") return "native";
+  // Removed palettes and the custom color editor read as native.
+  if (value === "emerald" || value === "green" || value === "plum" || value === "custom") return "native";
   return typeof value === "string" && (NOTE_PROSE_PALETTE_CHOICES as readonly string[]).includes(value)
     ? value as NoteProsePaletteChoice
     : null;

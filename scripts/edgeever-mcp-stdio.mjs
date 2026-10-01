@@ -140,10 +140,14 @@ async function forwardToEdgeEver(request) {
 }
 
 async function createClient(profileName) {
-  const config = await readConfig();
+  const directUrl = process.env.EDGEEVER_URL;
+  const directToken = process.env.EDGEEVER_TOKEN;
+  // ACP supplies both values for its short-lived local bridge. In that mode,
+  // do not read an unrelated MCP profile from the user's home directory.
+  const config = directUrl && directToken ? {} : await readConfig();
   const profile = profileName ? config.profiles?.[profileName] : undefined;
-  const baseUrl = (process.env.EDGEEVER_URL || profile?.url || DEFAULT_URL).replace(/\/+$/, "");
-  const token = process.env.EDGEEVER_TOKEN || profile?.token;
+  const baseUrl = (directUrl || profile?.url || DEFAULT_URL).replace(/\/+$/, "");
+  const token = directToken || profile?.token;
 
   if (!token) {
     throw new Error("EDGEEVER_TOKEN is required, or configure a profile with `bun run cli -- profile set`.");

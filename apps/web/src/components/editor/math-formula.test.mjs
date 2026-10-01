@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { Editor } from "@tiptap/core";
 import { createEdgeEverDocumentExtensions } from "@edgeever/shared";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
+import { ensureTestWindowDom } from "../../lib/restore-test-global.mjs";
 import {
   applyMathFormula,
   deleteMathFormula,
@@ -9,12 +10,15 @@ import {
   selectedTextAsLatex,
 } from "./math-formula.ts";
 
-const createEditor = (content) => new Editor({
-  extensions: createEdgeEverDocumentExtensions({
-    mathematics: createEdgeEverMathematics(),
-  }),
-  content,
-});
+const createEditor = (content) => {
+  ensureTestWindowDom();
+  return new Editor({
+    extensions: createEdgeEverDocumentExtensions({
+      mathematics: createEdgeEverMathematics(),
+    }),
+    content,
+  });
+};
 
 describe("math formula commands", () => {
   test("inserts inline math at the caret", () => {

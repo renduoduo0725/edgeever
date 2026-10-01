@@ -17,8 +17,9 @@ describe("shared memo editor header actions", () => {
     expect(actionsSource).toContain("<GitHubRepositoryLink");
     expect(actionsSource).not.toContain("SystemInfoDialog");
     expect(actionsSource).not.toContain("systemInfo.title");
+    expect(actionsSource).not.toContain("setPreference(nextTheme)");
+    expect(actionsSource).not.toContain('t("common.githubRepository")');
     expect(actionsSource).toContain("<ExecutionCenterButton");
-    expect(actionsSource).toContain("setPreference(nextTheme)");
     expect(actionsSource).toContain("<MoreHorizontal");
   });
 
@@ -74,6 +75,13 @@ describe("shared memo editor header actions", () => {
     expect(densitySource.match(/MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME =\s*"([^"]+)"/)?.[1]).not.toContain("sm:px-7");
     expect(densitySource).toContain("[--editor-reading-gutter:1rem] sm:[--editor-reading-gutter:1.75rem] lg:[--editor-reading-gutter:6rem]");
     expect(densitySource).not.toContain("min-[1600px]:flex");
+  });
+
+  test("cycles rich text and markdown from one toolbar button", () => {
+    expect(editorToolbarSource).toContain("const nextEditorViewMode = EDITOR_VIEW_MODES[activeEditorView === \"rich\" ? 1 : 0]");
+    expect(editorToolbarSource).toContain("onEditorViewChange(nextEditorViewMode.value)");
+    expect(editorToolbarSource).not.toContain("EDITOR_VIEW_MODES.map");
+    expect(editorToolbarSource).not.toContain('t("editorToolbar.viewMode")');
   });
 
   test("aligns the note title, notebook row, and article on one reading gutter", () => {

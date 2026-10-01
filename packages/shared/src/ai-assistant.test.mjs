@@ -21,7 +21,7 @@ const originalWindow = globalThis.window;
 const originalLocalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 
 afterEach(() => {
-  globalThis.window = originalWindow;
+  if (originalWindow !== undefined) globalThis.window = originalWindow;
   if (originalLocalStorage) {
     Object.defineProperty(globalThis, "localStorage", originalLocalStorage);
   } else {

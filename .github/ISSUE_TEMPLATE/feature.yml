@@ -1,0 +1,52 @@
+name: 功能建议
+description: 希望增加或调整一个能力。
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请写清现在办不到什么，以及你希望怎么做。GitHub Issue 公开可见，不要附上密码、Token、实例地址或笔记正文。
+
+        系统信息用来确认当前版本是否已经支持。在「设置 → 系统信息」点「复制信息」后粘贴。
+  - type: dropdown
+    id: client
+    attributes:
+      label: 用在哪个端
+      description: Which client should have this?
+      multiple: true
+      options:
+        - Web
+        - macOS
+        - Windows
+        - Linux
+        - Android
+        - iOS
+        - Browser extension
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 想要的能力
+      description: 做成之后，你可以完成哪件现在做不到的事。What should become possible?
+      placeholder: 例如：在手机上把一篇笔记从 Markdown 切回富文本继续改。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 现在怎么做
+      description: 你目前的做法，以及具体卡在哪一步。How do you handle this today, and where does it break down?
+    validations:
+      required: true
+  - type: textarea
+    id: system-info
+    attributes:
+      label: 系统信息
+      description: 粘贴「设置 → 系统信息」里复制的内容。应用内反馈会自动填入。Paste the copied system information.
+      placeholder: |
+        - 客户端版本: v1.93.0
+        - 系统: Android
+    validations:
+      required: true

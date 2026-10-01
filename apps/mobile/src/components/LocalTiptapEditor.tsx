@@ -3236,6 +3236,21 @@ const getEditorStyles = (theme: "light" | "dark", options?: { viewer?: boolean }
   .edgeever-editor-content a.edgeever-attachment-kind-archive::before { background: ${theme === "dark" ? "#713f12" : "#fffbeb"}; color: ${theme === "dark" ? "#fde68a" : "#d97706"}; content: "ZIP"; }
   .edgeever-editor-content a.edgeever-attachment-kind-code::before { background: ${theme === "dark" ? "#581c87" : "#faf5ff"}; color: ${theme === "dark" ? "#d8b4fe" : "#8b5cf6"}; content: "</>"; }
   .edgeever-editor-content a.edgeever-attachment-kind-text::before { background: ${theme === "dark" ? "#334155" : "#f1f5f9"}; color: ${theme === "dark" ? "#cbd5e1" : "#64748b"}; content: "TXT"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-apk::before { background: ${theme === "dark" ? "#064e3b" : "#ecfdf5"}; color: ${theme === "dark" ? "#6ee7b7" : "#059669"}; content: "APK"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-exe::before { background: ${theme === "dark" ? "#0c4a6e" : "#f0f9ff"}; color: ${theme === "dark" ? "#7dd3fc" : "#0284c7"}; content: "EXE"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-dmg::before { background: ${theme === "dark" ? "#4c1d95" : "#f5f3ff"}; color: ${theme === "dark" ? "#c4b5fd" : "#7c3aed"}; content: "DMG"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-linux::before { background: ${theme === "dark" ? "#7c2d12" : "#fff7ed"}; color: ${theme === "dark" ? "#fdba74" : "#ea580c"}; content: "LINUX"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-executable::before { background: ${theme === "dark" ? "#134e4a" : "#ccfbf1"}; color: ${theme === "dark" ? "#5eead4" : "#0d9488"}; content: "BIN"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-book::before { background: ${theme === "dark" ? "#78350f" : "#fef3c7"}; color: ${theme === "dark" ? "#fcd34d" : "#b45309"}; content: "BOOK"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-font::before { background: ${theme === "dark" ? "#312e81" : "#e0e7ff"}; color: ${theme === "dark" ? "#a5b4fc" : "#4f46e5"}; content: "FONT"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-diskimage::before { background: ${theme === "dark" ? "#164e63" : "#cffafe"}; color: ${theme === "dark" ? "#67e8f9" : "#0891b2"}; content: "ISO"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-database::before { background: ${theme === "dark" ? "#701a75" : "#fae8ff"}; color: ${theme === "dark" ? "#f0abfc" : "#c026d3"}; content: "DB"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-design::before { background: ${theme === "dark" ? "#831843" : "#fdf2f8"}; color: ${theme === "dark" ? "#f472b6" : "#db2777"}; content: "DESIGN"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-model3d::before { background: ${theme === "dark" ? "#1e3a8a" : "#eff6ff"}; color: ${theme === "dark" ? "#93c5fd" : "#2563eb"}; content: "3D"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-script::before { background: ${theme === "dark" ? "#064e3b" : "#ecfdf5"}; color: ${theme === "dark" ? "#6ee7b7" : "#059669"}; content: "SHELL"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-log::before { background: ${theme === "dark" ? "#27272a" : "#f4f4f5"}; color: ${theme === "dark" ? "#a1a1aa" : "#71717a"}; content: "LOG"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-certificate::before { background: ${theme === "dark" ? "#713f12" : "#fefce8"}; color: ${theme === "dark" ? "#fde047" : "#ca8a04"}; content: "KEY"; }
+  .edgeever-editor-content a.edgeever-attachment-kind-diagram::before { background: ${theme === "dark" ? "#134e4a" : "#f0fdfa"}; color: ${theme === "dark" ? "#5eead4" : "#0d9488"}; content: "DIAG"; }
   .edgeever-editor-content .edgeever-unsupported-content {
     border: 1px dashed ${theme === "dark" ? "#64748b" : "#94a3b8"};
     border-radius: 8px;

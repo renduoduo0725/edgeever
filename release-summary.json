@@ -1,20 +1,32 @@
 {
-  "version": "1.93.0",
+  "version": "1.95.0",
   "changes": {
     "en-US": [
-      "Desktop users can connect and manage local Agents through ACP, including DeepSeek Harness and pi.",
-      "Double-click an image in a shared note to enlarge it.",
-      "AI settings use clearer service and local Agent labels."
+      "Structured tables can now be created and edited through MCP, including table schemas and record operations.",
+      "Note body colors have been refined. The removed Plum palette in saved settings falls back to the default appearance.",
+      "The local Agent now supports Claude Code, OpenClaw, and Hermes. Compatible agents can access notes for the current session; note context is optional, generated images are kept locally, and activity and settings are clearer.",
+      "Copying notes for publishing now shows progress, and copying to WeChat preserves LaTeX formulas.",
+      "Infographics can be generated from the AI sidebar and exported as readable images.",
+      "Changing a password now works from an existing desktop sign-in session.",
+      "The note menu is simpler, with theme and repository rows removed."
     ],
     "zh-CN": [
-      "桌面端可通过 ACP 连接和管理本机 Agent，包括 DeepSeek Harness 和 pi。",
-      "在分享的笔记中双击图片即可放大查看。",
-      "AI 设置中的服务与本机 Agent 说明更清晰。"
+      "现在可以通过 MCP 创建和编辑结构化表格，包括表结构与记录的增删改查。",
+      "笔记正文配色已调整；此前保存的梅红配色会回退为默认外观。",
+      "本机 Agent 新增 Claude Code、OpenClaw 和 Hermes 支持。兼容的 Agent 可在当前会话访问笔记；当前笔记上下文可选，生成的图片会保存在本机，活动和设置显示也更清楚。",
+      "复制笔记用于发布时会显示进度；复制到微信时会保留 LaTeX 公式。",
+      "现在可以在 AI 侧栏生成信息图，并将其导出为清晰易读的图片。",
+      "使用现有桌面端登录会话时，现在可以正常修改密码。",
+      "笔记菜单移除了主题和仓库条目，内容更简洁。"
     ],
     "ja": [
-      "デスクトップ版で ACP 経由のローカル Agent の接続と管理に対応し、DeepSeek Harness と pi も利用できます。",
-      "共有ノートの画像をダブルクリックして拡大表示できます。",
-      "AI 設定のサービスとローカル Agent の表記を分かりやすくしました。"
+      "MCP から構造化テーブルのスキーマとレコードを作成・編集できるようになりました。",
+      "ノート本文の配色を調整しました。保存済みの Plum 配色は標準の外観に戻ります。",
+      "ローカル Agent が Claude Code、OpenClaw、Hermes に対応しました。対応する Agent は現在のセッションでノートにアクセスでき、ノート文脈は任意です。生成画像はローカルに保存され、操作状況と設定も見やすくなりました。",
+      "公開用にノートをコピーすると進行状況が表示され、微信へのコピーでは LaTeX 数式が保持されます。",
+      "AI サイドバーからインフォグラフィックを生成し、読みやすい画像として書き出せます。",
+      "既存のデスクトップのログインセッションからパスワードを変更できるようになりました。",
+      "ノートメニューからテーマとリポジトリの項目を外し、表示を簡潔にしました。"
     ]
   }
 }

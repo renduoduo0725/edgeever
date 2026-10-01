@@ -60,13 +60,13 @@ export const MemoEditorMetadataRow = ({
           <span className="min-w-0 truncate">{currentNotebookLabel}</span>
           <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
         </button>
-        <div className="hidden min-w-[9rem] max-w-[18rem] sm:block">
+        <div className="hidden min-w-0 max-w-[18rem] shrink overflow-hidden sm:block">
           <Select
             value={selectedNotebookId}
             disabled={disabled || notebookUpdatePending}
             onValueChange={onNotebookChange}
           >
-            <SelectTrigger className="h-7 min-w-0 whitespace-nowrap border-transparent bg-transparent px-2 text-xs font-medium text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900">
+            <SelectTrigger className="h-7 w-auto max-w-full min-w-0 overflow-hidden border-transparent bg-transparent px-2 text-xs font-medium text-slate-600 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 [&_svg]:shrink-0 [&>span]:min-w-0 [&>span]:truncate">
               <SelectValue placeholder={t("editor.notebookPlaceholder")}>{currentNotebookLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent className="max-h-60 rounded-md border border-slate-200 bg-card py-1 shadow-md">

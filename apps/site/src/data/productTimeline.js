@@ -1,5 +1,53 @@
 export const productTimeline = [
   {
+    date: "2026-09-30",
+    title: "本机 ACP Agent 深度协同与 AI 伴侣侧边栏 (v1.93.0)",
+    summary:
+      "桌面端支持 ACP（Agent Client Protocol）直连本机 Agent（Codex、Antigravity、Claude Code、WorkBuddy、DeepSeek Harness、pi agent 等）；全面上线常驻伴侣侧边栏与多轮对话；分享笔记支持双击图片缩放。",
+    commits: ["5ebcc5c", "cb16fa2", "4ed13eb", "8ac1fc9"],
+    highlights: ["桌面端 ACP 本机 Agent 深度协同", "AI 伴侣侧边栏多会话切换", "划词一键解释与翻译", "公开分享笔记双击放大图片"],
+  },
+  {
+    date: "2026-09-28",
+    title: "笔记外观排版预设与明暗自定义 CSS (v1.90.0)",
+    summary:
+      "笔记支持字号、行高与调色板独立配置；支持明亮与暗黑模式自定义 CSS 预设与一览同屏预览；优化长文档分块加载性能。",
+    commits: ["871a932", "64d8857", "9e1a1df", "5329053"],
+    highlights: ["笔记独立字号与行高设置", "明暗双模式自定义 CSS 预设", "自定义样式同屏对照预览", "伴侣侧边栏直观切换会话"],
+  },
+  {
+    date: "2026-09-24",
+    title: "剪藏生态全能升级与移动端撤销重做 (v1.85.0)",
+    summary:
+      "剪藏插件支持右键网页图片直接存为笔记、右键保存 X 推文、右键保存选区文本；手机端编辑器新增 Undo / Redo 操作按钮。",
+    commits: ["8a4df2a", "c85e365", "26ebc33", "4878298"],
+    highlights: ["网页右键存图与 X 推文剪藏", "选中文本快捷右键保存", "手机端编辑器撤销重做", "结构化表格与信息图笔记"],
+  },
+  {
+    date: "2026-09-16",
+    title: "可视化图表笔记与结构化 IR 引擎 (v1.75.0)",
+    summary:
+      "笔记内原生支持思维导图、流程图与架构图绘制；基于结构化 IR，内置 AI 助手与外部 Agent 可一句话智能生成与修改图表，支持自动布局与矢量导出。",
+    commits: ["d400371", "5597680", "caa5967", "4661612"],
+    highlights: ["笔记内原生思维导图与流程图", "结构化 IR 一句话 AI 生成与修改", "多端 X6 图表原生渲染", "组织架构与鱼骨图自动布局"],
+  },
+  {
+    date: "2026-09-05",
+    title: "官方插件市场上线与 Linux AppImage 自动更新 (v1.65.0)",
+    summary:
+      "发布官方插件市场（EdgeEver Tasks、AI RSS）；声明式原生设置与权限受控隔离；Linux x64 AppImage 支持应用内跨版本自动更新。",
+    commits: ["39cf34b", "5070578", "a02e2d4", "930d2d7"],
+    highlights: ["官方插件市场与任务管理插件", "声明式受控插件设置面板", "Linux AppImage 跨版本自动更新", "拖拽导入 Markdown 笔记"],
+  },
+  {
+    date: "2026-09-01",
+    title: "公开分享密码保护与桌面系统集成 (v1.55.0)",
+    summary:
+      "公开分享笔记支持设置自动生成的访问密码；Windows 资源管理器右键直接“发送到 EdgeEver”；支持托盘截图快捷新建笔记；内置日语多语言。",
+    commits: ["dcfd114", "cfd73b7", "aca0f17", "ea9900b"],
+    highlights: ["公开分享链接密码保护", "Windows 资源管理器右键集成", "托盘截图快捷新建笔记", "全端第一方日语支持"],
+  },
+  {
     date: "2026-08-28",
     title: "统一附件卡片、PDF 预览与智能标题派生 (v1.45.x)",
     summary:

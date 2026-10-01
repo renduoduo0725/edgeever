@@ -1,17 +1,22 @@
 import { spawn as nodeSpawn } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { accessSync, constants as fsConstants, existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { Readable, Writable } from "node:stream";
+import { fileURLToPath } from "node:url";
 import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION, RequestError } from "@agentclientprotocol/sdk";
 import { waitForChildProcessSpawn } from "./child-process-start.mjs";
 import { createAcpAdapterManager } from "./acp-adapter-manager.mjs";
+import { startAcpMcpBridge } from "./acp-mcp-bridge.mjs";
 
 const ADAPTERS = {
   codex: { id: "codex", label: "Codex" },
+  claudeCode: { id: "claudeCode", label: "Claude Code" },
   antigravity: { id: "antigravity", label: "Antigravity" },
+  openClaw: { id: "openClaw", label: "OpenClaw" },
+  hermesAgent: { id: "hermesAgent", label: "Hermes Agent" },
   grokBuild: { id: "grokBuild", label: "Grok Build" },
   deepseekHarness: { id: "deepseekHarness", label: "DeepSeek Harness" },
   piAgent: { id: "piAgent", label: "pi agent" },
@@ -123,7 +128,10 @@ export function resolveAcpCommand(input, deps = {}) {
   const id = input?.id;
   if (!Object.hasOwn(ADAPTERS, id)) return { ok: false, state: "failed", detail: "unknown_adapter" };
   if (id === "codex") return resolveCodex(input?.path, resolved);
+  if (id === "claudeCode") return resolveAgentCli("claude-agent-acp", [], resolved);
   if (id === "antigravity") return resolveAntigravity(input?.path, resolved);
+  if (id === "openClaw") return resolveAgentCli("openclaw", ["acp"], resolved);
+  if (id === "hermesAgent") return resolveAgentCli("hermes", ["acp"], resolved);
   if (id === "grokBuild") return resolveGrok(input?.path, resolved);
   if (id === "deepseekHarness") return resolveLocalAcpCli("dsh", ["--profile", "acp"], resolved);
   if (id === "piAgent") {
@@ -155,6 +163,14 @@ function resolveLocalAcpCli(name, args, deps) {
   return { ok: true, command: /\.[cm]?js$/i.test(executable)
     ? { command: deps.executablePath, args: [executable, ...args], env: { ELECTRON_RUN_AS_NODE: "1" } }
     : { command: executable, args } };
+}
+
+function resolveAgentCli(name, args, deps) {
+  const result = resolveLocalAcpCli(name, args, deps);
+  if (!result.ok || deps.platform === "win32") return result;
+  // Desktop launchers may omit the directories containing node or agent shims.
+  const paths = [path.join(deps.home, ".local", "bin"), ...(deps.platform === "darwin" ? ["/opt/homebrew/bin", "/usr/local/bin"] : []), deps.pathEnv];
+  return { ...result, command: { ...result.command, env: { ...result.command.env, PATH: paths.join(":") } } };
 }
 
 function withPiPath(command, deps) {
@@ -397,18 +413,59 @@ const safeToolToken = (value) => {
   return trimmed;
 };
 
+const MAX_GENERATED_IMAGES = 8;
+
+const compactBase64 = (value) => {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (trimmed.startsWith("data:") && !trimmed.includes(",")) return "";
+  const payload = trimmed.startsWith("data:") ? trimmed.slice(trimmed.indexOf(",") + 1) : trimmed;
+  const compact = payload.replace(/\s+/g, "");
+  if (!compact || compact.length > MAX_ATTACHMENT_CHARS || compact.length % 4 === 1) return "";
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(compact)) return "";
+  return compact;
+};
+
+const imageFingerprint = (base64) => createHash("sha256").update(base64).digest("hex").slice(0, 16);
+
+const imageEventFromBlock = (requestId, block, id) => {
+  if (!block || typeof block !== "object" || block.type !== "image") return null;
+  const mediaType = mediaTypeBase(block.mimeType);
+  if (!IMAGE_TYPES.has(mediaType)) return null;
+  const base64 = compactBase64(block.data);
+  if (!base64) return null;
+  return { requestId, type: "image", id, mediaType, base64 };
+};
+
+const toolImageEvents = (requestId, update) => {
+  if (!Array.isArray(update.content)) return [];
+  const toolId = safeToolToken(update.toolCallId) || "tool";
+  const events = [];
+  for (const item of update.content) {
+    if (events.length >= MAX_GENERATED_IMAGES) break;
+    const block = item?.type === "content" ? item.content : item;
+    const image = imageEventFromBlock(requestId, block, `${toolId}:${events.length}`);
+    if (image) events.push(image);
+  }
+  return events;
+};
+
 export function eventsFromSessionUpdate(requestId, params) {
   const update = params?.update;
   if (!update || typeof update !== "object") return [];
-  if (update.sessionUpdate === "agent_message_chunk" || update.sessionUpdate === "agent_thought_chunk") {
+  if (update.sessionUpdate === "agent_thought_chunk") {
     if (update.content?.type !== "text" || typeof update.content.text !== "string" || update.content.text.length === 0) {
       return [];
     }
-    return [{
-      requestId,
-      type: update.sessionUpdate === "agent_message_chunk" ? "text-delta" : "reasoning",
-      text: update.content.text,
-    }];
+    return [{ requestId, type: "reasoning", text: update.content.text }];
+  }
+  if (update.sessionUpdate === "agent_message_chunk") {
+    if (update.content?.type === "text" && typeof update.content.text === "string" && update.content.text.length > 0) {
+      return [{ requestId, type: "text-delta", text: update.content.text }];
+    }
+    const image = imageEventFromBlock(requestId, update.content, "");
+    if (!image) return [];
+    return [{ ...image, id: `message:${imageFingerprint(image.base64)}` }];
   }
   if (update.sessionUpdate !== "tool_call" && update.sessionUpdate !== "tool_call_update") return [];
   const name = safeToolToken(update.name) || safeToolToken(update.toolCallId) || "tool";
@@ -416,7 +473,7 @@ export function eventsFromSessionUpdate(requestId, params) {
   const event = { requestId, type: "tool", name, status };
   const title = safeToolToken(update.title);
   if (title) event.title = title;
-  return [event];
+  return [event, ...toolImageEvents(requestId, update)];
 }
 
 export function acpInitializeParams(version = clientVersion()) {
@@ -618,6 +675,17 @@ export function createAcpHostRuntime(options = {}) {
   const updateFailures = new Map();
   const installingIds = new Set();
   const latestStatus = new Map();
+  const mcpScriptPath = options.mcpScriptPath ?? fileURLToPath(new URL("../../../../scripts/edgeever-mcp-stdio.mjs", import.meta.url));
+  const mcpServerFor = (bridge) => ({
+    name: "edgeever-current-workspace",
+    command: options.mcpExecutablePath ?? process.execPath,
+    args: [mcpScriptPath],
+    env: [
+      { name: "ELECTRON_RUN_AS_NODE", value: "1" },
+      { name: "EDGEEVER_URL", value: bridge.url },
+      { name: "EDGEEVER_TOKEN", value: bridge.secret },
+    ],
+  });
 
   const resolveCommand = (input) => {
     if (input?.id === "antigravity" && typeof input.path === "string" && input.path.trim()) return resolveAcpCommand(input, commandDeps);
@@ -627,7 +695,7 @@ export function createAcpHostRuntime(options = {}) {
     return resolveAcpCommand(input, commandDeps);
   };
 
-  const connect = async (command, requestId, emit, signal, authMethodId) => {
+  const connect = async (command, requestId, emit, signal, authMethodId, mcpServers = []) => {
     const cwd = await createAcpWorkspace(mkdtempImpl, options.tmpRoot);
     let child = null;
     let authMethods = [];
@@ -646,7 +714,7 @@ export function createAcpHostRuntime(options = {}) {
         if (!authMethods.some((method) => method.id === authMethodId)) throw new Error("invalid_auth_method");
         await connection.authenticate({ methodId: authMethodId });
       }
-      const session = await connection.newSession({ cwd, mcpServers: [] });
+      const session = await connection.newSession({ cwd, mcpServers });
       if (signal?.aborted) throw Object.assign(new Error("connection_timeout"), { code: "TIMEOUT" });
       return {
         cwd,
@@ -684,7 +752,7 @@ export function createAcpHostRuntime(options = {}) {
 
   return {
     listAdapters() {
-      return ["codex", "antigravity", "grokBuild", "deepseekHarness", "piAgent", "workbuddyCn", "workbuddyIntl"].map((id) => {
+      return ["codex", "claudeCode", "antigravity", "openClaw", "hermesAgent", "grokBuild", "deepseekHarness", "piAgent", "workbuddyCn", "workbuddyIntl"].map((id) => {
         if (installingIds.has(id)) return { ...adapterShell(id), state: "installing" };
         const resolved = resolveCommand({ id });
         return resolved.ok
@@ -814,9 +882,19 @@ export function createAcpHostRuntime(options = {}) {
       if (!resolved.ok) return fail(promptFailureMessage(resolved));
 
       let connected;
+      let mcpBridge;
       try {
-        connected = await withHandshakeTimeout((signal) => connect(resolved.command, requestId, notify, signal));
+        // OpenClaw's ACP Gateway bridge rejects session-scoped MCP servers.
+        if (options.mcpAccess && input.adapterId !== "openClaw") {
+          const access = await options.mcpAccess();
+          mcpBridge = await (options.startMcpBridge ?? startAcpMcpBridge)(access);
+        }
+        connected = await withHandshakeTimeout((signal) => connect(
+          resolved.command, requestId, notify, signal, undefined,
+          mcpBridge ? [mcpServerFor(mcpBridge)] : [],
+        ));
       } catch (error) {
+        await mcpBridge?.close();
         return fail(promptFailureMessage(classifyAcpFailure(error)));
       }
 
@@ -828,9 +906,16 @@ export function createAcpHostRuntime(options = {}) {
           attachments: input.attachments,
           promptCapabilities: connected.promptCapabilities,
         });
+        if (mcpBridge) {
+          content.blocks.unshift({
+            type: "text",
+            text: "For EdgeEver note operations in this conversation, use only the session-provided MCP server named edgeever-current-workspace. It is connected to the account currently signed in to EdgeEver. Ignore any EdgeEver MCP server from your persistent configuration, which may target a different instance or account.",
+          });
+        }
       } catch (error) {
         connected.stop();
         await removeAcpWorkspace(connected.cwd, rmImpl);
+        await mcpBridge?.close();
         return fail(promptFailureMessage(classifyAcpFailure(error)));
       }
 
@@ -838,6 +923,7 @@ export function createAcpHostRuntime(options = {}) {
         cancelled: false,
         settled: false,
         ...connected,
+        mcpBridge,
       };
       active.set(requestId, session);
       const finish = (event) => {
@@ -847,6 +933,7 @@ export function createAcpHostRuntime(options = {}) {
         session.stop();
         active.delete(requestId);
         void removeAcpWorkspace(session.cwd, rmImpl);
+        void session.mcpBridge?.close();
       };
       void connected.connection.prompt({ sessionId: connected.sessionId, prompt: content.blocks }).then(() => {
         finish({ requestId, type: "done" });
@@ -867,6 +954,7 @@ export function createAcpHostRuntime(options = {}) {
         // The process may already be gone. Killing it is enough.
       }
       session.stop();
+      void session.mcpBridge?.close();
       return { ok: true };
     },
   };
@@ -878,7 +966,7 @@ const failureFields = (failure) => (
     : { state: failure.state }
 );
 
-export function registerAcpIpc(ipcMain, runtime = createAcpHostRuntime(), { allowInstall = () => false } = {}) {
+export function registerAcpIpc(ipcMain, runtime = createAcpHostRuntime(), { allowInstall = () => false, allowPrompt = allowInstall } = {}) {
   const send = (sender, event) => {
     if (!sender || sender.isDestroyed?.()) return;
     sender.send("desktop:acp-event", event);
@@ -893,7 +981,13 @@ export function registerAcpIpc(ipcMain, runtime = createAcpHostRuntime(), { allo
     if (!allowInstall(event.sender)) throw new Error("adapter_auth_forbidden");
     return runtime.authenticateAdapter(input);
   });
-  ipcMain.handle("desktop:acp-prompt", (event, input) => runtime.prompt(input, (acpEvent) => send(event.sender, acpEvent)));
-  ipcMain.handle("desktop:acp-cancel", (_event, requestId) => runtime.cancel(requestId));
+  ipcMain.handle("desktop:acp-prompt", (event, input) => {
+    if (!allowPrompt(event.sender)) throw new Error("acp_prompt_forbidden");
+    return runtime.prompt(input, (acpEvent) => send(event.sender, acpEvent));
+  });
+  ipcMain.handle("desktop:acp-cancel", (event, requestId) => {
+    if (!allowPrompt(event.sender)) throw new Error("acp_cancel_forbidden");
+    return runtime.cancel(requestId);
+  });
   return runtime;
 }

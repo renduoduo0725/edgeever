@@ -24,6 +24,9 @@ describe("GitHub feedback URL", () => {
     expect(body).toContain("## Diagnostics");
     expect(body).toContain('"errorCode":"memo_not_found"');
     expect(body).toContain("- Version: v1.46.0");
+    expect(url.searchParams.get("system-info")).toContain("- Version: v1.46.0");
+    expect(url.searchParams.get("template")).toBe("bug.yml");
+    expect(url.searchParams.get("diagnostics")).toContain('"errorCode":"memo_not_found"');
     expect(body.indexOf("## Diagnostics")).toBeLessThan(body.indexOf("## System information"));
   });
 });

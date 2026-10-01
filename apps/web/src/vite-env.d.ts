@@ -92,7 +92,7 @@ interface EdgeEverDesktopBridge {
   finishWeChatImport?(importId: string, success: boolean): Promise<void>;
   retryWeChatImport?(importId: string): Promise<boolean>;
   listAcpAdapters?(): Promise<Array<{
-    id: "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
+    id: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
     label: string;
     state: "not_installed" | "installing" | "needs_login" | "available" | "failed";
     detail?: string;
@@ -102,8 +102,8 @@ interface EdgeEverDesktopBridge {
     updateError?: string;
     authMethods?: Array<{ id: string; name: string }>;
   }>>;
-  probeAcpAdapter?(input: { id: "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl"; path?: string }): Promise<{
-    id: "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
+  probeAcpAdapter?(input: { id: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl"; path?: string }): Promise<{
+    id: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
     label: string;
     state: "not_installed" | "needs_login" | "available" | "failed";
     detail?: string;
@@ -120,15 +120,15 @@ interface EdgeEverDesktopBridge {
     promptCapabilities?: { image?: boolean; embeddedContext?: boolean };
     authMethods?: Array<{ id: string; name: string }>;
   } }>;
-  authenticateAcpAdapter?(input: { id: "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl"; path?: string; methodId: string }): Promise<{
-    id: "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
+  authenticateAcpAdapter?(input: { id: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl"; path?: string; methodId: string }): Promise<{
+    id: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
     label: string;
     state: "not_installed" | "needs_login" | "available" | "failed";
     detail?: string;
     authMethods?: Array<{ id: string; name: string }>;
   }>;
   promptAcp?(input: {
-    adapterId: "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
+    adapterId: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
     path?: string;
     prompt: string;
     contextText?: string;
@@ -139,6 +139,7 @@ interface EdgeEverDesktopBridge {
     | { requestId: string; type: "text-delta"; text: string }
     | { requestId: string; type: "reasoning"; text: string }
     | { requestId: string; type: "tool"; name: string; status: string; title?: string }
+    | { requestId: string; type: "image"; id: string; mediaType: string; base64: string }
     | { requestId: string; type: "done" }
     | { requestId: string; type: "error"; message: string }
   ) => void): () => void;

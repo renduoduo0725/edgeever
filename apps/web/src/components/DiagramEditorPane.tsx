@@ -151,9 +151,10 @@ import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { DiagramToolbar, DiagramToolbarAddTrigger } from "@/components/DiagramToolbar";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
 import { MemoEditorMetadataRow } from "@/components/MemoEditorMetadataRow";
-import { MemoEditorFocusModeButton, MemoEditorTopRowLeading, MemoEditorUpdatedLabel } from "@/components/MemoEditorTopRowLeading";
+import { MemoEditorFocusModeButton, MemoEditorTopRowLeading } from "@/components/MemoEditorTopRowLeading";
 import { MemoEditorToolbarDivider } from "@/components/MemoEditorToolbarChrome";
 import {
+  MEMO_EDITOR_METADATA_ROW_CLASS_NAME,
   MEMO_EDITOR_TOP_ROW_CLASS_NAME,
   nextTitleStatusClearance,
 } from "@/components/MemoEditorChromeDensity";
@@ -181,7 +182,7 @@ import { isLocalMemoId } from "@/lib/local-mirror";
 import { isBrowserOffline } from "@/lib/network-status";
 import { statusSettleMotion } from "@/lib/motion";
 import type { EdgeEverRepository } from "@/lib/repository";
-import { cn, formatDateTime, parseTagsText } from "@/lib/utils";
+import { cn, parseTagsText } from "@/lib/utils";
 
 Graph.registerConnector(MIND_MAP_CONNECTOR_NAME, mindMapConnector, true);
 
@@ -3057,7 +3058,6 @@ export const DiagramEditorPane = ({
 
   if (!document) return null;
   const kindLabel = document.kind === "mind-map" ? t("diagram.mindMap") : document.kind === "architecture" ? t("diagram.architecture") : t("diagram.flowchart");
-  const updatedLabel = formatDateTime(memo.updatedAt);
   const currentMarkdown = historyOpen && dirty
     ? serializeDiagramDocument(graphRef.current ? graphToDocument(graphRef.current, document.kind, themeRef.current, structureRef.current) : document)
     : memo.contentMarkdown;
@@ -3089,7 +3089,6 @@ export const DiagramEditorPane = ({
             className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-4 sm:flex-nowrap"
           >
           <MemoEditorTopRowLeading
-            className="min-w-0 flex-1"
             mobileBackButton={(
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -3123,7 +3122,7 @@ export const DiagramEditorPane = ({
             )}
           />
           <MemoEditorMetadataRow
-            rowClassName="shrink-0 flex-nowrap"
+            rowClassName={MEMO_EDITOR_METADATA_ROW_CLASS_NAME}
             contentMarkdown={memo.contentMarkdown}
             disabled={readOnly}
             mobileNotebookPickerOpen={mobileNotebookSheetOpen}
@@ -3147,7 +3146,6 @@ export const DiagramEditorPane = ({
 
           <div ref={setHeaderStatusCluster} className="absolute right-1 top-0 flex h-full shrink-0 items-center gap-1 sm:right-2">
             <div className="flex min-w-0 items-center gap-1.5">
-              <MemoEditorUpdatedLabel updatedLabel={updatedLabel} />
             <m.span
               key={`mobile-${saveStatus}`}
               className={cn(

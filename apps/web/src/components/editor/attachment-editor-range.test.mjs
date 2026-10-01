@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import { FileAttachment, PdfAttachment } from "@edgeever/shared";
+import { ensureTestWindowDom } from "../../lib/restore-test-global.mjs";
 import { findAttachmentRange, removeAttachmentAt, renameAttachmentAt } from "./attachment-editor-range.ts";
 
 const videoUrl = "edgeever-resource://resource/res_video";
@@ -35,10 +36,13 @@ const pdfNode = (url, filename) => ({
 
 const paragraph = (...content) => ({ type: "paragraph", content });
 
-const makeEditor = (content) => new Editor({
-  extensions: [StarterKit, FileAttachment, PdfAttachment],
-  content: { type: "doc", content },
-});
+const makeEditor = (content) => {
+  ensureTestWindowDom();
+  return new Editor({
+    extensions: [StarterKit, FileAttachment, PdfAttachment],
+    content: { type: "doc", content },
+  });
+};
 
 describe("attachment editor range", () => {
   test("removes a video file-attachment node whose hover URL is the API blob path", () => {

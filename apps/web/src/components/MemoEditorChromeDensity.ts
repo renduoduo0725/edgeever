@@ -7,6 +7,13 @@ export const MEMO_EDITOR_READING_GUTTER_CLASS_NAME =
 export const MEMO_EDITOR_TOP_ROW_CLASS_NAME =
   "relative flex min-h-12 items-center justify-between gap-2 border-b border-slate-100 py-2 sm:min-h-9 sm:py-0.5";
 
+/**
+ * Notebook and tags share the title row and shrink before the title field.
+ * The title's own minimum width is what keeps typed text visible.
+ */
+export const MEMO_EDITOR_METADATA_ROW_CLASS_NAME =
+  "min-w-0 max-w-full shrink overflow-hidden flex-nowrap";
+
 export const MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME =
   "px-3 py-2 sm:px-4 sm:py-0.5";
 

@@ -95,6 +95,56 @@ final class WebClipperTests: XCTestCase {
         )
         XCTAssertEqual(draft.title, "Known title")
         XCTAssertTrue(draft.contentMarkdown.contains("正文暂时无法抓取"))
+        XCTAssertTrue(draft.contentMarkdown.contains("来源："))
+        XCTAssertTrue(draft.contentMarkdown.contains("剪藏时间："))
         XCTAssertTrue(draft.contentMarkdown.contains(source.absoluteString))
+    }
+
+    func testEnglishLabelsAreWrittenIntoTheNote() throws {
+        let source = try XCTUnwrap(URL(string: "https://example.com/story"))
+        let labels = WebClipLabels(
+            sourceLabel: "Source",
+            capturedAtLabel: "Captured at",
+            unavailableBody: "Could not extract the page text. The source link is kept so you can retry later.",
+            fallbackTitle: "Web clip",
+            imageAlt: "Image",
+            usesFullwidthColon: false
+        )
+        let draft = WebClipper.buildRendered(
+            source,
+            page: RenderedWebPage(
+                title: "Story",
+                contentHTML: "<p>Body</p><img src=\"/a.png\">",
+                finalURL: source.absoluteString
+            ),
+            capturedAt: Date(timeIntervalSince1970: 0),
+            labels: labels
+        )
+
+        XCTAssertTrue(draft.contentMarkdown.contains("Source: [https://example.com/story](https://example.com/story)"))
+        XCTAssertTrue(draft.contentMarkdown.contains("Captured at:"))
+        XCTAssertTrue(draft.contentMarkdown.contains("![Image](https://example.com/a.png)"))
+        XCTAssertFalse(draft.contentMarkdown.contains("来源"))
+    }
+
+    func testJapaneseFallbackKeepsTheSourceLink() throws {
+        let source = try XCTUnwrap(URL(string: "https://example.com/missing"))
+        let labels = WebClipLabels(
+            sourceLabel: "出典",
+            capturedAtLabel: "取り込み日時",
+            unavailableBody: "本文を取り込めませんでした。出典リンクは残してあるので、あとからやり直せます。",
+            fallbackTitle: "ウェブクリップ",
+            imageAlt: "画像",
+            usesFullwidthColon: false
+        )
+        let draft = WebClipper.buildRendered(
+            source,
+            page: RenderedWebPage(title: "", contentHTML: "  ", finalURL: source.absoluteString),
+            labels: labels
+        )
+
+        XCTAssertEqual(draft.title, "example.com")
+        XCTAssertTrue(draft.contentMarkdown.contains("出典: [https://example.com/missing](https://example.com/missing)"))
+        XCTAssertTrue(draft.contentMarkdown.contains("本文を取り込めませんでした"))
     }
 }

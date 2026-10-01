@@ -266,6 +266,23 @@ describe("ACP command allow-list", () => {
     }
   });
 
+  test("resolves the three additional ACP entry points from installed commands", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-extra-"));
+    try {
+      for (const name of ["claude-agent-acp", "openclaw", "hermes"]) {
+        await writeFile(path.join(directory, name), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+      }
+      const deps = { platform: "darwin", pathEnv: directory, home: directory };
+      expect(resolveAcpCommand({ id: "claudeCode" }, deps).command).toMatchObject({ command: realpathSync(path.join(directory, "claude-agent-acp")), args: [] });
+      expect(resolveAcpCommand({ id: "openClaw" }, deps).command).toMatchObject({ command: realpathSync(path.join(directory, "openclaw")), args: ["acp"] });
+      expect(resolveAcpCommand({ id: "hermesAgent" }, deps).command).toMatchObject({ command: realpathSync(path.join(directory, "hermes")), args: ["acp"] });
+      expect(resolveAcpCommand({ id: "openClaw" }, deps).command.env.PATH).toContain(path.join(directory, ".local", "bin"));
+      expect(resolveAcpCommand({ id: "openClaw" }, { ...deps, pathEnv: "" }).state).toBe("not_installed");
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   test("automatically installs only a detected agent missing its ACP connector", async () => {
     let installed = false;
     let installs = 0;
@@ -477,6 +494,54 @@ describe("ACP spawn and failure mapping", () => {
       update: { sessionUpdate: "tool_call", toolCallId: "call_2", title: `${home}/secret`, status: "completed" },
     })).toEqual([{ requestId: "r1", type: "tool", name: "call_2", status: "completed" }]);
   });
+
+  test("forwards generated images without paths, diffs, or non-image payloads", () => {
+    const png = Buffer.from("png-bytes").toString("base64");
+    const wrapped = `data:image/png;base64,${png.slice(0, 4)}\n${png.slice(4)}`;
+    const message = eventsFromSessionUpdate("r1", {
+      update: {
+        sessionUpdate: "agent_message_chunk",
+        content: { type: "image", mimeType: "image/png", data: wrapped, uri: `${home}/cat.png` },
+      },
+    });
+    const again = eventsFromSessionUpdate("r1", {
+      update: {
+        sessionUpdate: "agent_message_chunk",
+        content: { type: "image", mimeType: "image/png", data: png, uri: `file://${home}/cat.png` },
+      },
+    });
+    expect(message).toEqual([{ requestId: "r1", type: "image", id: again[0].id, mediaType: "image/png", base64: png }]);
+    expect(message[0].id.startsWith("message:")).toBe(true);
+    expect(JSON.stringify(message)).not.toContain(home);
+    expect(JSON.stringify(message)).not.toContain("file:");
+
+    const tool = eventsFromSessionUpdate("r1", {
+      update: {
+        sessionUpdate: "tool_call_update",
+        toolCallId: "call_img",
+        title: "Image generation",
+        status: "completed",
+        content: [
+          { type: "diff", path: `${home}/note.md`, oldText: "a", newText: "b" },
+          { type: "content", content: { type: "text", text: `saved ${home}/cat.png` } },
+          { type: "content", content: { type: "image", mimeType: "image/jpeg", data: png, uri: `${home}/cat.png` } },
+          { type: "content", content: { type: "image", mimeType: "image/svg+xml", data: png } },
+          { type: "image", mimeType: "image/webp", data: `${home}/cat.webp` },
+        ],
+      },
+    });
+    expect(tool).toEqual([
+      { requestId: "r1", type: "tool", name: "call_img", status: "completed", title: "Image generation" },
+      { requestId: "r1", type: "image", id: "call_img:0", mediaType: "image/jpeg", base64: png },
+    ]);
+    expect(JSON.stringify(tool)).not.toContain(home);
+    expect(eventsFromSessionUpdate("r1", {
+      update: { sessionUpdate: "agent_thought_chunk", content: { type: "image", mimeType: "image/png", data: png } },
+    })).toEqual([]);
+    expect(eventsFromSessionUpdate("r1", {
+      update: { sessionUpdate: "agent_message_chunk", content: { type: "image", mimeType: "image/png", data: "@@@@" } },
+    })).toEqual([]);
+  });
 });
 
 // bun test started at the workspace root drops child stdin and stdout pipes
@@ -536,6 +601,69 @@ describe("ACP stdio session", () => {
       expect(report.newSession.mcpServers).toEqual([]);
       const pid = Number(await readFile(`${reportPath}.pid`, "utf8"));
       await waitUntilExited(pid);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 15_000);
+
+  sessionTest("provides the signed-in workspace MCP server only during an ACP prompt", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-mcp-"));
+    const reportPath = path.join(directory, "report.json");
+    let closed = false;
+    try {
+      const scriptPath = await writeFakeAgent(directory, {
+        reportPath,
+        secretPath: path.join(directory, "secret.txt"),
+        allowImage: false,
+        allowEmbedded: false,
+        hold: false,
+      });
+      const runtime = createAcpHostRuntime({
+        mcpAccess: () => ({ baseUrl: "https://notes.example", sessionToken: "login-secret" }),
+        startMcpBridge: () => ({
+          url: "http://127.0.0.1:12345",
+          secret: "temporary-secret",
+          close: async () => { closed = true; },
+        }),
+      });
+      const events = collector();
+      await runtime.prompt({ adapterId: "antigravity", path: scriptPath, prompt: "List my notes" }, events.emit);
+      await events.waitFor((event) => event.type === "done");
+      const servers = (await readReport(reportPath)).newSession.mcpServers;
+      expect(servers).toHaveLength(1);
+      expect(servers[0].name).toBe("edgeever-current-workspace");
+      expect(servers[0].env).toContainEqual({ name: "EDGEEVER_TOKEN", value: "temporary-secret" });
+      expect(JSON.stringify(servers)).not.toContain("login-secret");
+      expect(closed).toBe(true);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 15_000);
+
+  sessionTest("keeps OpenClaw ACP sessions free of unsupported session MCP servers", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-openclaw-acp-"));
+    const reportPath = path.join(directory, "report.json");
+    try {
+      const scriptPath = await writeFakeAgent(directory, {
+        reportPath,
+        secretPath: path.join(directory, "secret.txt"),
+        allowImage: false,
+        allowEmbedded: false,
+        hold: false,
+      });
+      const executable = path.join(directory, "openclaw");
+      await writeFile(executable, await readFile(scriptPath), { mode: 0o755 });
+      const runtime = createAcpHostRuntime({
+        pathEnv: `${directory}${path.delimiter}${path.dirname(process.execPath)}`,
+        home: directory,
+        mcpAccess: () => { throw new Error("OpenClaw must use Gateway MCP configuration"); },
+      });
+      const events = collector();
+      await runtime.prompt({ adapterId: "openClaw", prompt: "Hello" }, events.emit);
+      await events.waitFor((event) => event.type === "done");
+      const report = await readReport(reportPath);
+      expect(report.newSession.mcpServers).toEqual([]);
+      expect(report.prompt).toEqual([{ type: "text", text: "Hello" }]);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
@@ -694,4 +822,5 @@ test("desktop preload and main process expose the ACP host", async () => {
   const handlers = new Map();
   registerAcpIpc({ handle: (channel, handler) => handlers.set(channel, handler) });
   expect([...handlers.keys()]).toEqual(["desktop:acp-list", "desktop:acp-probe", "desktop:acp-install", "desktop:acp-authenticate", "desktop:acp-prompt", "desktop:acp-cancel"]);
+  expect(() => handlers.get("desktop:acp-prompt")({ sender: {} }, { prompt: "test" })).toThrow("acp_prompt_forbidden");
 });

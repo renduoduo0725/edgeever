@@ -70,6 +70,7 @@ describe("dispatchMemoDocumentAction", () => {
       saveAsTemplate: () => calls.push("template"),
       share: () => calls.push("share"),
       shareImage: () => calls.push("image"),
+      copyWeChat: () => calls.push("wechat"),
     };
 
     dispatchMemoDocumentAction("share", handlers);
@@ -78,7 +79,8 @@ describe("dispatchMemoDocumentAction", () => {
     dispatchMemoDocumentAction("export-pdf", handlers, null);
     dispatchMemoDocumentAction("share-image", handlers);
     dispatchMemoDocumentAction("save-as-template", handlers);
+    dispatchMemoDocumentAction("copy-wechat", handlers);
 
-    expect(calls).toEqual(["share", "markdown", "html", ["pdf", null], "image", "template"]);
+    expect(calls).toEqual(["share", "markdown", "html", ["pdf", null], "image", "template", "wechat"]);
   });
 });

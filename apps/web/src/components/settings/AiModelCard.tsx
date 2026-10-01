@@ -146,8 +146,8 @@ export const AiModelCard = () => {
                   </p>
                 ) : null}
 
-                <div className="overflow-hidden rounded-lg border border-slate-200/70 bg-slate-50/50 divide-y divide-slate-200/70">
-                  <div className="flex items-center justify-between gap-3 px-3.5 py-2.5">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("aiModel.defaultModel")}</div>
                     </div>
@@ -169,13 +169,13 @@ export const AiModelCard = () => {
                       </Select>
                     </div>
                   </div>
+                  {!defaultModelAvailable ? (
+                    <p className="flex items-center gap-1.5 text-xs text-amber-700">
+                      <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
+                      {t("aiModel.defaultUnavailable")}
+                    </p>
+                  ) : null}
                 </div>
-                {!defaultModelAvailable ? (
-                  <p className="flex items-center gap-1.5 text-xs text-amber-700">
-                    <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
-                    {t("aiModel.defaultUnavailable")}
-                  </p>
-                ) : null}
 
                 <section className="grid gap-3">
                   <div className="flex items-center justify-end">

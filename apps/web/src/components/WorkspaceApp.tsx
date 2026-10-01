@@ -137,6 +137,7 @@ import { compressImageForUpload } from "@/lib/image-compression";
 import { createScreenshotMemo, screenshotFileFromImportPayload, screenshotImportDedupeKey, screenshotImportGate } from "@/lib/screenshot-import";
 import { createSharedFileMemo, sharedFileTitle } from "@/lib/shared-file-import";
 import { createWeChatChatMemo } from "@/lib/wechat-chat-import";
+import { copyMarkdownToWeChat } from "@/lib/wechat-copy";
 import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceUrl } from "@/lib/desktop-resources";
 import { findMatchingMemoResource } from "@/lib/staged-resource-repair";
 
@@ -3380,6 +3381,29 @@ export const WorkspaceApp = ({
                   printWindow,
                 });
               }}
+              onCopyMemoToWeChat={async (memoId) => {
+                const openTextNote = selectedMemo?.id === memoId
+                  && !selectedDiagram
+                  && !selectedTableNote
+                  && !selectedInfographicNote;
+                if (openTextNote) {
+                  memoDocumentActionIdRef.current += 1;
+                  setMemoDocumentActionRequest({
+                    id: memoDocumentActionIdRef.current,
+                    memoId,
+                    action: "copy-wechat",
+                  });
+                  return "editor";
+                }
+
+                try {
+                  const { memo } = await repository.getMemo(memoId, memoView === "trash");
+                  await copyMarkdownToWeChat(memo.contentMarkdown);
+                  return "copied";
+                } catch {
+                  return "error";
+                }
+              }}
               onTogglePinMemo={handleToggleMemoPinned}
               onPinSelectedMemos={handlePinSelectedMemos}
               onExportSelectedMemos={handleExportSelectedMemos}
@@ -3533,6 +3557,8 @@ export const WorkspaceApp = ({
                           }}
                           onOpenExecutionCenter={handleOpenExecutionCenter}
                           onToggleDesktopFocusMode={toggleDesktopFocusMode}
+                          aiAssistantOpenToken={noteAiAssistantOpenToken}
+                          shortcutSettings={shortcutSettings}
                           onSaved={async (memo) => {
                             await putLocalMemo(localDataScope, memo);
                             cacheMemoDetail(queryClient, memo, memoView);

@@ -1596,6 +1596,20 @@ const startApplication = async () => {
   });
   const acpRuntime = registerAcpIpc(ipcMain, createAcpHostRuntime({
     adapterStore: join(app.getPath("userData"), "acp-adapters"),
+    mcpScriptPath: app.isPackaged
+      ? join(process.resourcesPath, "mcp-bridge", "edgeever-mcp-stdio.mjs")
+      : join(projectRoot, "scripts", "edgeever-mcp-stdio.mjs"),
+    mcpAccess: () => {
+      const baseUrl = configuredApiBaseUrl;
+      const sessionToken = desktopSessionToken;
+      const accountId = activeAccountId;
+      return {
+        baseUrl,
+        sessionToken,
+        accountId,
+        isCurrent: () => configuredApiBaseUrl === baseUrl && desktopSessionToken === sessionToken && activeAccountId === accountId,
+      };
+    },
   }), { allowInstall: (sender) => sender === mainWindow?.webContents });
   await acpRuntime.pruneAdapters().catch(() => {});
   const refreshAdapters = () => { void acpRuntime.installDetected().catch(() => []).then(() => acpRuntime.updateInstalled()).catch(() => {}); };

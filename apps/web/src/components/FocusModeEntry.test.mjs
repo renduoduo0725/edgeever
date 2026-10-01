@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 const editorPaneSource = readFileSync(new URL("./EditorPane.tsx", import.meta.url), "utf8");
 const diagramEditorPaneSource = readFileSync(new URL("./DiagramEditorPane.tsx", import.meta.url), "utf8");
+const infographicEditorPaneSource = readFileSync(new URL("./InfographicEditorPane.tsx", import.meta.url), "utf8");
 const topRowLeadingSource = readFileSync(new URL("./MemoEditorTopRowLeading.tsx", import.meta.url), "utf8");
 
 const expectIconOnlyFocusModeEntry = (source) => {
@@ -24,11 +25,14 @@ describe("focus mode entry", () => {
     }
   });
 
-  test("keeps status copy ahead of the action icons in the shared editor header", () => {
-    for (const source of [editorPaneSource, diagramEditorPaneSource]) {
-      const statusIndex = source.indexOf("<MemoEditorUpdatedLabel");
+  test("keeps status copy ahead of the action icons and leaves the updated time off the header", () => {
+    expect(topRowLeadingSource).not.toContain("MemoEditorUpdatedLabel");
+    for (const source of [editorPaneSource, diagramEditorPaneSource, infographicEditorPaneSource]) {
+      const statusIndex = source.indexOf('ref={setHeaderStatusCluster}');
       const focusIndex = source.indexOf("<MemoEditorFocusModeButton");
       const headerActionsIndex = source.indexOf("<MemoEditorHeaderActions");
+      expect(source).not.toContain("MemoEditorUpdatedLabel");
+      expect(source).not.toContain("formatDateTime(memo.updatedAt)");
       expect(statusIndex).toBeGreaterThan(-1);
       expect(focusIndex).toBeGreaterThan(statusIndex);
       expect(headerActionsIndex).toBeGreaterThan(focusIndex);

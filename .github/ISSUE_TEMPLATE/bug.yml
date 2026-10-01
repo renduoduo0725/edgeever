@@ -1,0 +1,79 @@
+name: 问题反馈
+description: 功能表现和预期不一致，或出现报错。
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请填写下面的必填项。GitHub Issue 公开可见，不要附上密码、Token、实例地址或笔记正文。
+
+        系统信息在「设置 → 系统信息」，点「复制信息」后粘贴。Linux 请另外写上发行版、桌面环境，以及 Wayland 或 X11。桌面端如果停在崩溃恢复页，请写上恢复页出现前正在做什么。
+  - type: dropdown
+    id: client
+    attributes:
+      label: 出现问题的客户端
+      description: Which client is affected?
+      multiple: true
+      options:
+        - Web
+        - macOS
+        - Windows
+        - Linux
+        - Android
+        - iOS
+        - Browser extension
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么
+      description: 实际看到的结果、报错原文。What did you see, including the exact error text?
+      placeholder: 例如：点击分享后按钮一直转圈，控制台出现 TypeError。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 怎样复现
+      description: 按顺序写出操作。Steps to reproduce, in order.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望的结果
+      description: 你认为这一步应该发生什么。What did you expect?
+    validations:
+      required: false
+  - type: textarea
+    id: system-info
+    attributes:
+      label: 系统信息
+      description: 粘贴「设置 → 系统信息」里复制的内容。应用内反馈会自动填入。Paste the copied system information.
+      placeholder: |
+        - 客户端版本: v1.93.0
+        - 系统: macOS
+        - 实例构建: v1.93.0
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 诊断信息
+      description: 应用在崩溃或同步失败时会自动填入。手动提交时留空。Filled automatically for crash and sync reports.
+    validations:
+      required: false
+  - type: upload
+    id: screenshots
+    attributes:
+      label: 截图或录屏
+      description: 有界面异常时附上。Add a screenshot or screen recording when the issue is visible.
+    validations:
+      required: false
+      accept: ".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.webm"

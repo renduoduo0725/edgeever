@@ -147,11 +147,11 @@ export const EditorTagPicker = ({ contentMarkdown, disabled, loadTags, title, va
 
   return (
     <>
-      <div className="flex min-w-0 max-w-full items-center gap-1">
+      <div className="flex min-w-0 max-w-full flex-1 items-center gap-1 overflow-hidden">
         <button
           type="button"
           disabled={disabled}
-          className="flex h-7 min-w-0 max-w-[32rem] items-center gap-1 rounded-md border border-transparent px-1.5 text-left text-xs text-slate-500 outline-none transition hover:border-slate-200 hover:bg-slate-50 focus-visible:border-slate-300 focus-visible:ring-2 focus-visible:ring-slate-400/25 disabled:opacity-50 sm:gap-1.5 sm:px-2"
+          className="flex h-7 min-w-0 flex-1 overflow-hidden max-w-[32rem] items-center gap-1 rounded-md border border-transparent px-1.5 text-left text-xs text-slate-500 outline-none transition hover:border-slate-200 hover:bg-slate-50 focus-visible:border-slate-300 focus-visible:ring-2 focus-visible:ring-slate-400/25 disabled:opacity-50 sm:gap-1.5 sm:px-2"
           aria-label={t("editor.tagPicker.open")}
           onClick={() => setOpen(true)}
         >

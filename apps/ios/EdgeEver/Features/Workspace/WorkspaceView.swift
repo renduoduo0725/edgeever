@@ -223,10 +223,10 @@ struct WorkspaceView: View {
                             ProgressView()
                                 .controlSize(.large)
                                 .tint(AppTheme.accent)
-                            Text(env.preferences.t("正在剪藏文章", en: "Clipping article"))
+                            Text(env.preferences.t("正在剪藏文章", en: "Clipping article", ja: "記事を取り込んでいます"))
                                 .font(.system(size: 17, weight: .bold))
                                 .foregroundStyle(AppTheme.title)
-                            Text(env.preferences.t("正在提取标题、正文和图片链接…", en: "Extracting the title, body, and image links…"))
+                            Text(env.preferences.t("正在提取标题、正文和图片链接…", en: "Extracting the title, body, and image links…", ja: "タイトル、本文、画像リンクを抽出しています…"))
                                 .font(.system(size: 13))
                                 .foregroundStyle(AppTheme.secondary)
                                 .multilineTextAlignment(.center)
@@ -775,26 +775,67 @@ struct WorkspaceView: View {
             incomingClipURL = sourceURL
         } else {
             Task {
-                let draft = await WebClipper.build(sourceURL)
+                let draft = await WebClipper.build(sourceURL, labels: webClipLabels)
                 finishClip(draft)
             }
         }
     }
 
     private func finishRenderedClip(_ page: RenderedWebPage, sourceURL: URL) {
-        finishClip(WebClipper.buildRendered(sourceURL, page: page))
+        finishClip(WebClipper.buildRendered(sourceURL, page: page, labels: webClipLabels))
+    }
+
+    private var webClipLabels: WebClipLabels {
+        WebClipLabels(
+            sourceLabel: env.preferences.t("来源", en: "Source", ja: "出典"),
+            capturedAtLabel: env.preferences.t("剪藏时间", en: "Captured at", ja: "取り込み日時"),
+            unavailableBody: env.preferences.t(
+                "正文暂时无法抓取，来源链接已保留，可稍后重试。",
+                en: "Could not extract the page text. The source link is kept so you can retry later.",
+                ja: "本文を取り込めませんでした。出典リンクは残してあるので、あとからやり直せます。"
+            ),
+            fallbackTitle: env.preferences.t("网页剪藏", en: "Web clip", ja: "ウェブクリップ"),
+            imageAlt: env.preferences.t("图片", en: "Image", ja: "画像"),
+            usesFullwidthColon: env.preferences.uiLanguage == .chinese
+        )
+    }
+
+    private func localizedCaptureFailure(_ message: String) -> String {
+        switch message {
+        case "微信文章加载超时。":
+            return env.preferences.t(
+                "微信文章加载超时。",
+                en: "The WeChat article took too long to load.",
+                ja: "WeChat 記事の読み込みがタイムアウトしました。"
+            )
+        case "页面加载完成，但没有找到可剪藏的正文。":
+            return env.preferences.t(
+                "页面加载完成，但没有找到可剪藏的正文。",
+                en: "The page finished loading, but there was no article text to clip.",
+                ja: "ページの読み込みは終わりましたが、取り込める本文がありません。"
+            )
+        case "没有找到可剪藏的正文。":
+            return env.preferences.t(
+                "没有找到可剪藏的正文。",
+                en: "No article text was found to clip.",
+                ja: "取り込める本文が見つかりません。"
+            )
+        default:
+            return message
+        }
     }
 
     private func failRenderedClip(_ message: String, sourceURL: URL) {
         incomingClipURL = nil
         Task {
-            let draft = await WebClipper.build(sourceURL)
+            let draft = await WebClipper.build(sourceURL, labels: webClipLabels)
             isImportingShare = false
             shareImportAlert = ShareImportAlert(
-                title: env.preferences.t("正文剪藏失败", en: "Article extraction failed"),
-                message: message + env.preferences.t(
-                    " 已保留文章链接，你可以稍后重新分享重试。",
-                    en: " The article link was preserved; you can share it again later to retry."
+                title: env.preferences.t("正文剪藏失败", en: "Article extraction failed", ja: "本文を取り込めませんでした"),
+                message: localizedCaptureFailure(message) + " " + env.preferences.t(
+                    "已保留文章链接，你可以稍后重新分享重试。",
+                    en: "The article link was kept. Share it again later to retry.",
+                    ja: "記事リンクは残してあります。あとから再共有してやり直せます。"
                 ),
                 draft: draft
             )

@@ -5,8 +5,9 @@ const originalWindow = globalThis.window;
 const originalDocument = globalThis.document;
 
 afterEach(() => {
-  globalThis.window = originalWindow;
-  globalThis.document = originalDocument;
+  if (originalWindow !== undefined) globalThis.window = originalWindow;
+  if (originalDocument === undefined) delete globalThis.document;
+  else globalThis.document = originalDocument;
 });
 
 describe("desktop renderer readiness", () => {

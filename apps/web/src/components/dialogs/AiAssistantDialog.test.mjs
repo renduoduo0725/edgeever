@@ -14,6 +14,8 @@ describe("AI assistant modes", () => {
     expect(sidebar).toContain("sidebarRevealTransition");
     expect(sidebar).not.toContain("{open && <AiSidebarSession");
     expect(sidebar).not.toContain("hidden w-0");
+    expect(sidebar).toContain("props.infographic ? (");
+    expect(sidebar).toContain("<InfographicSidebarSession");
   });
 
   test("agent mode opens a fresh thread and only resumes last chat on request", () => {

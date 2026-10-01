@@ -126,7 +126,8 @@ describe("diagram editor canvas surface", () => {
 
   test("uses the common note header and capability-aware more menu", () => {
     expect(source).toContain("<MemoEditorTopRowLeading");
-    expect(topRowLeadingSource).toContain('<span className="hidden truncate text-xs text-slate-400 sm:inline">{updatedLabel}</span>');
+    expect(topRowLeadingSource).not.toContain("MemoEditorUpdatedLabel");
+    expect(source).not.toContain("formatDateTime(memo.updatedAt)");
     expect(source).not.toContain('t("editor.updatedAt", { time: updatedLabel })');
     expect(source).toContain("onToggleDesktopFocusMode");
     expect(source).not.toContain("onOpenPreviousMemo");
@@ -444,7 +445,7 @@ describe("diagram editor canvas surface", () => {
     expect(status).toBeGreaterThan(metadata);
     expect(headerEnd).toBeGreaterThan(status);
     expect(toolbar).toBeGreaterThan(headerEnd);
-    expect(source).toContain('rowClassName="shrink-0 flex-nowrap"');
+    expect(source).toContain("rowClassName={MEMO_EDITOR_METADATA_ROW_CLASS_NAME}");
     expect(source).toContain("nextTitleStatusClearance");
     expect(source).toContain('cn(MEMO_EDITOR_TOP_ROW_CLASS_NAME, "border-b-0")');
     expect(source).not.toContain("MEMO_EDITOR_TITLE_REGION_CLASS_NAME");

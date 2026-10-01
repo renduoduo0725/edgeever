@@ -5,10 +5,6 @@ import { IconTooltip } from "@/components/editor/EditorPaneChrome";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export const MemoEditorUpdatedLabel = ({ updatedLabel }: { updatedLabel: string }) => (
-  <span className="hidden truncate text-xs text-slate-400 sm:inline">{updatedLabel}</span>
-);
-
 export const MemoEditorFocusModeButton = ({
   desktopFocusMode,
   onToggleDesktopFocusMode,
@@ -46,7 +42,7 @@ export const MemoEditorTopRowLeading = ({
   mobileBackButton?: ReactNode;
   titleInput?: ReactNode;
 }) => (
-  <div className={cn("flex min-w-0 flex-1 items-center gap-2 text-sm", className)}>
+  <div className={cn("flex min-w-0 basis-full items-center gap-2 text-sm sm:min-w-[min(12rem,45%)] sm:flex-1", className)}>
     {mobileBackButton}
     {titleInput && <div className="min-w-0 flex-1">{titleInput}</div>}
   </div>

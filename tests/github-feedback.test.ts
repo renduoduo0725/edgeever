@@ -24,5 +24,8 @@ describe("buildGitHubFeedbackUrl", () => {
     expect(url.searchParams.get("body")).toContain("- 版本号: v0.5.0");
     expect(url.searchParams.get("body")).toContain("- 系统: Android 16");
     expect(url.searchParams.get("body")).toContain("> 请勿提交隐私信息");
+    expect(url.searchParams.get("system-info")).toContain("- 版本号: v0.5.0");
+    expect(url.searchParams.get("system-info")).toContain("- 系统: Android 16");
+    expect(url.searchParams.get("template")).toBeNull();
   });
 });

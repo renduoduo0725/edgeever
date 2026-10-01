@@ -18,6 +18,28 @@ struct RenderedWebPage: Equatable, Sendable {
     var finalURL: String
 }
 
+struct WebClipLabels: Equatable, Sendable {
+    var sourceLabel: String
+    var capturedAtLabel: String
+    var unavailableBody: String
+    var fallbackTitle: String
+    var imageAlt: String
+    var usesFullwidthColon: Bool
+
+    static let chinese = WebClipLabels(
+        sourceLabel: "来源",
+        capturedAtLabel: "剪藏时间",
+        unavailableBody: "正文暂时无法抓取，来源链接已保留，可稍后重试。",
+        fallbackTitle: "网页剪藏",
+        imageAlt: "图片",
+        usesFullwidthColon: true
+    )
+
+    func labeledLine(_ label: String, value: String) -> String {
+        usesFullwidthColon ? "\(label)：\(value)" : "\(label): \(value)"
+    }
+}
+
 enum WebClipper {
     static func sharedWebURL(from payloads: [ShareHandoffStore.SharePayload]) -> URL? {
         for payload in payloads {
@@ -38,7 +60,11 @@ enum WebClipper {
             && url.path.hasPrefix("/s")
     }
 
-    static func build(_ sourceURL: URL, capturedAt: Date = Date()) async -> WebClipDraft {
+    static func build(
+        _ sourceURL: URL,
+        capturedAt: Date = Date(),
+        labels: WebClipLabels = .chinese
+    ) async -> WebClipDraft {
         var request = URLRequest(url: sourceURL)
         request.setValue("text/html,application/xhtml+xml", forHTTPHeaderField: "Accept")
         do {
@@ -47,37 +73,44 @@ enum WebClipper {
                   (200 ..< 300).contains(http.statusCode),
                   let html = String(data: data, encoding: .utf8)
                     ?? String(data: data, encoding: .isoLatin1)
-            else { return fallback(sourceURL, capturedAt: capturedAt) }
+            else { return fallback(sourceURL, capturedAt: capturedAt, labels: labels) }
             let finalURL = response.url ?? sourceURL
-            let title = extractTitle(html) ?? hostnameTitle(sourceURL)
+            let title = extractTitle(html) ?? hostnameTitle(sourceURL, fallbackTitle: labels.fallbackTitle)
             let bodyHTML = firstInnerHTML(html, tags: ["article", "main"])
             return buildRendered(
                 sourceURL,
                 page: RenderedWebPage(title: title, contentHTML: bodyHTML, finalURL: finalURL.absoluteString),
-                capturedAt: capturedAt
+                capturedAt: capturedAt,
+                labels: labels
             )
         } catch {
-            return fallback(sourceURL, capturedAt: capturedAt)
+            return fallback(sourceURL, capturedAt: capturedAt, labels: labels)
         }
     }
 
     static func buildRendered(
         _ sourceURL: URL,
         page: RenderedWebPage,
-        capturedAt: Date = Date()
+        capturedAt: Date = Date(),
+        labels: WebClipLabels = .chinese
     ) -> WebClipDraft {
-        let title = normalizedText(page.title).nilIfEmpty ?? hostnameTitle(sourceURL)
-        let markdown = htmlToMarkdown(page.contentHTML, baseURL: URL(string: page.finalURL) ?? sourceURL)
+        let title = normalizedText(page.title).nilIfEmpty ?? hostnameTitle(sourceURL, fallbackTitle: labels.fallbackTitle)
+        let markdown = htmlToMarkdown(
+            page.contentHTML,
+            baseURL: URL(string: page.finalURL) ?? sourceURL,
+            imageAlt: labels.imageAlt
+        )
         guard !markdown.isEmpty else {
-            var draft = fallback(sourceURL, capturedAt: capturedAt)
+            var draft = fallback(sourceURL, capturedAt: capturedAt, labels: labels)
             draft.title = title
             return draft
         }
+        let sourceLink = "[\(escapeMarkdown(sourceURL.absoluteString))](\(sourceURL.absoluteString))"
         return WebClipDraft(
             title: title,
             contentMarkdown: [
-                "来源：[\(escapeMarkdown(sourceURL.absoluteString))](\(sourceURL.absoluteString))",
-                "剪藏时间：\(ISO8601DateFormatter.edgeEver.string(from: capturedAt))",
+                labels.labeledLine(labels.sourceLabel, value: sourceLink),
+                labels.labeledLine(labels.capturedAtLabel, value: ISO8601DateFormatter.edgeEver.string(from: capturedAt)),
                 "---",
                 markdown,
             ].joined(separator: "\n\n"),
@@ -85,19 +118,24 @@ enum WebClipper {
         )
     }
 
-    static func fallback(_ sourceURL: URL, capturedAt: Date = Date()) -> WebClipDraft {
-        WebClipDraft(
-            title: hostnameTitle(sourceURL),
+    static func fallback(
+        _ sourceURL: URL,
+        capturedAt: Date = Date(),
+        labels: WebClipLabels = .chinese
+    ) -> WebClipDraft {
+        let sourceLink = "[\(escapeMarkdown(sourceURL.absoluteString))](\(sourceURL.absoluteString))"
+        return WebClipDraft(
+            title: hostnameTitle(sourceURL, fallbackTitle: labels.fallbackTitle),
             contentMarkdown: [
-                "来源：[\(escapeMarkdown(sourceURL.absoluteString))](\(sourceURL.absoluteString))",
-                "剪藏时间：\(ISO8601DateFormatter.edgeEver.string(from: capturedAt))",
-                "正文暂时无法抓取，来源链接已保留，可稍后重试。",
+                labels.labeledLine(labels.sourceLabel, value: sourceLink),
+                labels.labeledLine(labels.capturedAtLabel, value: ISO8601DateFormatter.edgeEver.string(from: capturedAt)),
+                labels.unavailableBody,
             ].joined(separator: "\n\n"),
             tagsText: isWeChatArticle(sourceURL) ? "web-clip, wechat" : "web-clip"
         )
     }
 
-    static func htmlToMarkdown(_ html: String, baseURL: URL) -> String {
+    static func htmlToMarkdown(_ html: String, baseURL: URL, imageAlt: String = "图片") -> String {
         guard !html.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return "" }
         var value = replace(html, pattern: #"<!--[\s\S]*?-->"#) { _ in "" }
         value = replace(
@@ -109,7 +147,7 @@ enum WebClipper {
                 ?? attribute(match, "data-original").nilIfEmpty
                 ?? attribute(match, "src").nilIfEmpty
             guard let source, !source.hasPrefix("data:"), let resolved = resolve(source, against: baseURL) else { return "" }
-            let alt = normalizedText(attribute(match, "alt")).nilIfEmpty ?? "图片"
+            let alt = normalizedText(attribute(match, "alt")).nilIfEmpty ?? imageAlt
             return "\n\n![\(escapeMarkdown(alt))](\(resolved))\n\n"
         }
         value = replace(value, pattern: #"<a\b[^>]*>([\s\S]*?)</a\s*>"#) { match in
@@ -164,7 +202,7 @@ enum WebClipper {
         return ""
     }
 
-    private static func hostnameTitle(_ url: URL) -> String { url.host ?? "网页剪藏" }
+    private static func hostnameTitle(_ url: URL, fallbackTitle: String) -> String { url.host ?? fallbackTitle }
     private static func normalizedText(_ value: String) -> String {
         decodeEntities(value).replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)

@@ -134,6 +134,14 @@ describe("MCP HTTP routes", () => {
       _meta: { "io.modelcontextprotocol/serverInfo": { name: "edgeever" } },
     });
     expect(body.result.tools).toEqual(expect.arrayContaining([expect.objectContaining({ name: "get_current_user" })]));
+    expect(body.result.tools).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "get_table_records", annotations: expect.objectContaining({ readOnlyHint: true }) }),
+      expect.objectContaining({ name: "add_table_record" }),
+      expect.objectContaining({ name: "update_table_record" }),
+      expect.objectContaining({ name: "delete_table_record" }),
+      expect.objectContaining({ name: "create_table_memo" }),
+      expect.objectContaining({ name: "update_table_schema" }),
+    ]));
   });
 
   test("requires matching 2026 transport headers and per-request metadata", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
+import { ensureTestWindowDom } from "../../lib/restore-test-global.mjs";
 import {
   filterNoteLinkSuggestions,
   insertSuggestedNoteLink,
@@ -31,6 +32,7 @@ describe("note link suggestion", () => {
   });
 
   test("replaces the @ query with the existing internal-note link format", () => {
+    ensureTestWindowDom();
     const editor = new Editor({
       extensions: [StarterKit],
       content: {
@@ -64,6 +66,7 @@ describe("note link suggestion", () => {
   });
 
   test("uses the untitled fallback for an empty title", () => {
+    ensureTestWindowDom();
     const editor = new Editor({
       extensions: [StarterKit],
       content: {

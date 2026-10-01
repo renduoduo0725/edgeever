@@ -27,6 +27,42 @@ export type MobileRenderedWebPage = {
   title?: string;
 };
 
+export type MobileWebClipLocale = "zh-CN" | "en-US" | "ja";
+
+const webClipCopy: Record<MobileWebClipLocale, {
+  capturedAtLabel: string;
+  fallbackTitle: string;
+  imageAlt: string;
+  separator: string;
+  sourceLabel: string;
+  unavailableBody: string;
+}> = {
+  "zh-CN": {
+    sourceLabel: "来源",
+    capturedAtLabel: "剪藏时间",
+    unavailableBody: "正文暂时无法抓取，来源链接已保留，可稍后重试。",
+    fallbackTitle: "网页剪藏",
+    imageAlt: "图片",
+    separator: "：",
+  },
+  "en-US": {
+    sourceLabel: "Source",
+    capturedAtLabel: "Captured at",
+    unavailableBody: "Could not extract the page text. The source link is kept so you can retry later.",
+    fallbackTitle: "Web clip",
+    imageAlt: "Image",
+    separator: ": ",
+  },
+  ja: {
+    sourceLabel: "出典",
+    capturedAtLabel: "取り込み日時",
+    unavailableBody: "本文を取り込めませんでした。出典リンクは残してあるので、あとからやり直せます。",
+    fallbackTitle: "ウェブクリップ",
+    imageAlt: "画像",
+    separator: ": ",
+  },
+};
+
 const URL_PATTERN = /https?:\/\/[^\s<>"'）)]+/i;
 const WECHAT_ARTICLE_HOSTS = new Set(["mp.weixin.qq.com"]);
 const BLOCK_TAGS = new Set([
@@ -114,10 +150,12 @@ export const buildMobileWebClipDraft = async (
   options: {
     fetcher?: typeof fetch;
     capturedAt?: Date;
+    locale?: MobileWebClipLocale;
   } = {}
 ): Promise<MobileWebClipDraft> => {
   const fetcher = options.fetcher ?? fetch;
   const capturedAt = options.capturedAt ?? new Date();
+  const locale = options.locale ?? "zh-CN";
   let html = "";
   let finalUrl = sourceUrl;
 
@@ -133,10 +171,10 @@ export const buildMobileWebClipDraft = async (
     finalUrl = response.url || sourceUrl;
     html = await response.text();
   } catch {
-    return buildFallbackDraft(sourceUrl, capturedAt);
+    return buildFallbackDraft(sourceUrl, capturedAt, locale);
   }
 
-  const title = extractPageTitle(html) || hostnameTitle(sourceUrl);
+  const title = extractPageTitle(html) || hostnameTitle(sourceUrl, locale);
   const articleHtml = isWeChatArticleUrl(sourceUrl)
     ? extractElementInnerHtmlById(html, "js_content")
     : extractFirstElementInnerHtml(html, ["article", "main"]);
@@ -147,7 +185,7 @@ export const buildMobileWebClipDraft = async (
       finalUrl,
       title,
     },
-    { capturedAt },
+    { capturedAt, locale },
   );
 };
 
@@ -156,14 +194,17 @@ export const buildMobileWebClipDraftFromRenderedPage = (
   page: MobileRenderedWebPage,
   options: {
     capturedAt?: Date;
+    locale?: MobileWebClipLocale;
   } = {},
 ): MobileWebClipDraft => {
   const capturedAt = options.capturedAt ?? new Date();
-  const title = normalizeInlineText(page.title ?? "") || hostnameTitle(sourceUrl);
-  const body = htmlToMarkdown(page.contentHtml, page.finalUrl || sourceUrl);
+  const locale = options.locale ?? "zh-CN";
+  const copy = webClipCopy[locale];
+  const title = normalizeInlineText(page.title ?? "") || hostnameTitle(sourceUrl, locale);
+  const body = htmlToMarkdown(page.contentHtml, page.finalUrl || sourceUrl, copy.imageAlt);
 
   if (!body) {
-    return { ...buildFallbackDraft(sourceUrl, capturedAt), title };
+    return { ...buildFallbackDraft(sourceUrl, capturedAt, locale), title };
   }
 
   return {
@@ -171,8 +212,8 @@ export const buildMobileWebClipDraftFromRenderedPage = (
     sourceUrl,
     tagsText: isWeChatArticleUrl(sourceUrl) ? "web-clip, wechat" : "web-clip",
     contentMarkdown: [
-      `来源：[${escapeMarkdownText(sourceUrl)}](${sourceUrl})`,
-      `剪藏时间：${capturedAt.toISOString()}`,
+      clipMetadataLine(copy.sourceLabel, `[${escapeMarkdownText(sourceUrl)}](${sourceUrl})`, copy.separator),
+      clipMetadataLine(copy.capturedAtLabel, capturedAt.toISOString(), copy.separator),
       "---",
       body,
     ].join("\n\n"),
@@ -196,7 +237,7 @@ export const extractPageTitle = (html: string) => {
   return titleMatch ? normalizeInlineText(stripTags(titleMatch[1])) : "";
 };
 
-export const htmlToMarkdown = (html: string, baseUrl?: string) => {
+export const htmlToMarkdown = (html: string, baseUrl?: string, imageAlt = "图片") => {
   if (!html.trim()) {
     return "";
   }
@@ -214,7 +255,7 @@ export const htmlToMarkdown = (html: string, baseUrl?: string) => {
     if (!resolvedSrc) {
       return "";
     }
-    const alt = normalizeInlineText(readAttribute(tag, "alt") || "图片");
+    const alt = normalizeInlineText(readAttribute(tag, "alt") || imageAlt);
     return `\n\n![${escapeMarkdownText(alt)}](${resolvedSrc})\n\n`;
   });
 
@@ -257,23 +298,32 @@ export const htmlToMarkdown = (html: string, baseUrl?: string) => {
     .trim();
 };
 
-const buildFallbackDraft = (sourceUrl: string, capturedAt: Date): MobileWebClipDraft => ({
-  title: hostnameTitle(sourceUrl),
-  sourceUrl,
-  tagsText: isWeChatArticleUrl(sourceUrl) ? "web-clip, wechat" : "web-clip",
-  contentMarkdown: [
-    `来源：[${escapeMarkdownText(sourceUrl)}](${sourceUrl})`,
-    `剪藏时间：${capturedAt.toISOString()}`,
-    "",
-    "正文暂时无法抓取，来源链接已保留，可稍后重试。",
-  ].join("\n\n"),
-});
+const clipMetadataLine = (label: string, value: string, separator: string) => `${label}${separator}${value}`;
 
-const hostnameTitle = (value: string) => {
+const buildFallbackDraft = (
+  sourceUrl: string,
+  capturedAt: Date,
+  locale: MobileWebClipLocale,
+): MobileWebClipDraft => {
+  const copy = webClipCopy[locale];
+  return {
+    title: hostnameTitle(sourceUrl, locale),
+    sourceUrl,
+    tagsText: isWeChatArticleUrl(sourceUrl) ? "web-clip, wechat" : "web-clip",
+    contentMarkdown: [
+      clipMetadataLine(copy.sourceLabel, `[${escapeMarkdownText(sourceUrl)}](${sourceUrl})`, copy.separator),
+      clipMetadataLine(copy.capturedAtLabel, capturedAt.toISOString(), copy.separator),
+      "",
+      copy.unavailableBody,
+    ].join("\n\n"),
+  };
+};
+
+const hostnameTitle = (value: string, locale: MobileWebClipLocale = "zh-CN") => {
   try {
     return new URL(value).hostname;
   } catch {
-    return "网页剪藏";
+    return webClipCopy[locale].fallbackTitle;
   }
 };
 

@@ -16,7 +16,7 @@ const installTestWindow = ({ hostname = "localhost" } = {}) => {
     location: { hostname, href: `http://${hostname}/` },
   });
   return () => {
-    globalThis.window = previousWindow;
+    if (previousWindow !== undefined) globalThis.window = previousWindow;
   };
 };
 

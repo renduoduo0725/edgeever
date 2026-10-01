@@ -31,6 +31,10 @@ describe("note prose", () => {
     expect(paletteForLegacyEditorTheme("wechat-green")).toBeNull();
     expect(paletteForLegacyEditorTheme("modern-mint")).toBeNull();
     expect(parseNoteProsePalette("emerald")).toBe("native");
+    expect(parseNoteProsePalette("green")).toBe("native");
+    expect(NoteProseUpdateSchema.safeParse({ palette: "green" }).success).toBe(false);
+    expect(parseNoteProsePalette("plum")).toBe("native");
+    expect(NoteProseUpdateSchema.safeParse({ palette: "plum" }).success).toBe(false);
     expect(resolveNoteProse({ palette: "emerald" }).palette).toBe("native");
     expect(paletteForLegacyEditorTheme("brief")).toBe("teal");
     expect(paletteForLegacyEditorTheme("zen")).toBe("teal");

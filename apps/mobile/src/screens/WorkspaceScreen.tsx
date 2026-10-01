@@ -140,7 +140,7 @@ export const WorkspaceScreen = ({
   onIncomingShareHandled?: () => void;
 }) => {
   const { resolvedTheme } = useMobileTheme();
-  const { preference: localePreference, resolvedLocale, setPreference: setLocalePreference } = useMobileLocale();
+  const { preference: localePreference, resolvedLocale, setPreference: setLocalePreference, translate } = useMobileLocale();
   const hasUpdate = useMobileUpdateAvailable();
   refreshWorkspaceThemeStyles(resolvedTheme);
   const { client, session, signOut } = useSession();
@@ -550,25 +550,25 @@ export const WorkspaceScreen = ({
   const handleRenderedClipCaptured = useCallback((page: MobileRenderedWebPage) => {
     if (!incomingClipCaptureUrl) return;
     openIncomingClipDraft(
-      buildMobileWebClipDraftFromRenderedPage(incomingClipCaptureUrl, page),
+      buildMobileWebClipDraftFromRenderedPage(incomingClipCaptureUrl, page, { locale: resolvedLocale }),
     );
     finishIncomingShare();
-  }, [finishIncomingShare, incomingClipCaptureUrl, openIncomingClipDraft]);
+  }, [finishIncomingShare, incomingClipCaptureUrl, openIncomingClipDraft, resolvedLocale]);
 
   const handleRenderedClipFailed = useCallback((message: string) => {
     const sourceUrl = incomingClipCaptureUrl;
     if (!sourceUrl) return;
     setIncomingClipCaptureUrl(null);
-    void buildMobileWebClipDraft(sourceUrl)
+    void buildMobileWebClipDraft(sourceUrl, { locale: resolvedLocale })
       .then((draft) => {
         openIncomingClipDraft(draft);
         Alert.alert(
           "正文剪藏失败",
-          `${message} 已保留文章链接，你可以稍后重新分享重试。`,
+          `${translate(message)} ${translate("已保留文章链接，你可以稍后重新分享重试。")}`,
         );
       })
       .finally(finishIncomingShare);
-  }, [finishIncomingShare, incomingClipCaptureUrl, openIncomingClipDraft]);
+  }, [finishIncomingShare, incomingClipCaptureUrl, openIncomingClipDraft, resolvedLocale, translate]);
 
   useEffect(() => {
     if (incomingShareIsResolving) {
@@ -606,7 +606,7 @@ export const WorkspaceScreen = ({
       setCreateSeed({
         contentMarkdown: "",
         tagsText: "",
-        title: sharedImages.length === 1 ? "分享的图片" : `分享的图片（${sharedImages.length} 张）`,
+        title: translate(sharedImages.length === 1 ? "分享的图片" : `分享的图片（${sharedImages.length} 张）`),
       });
       setActiveView("notes");
       setMemoView("notebook");
@@ -650,7 +650,7 @@ export const WorkspaceScreen = ({
         active = false;
       };
     }
-    void buildMobileWebClipDraft(sourceUrl)
+    void buildMobileWebClipDraft(sourceUrl, { locale: resolvedLocale })
       .then((draft) => {
         if (!active) {
           return;
@@ -680,7 +680,9 @@ export const WorkspaceScreen = ({
     notebooks.length,
     notebooksQuery.isSuccess,
     openIncomingClipDraft,
+    resolvedLocale,
     sharedImages,
+    translate,
   ]);
 
   useEffect(() => {

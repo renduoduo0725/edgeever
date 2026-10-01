@@ -27,6 +27,11 @@ files:
   - src/**
   - package.json
 extraResources:
+  - from: ../../scripts
+    to: mcp-bridge
+    filter:
+      - edgeever-mcp-stdio.mjs
+      - mcp-http-headers.mjs
   - from: ../web/dist
     to: web
     filter:

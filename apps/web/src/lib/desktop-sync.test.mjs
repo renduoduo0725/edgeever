@@ -38,7 +38,7 @@ describe("desktop staged resource sync", () => {
       release();
       expect(events.filter((event) => event === "edgeever:sync-queue-changed")).toHaveLength(1);
     } finally {
-      globalThis.window = originalWindow;
+      if (originalWindow !== undefined) globalThis.window = originalWindow;
     }
   });
 

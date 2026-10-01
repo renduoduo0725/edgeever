@@ -20,9 +20,16 @@ describe("PDF document sources", () => {
   });
 
   test("recovers leaked desktop resource URLs in the web runtime", async () => {
-    await expect(loadPdfDocumentSource("edgeever-resource://resource/res_web", undefined)).resolves.toEqual({
-      url: "/api/v1/resources/res_web/blob",
-    });
+    const current = globalThis.window;
+    const previousBridge = current?.edgeeverDesktop;
+    if (current) current.edgeeverDesktop = undefined;
+    try {
+      await expect(loadPdfDocumentSource("edgeever-resource://resource/res_web")).resolves.toEqual({
+        url: "/api/v1/resources/res_web/blob",
+      });
+    } finally {
+      if (current) current.edgeeverDesktop = previousBridge;
+    }
   });
 
   test("loads synced desktop resources through the native bridge", async () => {

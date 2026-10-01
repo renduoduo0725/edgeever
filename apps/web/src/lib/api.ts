@@ -161,11 +161,7 @@ let unauthorizedConfirmPromise: Promise<boolean> | null = null;
 const isDesktopPublicRequest = (path: string) =>
   path === "/api/release" || path === "/api/v1/auth/login" || path === "/api/v1/auth/session";
 
-/**
- * Confirm the browser is actually logged out before forcing the login screen.
- * A single flaky 401 (or a mid-session local-dev auth mode flip) should not
- * wipe the whole workspace if the session cookie is still valid.
- */
+/** Confirm the current browser or desktop session is lost before signing out. */
 const confirmSessionLost = async (): Promise<boolean> => {
   if (typeof window === "undefined") return true;
   if (unauthorizedConfirmPromise) return unauthorizedConfirmPromise;
@@ -201,6 +197,8 @@ const notifyUnauthorized = async (isDesktop: boolean, rejectedDesktopSessionToke
 
   if (isDesktop && rejectedDesktopSessionToken) {
     if (getDesktopSessionToken() !== rejectedDesktopSessionToken) return;
+    const sessionLost = await confirmSessionLost();
+    if (!sessionLost || getDesktopSessionToken() !== rejectedDesktopSessionToken) return;
     clearCachedDesktopSession();
     desktopSessionRejected = true;
     window.dispatchEvent(new CustomEvent("edgeever:unauthorized"));

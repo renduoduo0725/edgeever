@@ -1,4 +1,4 @@
-export type DesktopAcpAdapterId = "codex" | "antigravity" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
+export type DesktopAcpAdapterId = "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
 export type DesktopAcpAdapterState = "not_installed" | "installing" | "needs_login" | "available" | "failed";
 
 export type DesktopAcpPromptCapabilities = {
@@ -41,12 +41,15 @@ export type DesktopAcpEvent =
   | { requestId: string; type: "text-delta"; text: string }
   | { requestId: string; type: "reasoning"; text: string }
   | { requestId: string; type: "tool"; name: string; status: string; title?: string }
+  | { requestId: string; type: "image"; id: string; mediaType: string; base64: string }
   | { requestId: string; type: "done" }
   | { requestId: string; type: "error"; message: string };
 
 export const AI_SIDEBAR_WIDTH_KEY = "edgeever.aiSidebar.width";
 export const AI_SIDEBAR_OPEN_KEY = "edgeever.aiSidebar.open";
 export const AI_SIDEBAR_THREAD_KEY = "edgeever.aiSidebar.thread";
+export const AI_SIDEBAR_LOCAL_THREAD_KEY = "edgeever.aiSidebar.localThread";
+export const AI_SIDEBAR_LOCAL_THREADS_KEY = "edgeever.aiSidebar.localThreads";
 export const AI_SIDEBAR_SOURCE_KEY = "edgeever.aiSidebar.source";
 export const AI_SIDEBAR_ADAPTER_KEY = "edgeever.aiSidebar.adapterId";
 export const AI_SIDEBAR_ADAPTER_PATH_KEY = "edgeever.aiSidebar.adapterPath";

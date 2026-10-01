@@ -311,7 +311,7 @@ export const registerAuthRoutes = (
     "/api/v1/auth/change-password",
     zValidator("json", ChangePasswordSchema),
     async (context) => {
-      const auth = await requireInteractiveSession(context, dependencies.authenticateSession);
+      const auth = await requireInteractiveSession(context, dependencies.authenticateRequest);
       if (!auth) return unauthorized(context, "An interactive user session is required.");
       if (dependencies.isDemoMode(context.env)) {
         return forbidden(context, "The demo environment does not allow changing login passwords.");

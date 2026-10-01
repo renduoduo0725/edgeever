@@ -46,7 +46,7 @@ describe("desktop workspace restore", () => {
     try {
       expect(shouldRestoreDesktopWorkspace()).toBe(true);
     } finally {
-      globalThis.window = previous;
+      if (previous !== undefined) globalThis.window = previous;
     }
   });
 });

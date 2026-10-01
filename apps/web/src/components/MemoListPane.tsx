@@ -51,6 +51,7 @@ import {
   Pencil,
   Copy,
 } from "lucide-react";
+import { WeChatIcon } from "./WeChatIcon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -65,6 +66,7 @@ import {
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { MemoCard } from "./MemoCard";
 import { ClipboardCopyNotice } from "./ClipboardCopyNotice";
+import { WeChatCopyProgress } from "./WeChatCopyProgress";
 import { cn } from "@/lib/utils";
 import { WORKSPACE_PAGE_TITLE_CLASSNAME } from "@/lib/workspace-ui";
 import type { Notebook, MemoSummary } from "@edgeever/shared";
@@ -75,6 +77,7 @@ import type {
   MemoListDensity,
   MemoContextMenuState,
   MemoDocumentAction,
+  MemoWeChatCopyResult,
   NotebookMoveOption,
 } from "@/lib/app-helpers";
 import { contentEnterMotion, paneEnterMotion } from "@/lib/motion";
@@ -392,6 +395,7 @@ export const MemoListPane = ({
   onTogglePinMemo,
   onMoveMemo,
   onRequestDocumentAction,
+  onCopyMemoToWeChat,
   onMoveSelectedMemos,
   onPinSelectedMemos,
   onExportSelectedMemos,
@@ -471,6 +475,7 @@ export const MemoListPane = ({
   onTogglePinMemo: (memo: MemoSummary) => void;
   onMoveMemo: (memoId: string, notebookId: string) => void;
   onRequestDocumentAction: (memoId: string, action: MemoDocumentAction, printWindow?: Window | null) => void;
+  onCopyMemoToWeChat: (memoId: string) => Promise<MemoWeChatCopyResult>;
   onMoveSelectedMemos: (notebookId: string) => void;
   onPinSelectedMemos: (pinned: boolean) => void;
   onExportSelectedMemos: () => void;
@@ -515,6 +520,10 @@ export const MemoListPane = ({
   const [lastSelectedMemoId, setLastSelectedMemoId] = useState<string | null>(null);
   const [moveTargetNotebookId, setMoveTargetNotebookId] = useState("");
   const [memoIdCopyNotice, setMemoIdCopyNotice] = useState<{ status: "copied" | "error"; id: string } | null>(null);
+  const [wechatCopyNotice, setWechatCopyNotice] = useState<"copied" | "error" | null>(null);
+  const [wechatCopyPending, setWechatCopyPending] = useState(false);
+  const wechatCopyPendingRef = useRef(false);
+  const wechatCopyNoticeTimerRef = useRef<number | null>(null);
   const [fileDragActive, setFileDragActive] = useState(false);
 
   const filterOptions = useMemo(() => getMemoFilterOptions(t), [t]);
@@ -528,6 +537,12 @@ export const MemoListPane = ({
   const [searchFocused, setSearchFocused] = useState(false);
   const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
   const listRootRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => () => {
+    if (wechatCopyNoticeTimerRef.current !== null) {
+      window.clearTimeout(wechatCopyNoticeTimerRef.current);
+    }
+  }, []);
   const listScrollRef = useRef<HTMLDivElement | null>(null);
   const [listScrollElement, setListScrollElement] = useState<HTMLDivElement | null>(null);
   const [isDesktopList, setIsDesktopList] = useState(isDesktopViewport);
@@ -653,6 +668,30 @@ export const MemoListPane = ({
     const copied = await copyTextToClipboard(memo.id);
     setMemoIdCopyNotice({ status: copied ? "copied" : "error", id: memo.id });
     window.setTimeout(() => setMemoIdCopyNotice(null), copied ? 2200 : 3000);
+  };
+
+  const handleCopyContextMemoToWeChat = async () => {
+    const memo = memoContextMenu?.memo;
+    if (!memo || memo.diagramKind || memo.structuredTable || memo.infographic || wechatCopyPendingRef.current) return;
+    setMemoContextMenu(null);
+    wechatCopyPendingRef.current = true;
+    if (wechatCopyNoticeTimerRef.current !== null) {
+      window.clearTimeout(wechatCopyNoticeTimerRef.current);
+    }
+    setWechatCopyNotice(null);
+    setWechatCopyPending(true);
+    try {
+      const result = await onCopyMemoToWeChat(memo.id);
+      if (result === "editor") return;
+      setWechatCopyNotice(result);
+      wechatCopyNoticeTimerRef.current = window.setTimeout(() => setWechatCopyNotice(null), result === "copied" ? 2200 : 2600);
+    } catch {
+      setWechatCopyNotice("error");
+      wechatCopyNoticeTimerRef.current = window.setTimeout(() => setWechatCopyNotice(null), 2600);
+    } finally {
+      wechatCopyPendingRef.current = false;
+      setWechatCopyPending(false);
+    }
   };
 
   useEffect(() => {
@@ -875,7 +914,7 @@ export const MemoListPane = ({
     // Keep enough room for the full action list. Radix can still adjust the
     // final position, but this prevents the initial placement from starting
     // below the viewport on short or zoomed desktop viewports.
-    const menuHeight = view === "trash" ? 216 : 356;
+    const menuHeight = view === "trash" ? 216 : 392;
     const x = Math.min(clientX, Math.max(12, window.innerWidth - menuWidth - 12));
     const y = Math.min(clientY, Math.max(12, window.innerHeight - menuHeight - 12));
 
@@ -1634,6 +1673,15 @@ export const MemoListPane = ({
                     <Share2 className="h-4 w-4 text-slate-500" />
                     {t(isLocalMemoId(memoContextMenu.memo.id) ? "sharing.afterSync" : "sharing.action")}
                   </DropdownMenuItem>
+                  {!memoContextMenu.memo.diagramKind && !memoContextMenu.memo.structuredTable && !memoContextMenu.memo.infographic && (
+                    <DropdownMenuItem
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                      onClick={() => void handleCopyContextMemoToWeChat()}
+                    >
+                      <WeChatIcon className="h-4 w-4 text-slate-500" />
+                      {t("editor.copyToWeChat")}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
                     onClick={() => requestContextDocumentAction("export-markdown")}
@@ -1692,6 +1740,14 @@ export const MemoListPane = ({
       {memoIdCopyNotice && (
         <ClipboardCopyNotice status={memoIdCopyNotice.status}>
           {t(memoIdCopyNotice.status === "copied" ? "editor.noteIdCopied" : "editor.noteIdCopyFailed", { id: memoIdCopyNotice.id })}
+        </ClipboardCopyNotice>
+      )}
+
+      {wechatCopyPending && <WeChatCopyProgress />}
+
+      {wechatCopyNotice && (
+        <ClipboardCopyNotice status={wechatCopyNotice}>
+          {t(wechatCopyNotice === "copied" ? "editor.copiedToWeChat" : "editor.copyToWeChatFailed")}
         </ClipboardCopyNotice>
       )}
 

@@ -301,7 +301,45 @@ describe("desktop instance setup", () => {
     await cacheDesktopSession(await api.login({ username: "admin", password: "secret" }));
   });
 
-  test("uses the desktop session token and stops network retries after a 401", async () => {
+  test("keeps the desktop session after a route-specific 401", async () => {
+    events.length = 0;
+    await cacheDesktopSession({
+      authRequired: true,
+      authenticated: true,
+      demoMode: false,
+      sessionToken: "desktop-session-token",
+      user: { id: "user-1", username: "admin", displayName: null, role: "owner" },
+    });
+
+    const requests = [];
+    globalThis.fetch = async (url, init) => {
+      requests.push({ url, authorization: new Headers(init?.headers).get("Authorization") });
+      if (String(url).endsWith("/api/v1/auth/session")) {
+        return Response.json({ authRequired: true, authenticated: true, demoMode: false, user: { id: "user-1" } });
+      }
+      if (String(url).endsWith("/api/v1/auth/sessions")) return Response.json({ sessions: [] });
+      return Response.json({ error: { code: "unauthorized", message: "Authentication required" } }, { status: 401 });
+    };
+
+    await expect(api.changePassword({
+      currentPassword: "old-password",
+      newPassword: "new-password",
+      confirmPassword: "new-password",
+    })).rejects.toMatchObject({ status: 401 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await expect(api.listLoginDeviceSessions()).resolves.toEqual({ sessions: [] });
+
+    expect(requests.map(({ url }) => new URL(url).pathname)).toEqual([
+      "/api/v1/auth/change-password",
+      "/api/v1/auth/session",
+      "/api/v1/auth/sessions",
+    ]);
+    expect(requests.every(({ authorization }) => authorization === "Bearer desktop-session-token")).toBe(true);
+    expect(secureSessionToken).toBe("desktop-session-token");
+    expect(events).toEqual([]);
+  });
+
+  test("uses the desktop session token and stops network retries after a confirmed 401", async () => {
     calls.length = 0;
     events.length = 0;
     storage.set(DESKTOP_API_BASE_URL_STORAGE_KEY, "https://notes.example.com");
@@ -316,6 +354,9 @@ describe("desktop instance setup", () => {
     const requests = [];
     globalThis.fetch = async (url, init) => {
       requests.push({ url, authorization: new Headers(init?.headers).get("Authorization") });
+      if (String(url).endsWith("/api/v1/auth/session")) {
+        return Response.json({ authRequired: true, authenticated: false, demoMode: false, user: null });
+      }
       return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Authentication required" } }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -323,10 +364,14 @@ describe("desktop instance setup", () => {
     };
 
     await expect(api.syncBootstrap({ limit: 200 })).rejects.toMatchObject({ status: 401 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
     await expect(api.syncBootstrap({ limit: 200 })).rejects.toMatchObject({ status: 401 });
 
     expect(requests).toEqual([{
       url: "https://notes.example.com/api/v1/sync/bootstrap?limit=200",
+      authorization: "Bearer desktop-session-token",
+    }, {
+      url: "https://notes.example.com/api/v1/auth/session",
       authorization: "Bearer desktop-session-token",
     }]);
     expect(events).toEqual(["edgeever:unauthorized"]);

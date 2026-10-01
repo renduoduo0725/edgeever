@@ -32,11 +32,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
+import { WeChatCopyProgress } from "@/components/WeChatCopyProgress";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
 import { MemoEditorMetadataRow } from "@/components/MemoEditorMetadataRow";
-import { MemoEditorFocusModeButton, MemoEditorTopRowLeading, MemoEditorUpdatedLabel } from "@/components/MemoEditorTopRowLeading";
+import { MemoEditorFocusModeButton, MemoEditorTopRowLeading } from "@/components/MemoEditorTopRowLeading";
 import { MemoEditorToolbarDivider } from "@/components/MemoEditorToolbarChrome";
 import {
+  MEMO_EDITOR_METADATA_ROW_CLASS_NAME,
   MEMO_EDITOR_READING_GUTTER_CLASS_NAME,
   MEMO_EDITOR_READING_GUTTER_PROPERTIES_CLASS_NAME,
   MEMO_EDITOR_TOP_ROW_CLASS_NAME,
@@ -115,7 +117,7 @@ import { AiSidebarErrorBoundary } from "./ai-sidebar/AiSidebarErrorBoundary";
 import { api } from "@/lib/api";
 import { isDesktopResourceRuntime, stageDesktopResource, toDesktopResourceDownloadUrl, toDesktopResourceUrl } from "@/lib/desktop-resources";
 import { contentReferencesStagedResourceUrl, findMatchingMemoResource, repairMemoStagedResourceUrls, repairTiptapStagedResourceUrls } from "@/lib/staged-resource-repair";
-import { cn, formatDateTime, parseTagsText } from "@/lib/utils";
+import { cn, parseTagsText } from "@/lib/utils";
 import { editorContentColumnMaxWidth, type EditorContentWidth } from "@/lib/editor-content-width";
 import {
   countMemoCharacters,
@@ -3414,7 +3416,6 @@ const RichEditorPane = ({
         ? "bg-slate-100 text-slate-700"
         : saveStateClassName;
 
-  const updatedLabel = formatDateTime(memo.updatedAt);
   const currentMarkdownForAi = getCurrentMarkdownForAi();
 
   const mobileDoneDisabled =
@@ -3650,7 +3651,6 @@ const RichEditorPane = ({
             className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-4 sm:flex-nowrap"
           >
           <MemoEditorTopRowLeading
-            className="min-w-0 flex-1"
             mobileBackButton={(
               <Button
                 className="lg:hidden"
@@ -3679,7 +3679,7 @@ const RichEditorPane = ({
             )}
           />
           <MemoEditorMetadataRow
-            rowClassName="shrink-0 flex-nowrap"
+            rowClassName={MEMO_EDITOR_METADATA_ROW_CLASS_NAME}
             contentMarkdown={currentMarkdownForAi}
             disabled={effectiveReadOnly}
             mobileNotebookPickerOpen={mobileNotebookSheetOpen}
@@ -3724,7 +3724,6 @@ const RichEditorPane = ({
 
           <div ref={setHeaderStatusCluster} className="absolute right-1 top-0 flex h-full shrink-0 items-center gap-1 sm:right-2">
             <div className="flex min-w-0 items-center gap-1.5">
-              <MemoEditorUpdatedLabel updatedLabel={updatedLabel} />
               <span className="hidden shrink-0 whitespace-nowrap text-xs tabular-nums text-slate-400 sm:inline">
                 {t("editor.characterCount", { count: characterCount })}
               </span>
@@ -4292,6 +4291,8 @@ const RichEditorPane = ({
           {t(memoIdCopyNotice.status === "copied" ? "editor.noteIdCopied" : "editor.noteIdCopyFailed", { id: memoIdCopyNotice.id })}
         </ClipboardCopyNotice>
       )}
+
+      {wechatCopyState === "copying" && <WeChatCopyProgress />}
 
       {(wechatCopyState === "copied" || wechatCopyState === "error") && (
         <ClipboardCopyNotice status={wechatCopyState === "copied" ? "copied" : "error"}>

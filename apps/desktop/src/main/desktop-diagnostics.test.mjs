@@ -52,10 +52,14 @@ describe("desktop crash diagnostics", () => {
     });
     const url = new URL(issueUrl);
     expect(url.origin + url.pathname).toBe("https://github.com/tianma-if/edgeever/issues/new");
+    expect(url.searchParams.get("template")).toBe("bug.yml");
+    expect(url.searchParams.get("client")).toBe("macOS");
     expect(url.searchParams.get("title")).toContain("darwin x64");
-    expect(url.searchParams.get("body")).toContain('"appVersion": "1.31.0"');
-    expect(url.searchParams.get("body")).toContain("Intel UHD Graphics 630");
-    expect(url.searchParams.get("body")).not.toContain("private.example.com");
+    expect(url.searchParams.get("system-info")).toContain("- appVersion: 1.31.0");
+    expect(url.searchParams.get("diagnostics")).toContain('"appVersion": "1.31.0"');
+    expect(url.searchParams.get("diagnostics")).toContain("Intel UHD Graphics 630");
+    expect(url.searchParams.get("diagnostics")).not.toContain("private.example.com");
+    expect(url.searchParams.get("system-info")).not.toContain("private.example.com");
     expect(issueUrl.length).toBeLessThan(8_000);
   });
 

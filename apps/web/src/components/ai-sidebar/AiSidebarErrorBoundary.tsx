@@ -36,7 +36,7 @@ export class AiSidebarErrorBoundary extends React.Component<Props, State> {
           <div className="flex gap-2">
             <button
               type="button"
-              className="rounded-lg bg-emerald-500 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-600"
+              className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
               onClick={() => this.setState({ failed: false })}
             >
               {zh ? "重试侧栏" : "Retry sidebar"}

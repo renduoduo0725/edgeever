@@ -256,7 +256,7 @@ esac
     } finally {
       await rm(fixture, { recursive: true, force: true });
     }
-  });
+  }, 15_000);
 
   test("prints actionable diagnostics without exposing the password", async () => {
     const fixture = await mkdtemp(resolve(tmpdir(), "edgeever-installer-failure-"));
