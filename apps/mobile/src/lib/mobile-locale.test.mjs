@@ -18,6 +18,23 @@ describe("mobile locale translation", () => {
     expect(translateMobileText("筛选：Pinned · 3 条", "en-US")).toBe("Filter: Pinned · 3 notes");
   });
 
+  test("uses shared translations for the descendant preference", () => {
+    expect(translateMobileText("父笔记本中显示子笔记本笔记", "en-US")).toBe("Show notes from sub-notebooks");
+    expect(translateMobileText("父笔记本中显示子笔记本笔记", "ja")).toBe("サブノートブックのノートを表示");
+    expect(translateMobileText("是否在父笔记本中显示子笔记本中的笔记", "en-US")).toBe("Show notes from sub-notebooks in parent notebooks");
+  });
+
+  test("translates the hidden sub-notebook notes hint", () => {
+    const hint = "子笔记本中还有 5 条笔记。可以打开子笔记本查看，或在设置中开启“父笔记本中显示子笔记本笔记”。";
+    expect(translateMobileText(hint, "en-US"))
+      .toBe("Its sub-notebooks still contain 5 notes. Open a sub-notebook to see them, or turn on \"Show notes from sub-notebooks\" in Settings.");
+    expect(translateMobileText(hint, "ja"))
+      .toBe("サブノートブックにはまだ 5 件のノートがあります。サブノートブックを開くか、設定で「サブノートブックのノートを表示」をオンにしてください。");
+    expect(translateMobileText("本级暂无笔记", "en-US")).toBe("No notes directly in this notebook");
+    expect(translateMobileText("无法保存“父笔记本中显示子笔记本笔记”设置，请稍后重试", "en-US"))
+      .toBe("Could not save the \"Show notes from sub-notebooks\" setting. Please try again.");
+  });
+
   test("prefers specific shared templates over broader mobile-only templates", () => {
     expect(translateMobileText("永久删除 3 条笔记", "en-US")).toBe("Delete 3 notes permanently");
     expect(translateMobileText("当前：Inbox，3 条笔记", "en-US")).toBe("Current: Inbox, 3 notes");

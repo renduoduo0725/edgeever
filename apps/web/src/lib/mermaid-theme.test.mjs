@@ -28,14 +28,26 @@ describe("official Mermaid theme variables", () => {
     }
   });
 
-  test("keeps the zinc light theme coherent", () => {
-    const palette = MERMAID_THEME_PALETTES["zinc-light"];
-    const variables = getOfficialMermaidThemeVariables(palette);
+  test("keeps the default themes on the note surface with a solid node plate", () => {
+    const light = MERMAID_THEME_PALETTES["zinc-light"];
+    const dark = MERMAID_THEME_PALETTES["zinc-dark"];
+    const lightVariables = getOfficialMermaidThemeVariables(light);
 
-    expect(variables.background).toBe(palette.bg);
-    expect(variables.primaryColor).toBe(palette.bg);
-    expect(variables.primaryBorderColor).toBe(palette.muted);
-    expect(variables.signalColor).toBe(palette.accent);
+    expect(light.bg).toBe("#f8fafb");
+    expect(light.fg).toBe("#27272A");
+    expect(light.muted).toBe("#3f3f46");
+    expect(light.line).toBe("#52525b");
+    expect(light.surface).toBe("#ffffff");
+    expect(light.border).toBe("#d4d4d8");
+    expect(lightVariables.background).toBe(light.bg);
+    expect(lightVariables.primaryColor).toBe(light.surface);
+    expect(lightVariables.primaryTextColor).toBe(light.fg);
+    expect(lightVariables.primaryBorderColor).toBe(light.border);
+    expect(lightVariables.lineColor).toBe(light.line);
+    expect(lightVariables.fontSize).toBe("12px");
+    expect(dark.bg).toBe("#191e1b");
+    expect(dark.surface).toBe("#242b27");
+    expect(dark.muted).toBe("#d4d4d8");
   });
 
   test("keeps primary and secondary diagram text readable in every theme", () => {
@@ -43,6 +55,9 @@ describe("official Mermaid theme variables", () => {
       expect(contrastRatio(palette.fg, palette.bg), `${theme} primary text`).toBeGreaterThanOrEqual(4.5);
       expect(palette.muted, `${theme} secondary text color`).toBeDefined();
       expect(contrastRatio(palette.muted, palette.bg), `${theme} secondary text`).toBeGreaterThanOrEqual(4.5);
+      if (palette.surface) {
+        expect(contrastRatio(palette.fg, palette.surface), `${theme} node text`).toBeGreaterThanOrEqual(4.5);
+      }
     }
   });
 

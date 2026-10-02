@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 const actionsSource = readFileSync(new URL("./MemoEditorHeaderActions.tsx", import.meta.url), "utf8");
 const editorSource = readFileSync(new URL("./EditorPane.tsx", import.meta.url), "utf8");
 const diagramSource = readFileSync(new URL("./DiagramEditorPane.tsx", import.meta.url), "utf8");
+const tableSource = readFileSync(new URL("./TableEditorPane.tsx", import.meta.url), "utf8");
+const workspaceSource = readFileSync(new URL("./WorkspaceApp.tsx", import.meta.url), "utf8");
 const densitySource = readFileSync(new URL("./MemoEditorChromeDensity.ts", import.meta.url), "utf8");
 const editorToolbarSource = readFileSync(new URL("./EditorToolbar.tsx", import.meta.url), "utf8");
 const diagramToolbarSource = readFileSync(new URL("./DiagramToolbar.tsx", import.meta.url), "utf8");
@@ -30,7 +32,8 @@ describe("shared memo editor header actions", () => {
     expect(editorSource).toContain("data-ai-assistant-launcher");
     expect(editorSource).not.toContain("textNoteActions=");
     expect(diagramSource).not.toContain("textNoteActions=");
-    expect(diagramSource).not.toContain("data-ai-assistant-launcher");
+    expect(diagramSource).toContain("data-ai-assistant-launcher");
+    expect(diagramSource).toContain("<AiSidebar");
     expect(diagramSource).not.toContain("<WeChatIcon");
   });
 
@@ -49,6 +52,20 @@ describe("shared memo editor header actions", () => {
     expect(editorSource).not.toContain("<Maximize2");
     expect(diagramSource).not.toContain("<Maximize2");
     expect(metadataRowSource).not.toContain("<Maximize2");
+  });
+
+  test("opens the same assistant on diagram and table notes", () => {
+    expect(tableSource).toContain("data-ai-assistant-launcher");
+    expect(tableSource).toContain("<AiSidebar");
+    expect(tableSource).not.toContain("infographic=");
+    expect(diagramSource).not.toContain("infographic=");
+    const diagramPane = workspaceSource.slice(workspaceSource.indexOf("<DiagramEditorPane"), workspaceSource.indexOf("<InfographicEditorPane"));
+    const tablePane = workspaceSource.slice(workspaceSource.indexOf("<TableEditorPane"), workspaceSource.indexOf("<EditorPane\n"));
+    expect(diagramPane).toContain("aiAssistantOpenToken={noteAiAssistantOpenToken}");
+    expect(diagramPane).toContain("companionAvailable={authRequired && Boolean(user) && !demoMode}");
+    expect(tablePane).toContain("aiAssistantOpenToken={noteAiAssistantOpenToken}");
+    expect(tablePane).toContain("notebooks={notebooks}");
+    expect(tablePane).toContain("companionAvailable={authRequired && Boolean(user) && !demoMode}");
   });
 
   test("leaves sequential note navigation to the memo list", () => {

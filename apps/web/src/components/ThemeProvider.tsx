@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { DIAGRAM_CANVAS_DARK, DIAGRAM_CANVAS_LIGHT } from "@edgeever/shared";
 import {
   DEFAULT_CUSTOM_DARK_COLORS,
   DEFAULT_CUSTOM_EDITOR_THEME,
@@ -50,8 +51,24 @@ export interface MermaidThemePalette {
 }
 
 export const MERMAID_THEME_PALETTES: Record<MermaidThemeName, MermaidThemePalette> = {
-  "zinc-light": { bg: "#FFFFFF", fg: "#27272A", line: "#a1a1aa", accent: "#52525b", muted: "#71717a" },
-  "zinc-dark": { bg: "#18181B", fg: "#FAFAFA", line: "#52525b", accent: "#a1a1aa", muted: "#a1a1aa" },
+  "zinc-light": {
+    bg: DIAGRAM_CANVAS_LIGHT,
+    fg: "#27272A",
+    line: "#52525b",
+    accent: "#52525b",
+    muted: "#3f3f46",
+    surface: "#ffffff",
+    border: "#d4d4d8",
+  },
+  "zinc-dark": {
+    bg: DIAGRAM_CANVAS_DARK,
+    fg: "#FAFAFA",
+    line: "#8b938c",
+    accent: "#d4d4d8",
+    muted: "#d4d4d8",
+    surface: "#242b27",
+    border: "#3d4741",
+  },
   "tokyo-night": { bg: "#1a1b26", fg: "#a9b1d6", line: "#3d59a1", accent: "#7aa2f7", muted: "#7c85ac" },
   "tokyo-night-storm": { bg: "#24283b", fg: "#a9b1d6", line: "#3d59a1", accent: "#7aa2f7", muted: "#8991b8" },
   "tokyo-night-light": { bg: "#d5d6db", fg: "#343b58", line: "#34548a", accent: "#34548a", muted: "#545a71" },

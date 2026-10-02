@@ -74,6 +74,10 @@ bun run release -- \
   GitHub Release 保持已发布，跟踪 Issue 保持已关闭；用
   `bun run publish:stores -- --release vX.Y.Z --platform ios` 重试即可。详见
   [移动端商店交付](store-delivery.zh-CN.md)。
+- 网页剪藏插件的商店提交是官方仓库里的独立工作流。提高
+  `apps/extension/package.json` 的版本后，运行 **Submit Web Clipper**。
+  它不属于 `bun run release`，审核结果也不会改变 GitHub Release。详见
+  [网页剪藏插件商店提交](extension-store.zh-CN.md)。
 - 公开发布后的桌面和 Android 审计通过 Release API URL 读取文件名并下载安装包。
   Draft 刚公开时，`gh release view --json assets` 和 `gh release download`
   可能持续看不到这些文件；如果把空列表当成资产缺失，发布会被退回 Draft。

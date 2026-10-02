@@ -9,6 +9,7 @@ import { pathToFileURL } from "node:url";
 import { RequestError } from "@agentclientprotocol/sdk";
 import {
   acpInitializeParams,
+  automaticAcpPermissionResponse,
   buildPromptContent,
   classifyAcpFailure,
   createAcpHostRuntime,
@@ -16,6 +17,7 @@ import {
   detectInstalledAgentApps,
   eventsFromSessionUpdate,
   isAuthRequiredError,
+  promptResultFailure,
   registerAcpIpc,
   resolveAcpCommand,
   sanitizeFailureDetail,
@@ -27,6 +29,28 @@ const sdkHref = pathToFileURL(require.resolve("@agentclientprotocol/sdk")).href;
 const home = path.resolve(homedir());
 
 const encode = (value) => Buffer.from(value).toString("base64");
+
+test("classifies ACP prompt refusals without exposing vendor error details", () => {
+  expect(promptResultFailure({ stopReason: "end_turn" })).toBeNull();
+  expect(promptResultFailure({ stopReason: "refusal" })).toBe("agent_refused");
+  expect(promptResultFailure({ stopReason: "refusal", _meta: { "codebuddy.ai/errorMessage": "not-json" } })).toBe("agent_refused");
+  expect(promptResultFailure({ stopReason: "refusal", _meta: { "codebuddy.ai/errorMessage": JSON.stringify({ data: { category: "auth" }, message: "private detail" }) } })).toBe("needs_login");
+});
+
+test("ACP tool permissions automatically select a one-time allow option", () => {
+  const options = [
+    { optionId: "always", kind: "allow_always" },
+    { optionId: "once", kind: "allow_once" },
+    { optionId: "deny", kind: "reject_once" },
+  ];
+  expect(automaticAcpPermissionResponse({ options })).toEqual({ outcome: { outcome: "selected", optionId: "once" } });
+  expect(automaticAcpPermissionResponse({ options: options.filter((option) => option.kind !== "allow_once") }))
+    .toEqual({ outcome: { outcome: "selected", optionId: "always" } });
+  expect(automaticAcpPermissionResponse({ options: [{ optionId: "deny", kind: "reject_once" }] }))
+    .toEqual({ outcome: { outcome: "cancelled" } });
+  expect(automaticAcpPermissionResponse({ options: [{ optionId: "", kind: "allow_once" }] }))
+    .toEqual({ outcome: { outcome: "cancelled" } });
+});
 
 const collector = () => {
   const events = [];
@@ -60,7 +84,7 @@ const collector = () => {
   };
 };
 
-const fakeAgentSource = ({ reportPath, secretPath, allowImage, allowEmbedded, hold, requireAuth }) => `#!/usr/bin/env bun
+const fakeAgentSource = ({ reportPath, secretPath, allowImage, allowEmbedded, hold, requireAuth, advertiseAuth, promptRefusal }) => `#!/usr/bin/env bun
 import * as acp from ${JSON.stringify(sdkHref)};
 import { writeFileSync } from "node:fs";
 
@@ -70,6 +94,8 @@ const allowImage = ${allowImage ? "true" : "false"};
 const allowEmbedded = ${allowEmbedded ? "true" : "false"};
 const hold = ${hold ? "true" : "false"};
 const requireAuth = ${requireAuth ? "true" : "false"};
+const advertiseAuth = ${advertiseAuth ? "true" : "false"};
+const promptRefusal = ${promptRefusal ? JSON.stringify(promptRefusal) : "null"};
 let authenticated = false;
 const report = { initialize: null, newSession: null, permission: null, readError: null, readResult: null, prompt: null, authMethod: null };
 const save = () => writeFileSync(reportPath, JSON.stringify(report));
@@ -110,7 +136,7 @@ acp.agent({ name: "edgeever-fake-agent" })
     return {
       protocolVersion: ctx.params.protocolVersion,
       agentCapabilities: { promptCapabilities: { image: allowImage, embeddedContext: allowEmbedded } },
-      authMethods: requireAuth ? [{ id: "browser", name: "Browser" }] : [],
+      authMethods: requireAuth || advertiseAuth ? [{ id: "browser", name: "Browser" }] : [],
     };
   })
   .onRequest("authenticate", (ctx) => {
@@ -128,6 +154,7 @@ acp.agent({ name: "edgeever-fake-agent" })
   .onRequest("session/prompt", async (ctx) => {
     report.prompt = ctx.params.prompt;
     save();
+    if (promptRefusal) return promptRefusal;
     await ctx.client.notify("session/update", {
       sessionId: ctx.params.sessionId,
       update: { sessionUpdate: "agent_thought_chunk", content: { type: "text", text: "thinking" } },
@@ -580,13 +607,18 @@ describe("ACP stdio session", () => {
       const { spawn } = await import("node:child_process");
       const spawned = [];
       const runtime = createAcpHostRuntime({
+        platform: "darwin",
+        env: {},
+        readProxy: () => "HTTPEnable : 1\nHTTPProxy : 127.0.0.1\nHTTPPort : 10808\nHTTPSEnable : 1\nHTTPSProxy : 127.0.0.1\nHTTPSPort : 10809\nSOCKSEnable : 1",
         spawnImpl(command, args, options) {
-          spawned.push({ command, args, cwd: options.cwd, shell: options.shell });
+          spawned.push({ command, args, cwd: options.cwd, shell: options.shell, httpProxy: options.env?.HTTP_PROXY, httpsProxy: options.env?.HTTPS_PROXY });
           return spawn(command, args, options);
         },
       });
       const probed = await runtime.probeAdapter({ id: "antigravity", path: wrapper });
       expect(spawned[0]?.shell).toBe(false);
+      expect(spawned[0]?.httpProxy).toBe("http://127.0.0.1:10808");
+      expect(spawned[0]?.httpsProxy).toBe("http://127.0.0.1:10809");
       expect(realpathSync(spawned[0]?.command)).toBe(realpathSync(wrapper));
       expect(probed.state).toBe("available");
       expect(probed.promptCapabilities).toEqual({ image: true, embeddedContext: true });
@@ -640,6 +672,42 @@ describe("ACP stdio session", () => {
     }
   }, 15_000);
 
+  sessionTest("keeps infographic prompts from granting note write access", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-infographic-"));
+    const reportPath = path.join(directory, "report.json");
+    try {
+      const scriptPath = await writeFakeAgent(directory, {
+        reportPath,
+        secretPath: path.join(directory, "secret.txt"),
+        allowImage: false,
+        allowEmbedded: false,
+        hold: false,
+      });
+      const runtime = createAcpHostRuntime({
+        mcpAccess: () => { throw new Error("infographic prompts must not open note access"); },
+        startMcpBridge: () => { throw new Error("infographic prompts must not open note access"); },
+      });
+      const events = collector();
+      await runtime.prompt({
+        adapterId: "antigravity",
+        path: scriptPath,
+        prompt: "换成小米",
+        contextText: "Reply with one json proposal.",
+        noteAccess: false,
+      }, events.emit);
+      await events.waitFor((event) => event.type === "done");
+      const report = await readReport(reportPath);
+      expect(report.newSession.mcpServers).toEqual([]);
+      expect(JSON.stringify(report.prompt)).not.toContain("edgeever-current-workspace");
+      expect(report.prompt).toEqual([
+        { type: "text", text: "Reply with one json proposal." },
+        { type: "text", text: "换成小米" },
+      ]);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 15_000);
+
   sessionTest("keeps OpenClaw ACP sessions free of unsupported session MCP servers", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "edgeever-openclaw-acp-"));
     const reportPath = path.join(directory, "report.json");
@@ -664,6 +732,7 @@ describe("ACP stdio session", () => {
       const report = await readReport(reportPath);
       expect(report.newSession.mcpServers).toEqual([]);
       expect(report.prompt).toEqual([{ type: "text", text: "Hello" }]);
+      expect(report.permission?.outcome).toEqual({ outcome: "selected", optionId: "allow" });
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
@@ -693,7 +762,53 @@ describe("ACP stdio session", () => {
     }
   }, 15_000);
 
-  sessionTest("streams updates, cancels permission, and never reads a local file", async () => {
+  sessionTest("keeps ACP login methods visible when another agent can already create a session", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-optional-auth-"));
+    try {
+      const scriptPath = await writeFakeAgent(directory, {
+        reportPath: path.join(directory, "report.json"),
+        secretPath: path.join(directory, "secret.txt"),
+        allowImage: false,
+        allowEmbedded: false,
+        hold: false,
+        advertiseAuth: true,
+      });
+      const runtime = createAcpHostRuntime();
+      const probed = await runtime.probeAdapter({ id: "antigravity", path: scriptPath });
+      expect(probed.state).toBe("available");
+      expect(probed.authMethods).toEqual([{ id: "browser", name: "Browser" }]);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 15_000);
+
+  sessionTest("reports a prompt-time authentication refusal instead of an empty reply", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-refusal-"));
+    try {
+      const scriptPath = await writeFakeAgent(directory, {
+        reportPath: path.join(directory, "report.json"),
+        secretPath: path.join(directory, "secret.txt"),
+        allowImage: false,
+        allowEmbedded: false,
+        hold: false,
+        promptRefusal: {
+          stopReason: "refusal",
+          _meta: { "codebuddy.ai/errorMessage": JSON.stringify({ code: -32000, message: "Authentication required", data: { category: "auth" } }) },
+        },
+      });
+      const runtime = createAcpHostRuntime();
+      const probed = await runtime.probeAdapter({ id: "antigravity", path: scriptPath });
+      expect(probed.state).toBe("available");
+      const events = collector();
+      const result = await runtime.prompt({ adapterId: "antigravity", path: scriptPath, prompt: "Hello" }, events.emit);
+      expect(await events.waitFor((event) => event.type === "error")).toEqual({ requestId: result.requestId, type: "error", message: "needs_login" });
+      expect(events.events.some((event) => event.type === "done")).toBe(false);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 15_000);
+
+  sessionTest("streams updates, auto-approves tools, and never reads a local file", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-prompt-"));
     const reportPath = path.join(directory, "report.json");
     const secretPath = path.join(directory, "secret.txt");
@@ -717,7 +832,7 @@ describe("ACP stdio session", () => {
       }, events.emit);
       await events.waitFor((event) => event.type === "done");
       const report = await readReport(reportPath);
-      expect(report.permission?.outcome?.outcome).toBe("cancelled");
+      expect(report.permission?.outcome).toEqual({ outcome: "selected", optionId: "allow" });
       expect(report.readResult).toBeNull();
       expect(JSON.stringify(report)).not.toContain("SENTINEL_SECRET_CONTENT");
       expect(path.resolve(report.newSession.cwd)).not.toBe(home);

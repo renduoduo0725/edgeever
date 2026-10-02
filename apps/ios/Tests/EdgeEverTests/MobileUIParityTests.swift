@@ -5,7 +5,9 @@ import XCTest
 /// Exercises shipped parity helpers (same semantics as Android `@edgeever/shared/mobile-ui` + notebooks).
 final class MobileUIParityTests: XCTestCase {
     func testUnmatchedSystemLanguageUsesEnglishUI() {
-        XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "ja"))
+        // Japanese is a first-class UI language, so a Japanese system no longer falls back to English.
+        XCTAssertFalse(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "ja"))
+        XCTAssertEqual(AppUILocale.language(preferenceCode: "system", systemLanguageCode: "ja"), .japanese)
         XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "fr"))
         XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "en"))
         XCTAssertTrue(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: nil))
@@ -115,6 +117,33 @@ final class MobileUIParityTests: XCTestCase {
         ]
         let ids = NotebookHierarchy.descendantIds(notebooks: notebooks, targetNotebookId: "root")
         XCTAssertEqual(Set(ids), Set(["root", "child", "grand"]))
+    }
+
+    func testNotebookScopeFollowsDescendantPreference() {
+        let notebooks = [
+            makeNotebook(id: "root", parent: nil, name: "Root", order: 0),
+            makeNotebook(id: "child", parent: "root", name: "Child", order: 0),
+            makeNotebook(id: "grand", parent: "child", name: "Grand", order: 0),
+        ]
+        XCTAssertEqual(
+            Set(NotebookHierarchy.scopeIds(notebooks: notebooks, targetNotebookId: "root", includeDescendants: true)),
+            Set(["root", "child", "grand"])
+        )
+        XCTAssertEqual(
+            NotebookHierarchy.scopeIds(notebooks: notebooks, targetNotebookId: "root", includeDescendants: false),
+            ["root"]
+        )
+    }
+
+    func testNotebookDescendantMemoCountExcludesTheNotebookItself() {
+        let notebooks = [
+            makeNotebook(id: "root", parent: nil, name: "Root", order: 0, memoCount: 2),
+            makeNotebook(id: "child", parent: "root", name: "Child", order: 0, memoCount: 3),
+            makeNotebook(id: "grand", parent: "child", name: "Grand", order: 0, memoCount: 1),
+            makeNotebook(id: "other", parent: nil, name: "Other", order: 1, memoCount: 9),
+        ]
+        XCTAssertEqual(NotebookHierarchy.descendantMemoCount(notebooks: notebooks, targetNotebookId: "root"), 4)
+        XCTAssertEqual(NotebookHierarchy.descendantMemoCount(notebooks: notebooks, targetNotebookId: "grand"), 0)
     }
 
     func testFilterCollapsedHidesDescendants() {
@@ -341,7 +370,9 @@ final class MobileUIParityTests: XCTestCase {
             nav.onFinish = { exp.fulfill() }
             webView.loadHTMLString(html, baseURL: URL(string: "https://edgeever.local/"))
         }
-        await fulfillment(of: [exp], timeout: 5)
+        // The first WKWebView in the test process cold-starts WebKit's helper processes,
+        // which takes well over 5s on CI simulators.
+        await fulfillment(of: [exp], timeout: 30)
         // Poll naturalWidth via JS (give the scheme handler a moment if needed).
         var width = 0
         for _ in 0 ..< 20 {
@@ -389,7 +420,7 @@ final class MobileUIParityTests: XCTestCase {
         XCTAssertEqual(tagged.memos.map(\.id), ["p2"])
     }
 
-    private func makeNotebook(id: String, parent: String?, name: String, order: Int) -> Notebook {
+    private func makeNotebook(id: String, parent: String?, name: String, order: Int, memoCount: Int = 0) -> Notebook {
         Notebook(
             id: id,
             parentId: parent,
@@ -398,7 +429,7 @@ final class MobileUIParityTests: XCTestCase {
             icon: nil,
             color: nil,
             sortOrder: order,
-            memoCount: 0,
+            memoCount: memoCount,
             lastMemoUpdatedAt: nil,
             createdAt: EdgeEverDate.nowString(),
             updatedAt: EdgeEverDate.nowString()

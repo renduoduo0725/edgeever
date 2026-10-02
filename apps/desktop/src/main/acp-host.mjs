@@ -10,6 +10,7 @@ import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION, RequestError } fr
 import { waitForChildProcessSpawn } from "./child-process-start.mjs";
 import { createAcpAdapterManager } from "./acp-adapter-manager.mjs";
 import { startAcpMcpBridge } from "./acp-mcp-bridge.mjs";
+import { withAntigravityMacProxy } from "./antigravity-proxy.mjs";
 
 const ADAPTERS = {
   codex: { id: "codex", label: "Codex" },
@@ -614,9 +615,17 @@ const publicAuthMethods = (initialized) => (
     : []
 );
 
-const createEdgeEverAcpClient = (requestId, emit) => ({
-  requestPermission() {
-    return { outcome: { outcome: "cancelled" } };
+export function automaticAcpPermissionResponse(params) {
+  const options = Array.isArray(params?.options) ? params.options : [];
+  const option = options.find((item) => item?.kind === "allow_once" && typeof item.optionId === "string" && item.optionId.length > 0 && item.optionId.length <= 120)
+    ?? options.find((item) => item?.kind === "allow_always" && typeof item.optionId === "string" && item.optionId.length > 0 && item.optionId.length <= 120);
+  return { outcome: option ? { outcome: "selected", optionId: option.optionId } : { outcome: "cancelled" } };
+}
+
+const createEdgeEverAcpClient = (requestId, emit, allowPermissions) => ({
+  requestPermission(params) {
+    // Probe, install, and sign-in sessions do not originate from a user prompt.
+    return allowPermissions ? automaticAcpPermissionResponse(params) : { outcome: { outcome: "cancelled" } };
   },
   sessionUpdate(params) {
     for (const event of eventsFromSessionUpdate(requestId, params)) emit(event);
@@ -663,6 +672,18 @@ const promptFailureMessage = (failure) => {
   return failure.detail || "connection_failed";
 };
 
+export function promptResultFailure(result) {
+  if (result?.stopReason !== "refusal") return null;
+  const rawError = result?._meta?.["codebuddy.ai/errorMessage"];
+  if (typeof rawError === "string" && rawError.length <= 4_096) {
+    try {
+      const error = JSON.parse(rawError);
+      if (error?.data?.category === "auth" || isAuthRequiredError(error)) return "needs_login";
+    } catch { /* The agent may return an unstructured refusal. */ }
+  }
+  return "agent_refused";
+}
+
 export function createAcpHostRuntime(options = {}) {
   const spawnImpl = options.spawnImpl ?? nodeSpawn;
   const mkdtempImpl = options.mkdtemp ?? mkdtemp;
@@ -687,15 +708,18 @@ export function createAcpHostRuntime(options = {}) {
     ],
   });
 
-  const resolveCommand = (input) => {
-    if (input?.id === "antigravity" && typeof input.path === "string" && input.path.trim()) return resolveAcpCommand(input, commandDeps);
+  const resolveCommand = (input, { prepareProxy = true } = {}) => {
+    const adapt = (resolution) => prepareProxy && input?.id === "antigravity" && resolution.ok
+      ? { ...resolution, command: withAntigravityMacProxy(resolution.command, commandDeps) }
+      : resolution;
+    if (input?.id === "antigravity" && typeof input.path === "string" && input.path.trim()) return adapt(resolveAcpCommand(input, commandDeps));
     if (input?.id === "piAgent" && !localExecutable("pi", resolutionDeps(commandDeps))) return { ok: false, state: "not_installed" };
     const managed = manager?.get(input?.id);
-    if (managed) return { ok: true, command: input?.id === "piAgent" ? withPiPath(managed.command, resolutionDeps(commandDeps)) : managed.command, version: managed.version, managed: true };
-    return resolveAcpCommand(input, commandDeps);
+    if (managed) return adapt({ ok: true, command: input?.id === "piAgent" ? withPiPath(managed.command, resolutionDeps(commandDeps)) : managed.command, version: managed.version, managed: true });
+    return adapt(resolveAcpCommand(input, commandDeps));
   };
 
-  const connect = async (command, requestId, emit, signal, authMethodId, mcpServers = []) => {
+  const connect = async (command, requestId, emit, signal, authMethodId, mcpServers = [], allowPermissions = false) => {
     const cwd = await createAcpWorkspace(mkdtempImpl, options.tmpRoot);
     let child = null;
     let authMethods = [];
@@ -706,7 +730,7 @@ export function createAcpHostRuntime(options = {}) {
       child = await spawnAcpChild(spawnImpl, command, cwd);
       if (signal?.aborted) throw Object.assign(new Error("connection_timeout"), { code: "TIMEOUT" });
       const stream = acpNdJsonStream(child);
-      const connection = new ClientSideConnection(() => createEdgeEverAcpClient(requestId, emit), stream);
+      const connection = new ClientSideConnection(() => createEdgeEverAcpClient(requestId, emit, allowPermissions), stream);
       void connection.closed?.catch(() => {});
       const initialized = await connection.initialize(acpInitializeParams(version));
       authMethods = publicAuthMethods(initialized);
@@ -721,6 +745,7 @@ export function createAcpHostRuntime(options = {}) {
         child,
         connection,
         sessionId: session.sessionId,
+        authMethods,
         promptCapabilities: normalizePromptCapabilities(initialized),
         stop: abort,
       };
@@ -754,7 +779,7 @@ export function createAcpHostRuntime(options = {}) {
     listAdapters() {
       return ["codex", "claudeCode", "antigravity", "openClaw", "hermesAgent", "grokBuild", "deepseekHarness", "piAgent", "workbuddyCn", "workbuddyIntl"].map((id) => {
         if (installingIds.has(id)) return { ...adapterShell(id), state: "installing" };
-        const resolved = resolveCommand({ id });
+        const resolved = resolveCommand({ id }, { prepareProxy: false });
         return resolved.ok
           ? { ...adapterShell(id), ...(latestStatus.get(id) ?? { state: "failed", detail: "not_probed" }), ...(resolved.version ? { version: resolved.version, managed: true } : {}), ...(updateFailures.has(id) ? { updateError: updateFailures.get(id) } : {}) }
           : adapterFromResolution(id, resolved);
@@ -769,8 +794,10 @@ export function createAcpHostRuntime(options = {}) {
         const result = await manager.install(id, async (command) => {
           let connected;
           try {
-            connected = await withHandshakeTimeout((signal) => connect(id === "piAgent" ? withPiPath(command, resolutionDeps(commandDeps)) : command, `install-${id}`, () => {}, signal), 90_000);
-            return { ...adapterShell(id), state: "available", promptCapabilities: connected.promptCapabilities };
+            const prepared = id === "piAgent" ? withPiPath(command, resolutionDeps(commandDeps))
+              : id === "antigravity" ? withAntigravityMacProxy(command, commandDeps) : command;
+            connected = await withHandshakeTimeout((signal) => connect(prepared, `install-${id}`, () => {}, signal), 90_000);
+            return { ...adapterShell(id), state: "available", promptCapabilities: connected.promptCapabilities, authMethods: connected.authMethods };
           } catch (error) {
             return { ...adapterShell(id), ...failureFields(classifyAcpFailure(error)), ...(isAuthRequiredError(error) ? { authMethods: error.authMethods ?? [] } : {}) };
           } finally {
@@ -841,6 +868,7 @@ export function createAcpHostRuntime(options = {}) {
         ...adapterShell(id),
         state: "available",
         promptCapabilities: connected.promptCapabilities,
+        authMethods: connected.authMethods,
         ...(resolved.version ? { version: resolved.version, managed: true } : {}),
       };
       latestStatus.set(id, adapter);
@@ -858,7 +886,9 @@ export function createAcpHostRuntime(options = {}) {
       let connected;
       try {
         connected = await withHandshakeTimeout((signal) => connect(resolved.command, `auth-${id}`, () => {}, signal, input.methodId), 5 * 60_000);
-        return { ...adapterShell(id), state: "available", promptCapabilities: connected.promptCapabilities, ...(resolved.version ? { version: resolved.version, managed: true } : {}) };
+        const adapter = { ...adapterShell(id), state: "available", promptCapabilities: connected.promptCapabilities, authMethods: connected.authMethods, ...(resolved.version ? { version: resolved.version, managed: true } : {}) };
+        latestStatus.set(id, adapter);
+        return adapter;
       } catch (error) {
         return { ...adapterShell(id), ...failureFields(classifyAcpFailure(error)), ...(isAuthRequiredError(error) ? { authMethods: error.authMethods ?? [] } : {}), ...(resolved.version ? { version: resolved.version, managed: true } : {}) };
       } finally {
@@ -885,13 +915,13 @@ export function createAcpHostRuntime(options = {}) {
       let mcpBridge;
       try {
         // OpenClaw's ACP Gateway bridge rejects session-scoped MCP servers.
-        if (options.mcpAccess && input.adapterId !== "openClaw") {
+        if (options.mcpAccess && input.noteAccess !== false && input.adapterId !== "openClaw") {
           const access = await options.mcpAccess();
           mcpBridge = await (options.startMcpBridge ?? startAcpMcpBridge)(access);
         }
         connected = await withHandshakeTimeout((signal) => connect(
           resolved.command, requestId, notify, signal, undefined,
-          mcpBridge ? [mcpServerFor(mcpBridge)] : [],
+          mcpBridge ? [mcpServerFor(mcpBridge)] : [], true,
         ));
       } catch (error) {
         await mcpBridge?.close();
@@ -935,11 +965,22 @@ export function createAcpHostRuntime(options = {}) {
         void removeAcpWorkspace(session.cwd, rmImpl);
         void session.mcpBridge?.close();
       };
-      void connected.connection.prompt({ sessionId: connected.sessionId, prompt: content.blocks }).then(() => {
-        finish({ requestId, type: "done" });
+      void connected.connection.prompt({ sessionId: connected.sessionId, prompt: content.blocks }).then((result) => {
+        if (session.cancelled) return finish({ requestId, type: "done" });
+        const failure = promptResultFailure(result);
+        if (failure === "needs_login") {
+          latestStatus.set(input.adapterId, { ...adapterShell(input.adapterId), state: "needs_login", authMethods: connected.authMethods });
+        }
+        finish(failure ? { requestId, type: "error", message: failure } : { requestId, type: "done" });
       }).catch((error) => {
         if (session.cancelled) finish({ requestId, type: "done" });
-        else finish({ requestId, type: "error", message: promptFailureMessage(classifyAcpFailure(error)) });
+        else {
+          const failure = classifyAcpFailure(error);
+          if (failure.state === "needs_login") {
+            latestStatus.set(input.adapterId, { ...adapterShell(input.adapterId), state: "needs_login", authMethods: connected.authMethods });
+          }
+          finish({ requestId, type: "error", message: promptFailureMessage(failure) });
+        }
       });
       return { requestId, rejectedAttachments: content.rejectedAttachments };
     },

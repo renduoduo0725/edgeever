@@ -121,6 +121,20 @@ enum NotebookHierarchy {
         return descendantIds
     }
 
+    /// Port of `getNotebookScopeIds`: the notebooks a notebook view lists.
+    static func scopeIds(notebooks: [Notebook], targetNotebookId: String, includeDescendants: Bool) -> [String] {
+        includeDescendants ? descendantIds(notebooks: notebooks, targetNotebookId: targetNotebookId) : [targetNotebookId]
+    }
+
+    /// Port of `getNotebookDescendantMemoCount`: notes in sub-notebooks, not the notebook itself.
+    /// Expects direct per-notebook counts, as `LocalMirrorRepository.listNotebooks` returns them.
+    static func descendantMemoCount(notebooks: [Notebook], targetNotebookId: String) -> Int {
+        let memoCountById = Dictionary(notebooks.map { ($0.id, $0.memoCount) }, uniquingKeysWith: { first, _ in first })
+        return descendantIds(notebooks: notebooks, targetNotebookId: targetNotebookId)
+            .filter { $0 != targetNotebookId }
+            .reduce(0) { $0 + (memoCountById[$1] ?? 0) }
+    }
+
     static func treeItems(from notebooks: [Notebook]) -> [NotebookTreeItem] {
         let byParent = Dictionary(grouping: notebooks) { $0.parentId ?? "" }
         var items: [NotebookTreeItem] = []

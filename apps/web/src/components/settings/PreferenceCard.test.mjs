@@ -42,7 +42,7 @@ describe("editor content width preference", () => {
     const editorPane = readFileSync(new URL("../EditorPane.tsx", import.meta.url), "utf8");
 
     expect(preferenceCard).toContain('t("settings.editorContentWidthTitle")');
-    expect(preferenceCard).toContain('t("settings.editorContentWidthDescription")');
+    expect(preferenceCard).not.toContain('t("settings.editorContentWidthDescription")');
     expect(preferenceCard).toContain("onEditorContentWidthChange(value as EditorContentWidth)");
     expect(preferenceCard).toContain('hidden min-h-16 flex-col');
     expect(preferenceCard).toContain("lg:flex");
@@ -73,7 +73,7 @@ describe("reading typography settings", () => {
     expect(preferenceCard).not.toContain('t("settings.editorBodyFontSizeDescription")');
     expect(preferenceCard).toContain('t("settings.editorBodyLineHeightTitle")');
     expect(preferenceCard).not.toContain('t("settings.editorBodyLineHeightDescription")');
-    expect(preferenceCard).toContain('t("settings.editorContentWidthDescription")');
+    expect(preferenceCard).not.toContain('t("settings.editorContentWidthDescription")');
     expect(preferenceCard).toContain('t("settings.editorBodyPaletteTitle")');
     expect(preferenceCard).toContain("NoteProsePaletteSwatch");
     expect(preferenceCard).toContain("NOTE_PROSE_PALETTES[paletteId].accent");

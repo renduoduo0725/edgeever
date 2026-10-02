@@ -133,6 +133,7 @@ interface EdgeEverDesktopBridge {
     prompt: string;
     contextText?: string;
     attachments?: Array<{ filename: string; mediaType: string; dataBase64: string }>;
+    noteAccess?: boolean;
   }): Promise<{ requestId: string; rejectedAttachments?: Array<{ filename: string; reason: string }> }>;
   cancelAcp?(requestId: string): Promise<{ ok: true }>;
   onAcpEvent?(callback: (event:

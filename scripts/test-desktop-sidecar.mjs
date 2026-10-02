@@ -4,6 +4,9 @@ import { createInterface } from "node:readline";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createDefaultDiagramDocument, getDiagramSummary, serializeDiagramDocument } from "../packages/shared/src/diagram.ts";
+import { createDefaultInfographicDocument, getInfographicSummary, serializeInfographicDocument } from "../packages/shared/src/infographic.ts";
+import { createDefaultTableDocument, getTableSummary, serializeTableDocument } from "../packages/shared/src/table.ts";
 
 const sidecarPath = process.env.EDGE_EVER_SIDECAR_PATH ?? join(process.cwd(), "crates/desktop-sidecar/target/debug/edgeever-sidecar");
 const migrationsPath = process.env.EDGE_EVER_MIGRATIONS_PATH ?? join(process.cwd(), "migrations");
@@ -180,6 +183,35 @@ assert.equal((await request("memo.get", { memoId: first.memo.id })).memo.id, fir
 const second = await request("memo.create", { notebookId: inbox.id, title: "Second memo", contentMarkdown: "another body", tags: [] });
 const search = await request("memo.list", { q: "searchable", limit: 20 });
 assert.deepEqual(search.memos.map((memo) => memo.id), [first.memo.id]);
+assert.equal(search.memos[0].diagramKind, null, "an ordinary note has no diagram kind");
+assert.equal(search.memos[0].infographic, false, "an ordinary note is not an infographic");
+assert.equal(search.memos[0].structuredTable, false, "an ordinary note is not a table");
+assert.equal(Object.hasOwn(search.memos[0], "diagramPreview"), false);
+assert.equal(Object.hasOwn(search.memos[0], "tablePreview"), false);
+assert.equal(Object.hasOwn(search.memos[0], "contentMarkdown"), false, "list rows must not include the document payload");
+const assertListMetadata = async (title, markdown) => {
+  const created = await request("memo.create", { notebookId: inbox.id, title, contentMarkdown: markdown, tags: [] });
+  const listed = (await request("memo.list", { q: title, limit: 20 })).memos.find((memo) => memo.id === created.memo.id);
+  assert.ok(listed, `${title} should appear in the desktop list`);
+  const expected = { ...getDiagramSummary(markdown), ...getInfographicSummary(markdown), ...getTableSummary(markdown) };
+  assert.equal(listed.diagramKind, expected.diagramKind, title);
+  assert.deepEqual(listed.diagramPreview, expected.diagramPreview, title);
+  assert.equal(listed.infographic, expected.infographic, title);
+  assert.equal(listed.structuredTable, expected.structuredTable, title);
+  assert.deepEqual(listed.tablePreview, expected.tablePreview, title);
+  assert.equal(Object.hasOwn(listed, "contentMarkdown"), false, `${title} list row must not include the document payload`);
+};
+await assertListMetadata("Infographic list icon", serializeInfographicDocument({
+  schemaVersion: 1,
+  syntax: "infographic chart-column-simple\ndata\n  title 季度营收",
+  history: [{ id: "one", prompt: "换成小米", createdAt: "2026-10-02T00:37:00.000Z", kind: "refined", resultTitle: "小米集团2024年季度营收", response: "已替换。" }],
+}));
+await assertListMetadata("Empty infographic list icon", serializeInfographicDocument(createDefaultInfographicDocument()));
+await assertListMetadata("Mind map list icon", serializeDiagramDocument(createDefaultDiagramDocument("mind-map")));
+await assertListMetadata("Flowchart list icon", serializeDiagramDocument(createDefaultDiagramDocument("flowchart")));
+await assertListMetadata("Architecture list icon", serializeDiagramDocument(createDefaultDiagramDocument("architecture")));
+await assertListMetadata("Table list icon", serializeTableDocument(createDefaultTableDocument()));
+await assertListMetadata("Broken infographic list icon", "<!-- edgeever-infographic-v1:broken -->");
 await request("memo.create", { notebookId: inbox.id, title: "Local daily", contentMarkdown: "prefix overlap", tags: ["local-daily"] });
 const tagged = await request("memo.list", { tag: "local", limit: 20 });
 assert.deepEqual(tagged.memos.map((memo) => memo.id), [first.memo.id], "tag filter should match an exact tag, not a prefix");
@@ -491,4 +523,4 @@ assert.equal(blockedNotebookIds.has(blockedChild.id), true, "a child notebook th
 
 child.stdin.end();
 await new Promise((resolve) => child.once("close", resolve));
-console.log(JSON.stringify({ ok: true, checked: ["memo.create", "memo.list.search", "memo.list.tag", "memo.list.subtree", "memo.update", "memo.update.coalesce", "memo.revisions", "memo.restoreRevision", "memo.revision.cache", "tag.rename", "memo.moveBatch", "memo.pinBatch", "memo.deleteBatch", "memo.restore", "memo.emptyTrash", "memo.merge", "template.cache", "template.create.payload", "template.delete", "storage.backup", "storage.backups", "storage.restore", "sync.apply.merge-page-order", "sync.apply.deleted-notebook", "sync.apply.renamed-inbox", "sync.outbox", "sync.outbox.retry", "sync.outbox.recoverMemoUpdate", "sync.outbox.discard", "notebook.delete.empty-tree", "notebook.delete.not-empty"] }));
+console.log(JSON.stringify({ ok: true, checked: ["memo.create", "memo.list.search", "memo.list.noteKind", "memo.list.tag", "memo.list.subtree", "memo.update", "memo.update.coalesce", "memo.revisions", "memo.restoreRevision", "memo.revision.cache", "tag.rename", "memo.moveBatch", "memo.pinBatch", "memo.deleteBatch", "memo.restore", "memo.emptyTrash", "memo.merge", "template.cache", "template.create.payload", "template.delete", "storage.backup", "storage.backups", "storage.restore", "sync.apply.merge-page-order", "sync.apply.deleted-notebook", "sync.apply.renamed-inbox", "sync.outbox", "sync.outbox.retry", "sync.outbox.recoverMemoUpdate", "sync.outbox.discard", "notebook.delete.empty-tree", "notebook.delete.not-empty"] }));

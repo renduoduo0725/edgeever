@@ -9,7 +9,7 @@ export const IMAGE_WIDTH_PRESETS = [
   { id: "full", width: 100, labelKey: "editor.imageSizeFull" },
 ] as const;
 
-export const NEW_IMAGE_WIDTH_PERCENT = IMAGE_WIDTH_PRESETS[0].width;
+export const NEW_IMAGE_WIDTH_PERCENT = IMAGE_WIDTH_PRESETS[1].width;
 
 /**
  * Phone columns are already narrow. A desktop percent such as 35% ("较小")

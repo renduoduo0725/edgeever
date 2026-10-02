@@ -64,7 +64,11 @@ final class WorkspaceStore {
         let offset = resetOffset ? 0 : (nextOffset ?? memos.count)
         let notebookIds: [String]? = {
             guard selectedTag == nil, let selectedNotebookId else { return nil }
-            return NotebookHierarchy.descendantIds(notebooks: notebooks, targetNotebookId: selectedNotebookId)
+            return NotebookHierarchy.scopeIds(
+                notebooks: notebooks,
+                targetNotebookId: selectedNotebookId,
+                includeDescendants: env.preferences.showDescendantNotes
+            )
         }()
         let result = try env.mirror.listMemos(
             scope: scope,

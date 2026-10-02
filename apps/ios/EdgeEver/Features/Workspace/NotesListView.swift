@@ -394,7 +394,21 @@ struct NotesListView: View {
         }
     }
 
+    /// With sub-notebooks hidden, an empty parent must not look like its notes are gone.
+    private var hiddenDescendantMemoCount: Int {
+        guard !env.preferences.showDescendantNotes,
+              store.searchText.trimmingCharacters(in: .whitespaces).isEmpty,
+              store.filter == .all,
+              store.selectedTag == nil,
+              let notebookId = store.selectedNotebookId
+        else { return 0 }
+        return NotebookHierarchy.descendantMemoCount(notebooks: store.notebooks, targetNotebookId: notebookId)
+    }
+
     private var emptyTitle: String {
+        if hiddenDescendantMemoCount > 0 {
+            return env.preferences.t("本级暂无笔记", en: "No notes directly in this notebook", ja: "このノートブック直下にノートはありません")
+        }
         if !store.searchText.trimmingCharacters(in: .whitespaces).isEmpty {
             return env.preferences.t("没有找到匹配笔记", en: "No matching notes")
         }
@@ -405,6 +419,14 @@ struct NotesListView: View {
     }
 
     private var emptyDescription: String {
+        let hiddenCount = hiddenDescendantMemoCount
+        if hiddenCount > 0 {
+            return env.preferences.t(
+                "子笔记本中还有 \(hiddenCount) 条笔记。可以打开子笔记本查看，或在设置中开启“父笔记本中显示子笔记本笔记”。",
+                en: "Its sub-notebooks still contain \(hiddenCount) notes. Open a sub-notebook to see them, or turn on \"Show notes from sub-notebooks\" in Settings.",
+                ja: "サブノートブックにはまだ \(hiddenCount) 件のノートがあります。サブノートブックを開くか、設定で「サブノートブックのノートを表示」をオンにしてください。"
+            )
+        }
         if !store.searchText.trimmingCharacters(in: .whitespaces).isEmpty {
             return env.preferences.t("换个关键词再试", en: "Try another keyword")
         }

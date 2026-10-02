@@ -16,14 +16,12 @@ import {
   type Resource,
 } from "@edgeever/shared";
 import {
+  Inflate,
   strFromU8,
   strToU8,
-  Unzip,
-  UnzipInflate,
   Zip,
   ZipDeflate,
   ZipPassThrough,
-  type UnzipFile,
 } from "fflate";
 import {
   buildMarkdownFrontMatter,
@@ -411,44 +409,191 @@ type ZipEntryConsumer = {
   close?: () => void | Promise<void>;
 };
 
+type ZipDirectoryEntry = {
+  name: string;
+  method: number;
+  compressedSize: number;
+  localHeaderOffset: number;
+};
+
+const ZIP_LOCAL_FILE_HEADER = 0x04034b50;
+const ZIP_CENTRAL_DIRECTORY_HEADER = 0x02014b50;
+const ZIP_END_OF_CENTRAL_DIRECTORY = 0x06054b50;
+const ZIP_LOCAL_HEADER_BYTES = 30;
+const ZIP_CENTRAL_HEADER_BYTES = 46;
+const ZIP64_MAGIC_32 = 0xffffffff;
+const ZIP64_ENTRY_COUNT = 0xffff;
+const MAX_ZIP_COMMENT_BYTES = 65535;
+const MAX_CENTRAL_DIRECTORY_BYTES = 32 * 1024 * 1024;
+const ZIP_ENTRY_CHUNK_BYTES = 1024 * 1024;
+
+const readU16 = (bytes: Uint8Array, offset: number) => bytes[offset] | (bytes[offset + 1] << 8);
+
+const readU32 = (bytes: Uint8Array, offset: number) => (
+  bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)
+) >>> 0;
+
+const rejectInvalidZip = (error?: unknown): never => {
+  if (error instanceof EdgeEverZipImportError) throw error;
+  throw new EdgeEverZipImportError("invalidZip", error);
+};
+
+const readBlobRange = async (blob: Blob, start: number, length: number) => {
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(length) || start < 0 || length < 0 || start + length > blob.size) {
+    rejectInvalidZip();
+  }
+  const bytes = new Uint8Array(await blob.slice(start, start + length).arrayBuffer());
+  if (bytes.byteLength !== length) rejectInvalidZip();
+  return bytes;
+};
+
+// Stored attachments are written with a data descriptor, so their local headers
+// have no size. Office files are ZIP archives and contain the same signature
+// inside those bytes. The central directory already records each entry's offset
+// and compressed size, which keeps nested ZIP contents inside their attachment.
+const readZipCentralDirectory = async (blob: Blob) => {
+  if (blob.size < 22) rejectInvalidZip();
+  const tailLength = Math.min(blob.size, 22 + MAX_ZIP_COMMENT_BYTES);
+  const tail = await readBlobRange(blob, blob.size - tailLength, tailLength);
+  let endOffset = -1;
+  for (let offset = tail.length - 22; offset >= 0; offset -= 1) {
+    if (readU32(tail, offset) !== ZIP_END_OF_CENTRAL_DIRECTORY) continue;
+    const commentLength = readU16(tail, offset + 20);
+    if (offset + 22 + commentLength === tail.length) {
+      endOffset = offset;
+      break;
+    }
+  }
+  if (endOffset < 0) rejectInvalidZip();
+  const entryCount = readU16(tail, endOffset + 10);
+  const directorySize = readU32(tail, endOffset + 12);
+  const directoryOffset = readU32(tail, endOffset + 16);
+  if (directorySize > MAX_CENTRAL_DIRECTORY_BYTES || directoryOffset === ZIP64_MAGIC_32 || directorySize === ZIP64_MAGIC_32) {
+    rejectInvalidZip();
+  }
+  const endOfDirectory = blob.size - tailLength + endOffset;
+  if (directoryOffset > endOfDirectory || directorySize > endOfDirectory - directoryOffset) rejectInvalidZip();
+  const directory = directorySize === 0
+    ? new Uint8Array()
+    : await readBlobRange(blob, directoryOffset, directorySize);
+  const entries: ZipDirectoryEntry[] = [];
+  let offset = 0;
+  while (offset < directory.length) {
+    if (offset + ZIP_CENTRAL_HEADER_BYTES > directory.length || readU32(directory, offset) !== ZIP_CENTRAL_DIRECTORY_HEADER) {
+      rejectInvalidZip();
+    }
+    const flags = readU16(directory, offset + 8);
+    const method = readU16(directory, offset + 10);
+    const compressedSize = readU32(directory, offset + 20);
+    const localHeaderOffset = readU32(directory, offset + 42);
+    const nameLength = readU16(directory, offset + 28);
+    const extraLength = readU16(directory, offset + 30);
+    const commentLength = readU16(directory, offset + 32);
+    const nameStart = offset + ZIP_CENTRAL_HEADER_BYTES;
+    const nextOffset = nameStart + nameLength + extraLength + commentLength;
+    if (
+      nextOffset > directory.length
+      || (method !== 0 && method !== 8)
+      || compressedSize === ZIP64_MAGIC_32
+      || localHeaderOffset === ZIP64_MAGIC_32
+    ) {
+      rejectInvalidZip();
+    }
+    let name = "";
+    try {
+      name = strFromU8(directory.subarray(nameStart, nameStart + nameLength), (flags & 0x800) === 0);
+    } catch (error) {
+      rejectInvalidZip(error);
+    }
+    if (!name) rejectInvalidZip();
+    entries.push({ name, method, compressedSize, localHeaderOffset });
+    offset = nextOffset;
+  }
+  if (entryCount !== ZIP64_ENTRY_COUNT && entries.length !== entryCount) rejectInvalidZip();
+  return entries;
+};
+
+const locateZipEntryData = async (blob: Blob, entry: ZipDirectoryEntry) => {
+  const header = await readBlobRange(blob, entry.localHeaderOffset, ZIP_LOCAL_HEADER_BYTES);
+  if (readU32(header, 0) !== ZIP_LOCAL_FILE_HEADER) rejectInvalidZip();
+  const flags = readU16(header, 6);
+  if (readU16(header, 8) !== entry.method) rejectInvalidZip();
+  if ((flags & 0x08) === 0 && readU32(header, 18) !== entry.compressedSize) rejectInvalidZip();
+  const dataOffset = entry.localHeaderOffset + ZIP_LOCAL_HEADER_BYTES + readU16(header, 26) + readU16(header, 28);
+  if (dataOffset < entry.localHeaderOffset || dataOffset + entry.compressedSize > blob.size) rejectInvalidZip();
+  return dataOffset;
+};
+
+const streamZipEntry = async (
+  blob: Blob,
+  entry: ZipDirectoryEntry,
+  consumer: ZipEntryConsumer,
+  report: (bytes: number) => void,
+) => {
+  const dataOffset = await locateZipEntryData(blob, entry);
+  if (entry.method === 0) {
+    let remaining = entry.compressedSize;
+    let offset = dataOffset;
+    while (remaining > 0) {
+      const length = Math.min(ZIP_ENTRY_CHUNK_BYTES, remaining);
+      const chunk = await readBlobRange(blob, offset, length);
+      offset += length;
+      remaining -= length;
+      report(length);
+      await consumer.write?.(chunk);
+    }
+    await consumer.close?.();
+    return;
+  }
+
+  let deliveredFinal = false;
+  let delivering = Promise.resolve();
+  const inflate = new Inflate((data, final) => {
+    const copy = data?.byteLength ? new Uint8Array(data) : undefined;
+    delivering = delivering.then(async () => {
+      if (copy) await consumer.write?.(copy);
+      if (final) {
+        deliveredFinal = true;
+        await consumer.close?.();
+      }
+    });
+  });
+  let remaining = entry.compressedSize;
+  let offset = dataOffset;
+  do {
+    const length = Math.min(ZIP_ENTRY_CHUNK_BYTES, remaining);
+    const chunk = length === 0 ? new Uint8Array() : await readBlobRange(blob, offset, length);
+    offset += length;
+    remaining -= length;
+    if (length > 0) report(length);
+    try {
+      inflate.push(chunk, remaining === 0);
+    } catch (error) {
+      await delivering.catch((deliveryError: unknown) => rejectInvalidZip(deliveryError));
+      rejectInvalidZip(error);
+    }
+    await delivering;
+  } while (remaining > 0);
+  if (!deliveredFinal) rejectInvalidZip();
+};
+
 const streamZipEntries = async (
   blob: Blob,
-  onEntry: (file: UnzipFile) => ZipEntryConsumer,
+  onEntry: (file: { name: string }) => ZipEntryConsumer,
   onInputProgress?: (completedBytes: number) => void,
 ) => {
-  let processing = Promise.resolve();
-  const unzipper = new Unzip((file) => {
-    const consumer = onEntry(file);
-    file.ondata = (error, data, final) => {
-      processing = processing.then(async () => {
-        if (error) throw new EdgeEverZipImportError("invalidZip", error);
-        if (data?.byteLength) await consumer.write?.(data);
-        if (final) await consumer.close?.();
-      });
-    };
-    file.start();
-  });
-  unzipper.register(UnzipInflate);
-
-  const reader = blob.stream().getReader();
-  let completedBytes = 0;
-  try {
-    while (true) {
-      const next = await reader.read();
-      completedBytes += next.value?.byteLength ?? 0;
-      onInputProgress?.(completedBytes);
-      try {
-        unzipper.push(next.value ?? new Uint8Array(), next.done);
-      } catch (error) {
-        if (error instanceof EdgeEverZipImportError) throw error;
-        throw new EdgeEverZipImportError("invalidZip", error);
-      }
-      await processing;
-      if (next.done) break;
-    }
-  } finally {
-    reader.releaseLock();
+  const entries = await readZipCentralDirectory(blob);
+  const totalCompressed = entries.reduce((total, entry) => total + entry.compressedSize, 0);
+  let consumed = 0;
+  const report = (bytes: number) => {
+    consumed += bytes;
+    if (!onInputProgress || blob.size <= 0 || totalCompressed <= 0) return;
+    onInputProgress(Math.min(blob.size, Math.round((consumed / totalCompressed) * blob.size)));
+  };
+  for (const entry of entries) {
+    await streamZipEntry(blob, entry, onEntry({ name: entry.name }), report);
   }
+  onInputProgress?.(blob.size);
 };
 
 const MAX_ZIP_METADATA_ENTRY_BYTES = 32 * 1024 * 1024;

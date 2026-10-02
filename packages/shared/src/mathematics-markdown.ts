@@ -20,6 +20,90 @@ const findClosingDelimiter = (source: string, delimiter: "$" | "$$", from: numbe
   return -1;
 };
 
+/** A dollar-wrapped number is currency, so it must not become a formula. */
+export const isCurrencyLatex = (latex: string) => /^\d+(?:[.,]\d+)?$/u.test(latex);
+
+export type InlineMathSpan = {
+  index: number;
+  raw: string;
+  latex: string;
+};
+
+const readInlineMathAt = (text: string, start: number): InlineMathSpan | null => {
+  if (text[start] !== "$" || isEscaped(text, start) || text.startsWith("$$", start)) {
+    return null;
+  }
+  // The second `$` of `$$` belongs to a display delimiter, not an inline formula.
+  if (start > 0 && text[start - 1] === "$" && !isEscaped(text, start - 1)) {
+    return null;
+  }
+
+  const closing = findClosingDelimiter(text, "$", start + 1);
+  if (closing < 0 || text[closing + 1] === "$") return null;
+
+  const latex = text.slice(start + 1, closing).trim();
+  if (!latex || latex.includes("\n") || isCurrencyLatex(latex)) return null;
+
+  return {
+    index: start,
+    raw: text.slice(start, closing + 1),
+    latex,
+  };
+};
+
+const skipConsumedDollars = (text: string, start: number) => {
+  if (isEscaped(text, start) || text.startsWith("$$", start)) return start + 1;
+
+  const closing = findClosingDelimiter(text, "$", start + 1);
+  if (closing < 0 || text[closing + 1] === "$") return start + 1;
+
+  const latex = text.slice(start + 1, closing).trim();
+  if (latex && !latex.includes("\n") && isCurrencyLatex(latex)) return closing + 1;
+  return start + 1;
+};
+
+/** Inline `$...$` spans in document order. Currency pairs are consumed and skipped. */
+export const findInlineMathSpans = (text: string): InlineMathSpan[] => {
+  const spans: InlineMathSpan[] = [];
+  let index = 0;
+
+  while (index < text.length) {
+    const start = text.indexOf("$", index);
+    if (start < 0) break;
+
+    const span = readInlineMathAt(text, start);
+    if (!span) {
+      index = skipConsumedDollars(text, start);
+      continue;
+    }
+
+    spans.push(span);
+    index = span.index + span.raw.length;
+  }
+
+  return spans;
+};
+
+/** The inline formula that ends at the caret, if the closing `$` was just typed. */
+export const matchInlineMathSuffix = (text: string): InlineMathSpan | null => {
+  const span = findInlineMathSpans(text).at(-1);
+  if (!span || span.index + span.raw.length !== text.length) return null;
+  return span;
+};
+
+/** A paragraph whose entire text is one `$$...$$` display formula. */
+export const matchBlockMathText = (text: string): { latex: string } | null => {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("$$") || trimmed.startsWith("$$$")) return null;
+
+  const closing = findClosingDelimiter(trimmed, "$$", 2);
+  if (closing < 0 || trimmed.slice(closing + 2).trim() !== "") return null;
+
+  const latex = trimmed.slice(2, closing).trim();
+  if (!latex) return null;
+  return { latex };
+};
+
 export const edgeEverInlineMathMarkdownTokenizer = {
   name: INLINE_MATH_NODE_TYPE,
   level: "inline" as const,
@@ -42,7 +126,7 @@ export const edgeEverInlineMathMarkdownTokenizer = {
 
     // A dollar-wrapped number is overwhelmingly likely to be currency. Consume
     // it as text so its closing delimiter cannot start a later math token.
-    if (/^\d+(?:[.,]\d+)?$/u.test(latex)) {
+    if (isCurrencyLatex(latex)) {
       return { type: "text", raw, text: raw };
     }
 

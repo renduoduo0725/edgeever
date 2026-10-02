@@ -38,6 +38,11 @@ describe("desktop sidecar RPC contract", () => {
     expect(rustMemoSource).toContain("LOWER(TRIM(CAST(memo_tag.value AS TEXT))) = LOWER(?5)");
   });
 
+  test("derives diagram, infographic, and table list metadata without returning the document", () => {
+    expect(rustMemoSource).toContain("m.deleted_at, c.content_markdown");
+    expect(rustMemoSource).toContain("note_list_metadata(&markdown)");
+  });
+
   test("keeps sidecar local revision ids distinguishable from cached remote revisions", () => {
     expect(rustMemoSource).toContain(`now_id("${DESKTOP_LOCAL_REVISION_ID_PREFIX.slice(0, -1)}")`);
     expect(isDesktopLocalRevisionId("revision_local_1789810000000")).toBe(true);

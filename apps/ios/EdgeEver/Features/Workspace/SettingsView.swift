@@ -338,6 +338,21 @@ struct SettingsView: View {
                         .tint(AppTheme.accent)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+
+                preferenceBlock(
+                    title: env.preferences.t("父笔记本中显示子笔记本笔记", en: "Show notes from sub-notebooks", ja: "サブノートブックのノートを表示"),
+                    showTopBorder: true
+                ) {
+                    Toggle("", isOn: Bindable(env.preferences).showDescendantNotes)
+                        .labelsHidden()
+                        .tint(AppTheme.accent)
+                        .accessibilityLabel(env.preferences.t(
+                            "是否在父笔记本中显示子笔记本中的笔记",
+                            en: "Show notes from sub-notebooks in parent notebooks",
+                            ja: "親ノートブックにサブノートブックのノートを表示する"
+                        ))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 // List density lives in list-options sheet (Android NotesActionsModal), not here.
             }
         }
@@ -873,7 +888,7 @@ struct SettingsView: View {
 
     private func preferenceBlock<Content: View>(
         title: String,
-        description: String,
+        description: String? = nil,
         showTopBorder: Bool = false,
         @ViewBuilder content: () -> Content
     ) -> some View {
@@ -882,10 +897,12 @@ struct SettingsView: View {
                 Text(title)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(AppTheme.title)
-                Text(description)
-                    .font(.system(size: 12))
-                    .foregroundStyle(AppTheme.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let description {
+                    Text(description)
+                        .font(.system(size: 12))
+                        .foregroundStyle(AppTheme.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             content()
         }

@@ -25,6 +25,14 @@ import {
   type StoredImageFailure,
 } from "./image-clip";
 import {
+  githubRepoFactsFromSource,
+  githubRepoNoteMarkdown,
+  githubRepoNoteTitle,
+  githubRepoTarget,
+  type GithubRepoFacts,
+  type GithubRepoPageSource,
+} from "./github-repo";
+import {
   selectionNoteMarkdown,
   selectionNoteTitle,
 } from "./selection-clip";
@@ -35,6 +43,26 @@ import {
   statusIdFromPageUrl,
   tweetNoteTitle,
 } from "./tweet-clip";
+import {
+  isXhsPageRead,
+  noteIdFromPageUrl,
+  readXhsStateInPage,
+  resolveXhsNote,
+  saveCapturedXhsNote,
+  xhsNoteTitle,
+} from "./xhs-clip";
+import {
+  fetchZhihuItemInPage,
+  isZhihuApiRead,
+  isZhihuLocate,
+  resolveZhihuNote,
+  saveCapturedZhihuNote,
+  zhihuBodyFromHtml,
+  zhihuNoteTitle,
+  zhihuTargetFromPageUrl,
+  zhihuTimeIso,
+  type ZhihuLocateSuccess,
+} from "./zhihu-clip";
 import { t } from "./i18n";
 
 type CapturedPage = {
@@ -59,6 +87,7 @@ type PendingImageSave = {
 const IMAGE_MENU_ID = "save-image";
 const SELECTION_MENU_ID = "save-selection";
 const TWEET_MENU_ID = "save-tweet";
+const GITHUB_REPO_MENU_ID = "save-github-repo";
 const PENDING_IMAGE_SAVE_KEY = "pendingImageSave";
 const IMAGE_SAVE_WINDOW_KEY = "imageSaveWindowId";
 const PENDING_TWEET_KEY = "pendingTweetPermission";
@@ -69,6 +98,26 @@ const TWEET_DOCUMENT_PATTERNS = [
   "https://twitter.com/*",
   "https://www.twitter.com/*",
   "https://mobile.twitter.com/*",
+];
+const GITHUB_DOCUMENT_PATTERNS = [
+  "https://github.com/*",
+  "https://www.github.com/*",
+];
+const XHS_MENU_ID = "save-xhs";
+const PENDING_XHS_KEY = "pendingXhsPermission";
+const XHS_WINDOW_KEY = "xhsSaveWindowId";
+const XHS_DOCUMENT_PATTERNS = [
+  "https://www.xiaohongshu.com/*",
+  "https://xiaohongshu.com/*",
+];
+const ZHIHU_MENU_ID = "save-zhihu";
+const PENDING_ZHIHU_KEY = "pendingZhihuPermission";
+const ZHIHU_WINDOW_KEY = "zhihuSaveWindowId";
+const ZHIHU_DOCUMENT_PATTERNS = [
+  "https://www.zhihu.com/*",
+  "https://zhihu.com/*",
+  "https://zhuanlan.zhihu.com/*",
+  "https://www.zhuanlan.zhihu.com/*",
 ];
 
 const toMarkdown = (page: CapturedPage) => {
@@ -117,6 +166,32 @@ const createMemo = async (settings: ExtensionSettings, page: CapturedPage) => {
       notebookId: await notebookForClip(settings),
       title: page.title,
       contentMarkdown: toMarkdown(page),
+      tags: ["web-clip"],
+    }),
+  });
+};
+
+const createGithubRepoMemo = async (settings: ExtensionSettings, facts: GithubRepoFacts) => {
+  await edgeEverRequest(settings, "/api/v1/memos", {
+    method: "POST",
+    body: JSON.stringify({
+      notebookId: await notebookForClip(settings),
+      title: githubRepoNoteTitle(facts.owner, facts.name),
+      contentMarkdown: githubRepoNoteMarkdown({
+        canonicalUrl: facts.canonicalUrl,
+        intro: facts.intro,
+        homepage: facts.homepage,
+        language: facts.language,
+        license: facts.license,
+        topics: facts.topics,
+        capturedAt: new Date().toISOString(),
+        sourceLabel: t("sourceLabel"),
+        capturedAtLabel: t("capturedAtLabel"),
+        homepageLabel: t("githubRepoHomepageLabel"),
+        languageLabel: t("githubRepoLanguageLabel"),
+        licenseLabel: t("githubRepoLicenseLabel"),
+        topicsLabel: t("githubRepoTopicsLabel"),
+      }),
       tags: ["web-clip"],
     }),
   });
@@ -353,9 +428,22 @@ const openTweetPermissionWindow = async (tabId: number | null) => {
   await focusExtensionWindow("tweet-save.html", TWEET_WINDOW_KEY, 560);
 };
 
+const openXhsPermissionWindow = async (tabId: number | null) => {
+  await chrome.storage.session.set({ [PENDING_XHS_KEY]: { tabId } });
+  await focusExtensionWindow("xhs-save.html", XHS_WINDOW_KEY, 560);
+};
+
+const openZhihuPermissionWindow = async (tabId: number | null) => {
+  await chrome.storage.session.set({ [PENDING_ZHIHU_KEY]: { tabId } });
+  await focusExtensionWindow("zhihu-save.html", ZHIHU_WINDOW_KEY, 560);
+};
+
 let pendingCapture: ((page: CapturedPage) => void) | null = null;
 const pendingImageReads = new Map<string, (result: unknown) => void>();
 const pendingTweetReads = new Map<string, (result: unknown) => void>();
+const pendingGithubReads = new Map<string, (result: unknown) => void>();
+const pendingXhsReads = new Map<string, (result: unknown) => void>();
+const pendingZhihuReads = new Map<string, (result: unknown) => void>();
 let clipQueue = Promise.resolve();
 let completingImageSave = false;
 
@@ -617,6 +705,375 @@ const saveTweetFromMenu = async (
   }
 };
 
+const injectXhsReader = async (tabId: number, frameId: number | null, payload: unknown) => {
+  const target = scriptTarget(tabId, frameId);
+  await chrome.scripting.executeScript({
+    target,
+    func: (value: unknown) => {
+      (globalThis as { __edgeeverXhsClipPayload?: unknown }).__edgeeverXhsClipPayload = value;
+    },
+    args: [payload],
+  });
+  await chrome.scripting.executeScript({
+    target,
+    files: ["assets/capture-xhs.js"],
+  });
+};
+
+const injectXhsTarget = async (tabId: number) => {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ["assets/xhs-target.js"],
+  });
+};
+
+const readXhsStateFromPage = async (tabId: number, frameId: number | null) => {
+  try {
+    const [injected] = await chrome.scripting.executeScript({
+      target: scriptTarget(tabId, frameId),
+      world: "MAIN",
+      func: readXhsStateInPage,
+    });
+    return isXhsPageRead(injected?.result) && injected.result.ok ? injected.result : null;
+  } catch {
+    // Older pages can block the main world. The DOM reader below still runs.
+    return null;
+  }
+};
+
+const readXhsFromPage = async (tabId: number, frameId: number | null) => {
+  const requestId = crypto.randomUUID();
+  const result = await new Promise<unknown>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pendingXhsReads.delete(requestId);
+      reject(new Error("timeout"));
+    }, 10_000);
+    pendingXhsReads.set(requestId, (value) => {
+      clearTimeout(timeout);
+      resolve(value);
+    });
+    void injectXhsReader(tabId, frameId, { requestId }).catch((error: unknown) => {
+      clearTimeout(timeout);
+      pendingXhsReads.delete(requestId);
+      reject(error);
+    });
+  });
+  return isXhsPageRead(result) ? result : { ok: false as const, reason: "not-found" as const };
+};
+
+const describeXhsError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : "";
+  if (message === t("xhsNotFound") || message === t("xhsNeedsOpen")) return message;
+  return describeImageError(error);
+};
+
+const saveXhsFromMenu = async (
+  info: { pageUrl?: string; frameId?: number },
+  tab?: { id?: number; url?: string },
+) => {
+  const tabId = typeof tab?.id === "number" ? tab.id : null;
+  const frameId = typeof info.frameId === "number" ? info.frameId : null;
+  const pageUrl = tab?.url || info.pageUrl || "";
+  try {
+    const settings = await ensureClipperReady();
+    if (!tabId) throw new Error(t("xhsNotFound"));
+    const noteId = noteIdFromPageUrl(pageUrl);
+    if (!noteId && !await hasTweetSitePermission(pageUrl)) {
+      await openXhsPermissionWindow(tabId);
+      await showFeedback(tabId, frameId, t("xhsPermissionToast"), "success");
+      return;
+    }
+
+    await showFeedback(tabId, frameId, t("savingXhs"), "success");
+    const page = await readXhsStateFromPage(tabId, frameId) ?? await readXhsFromPage(tabId, frameId);
+    if (!page.ok && page.reason === "needs-listener") {
+      await injectXhsTarget(tabId);
+      await showFeedback(tabId, frameId, t("xhsRightClickAgain"), "success");
+      return;
+    }
+    if (!page.ok && page.reason === "needs-open") throw new Error(t("xhsNeedsOpen"));
+    if (!page.ok) throw new Error(t("xhsNotFound"));
+    const note = resolveXhsNote(page, pageUrl);
+    if (!note) throw new Error(t("xhsNotFound"));
+
+    const images = [];
+    const alt = note.title || t("imageAltFallback");
+    for (const url of note.imageUrls) {
+      const stored = await readTweetImage(tabId, frameId, url, alt);
+      if (stored) images.push(stored);
+    }
+    await saveCapturedXhsNote(imageNoteClient(settings), {
+      notebookId: settings.notebookId,
+      title: xhsNoteTitle({ ...note, fallback: t("xhsNoteFallbackTitle") }),
+      nickname: note.nickname,
+      noteTitle: note.title,
+      body: note.body,
+      datetime: note.datetime,
+      location: note.location,
+      noteUrl: note.noteUrl,
+      images,
+      capturedAt: new Date().toISOString(),
+      sourceLabel: t("sourceLabel"),
+      capturedAtLabel: t("capturedAtLabel"),
+      timeLabel: t("tweetTimeLabel"),
+      locationLabel: t("xhsLocationLabel"),
+      altFallback: t("imageAltFallback"),
+    });
+    await showFeedback(tabId, frameId, t("xhsSaved"), "success");
+  } catch (error) {
+    const message = describeXhsError(error);
+    if (message === t("completePluginConfiguration") || message === t("instancePermissionRequired")) {
+      await chrome.runtime.openOptionsPage();
+    }
+    await showFeedback(tabId, frameId, message, "error");
+  }
+};
+
+const injectZhihuReader = async (tabId: number, frameId: number | null, payload: unknown) => {
+  const target = scriptTarget(tabId, frameId);
+  await chrome.scripting.executeScript({
+    target,
+    func: (value: unknown) => {
+      (globalThis as { __edgeeverZhihuClipPayload?: unknown }).__edgeeverZhihuClipPayload = value;
+    },
+    args: [payload],
+  });
+  await chrome.scripting.executeScript({
+    target,
+    files: ["assets/capture-zhihu.js"],
+  });
+};
+
+const injectZhihuTarget = async (tabId: number) => {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ["assets/zhihu-target.js"],
+  });
+};
+
+const readZhihuLocate = async (tabId: number, frameId: number | null) => {
+  const requestId = crypto.randomUUID();
+  const result = await new Promise<unknown>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pendingZhihuReads.delete(requestId);
+      reject(new Error("timeout"));
+    }, 10_000);
+    pendingZhihuReads.set(requestId, (value) => {
+      clearTimeout(timeout);
+      resolve(value);
+    });
+    void injectZhihuReader(tabId, frameId, { requestId }).catch((error: unknown) => {
+      clearTimeout(timeout);
+      pendingZhihuReads.delete(requestId);
+      reject(error);
+    });
+  });
+  return isZhihuLocate(result) ? result : { ok: false as const, reason: "not-found" as const };
+};
+
+const readZhihuApi = async (tabId: number, frameId: number | null, located: ZhihuLocateSuccess) => {
+  try {
+    const [injected] = await chrome.scripting.executeScript({
+      target: scriptTarget(tabId, frameId),
+      world: "MAIN",
+      func: fetchZhihuItemInPage,
+      args: [{ kind: located.kind, id: located.id }],
+    });
+    return isZhihuApiRead(injected?.result) ? injected.result : null;
+  } catch {
+    return null;
+  }
+};
+
+const describeZhihuError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : "";
+  if (message === t("zhihuNotFound") || message === t("zhihuUnreadable")) return message;
+  return describeImageError(error);
+};
+
+const saveLocatedZhihu = async (
+  settings: ExtensionSettings,
+  tabId: number,
+  frameId: number | null,
+  located: ZhihuLocateSuccess,
+) => {
+  const api = await readZhihuApi(tabId, frameId, located);
+  const note = resolveZhihuNote(located, api);
+  if (!note) throw new Error(t("zhihuUnreadable"));
+  const body = zhihuBodyFromHtml(note.html, t("imageAltFallback"));
+  if (!body.markdown && body.images.length === 0) throw new Error(t("zhihuUnreadable"));
+  const images = [];
+  for (const image of body.images) {
+    const stored = await readTweetImage(tabId, frameId, image.url, image.alt || note.title || t("imageAltFallback"));
+    if (stored) images.push({ ...stored, sourceUrl: image.url });
+  }
+  await saveCapturedZhihuNote(imageNoteClient(settings), {
+    notebookId: settings.notebookId,
+    title: zhihuNoteTitle({
+      title: note.title,
+      author: note.author,
+      body: body.markdown,
+      fallback: t("zhihuNoteFallbackTitle"),
+    }),
+    author: note.author,
+    noteTitle: note.title,
+    body: body.markdown,
+    noteUrl: note.noteUrl,
+    datetime: zhihuTimeIso(note.timeSeconds),
+    images,
+    capturedAt: new Date().toISOString(),
+    sourceLabel: t("sourceLabel"),
+    capturedAtLabel: t("capturedAtLabel"),
+    timeLabel: t("tweetTimeLabel"),
+  });
+};
+
+const saveZhihuFromMenu = async (
+  info: { pageUrl?: string; frameId?: number },
+  tab?: { id?: number; url?: string },
+) => {
+  const tabId = typeof tab?.id === "number" ? tab.id : null;
+  const frameId = typeof info.frameId === "number" ? info.frameId : null;
+  try {
+    const settings = await ensureClipperReady();
+    if (!tabId) throw new Error(t("zhihuNotFound"));
+    let located: Awaited<ReturnType<typeof readZhihuLocate>>;
+    try {
+      located = await readZhihuLocate(tabId, frameId);
+    } catch (error) {
+      const raw = error instanceof Error ? error.message : String(error);
+      if (/cannot access|missing host permission|permission/i.test(raw)) {
+        await openZhihuPermissionWindow(tabId);
+        await showFeedback(tabId, frameId, t("zhihuPermissionToast"), "success");
+        return;
+      }
+      throw error;
+    }
+    if (!located.ok && located.reason === "needs-listener") {
+      try {
+        await injectZhihuTarget(tabId);
+        await showFeedback(tabId, frameId, t("zhihuRightClickAgain"), "success");
+      } catch {
+        await openZhihuPermissionWindow(tabId);
+        await showFeedback(tabId, frameId, t("zhihuPermissionToast"), "success");
+      }
+      return;
+    }
+    if (!located.ok) throw new Error(t("zhihuNotFound"));
+    await showFeedback(tabId, frameId, t("savingZhihu"), "success");
+    await saveLocatedZhihu(settings, tabId, frameId, located);
+    await showFeedback(tabId, frameId, t("zhihuSaved"), "success");
+  } catch (error) {
+    const message = describeZhihuError(error);
+    if (message === t("completePluginConfiguration") || message === t("instancePermissionRequired")) {
+      await chrome.runtime.openOptionsPage();
+    }
+    await showFeedback(tabId, frameId, message, "error");
+  }
+};
+
+const isGithubRepoSource = (value: unknown): value is GithubRepoPageSource => {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Partial<GithubRepoPageSource>;
+  const strings = (items: unknown): items is string[] =>
+    Array.isArray(items) && items.every((item) => typeof item === "string");
+  return typeof record.pageUrl === "string"
+    && typeof record.openGraphDescription === "string"
+    && strings(record.embeddedJsonChunks)
+    && typeof record.aboutText === "string"
+    && typeof record.homepage === "string"
+    && strings(record.topics)
+    && typeof record.license === "string"
+    && typeof record.language === "string"
+    && strings(record.readmeParagraphs);
+};
+
+const readGithubRepoFromPage = async (tabId: number, frameId: number | null) => {
+  const requestId = crypto.randomUUID();
+  const result = await new Promise<unknown>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pendingGithubReads.delete(requestId);
+      reject(new Error(t("captureTimeout")));
+    }, 10_000);
+    pendingGithubReads.set(requestId, (value) => {
+      clearTimeout(timeout);
+      resolve(value);
+    });
+    const target = scriptTarget(tabId, frameId);
+    const inject = async () => {
+      await chrome.scripting.executeScript({
+        target,
+        func: (value: unknown) => {
+          (globalThis as { __edgeeverGithubClipPayload?: unknown }).__edgeeverGithubClipPayload = value;
+        },
+        args: [{ requestId }],
+      });
+      await chrome.scripting.executeScript({
+        target,
+        files: ["assets/capture-github.js"],
+      });
+    };
+    void inject().catch((error: unknown) => {
+      clearTimeout(timeout);
+      pendingGithubReads.delete(requestId);
+      reject(new Error(describeCaptureError(error)));
+    });
+  });
+  if (!result || typeof result !== "object") return null;
+  const source = (result as { source?: unknown }).source;
+  if (!isGithubRepoSource(source)) return null;
+  return githubRepoFactsFromSource(source);
+};
+
+const describeGithubError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : "";
+  if (
+    message === t("completePluginConfiguration")
+    || message === t("instancePermissionRequired")
+    || message === t("noAvailableNotebooks")
+    || message === t("githubRepoNotPage")
+    || message === t("githubRepoUnreadable")
+    || message === t("captureTimeout")
+    || message === t("pageAccessDenied")
+  ) {
+    return message;
+  }
+  const captureScriptPrefix = t("captureScriptFailed", "\u0000").split("\u0000")[0] ?? "";
+  if (captureScriptPrefix && message.startsWith(captureScriptPrefix)) return message;
+  return describeSaveError(error);
+};
+
+const saveGithubRepoFromMenu = async (
+  info: { pageUrl?: string; frameId?: number },
+  tab?: { id?: number; url?: string },
+) => {
+  const tabId = typeof tab?.id === "number" ? tab.id : null;
+  const frameId = typeof info.frameId === "number" ? info.frameId : null;
+  const pageUrl = tab?.url || info.pageUrl || "";
+  try {
+    const settings = await ensureClipperReady();
+    if (!githubRepoTarget(pageUrl)) {
+      await showFeedback(tabId, frameId, t("githubRepoNotPage"), "error");
+      return;
+    }
+    if (!tabId) throw new Error(t("githubRepoUnreadable"));
+    const facts = await readGithubRepoFromPage(tabId, frameId);
+    if (!facts) {
+      await showFeedback(tabId, frameId, t("githubRepoUnreadable"), "error");
+      return;
+    }
+    await showFeedback(tabId, frameId, t("savingGithubRepo"), "success");
+    await createGithubRepoMemo(settings, facts);
+    await showFeedback(tabId, frameId, t("githubRepoSaved"), "success");
+  } catch (error) {
+    const message = describeGithubError(error);
+    if (message === t("completePluginConfiguration") || message === t("instancePermissionRequired")) {
+      await chrome.runtime.openOptionsPage();
+    }
+    await showFeedback(tabId, frameId, message, "error");
+  }
+};
+
 const isCapturedPage = (value: unknown): value is CapturedPage => {
   if (!value || typeof value !== "object") return false;
   const record = value as Partial<CapturedPage>;
@@ -728,8 +1185,12 @@ const registerClipMenus = () => {
   // Chrome and Firefox fold an extension into a submenu when more than one of
   // its items is visible. These contexts stay disjoint so each command remains
   // on the top-level menu: a photo saves the image, selected words save the
-  // passage, and the rest of an X post saves the post. Recreate from scratch
-  // so a previous registration cannot keep an overlapping item.
+  // passage, the rest of an X post saves the post, a GitHub repository page
+  // saves the repository, the rest of a Xiaohongshu note saves the note, and
+  // the rest of a Zhihu answer or article saves that item.
+  // Link context is omitted because a linked image would otherwise show both
+  // commands. Recreate from scratch so a previous registration cannot keep an
+  // overlapping item.
   chrome.contextMenus.removeAll(() => {
     void chrome.runtime.lastError;
     createClipMenus();
@@ -761,6 +1222,30 @@ const createClipMenus = () => {
   }, () => {
     void chrome.runtime.lastError;
   });
+  chrome.contextMenus.create({
+    id: GITHUB_REPO_MENU_ID,
+    title: t("saveGithubRepoToEdgeEver"),
+    contexts: ["page"],
+    documentUrlPatterns: GITHUB_DOCUMENT_PATTERNS,
+  }, () => {
+    void chrome.runtime.lastError;
+  });
+  chrome.contextMenus.create({
+    id: XHS_MENU_ID,
+    title: t("saveXhsToEdgeEver"),
+    contexts: ["page", "video"],
+    documentUrlPatterns: XHS_DOCUMENT_PATTERNS,
+  }, () => {
+    void chrome.runtime.lastError;
+  });
+  chrome.contextMenus.create({
+    id: ZHIHU_MENU_ID,
+    title: t("saveZhihuToEdgeEver"),
+    contexts: ["page", "video"],
+    documentUrlPatterns: ZHIHU_DOCUMENT_PATTERNS,
+  }, () => {
+    void chrome.runtime.lastError;
+  });
 };
 
 chrome.runtime.onInstalled.addListener(registerClipMenus);
@@ -777,16 +1262,34 @@ chrome.contextMenus.onClicked.addListener((info: { menuItemId?: string | number;
   }
   if (info.menuItemId === TWEET_MENU_ID) {
     void enqueueClip(() => saveTweetFromMenu(info, tab));
+    return;
+  }
+  if (info.menuItemId === GITHUB_REPO_MENU_ID) {
+    void enqueueClip(() => saveGithubRepoFromMenu(info, tab));
+    return;
+  }
+  if (info.menuItemId === XHS_MENU_ID) {
+    void enqueueClip(() => saveXhsFromMenu(info, tab));
+    return;
+  }
+  if (info.menuItemId === ZHIHU_MENU_ID) {
+    void enqueueClip(() => saveZhihuFromMenu(info, tab));
   }
 });
 
 chrome.windows.onRemoved.addListener((windowId: number) => {
-  void chrome.storage.session.get([IMAGE_SAVE_WINDOW_KEY, TWEET_WINDOW_KEY]).then((stored: Record<string, unknown>) => {
+  void chrome.storage.session.get([IMAGE_SAVE_WINDOW_KEY, TWEET_WINDOW_KEY, XHS_WINDOW_KEY, ZHIHU_WINDOW_KEY]).then((stored: Record<string, unknown>) => {
     if (stored[IMAGE_SAVE_WINDOW_KEY] === windowId) {
       void chrome.storage.session.remove(IMAGE_SAVE_WINDOW_KEY);
     }
     if (stored[TWEET_WINDOW_KEY] === windowId) {
       void chrome.storage.session.remove(TWEET_WINDOW_KEY);
+    }
+    if (stored[XHS_WINDOW_KEY] === windowId) {
+      void chrome.storage.session.remove(XHS_WINDOW_KEY);
+    }
+    if (stored[ZHIHU_WINDOW_KEY] === windowId) {
+      void chrome.storage.session.remove(ZHIHU_WINDOW_KEY);
     }
   }).catch(() => undefined);
 });
@@ -810,6 +1313,24 @@ chrome.runtime.onMessage.addListener((message: { type?: string; page?: CapturedP
     return false;
   }
 
+  if (message.type === "pageGithubRead" && message.requestId) {
+    pendingGithubReads.get(message.requestId)?.(message.result);
+    pendingGithubReads.delete(message.requestId);
+    return false;
+  }
+
+  if (message.type === "pageXhsRead" && message.requestId) {
+    pendingXhsReads.get(message.requestId)?.(message.result);
+    pendingXhsReads.delete(message.requestId);
+    return false;
+  }
+
+  if (message.type === "pageZhihuRead" && message.requestId) {
+    pendingZhihuReads.get(message.requestId)?.(message.result);
+    pendingZhihuReads.delete(message.requestId);
+    return false;
+  }
+
   if (message.type === "activateTweetTarget") {
     void (async () => {
       const stored = await chrome.storage.session.get(PENDING_TWEET_KEY);
@@ -822,6 +1343,40 @@ chrome.runtime.onMessage.addListener((message: { type?: string; page?: CapturedP
         }
       }
       await chrome.storage.session.remove(PENDING_TWEET_KEY);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (message.type === "activateXhsTarget") {
+    void (async () => {
+      const stored = await chrome.storage.session.get(PENDING_XHS_KEY);
+      const pending = stored[PENDING_XHS_KEY] as { tabId?: number | null } | undefined;
+      if (typeof pending?.tabId === "number") {
+        try {
+          await injectXhsTarget(pending.tabId);
+        } catch {
+          // The tab can be saved on the next right-click after it reloads.
+        }
+      }
+      await chrome.storage.session.remove(PENDING_XHS_KEY);
+      sendResponse({ ok: true });
+    })().catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
+  if (message.type === "activateZhihuTarget") {
+    void (async () => {
+      const stored = await chrome.storage.session.get(PENDING_ZHIHU_KEY);
+      const pending = stored[PENDING_ZHIHU_KEY] as { tabId?: number | null } | undefined;
+      if (typeof pending?.tabId === "number") {
+        try {
+          await injectZhihuTarget(pending.tabId);
+        } catch {
+          // The tab can be saved on the next right-click after it reloads.
+        }
+      }
+      await chrome.storage.session.remove(PENDING_ZHIHU_KEY);
       sendResponse({ ok: true });
     })().catch(() => sendResponse({ ok: false }));
     return true;
@@ -885,6 +1440,29 @@ chrome.runtime.onMessage.addListener((message: { type?: string; page?: CapturedP
           throw new Error(t("currentPageNotFound"));
         }
 
+        const pageUrl = tab.url || "";
+        if (githubRepoTarget(pageUrl)) {
+          let facts: GithubRepoFacts | null = null;
+          try {
+            facts = await readGithubRepoFromPage(tab.id, null);
+          } catch {
+            // The repository card is unavailable. Save the page as an article.
+          }
+          if (facts) {
+            await createGithubRepoMemo(settings, facts);
+            sendResponse({ ok: true });
+            return;
+          }
+        }
+
+        if (zhihuTargetFromPageUrl(pageUrl)) {
+          const located = await readZhihuLocate(tab.id, null);
+          if (!located.ok) throw new Error(t("zhihuNotFound"));
+          await saveLocatedZhihu(settings, tab.id, null, located);
+          sendResponse({ ok: true });
+          return;
+        }
+
         const page = await readCapturedPage(tab.id, null, "page");
         await createMemo(settings, page);
         sendResponse({ ok: true });
@@ -892,9 +1470,11 @@ chrome.runtime.onMessage.addListener((message: { type?: string; page?: CapturedP
         const message = error instanceof Error ? error.message : "";
         sendResponse({
           ok: false,
-          message: message === t("captureTimeout") || message.startsWith(t("captureScriptFailed", ""))
-            ? describeCaptureError(error)
-            : describeSaveError(error),
+          message: message === t("zhihuNotFound") || message === t("zhihuUnreadable")
+            ? message
+            : message === t("captureTimeout") || message.startsWith(t("captureScriptFailed", ""))
+              ? describeCaptureError(error)
+              : describeSaveError(error),
         });
       }
     })();

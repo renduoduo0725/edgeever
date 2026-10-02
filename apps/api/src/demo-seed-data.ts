@@ -566,7 +566,7 @@ EdgeEver 走在 AI 时代前沿，将大语言模型与智能体深度融入知�
 \`\`\`mermaid
 sequenceDiagram
     autonumber
-    actor User as 创作者 / 知识工作者
+    participant User as 创作者 / 知识工作者
     participant Client as EdgeEver 多端应用
     participant MCP as EdgeEver MCP 服务端点
     participant Agent as AI Agent (Claude / Cursor / Antigravity)
@@ -895,7 +895,7 @@ EdgeEver is architected for the agentic AI era, weaving LLMs directly into the k
 \`\`\`mermaid
 sequenceDiagram
     autonumber
-    actor User as Creator / Knowledge Worker
+    participant User as Creator / Knowledge Worker
     participant Client as EdgeEver Clients
     participant MCP as EdgeEver MCP Endpoint
     participant Agent as AI Agent (Claude / Cursor / Antigravity)

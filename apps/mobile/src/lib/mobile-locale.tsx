@@ -19,6 +19,9 @@ type MobileLocaleContextValue = {
 type TranslationPair = { source: string; target: string; pattern?: RegExp; placeholders?: string[] };
 
 const mobileOnlyTranslations = new Map<string, string>([
+  ["本级暂无笔记", "No notes directly in this notebook"],
+  ["无法保存“父笔记本中显示子笔记本笔记”设置，请稍后重试", "Could not save the \"Show notes from sub-notebooks\" setting. Please try again."],
+  ["子笔记本中还有 {{count}} 条笔记。可以打开子笔记本查看，或在设置中开启“父笔记本中显示子笔记本笔记”。", "Its sub-notebooks still contain {{count}} notes. Open a sub-notebook to see them, or turn on \"Show notes from sub-notebooks\" in Settings."],
   ["返回", "Back"],
   ["关闭对话框", "Close dialog"],
   ["切换到深色模式", "Switch to dark mode"],
@@ -205,6 +208,9 @@ const mobileOnlyTranslations = new Map<string, string>([
 ]);
 
 const mobileOnlyJapanese = new Map<string, string>([
+  ["本级暂无笔记", "このノートブック直下にノートはありません"],
+  ["无法保存“父笔记本中显示子笔记本笔记”设置，请稍后重试", "「サブノートブックのノートを表示」の設定を保存できませんでした。しばらくしてから再試行してください。"],
+  ["子笔记本中还有 {{count}} 条笔记。可以打开子笔记本查看，或在设置中开启“父笔记本中显示子笔记本笔记”。", "サブノートブックにはまだ {{count}} 件のノートがあります。サブノートブックを開くか、設定で「サブノートブックのノートを表示」をオンにしてください。"],
   ["返回", "戻る"],
   ["关闭对话框", "ダイアログを閉じる"],
   ["切换到深色模式", "ダークモードに切り替え"],

@@ -158,6 +158,7 @@ describe("extension manifests", () => {
             key: "endpoint",
             type: "text",
             label: "Endpoint",
+            locales: { "zh-CN": { label: "服务地址", description: "连接地址", placeholder: "请输入地址" } },
             default: "https://example.com",
             className: "plugin-owned-layout",
             style: { color: "red" },
@@ -166,7 +167,7 @@ describe("extension manifests", () => {
           { key: "token", type: "secret", label: "Token", required: true },
           { key: "limit", type: "number", label: "Limit", default: 10, min: 1, max: 100 },
           { key: "enabled", type: "boolean", label: "Enabled", default: true },
-          { key: "format", type: "select", label: "Format", options: [{ value: "md", label: "Markdown" }] },
+          { key: "format", type: "select", label: "Format", options: [{ value: "md", label: "Markdown" }], locales: { ja: { label: "形式", options: { md: "マークダウン" } } } },
           {
             key: "topics.ai",
             type: "boolean",
@@ -190,6 +191,8 @@ describe("extension manifests", () => {
     expect(manifest.type).toBe("plugin");
     expect(manifest.settings?.fields).toHaveLength(6);
     expect(manifest.settings?.fields[0]).toMatchObject({ key: "endpoint", default: "https://example.com" });
+    expect(manifest.settings?.fields[0].locales?.["zh-CN"]).toEqual({ label: "服务地址", description: "连接地址", placeholder: "请输入地址" });
+    expect(manifest.settings?.fields[4].locales?.ja?.options).toEqual({ md: "マークダウン" });
     expect(manifest.settings?.fields[0]).not.toHaveProperty("className");
     expect(manifest.settings?.fields[0]).not.toHaveProperty("style");
     expect(manifest.settings?.fields[0]).not.toHaveProperty("html");
@@ -228,6 +231,10 @@ describe("extension manifests", () => {
       ...base,
       settings: { fields: [{ key: "topics.ai", type: "boolean", label: "AI", list: { items: [] } }] },
     })).toThrow("between 1 and 100 items");
+    expect(() => parseExtensionManifest({
+      ...base,
+      settings: { fields: [{ key: "mode", type: "select", label: "Mode", options: [{ value: "a", label: "A" }], locales: { ja: { options: { missing: "不明" } } } }] },
+    })).toThrow("invalid options");
   });
 });
 

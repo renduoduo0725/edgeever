@@ -702,7 +702,7 @@ html.dark .edgeever-mobile-tiptap-content a:hover {
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
-  border: 1px solid #d9e2dc;
+  border: 1px solid #e3ece7;
   border-radius: 7px;
   background: rgb(255 255 255 / 0.94);
   box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
@@ -748,32 +748,43 @@ html.dark .edgeever-mobile-tiptap-content a:hover {
   display: flex;
   max-height: min(70vh, 36rem);
   min-height: 6rem;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   overflow: auto;
   overscroll-behavior-x: contain;
   overscroll-behavior-y: auto;
-  padding: 4rem 0.75rem 0.75rem;
-  border: 1px solid #d9e2dc;
+  padding: 1rem 0.75rem 0.75rem;
+  border: 1px solid #e3ece7;
   border-radius: 8px;
-  background: #fbfdfb;
+  background: var(--workspace-editor, #f8fafb);
   scrollbar-color: rgb(100 116 139 / 0.35) transparent;
 }
 
 .edgeever-mobile-tiptap-content .edgeever-mermaid-svg {
   display: flex;
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: 100%;
+  flex: none;
   align-self: flex-start;
   justify-content: center;
 }
 
 .edgeever-mobile-tiptap-content .edgeever-mermaid-svg svg {
   display: block;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  max-height: 440px;
+  width: var(--mermaid-display-width, auto);
+  max-width: none;
+  height: var(--mermaid-display-height, auto);
+  max-height: none;
+  flex: none;
+}
+
+.edgeever-mobile-tiptap-content .edgeever-mermaid-svg text {
+  font-family: var(--editor-body-font-family, var(--edgeever-system-font-family, -apple-system, "PingFang SC", "Noto Sans SC", sans-serif));
+  font-synthesis: weight;
+}
+
+.edgeever-mobile-tiptap-content .edgeever-mermaid-svg text[font-weight="500"] {
+  font-weight: 550;
 }
 
 .edgeever-mobile-tiptap-content .edgeever-mermaid-source {

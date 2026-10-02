@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import { useTranslation } from "react-i18next";
 import { Check, CircleAlert, Code2, Copy, Maximize2 } from "lucide-react";
@@ -7,6 +7,7 @@ import { MermaidViewer } from "./MermaidViewer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import { renderMermaidWithFallback } from "@/lib/mermaid-renderer";
+import { mermaidDisplayScale, scaleMermaidSvg } from "@/lib/mermaid-svg";
 import { getOfficialMermaidThemeVariables } from "@/lib/mermaid-theme";
 
 type MermaidModule = typeof import("mermaid")["default"];
@@ -44,6 +45,34 @@ export const MermaidCodeBlock = ({ editor, node }: NodeViewProps) => {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [renderState, setRenderState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const preview = previewRef.current;
+    if (!preview || !svg) return;
+
+    const applySize = () => {
+      const root = preview.querySelector("svg");
+      const viewBox = root?.viewBox?.baseVal;
+      if (!viewBox?.width || !viewBox.height) return;
+
+      const host = preview.parentElement ?? preview;
+      const previewStyle = getComputedStyle(preview);
+      const available = host.clientWidth
+        - Number.parseFloat(previewStyle.paddingLeft)
+        - Number.parseFloat(previewStyle.paddingRight)
+        - Number.parseFloat(previewStyle.borderLeftWidth)
+        - Number.parseFloat(previewStyle.borderRightWidth);
+      const scale = mermaidDisplayScale(viewBox.width, available);
+      preview.style.setProperty("--mermaid-display-width", `${Math.round(viewBox.width * scale)}px`);
+      preview.style.setProperty("--mermaid-display-height", `${Math.round(viewBox.height * scale)}px`);
+    };
+
+    applySize();
+    const observer = new ResizeObserver(applySize);
+    observer.observe(preview.parentElement ?? preview);
+    return () => observer.disconnect();
+  }, [svg]);
 
   useEffect(() => {
     if (copyState === "idle") return;
@@ -75,7 +104,7 @@ export const MermaidCodeBlock = ({ editor, node }: NodeViewProps) => {
           transparent: true,
           font: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
           padding: 24,
-        }));
+        })).then(scaleMermaidSvg);
       const renderOfficial = () => loadMermaid().then(async (mermaid) => {
         mermaid.initialize({
           startOnLoad: false,
@@ -228,6 +257,7 @@ export const MermaidCodeBlock = ({ editor, node }: NodeViewProps) => {
       )}
       {isMermaid && (
         <div
+          ref={previewRef}
           className="edgeever-mermaid-preview"
           contentEditable={false}
           aria-label={t("editorToolbar.mermaidPreview")}

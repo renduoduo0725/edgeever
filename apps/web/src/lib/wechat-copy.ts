@@ -14,6 +14,7 @@ import { common, createLowlight } from "lowlight";
 import { toCanvas } from "html-to-image";
 import { marked } from "marked";
 import { MERMAID_THEME_PALETTES } from "@/components/ThemeProvider";
+import { scaleMermaidSvg } from "@/lib/mermaid-svg";
 import { copyHtmlToClipboard } from "@/lib/clipboard";
 import { parseCustomCssToStyles } from "@/lib/css-sandbox";
 
@@ -334,13 +335,13 @@ const svgToWeChatImage = async (svg: string) => {
 
 const renderMermaidSvg = async (source: string) => {
   const { renderMermaidSVG, THEMES } = await import("beautiful-mermaid");
-  return renderMermaidSVG(source, {
+  return scaleMermaidSvg(renderMermaidSVG(source, {
     ...THEMES["zinc-light"],
     ...MERMAID_THEME_PALETTES["zinc-light"],
     transparent: true,
     font: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
     padding: 24,
-  });
+  }));
 };
 
 const embedMermaidForWeChat = async (root: HTMLElement, editor?: Editor) => {

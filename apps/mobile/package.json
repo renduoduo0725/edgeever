@@ -4,6 +4,13 @@
   "private": true,
   "type": "module",
   "main": "expo-router/entry",
+  "expo": {
+    "autolinking": {
+      "android": {
+        "buildFromSource": ["expo-sharing"]
+      }
+    }
+  },
   "scripts": {
     "dev": "bun ../../scripts/mobile-dev.mjs",
     "android": "bun ../../scripts/mobile-dev.mjs run:android",

@@ -79,7 +79,11 @@ describe("companion turn context", () => {
     expect(companionUserContent(input({
       message: "帮我新建一个RAG原理的思维导图。",
       focus: { memoId: "memo_1", notebookId: "nb_demo_features", notebookTitle: "功能演示" },
-    }))).toContain("use this open notebook");
+    }))).toContain("saved in the inbox notebook (等待分类)");
+    expect(companionUserContent(input({
+      message: "帮我新建一个RAG原理的思维导图。",
+      focus: { memoId: "memo_1", notebookId: "nb_demo_features", notebookTitle: "功能演示" },
+    }))).toContain("Do not ask which notebook");
     expect(companionUserContent(input({
       message: "根据这篇做思维导图",
       focus: {
@@ -541,6 +545,9 @@ describe("actual AI SDK companion runtime", () => {
     expect(COMPANION_INSTRUCTIONS).toContain("Do not ask which notebook or tag first");
     expect(COMPANION_INSTRUCTIONS).toContain("after you have already searched");
     expect(COMPANION_INSTRUCTIONS).toContain("create_diagram_memo");
+    expect(COMPANION_INSTRUCTIONS).toContain("create_infographic_memo");
+    expect(COMPANION_INSTRUCTIONS).toContain("信息图");
+    expect(COMPANION_INSTRUCTIONS).toContain("chart-pie-donut-plain-text");
     expect(COMPANION_INSTRUCTIONS).toContain("思维导图");
     expect(COMPANION_INSTRUCTIONS).toContain("架构图/architecture diagram means kind=architecture");
     expect(COMPANION_INSTRUCTIONS).toContain("update_diagram");
@@ -550,6 +557,9 @@ describe("actual AI SDK companion runtime", () => {
     expect(COMPANION_INSTRUCTIONS).toContain("use_note_template");
     expect(COMPANION_INSTRUCTIONS).toContain("todo_write");
     expect(COMPANION_INSTRUCTIONS).toContain("ask_user_question");
+    expect(COMPANION_INSTRUCTIONS).toContain("Omit notebookId and it is saved in the inbox notebook (等待分类)");
+    expect(COMPANION_INSTRUCTIONS).toContain("Do not ask which notebook, and do not use the open notebook unless the user named it");
+    expect(COMPANION_INSTRUCTIONS).not.toContain("use the open notebook from Focus DATA");
     expect(COMPANION_INSTRUCTIONS).toContain("Do not narrate");
     expect(COMPANION_INSTRUCTIONS).toContain("AI instructions");
     expect(COMPANION_INSTRUCTIONS).toContain("cannot empty the trash");

@@ -34,7 +34,7 @@ export function describeCompanionTool(
     return memos.slice(0, 5).map(item => effect("listed", asMemo(item)));
   }
   if (name === "get_memo" || name === "get_diagram") return [effect("read", memo ?? { id: String(args.memoId ?? record?.id ?? "") })];
-  if (name === "create_memo" || name === "create_diagram_memo" || name === "use_note_template") {
+  if (name === "create_memo" || name === "create_diagram_memo" || name === "create_infographic_memo" || name === "use_note_template") {
     return [effect("created", memo)];
   }
   if (name === "update_memo" || name === "update_diagram" || name === "restore_memo_revision") {

@@ -1,6 +1,7 @@
 mod catalog;
 mod database;
 mod memo;
+mod note_summary;
 mod rpc;
 mod sync;
 

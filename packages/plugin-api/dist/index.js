@@ -247,6 +247,52 @@ var normalizeThemeTokens = (value) => {
   return tokens;
 };
 var SETTING_KEY_PATTERN = /^[a-z][a-z0-9._-]*$/;
+var normalizeSettingLocales = (value, key, type, optionValues) => {
+  if (value === undefined)
+    return;
+  if (!isRecord(value) || Object.keys(value).length > 50)
+    throw new Error(`Plugin setting ${key} locales must be an object with at most 50 entries.`);
+  const locales = {};
+  for (const [rawLocale, copy] of Object.entries(value)) {
+    let locale;
+    try {
+      locale = Intl.getCanonicalLocales(rawLocale.trim().replaceAll("_", "-"))[0] ?? "";
+    } catch {
+      locale = "";
+    }
+    if (!locale || Object.keys(locales).some((existing) => existing.toLocaleLowerCase() === locale.toLocaleLowerCase())) {
+      throw new Error(`Plugin setting ${key} has an invalid or duplicate locale: ${rawLocale}.`);
+    }
+    if (!isRecord(copy))
+      throw new Error(`Plugin setting ${key} locale ${locale} must be an object.`);
+    const localized = {};
+    for (const property of ["label", "description", "placeholder"]) {
+      if (copy[property] === undefined)
+        continue;
+      const limit = property === "description" ? 1000 : 200;
+      if (typeof copy[property] !== "string" || !copy[property].trim() || copy[property].length > limit || property === "placeholder" && type !== "text" && type !== "secret") {
+        throw new Error(`Plugin setting ${key} locale ${locale} has an invalid ${property}.`);
+      }
+      localized[property] = copy[property].trim();
+    }
+    if (copy.options !== undefined) {
+      if (type !== "select" || !isRecord(copy.options) || Object.keys(copy.options).some((option) => !optionValues.includes(option))) {
+        throw new Error(`Plugin setting ${key} locale ${locale} has invalid options.`);
+      }
+      const translatedOptions = [];
+      for (const [option, label] of Object.entries(copy.options)) {
+        if (typeof label !== "string" || !label.trim() || label.length > 200)
+          throw new Error(`Plugin setting ${key} locale ${locale} has an invalid option label.`);
+        translatedOptions.push([option, label.trim()]);
+      }
+      localized.options = Object.fromEntries(translatedOptions);
+    }
+    if (Object.keys(localized).length === 0)
+      throw new Error(`Plugin setting ${key} locale ${locale} must include translated copy.`);
+    locales[locale] = localized;
+  }
+  return locales;
+};
 var normalizeSettingList = (field, key) => {
   if (field.list === undefined)
     return;
@@ -295,9 +341,12 @@ var normalizePluginSettings = (value) => {
     if (typeof field.description === "string" && field.description.length > 1000)
       throw new Error(`Plugin setting ${field.key} description is too long.`);
     const list = normalizeSettingList(field, field.key);
+    const optionValues = field.type === "select" && Array.isArray(field.options) ? field.options.filter(isRecord).map((option) => String(option.value)) : [];
+    const locales = normalizeSettingLocales(field.locales, field.key, String(field.type), optionValues);
     const common = {
       key: field.key,
       label: field.label.trim(),
+      ...locales ? { locales } : {},
       ...typeof field.description === "string" && field.description.trim() ? { description: field.description.trim() } : {},
       ...field.required === true ? { required: true } : {},
       ...list ? { list } : {}
@@ -339,17 +388,17 @@ var normalizePluginSettings = (value) => {
     if (field.type === "select") {
       if (!Array.isArray(field.options) || field.options.length === 0 || field.options.length > 100)
         throw new Error(`Plugin setting ${field.key} requires between 1 and 100 select options.`);
-      const optionValues = new Set;
+      const optionValues2 = new Set;
       const options = field.options.map((option) => {
         if (!isRecord(option) || typeof option.value !== "string" || !option.value || typeof option.label !== "string" || !option.label.trim()) {
           throw new Error(`Plugin setting ${field.key} has an invalid select option.`);
         }
-        if (optionValues.has(option.value))
+        if (optionValues2.has(option.value))
           throw new Error(`Plugin setting ${field.key} has a duplicate select value.`);
-        optionValues.add(option.value);
+        optionValues2.add(option.value);
         return { value: option.value, label: option.label.trim() };
       });
-      if (field.default !== undefined && (typeof field.default !== "string" || !optionValues.has(field.default)))
+      if (field.default !== undefined && (typeof field.default !== "string" || !optionValues2.has(field.default)))
         throw new Error(`Plugin setting ${field.key} default must match a select option.`);
       return { ...common, type: "select", options, ...typeof field.default === "string" ? { default: field.default } : {} };
     }

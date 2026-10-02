@@ -37,7 +37,7 @@ Plugins never receive EdgeEver's repository, IndexedDB database, Cloudflare bind
 
 The manifest and JavaScript module must be served with CORS headers that permit the EdgeEver origin. Relative `entry` paths resolve against the manifest URL.
 
-The top-level `name` and optional `description` remain the fallback copy. Plugins and themes can add a `locales` object keyed by BCP 47 language tags, such as `zh-CN`, `en-US`, or `ja`. Each locale can override `name`, `description`, or both. EdgeEver first matches the current interface locale, then the same base language, and finally falls back to the top-level fields. This localizes marketplace and plugin-manager metadata; runtime commands, panels, notices, and host-rendered setting labels remain the plugin's responsibility.
+The top-level `name` and optional `description` remain the fallback copy. Plugins and themes can add a `locales` object keyed by BCP 47 language tags, such as `zh-CN`, `en-US`, or `ja`. Each locale can override `name`, `description`, or both. EdgeEver first matches the current interface locale, then the same base language, and finally falls back to the top-level fields. This localizes marketplace and plugin-manager metadata. Plugin setting fields can also declare `locales` with translated `label`, `description`, and (for text inputs) `placeholder`; select fields can translate option labels with an `options` object keyed by option value. The host selects setting copy using the same locale fallback. Runtime commands, panels, and notices remain the plugin's responsibility.
 
 ## GitHub distribution
 

@@ -1,4 +1,13 @@
-import { infographicRequestsTimeline } from "@edgeever/shared";
+import {
+  buildOfficialInfographicSyntax,
+  infographicRequestsTimeline,
+  officialTemplateFamily,
+  parseGeneratedOfficialData,
+  type OfficialTemplateFamily,
+} from "@edgeever/shared";
+
+export { buildOfficialInfographicSyntax, officialTemplateFamily, parseGeneratedOfficialData };
+export type { OfficialTemplateFamily };
 
 export const INFOGRAPHIC_TEMPLATES = [
   { id: "list-row-simple-horizontal-arrow", label: "simpleList", kind: "steps", hint: "short horizontal process" },
@@ -33,7 +42,6 @@ export const selectableInfographicTemplates = INFOGRAPHIC_TEMPLATES.filter((item
 export const infographicTemplatePrompt = () => selectableInfographicTemplates
   .map((item) => `${item.id} (${item.kind}: ${item.hint})`).join("; ");
 
-export type OfficialTemplateFamily = "chart" | "comparison" | "hierarchy" | "list" | "quadrant" | "relation" | "sequence";
 export const INFOGRAPHIC_FAMILIES: OfficialTemplateFamily[] = ["chart", "comparison", "hierarchy", "list", "quadrant", "relation", "sequence"];
 
 export type InfographicFamilyDecision = {
@@ -79,16 +87,6 @@ export const infographicFamilyChoices = (decision: InfographicFamilyDecision) =>
   decision.ambiguous || decision.confidence < 0.65
     ? [decision.family, ...decision.alternatives].slice(0, 3) : [];
 
-export const officialTemplateFamily = (id: string): OfficialTemplateFamily => {
-  if (/^(compare-)?quadrant-/.test(id) || id.startsWith("compare-quadrant-")) return "quadrant";
-  if (id.startsWith("compare-")) return "comparison";
-  if (id.startsWith("hierarchy-")) return "hierarchy";
-  if (id.startsWith("relation-")) return "relation";
-  if (id.startsWith("chart-")) return "chart";
-  if (id.startsWith("sequence-")) return "sequence";
-  return "list";
-};
-
 export const templateForRequest = (request: string): string | null => {
   if (/(饼图|环形图|pie|donut)/i.test(request)) return "chart-pie-donut-plain-text";
   if (/(柱状图|条形图|bar chart|column chart)/i.test(request)) return "chart-column-simple";
@@ -113,89 +111,6 @@ export const sampleOfficialData = (template: string): Record<string, unknown> =>
   if (family === "quadrant") return { title: "示例四象限", compares: ["第一象限", "第二象限", "第三象限", "第四象限"].map((label) => entry(label, "简短说明")) };
   if (family === "sequence") return { title: "示例流程", sequences: [entry("第一步", "简短说明"), entry("第二步", "简短说明"), entry("第三步", "简短说明")] };
   return { title: "示例列表", lists: [entry("项目 A", "简短说明"), entry("项目 B", "简短说明"), entry("项目 C", "简短说明")] };
-};
-
-const syntaxScalar = (value: string | number | boolean) => String(value).replace(/\s+/g, " ").trim();
-
-const syntaxEntries = (value: Record<string, unknown>, indent: string): string[] => {
-  const lines: string[] = [];
-  for (const [key, entry] of Object.entries(value)) {
-    if (!/^[a-zA-Z][\w-]*$/.test(key) || entry == null) continue;
-    if (Array.isArray(entry)) {
-      if (!entry.length) continue;
-      lines.push(`${indent}${key}`);
-      for (const item of entry) {
-        if (!isRecord(item)) continue;
-        const firstKey = ["label", "id", "from"].find((candidate) => typeof item[candidate] === "string" && item[candidate]);
-        if (!firstKey) continue;
-        lines.push(`${indent}  - ${firstKey} ${syntaxScalar(item[firstKey] as string)}`);
-        const rest = Object.fromEntries(Object.entries(item).filter(([field]) => field !== firstKey));
-        lines.push(...syntaxEntries(rest, `${indent}    `));
-      }
-    } else if (isRecord(entry)) {
-      lines.push(`${indent}${key}`);
-      lines.push(...syntaxEntries(entry, `${indent}  `));
-    } else if (["string", "number", "boolean"].includes(typeof entry)) {
-      lines.push(`${indent}${key} ${syntaxScalar(entry as string | number | boolean)}`);
-    }
-  }
-  return lines;
-};
-
-export const buildOfficialInfographicSyntax = (template: string, data: Record<string, unknown>, dark = false) => [
-  `infographic ${template}`,
-  ...(dark ? ["theme dark"] : []),
-  "data",
-  ...syntaxEntries(data, "  "),
-].join("\n");
-
-const normalizedDatum = (value: unknown, depth = 0): Record<string, unknown> | null => {
-  if (!isRecord(value) || depth > 5) return null;
-  const result: Record<string, unknown> = {};
-  for (const field of ["id", "from", "to", "group", "label", "desc", "direction", "category"]) {
-    if (typeof value[field] === "string" && String(value[field]).trim()) result[field] = stringValue(value[field]);
-  }
-  if (!result.desc && typeof value.description === "string") result.desc = stringValue(value.description);
-  if (typeof value.value === "number" && Number.isFinite(value.value)) result.value = value.value;
-  if (Array.isArray(value.children)) result.children = value.children.slice(0, 12).map((child) => normalizedDatum(child, depth + 1)).filter(Boolean);
-  return Object.keys(result).length ? result : null;
-};
-
-export const parseGeneratedOfficialData = (output: string, template: string): Record<string, unknown> | null => {
-  const first = output.indexOf("{");
-  const last = output.lastIndexOf("}");
-  if (first < 0 || last <= first) return null;
-  let parsed: unknown;
-  try { parsed = JSON.parse(output.slice(first, last + 1)); } catch { return null; }
-  if (!isRecord(parsed)) return null;
-  const source = isRecord(parsed.data) ? parsed.data : parsed;
-  const family = officialTemplateFamily(template);
-  const field = { chart: "values", comparison: "compares", hierarchy: "root", list: "lists", quadrant: "compares", relation: "nodes", sequence: "sequences" }[family];
-  const data: Record<string, unknown> = { title: stringValue(source.title) || "信息图" };
-  if (typeof source.desc === "string" || typeof source.description === "string") data.desc = stringValue(source.desc ?? source.description);
-  if (family === "hierarchy") {
-    const root = normalizedDatum(source.root);
-    if (!root?.label) return null;
-    data.root = root;
-  } else {
-    const raw = source[field] ?? source.items;
-    if (!Array.isArray(raw)) return null;
-    const items = raw.slice(0, family === "quadrant" ? 4 : family === "comparison" ? 4 : 16).map((item) => normalizedDatum(item)).filter((item): item is Record<string, unknown> => Boolean(item));
-    if (!items.length || (family === "quadrant" && items.length !== 4) || (template.startsWith("compare-binary-") && items.length !== 2) || (template === "compare-swot" && items.length !== 4)) return null;
-    if (family !== "relation" && items.some((item) => !item.label)) return null;
-    if (template.startsWith("compare-binary-") && (items.some((item) => !Array.isArray(item.children) || !item.children.length)
-      || (items[0].children as unknown[]).length !== (items[1].children as unknown[]).length)) return null;
-    if (family === "chart" && items.some((item) => typeof item.value !== "number" || !item.label)) return null;
-    if (family === "relation" && (items.some((item) => !item.id || !item.label) || new Set(items.map((item) => item.id)).size !== items.length)) return null;
-    data[field] = items;
-    if (family === "relation") {
-      const ids = new Set(items.map((item) => item.id));
-      const relations = Array.isArray(source.relations) ? source.relations.slice(0, 24).map((item) => normalizedDatum(item)).filter((item): item is Record<string, unknown> => Boolean(item?.from && item?.to && ids.has(item.from) && ids.has(item.to))) : [];
-      if (items.length > 1 && !relations.length) return null;
-      data.relations = relations;
-    }
-  }
-  return data;
 };
 
 export const parseGeneratedOfficialSelection = (output: string, templates: string[]) => {
@@ -250,6 +165,41 @@ export const infographicAgentCandidates = (request: string, templates: string[],
   ])].slice(0, 50);
 
 const plainLine = (value: string) => value.replace(/\s+/g, " ").trim();
+
+export const infographicSyntaxTitle = (syntax: string) => {
+  const line = syntax.split("\n").find((entry) => /^  title \S/.test(entry));
+  return line ? plainLine(line.slice(8)) : "";
+};
+
+export const infographicNoteTitleIsAutomatic = (input: {
+  noteTitle: string;
+  graphicTitle: string;
+  defaultTitle: string;
+  earlierTitles?: string[];
+}) => {
+  const note = plainLine(input.noteTitle);
+  if (!note) return true;
+  return [input.defaultTitle, input.graphicTitle, ...(input.earlierTitles ?? [])].some((title) => plainLine(title) === note);
+};
+
+// The note title follows the infographic title the conversation just applied.
+// A title typed into the note field stays only while that graphic title itself stays put.
+export const nextInfographicNoteTitle = (input: {
+  noteTitle: string;
+  previousGraphicTitle: string;
+  nextGraphicTitle: string;
+  defaultTitle: string;
+  keepCustomTitle?: boolean;
+}) => {
+  const note = plainLine(input.noteTitle);
+  const previous = plainLine(input.previousGraphicTitle);
+  const next = plainLine(input.nextGraphicTitle).slice(0, 160);
+  const fallback = plainLine(input.defaultTitle);
+  if (!next || next === note) return note;
+  if (!note || note === fallback || note === previous || !input.keepCustomTitle) return next;
+  if (previous && next !== previous) return next;
+  return note;
+};
 
 export const buildInfographicSyntax = (input: {
   template: string;

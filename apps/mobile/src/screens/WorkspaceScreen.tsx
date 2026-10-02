@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData, type QueryKey } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteData, type QueryKey } from "@tanstack/react-query";
 import * as Clipboard from "expo-clipboard";
 import type { ListMemosResponse, MemoFilterMode, MemoSortMode } from "@edgeever/client";
 import {
@@ -19,13 +19,15 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Alert, Pressable, Text } from "../components/LocalizedText";
 import { ApiRequestError } from "@edgeever/client";
-import { DEFAULT_MEMO_TITLE, getNotebookDescendantIds, hasDiagramDocumentMarker, markdownToDoc, type MemoDetail } from "@edgeever/shared";
+import { DEFAULT_MEMO_TITLE, getNotebookScopeIds, hasDiagramDocumentMarker, markdownToDoc, type MemoDetail } from "@edgeever/shared";
 import { MOBILE_UI_METRICS, toggleMobileMemoFilterMode } from "@edgeever/shared/mobile-ui";
 import { clearMobileMemoDraft, readMobileMemoDraft, type MobileMemoDraft } from "../lib/mobile-drafts";
 import {
   readMobileImageCompressionEnabled,
+  readMobileShowDescendantNotes,
   readMobileMemoListDensity,
   writeMobileImageCompressionEnabled,
+  saveMobileShowDescendantNotes,
   writeMobileMemoListDensity,
   type MobileLocalePreference,
   type MobileMemoListDensity,
@@ -93,6 +95,7 @@ import {
   applyOptimisticMemoToCache,
   createOptimisticMemo,
   findCachedMemoDetail,
+  memoQueriesShareScope,
   type MobileMemoUpdatePayload,
 } from "./workspace-memo-cache";
 import { refreshWorkspaceThemeStyles, styles } from "./workspace-styles";
@@ -157,6 +160,9 @@ export const WorkspaceScreen = ({
   const [memoSortMode, setMemoSortMode] = useState<MemoSortMode>("updated-desc");
   const [memoListDensity, setMemoListDensity] = useState<MobileMemoListDensity>("preview");
   const [imageCompressionEnabled, setImageCompressionEnabled] = useState(true);
+  // Null until the stored value loads, so lists never flash the wrong notebook scope.
+  const [showDescendantNotes, setShowDescendantNotes] = useState<boolean | null>(null);
+  const [showDescendantNotesSaveFailed, setShowDescendantNotesSaveFailed] = useState(false);
   const [selectedMemoId, setSelectedMemoId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -250,13 +256,14 @@ export const WorkspaceScreen = ({
   }, [activeNotebookId, localePreference, notebooks, selectedTag]);
 
   const activeNotebook = notebooks.find((notebook) => notebook.id === activeNotebookId) ?? null;
-  const activeNotebookDescendantIds = useMemo(
-    () => (activeNotebookId === ALL_NOTES_ID || selectedTag ? [] : getNotebookDescendantIds(notebooks, activeNotebookId)),
-    [activeNotebookId, notebooks, selectedTag]
+  const activeNotebookScopeIds = useMemo(
+    () => (activeNotebookId === ALL_NOTES_ID || selectedTag ? [] : getNotebookScopeIds(notebooks, activeNotebookId, showDescendantNotes ?? true)),
+    [activeNotebookId, notebooks, selectedTag, showDescendantNotes]
   );
 
+  const memosQueryKey = ["mobile", "memos", memoView, activeNotebookId, memoFilterMode, memoSortMode, activeNotebookScopeIds, selectedTag, "paged-v3"] as const;
   const memosQuery = useInfiniteQuery({
-    queryKey: ["mobile", "memos", memoView, activeNotebookId, memoFilterMode, memoSortMode, activeNotebookDescendantIds, selectedTag, "paged-v3"],
+    queryKey: memosQueryKey,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       if (!client) {
@@ -264,7 +271,7 @@ export const WorkspaceScreen = ({
       }
 
       return listLocalMemos(dataScope, {
-        notebookIds: activeNotebookDescendantIds,
+        notebookIds: activeNotebookScopeIds,
         filter: memoFilterMode,
         tag: memoView === "notebook" ? selectedTag ?? undefined : undefined,
         limit: 50,
@@ -274,12 +281,14 @@ export const WorkspaceScreen = ({
       });
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor ? Number(lastPage.nextCursor) : undefined,
-    enabled: Boolean(client),
-    placeholderData: keepPreviousData,
+    enabled: Boolean(client) && showDescendantNotes !== null,
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery && memoQueriesShareScope("memos", previousQuery.queryKey, memosQueryKey) ? previousData : undefined,
   });
 
+  const searchQueryKey = ["mobile", "search", memoView, debouncedSearchText, activeNotebookId, memoFilterMode, memoSortMode, activeNotebookScopeIds, selectedTag, "paged-v5"] as const;
   const searchQuery = useInfiniteQuery({
-    queryKey: ["mobile", "search", memoView, debouncedSearchText, activeNotebookId, memoFilterMode, memoSortMode, activeNotebookDescendantIds, selectedTag, "paged-v5"],
+    queryKey: searchQueryKey,
     initialPageParam: 0,
     queryFn: async ({ pageParam }) => {
       if (!client) {
@@ -288,7 +297,7 @@ export const WorkspaceScreen = ({
 
       return listLocalMemos(dataScope, {
         q: debouncedSearchText,
-        notebookIds: activeNotebookDescendantIds,
+        notebookIds: activeNotebookScopeIds,
         filter: memoFilterMode,
         tag: memoView === "notebook" ? selectedTag ?? undefined : undefined,
         limit: 50,
@@ -298,8 +307,9 @@ export const WorkspaceScreen = ({
       });
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor ? Number(lastPage.nextCursor) : undefined,
-    enabled: Boolean(client && debouncedSearchText.length > 0),
-    placeholderData: keepPreviousData,
+    enabled: Boolean(client && debouncedSearchText.length > 0) && showDescendantNotes !== null,
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery && memoQueriesShareScope("search", previousQuery.queryKey, searchQueryKey) ? previousData : undefined,
   });
 
   const memoDetailQuery = useQuery({
@@ -575,10 +585,19 @@ export const WorkspaceScreen = ({
       return;
     }
 
+    if (incomingShareError && incomingSharePayloads.length === 0) {
+      if (processedShareUrlRef.current !== "invalid-share-resolution") {
+        processedShareUrlRef.current = "invalid-share-resolution";
+        Alert.alert(translate("无法读取分享内容"), translate("请重新分享后再试。"));
+        onIncomingShareHandledRef.current?.();
+      }
+      return;
+    }
+
     if (incomingShareError && sharedImages.some((image) => !image.uri.startsWith("file:"))) {
       if (processedShareUrlRef.current !== "invalid-binary-share") {
         processedShareUrlRef.current = "invalid-binary-share";
-        Alert.alert("无法读取分享图片", incomingShareError.message || "请重新分享后再试。");
+        Alert.alert(translate("无法读取分享图片"), translate("请重新分享后再试。"));
         onIncomingShareHandledRef.current?.();
       }
       return;
@@ -725,6 +744,11 @@ export const WorkspaceScreen = ({
         setImageCompressionEnabled(enabled);
       }
     });
+    readMobileShowDescendantNotes().then((enabled) => {
+      if (mounted) {
+        setShowDescendantNotes(enabled);
+      }
+    });
 
     return () => {
       mounted = false;
@@ -757,6 +781,12 @@ export const WorkspaceScreen = ({
   const handleImageCompressionChange = (enabled: boolean) => {
     setImageCompressionEnabled(enabled);
     void writeMobileImageCompressionEnabled(enabled);
+  };
+
+  const handleShowDescendantNotesChange = async (enabled: boolean) => {
+    const result = await saveMobileShowDescendantNotes(enabled);
+    setShowDescendantNotes(result.value);
+    setShowDescendantNotesSaveFailed(!result.saved);
   };
 
   const optimisticallyRemoveMemoIds = async (memoIds: string[]): Promise<MobileMemoListCacheSnapshot> => {
@@ -1210,6 +1240,7 @@ export const WorkspaceScreen = ({
       {activeView === "notes" ? (
         <NotesView
           activeNotebook={activeNotebook}
+          showDescendantNotes={showDescendantNotes ?? true}
           initialSyncProgress={initialMirrorSyncProgress}
           isLoading={notebooksQuery.isLoading || (searchActive ? searchQuery.isLoading : memosQuery.isLoading) || (isInitialMirrorStatusPending && visibleMemos.length === 0)}
           isLoadingMore={searchActive ? searchQuery.isFetchingNextPage : memosQuery.isFetchingNextPage}
@@ -1266,6 +1297,9 @@ export const WorkspaceScreen = ({
           onLocalePreferenceChange={handleLocalePreferenceChange}
           imageCompressionEnabled={imageCompressionEnabled}
           onImageCompressionChange={handleImageCompressionChange}
+          showDescendantNotes={showDescendantNotes ?? true}
+          showDescendantNotesSaveFailed={showDescendantNotesSaveFailed}
+          onShowDescendantNotesChange={(enabled) => void handleShowDescendantNotesChange(enabled)}
           onSignOut={signOut}
         />
       ) : null}

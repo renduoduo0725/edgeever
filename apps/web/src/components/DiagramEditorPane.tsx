@@ -142,6 +142,9 @@ import {
   type MemoEditSession,
   type Notebook,
 } from "@edgeever/shared";
+import { AiSidebar, readAiSidebarOpen, writeAiSidebarOpen } from "@/components/ai-sidebar/AiSidebar";
+import { AiSidebarErrorBoundary } from "@/components/ai-sidebar/AiSidebarErrorBoundary";
+import { IconTooltip } from "@/components/editor/EditorPaneChrome";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppConfirmDialog } from "@/components/dialogs/ConfirmDialogs";
@@ -164,7 +167,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAppearanceTheme } from "@/components/ThemeProvider";
 import { api } from "@/lib/api";
-import { EDITOR_LOCAL_SAVE_DELAY_MS, getNotebookMoveOptions } from "@/lib/app-helpers";
+import { EDITOR_LOCAL_SAVE_DELAY_MS, formatShortcutBinding, getNotebookMoveOptions, type ShortcutSettings } from "@/lib/app-helpers";
 import { copyTextToClipboard } from "@/lib/clipboard";
 import {
   compactArchitectureNodeSize,
@@ -200,6 +203,12 @@ type DiagramEditorPaneProps = {
   onSaveAsTemplate: (memo: MemoDetail, name: string) => Promise<void>;
   onToggleDesktopFocusMode: () => void;
   onOpenExecutionCenter: () => void;
+  aiAssistantOpenToken: number;
+  shortcutSettings: ShortcutSettings;
+  companionAvailable: boolean;
+  beforeCompanionApply?: () => Promise<void>;
+  onCompanionNotesChanged?: () => Promise<void>;
+  onOpenCompanionNote?: (id: string, notebookId: string) => void;
 };
 
 type NodeData = { label: string; shape: DiagramNodeShape; parentId?: string; resourceIcon?: ArchitectureResourceIcon };
@@ -768,7 +777,9 @@ const applyDiagramSurface = (
   appearance: DiagramAppearance,
   kind?: DiagramDocument["kind"],
 ) => {
-  graph.drawBackground({ color: diagramCanvasColor(kind ?? "mind-map", theme, appearance) });
+  const color = diagramCanvasColor(kind ?? "mind-map", theme, appearance);
+  graph.drawBackground({ color });
+  getDiagramScroller(graph)?.container.style.setProperty("--edgeever-diagram-canvas", color);
   if (kind === "architecture" || kind === "flowchart") {
     graph.drawGrid({
       type: "dot",
@@ -1635,6 +1646,12 @@ export const DiagramEditorPane = ({
   onSaveAsTemplate,
   onToggleDesktopFocusMode,
   onOpenExecutionCenter,
+  aiAssistantOpenToken,
+  shortcutSettings,
+  companionAvailable,
+  beforeCompanionApply,
+  onCompanionNotesChanged,
+  onOpenCompanionNote,
 }: DiagramEditorPaneProps) => {
   const { t } = useTranslation();
   const { resolvedTheme } = useAppearanceTheme();
@@ -1680,6 +1697,12 @@ export const DiagramEditorPane = ({
   const [saveFailed, setSaveFailed] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpenState] = useState(readAiSidebarOpen);
+  const setAiSidebarOpen = useCallback((open: boolean) => {
+    setAiAssistantOpenState(open);
+    writeAiSidebarOpen(open);
+  }, []);
+  const handledAiAssistantOpenTokenRef = useRef(aiAssistantOpenToken);
   const [memoIdCopyNotice, setMemoIdCopyNotice] = useState<"copied" | "error" | null>(null);
   const memoIdCopyTimerRef = useRef<number | null>(null);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
@@ -1849,6 +1872,14 @@ export const DiagramEditorPane = ({
     });
     return () => { cancelled = true; };
   }, [memo.id, memo.contentHash, memo.revision, readOnly, t]);
+
+  useEffect(() => {
+    if (handledAiAssistantOpenTokenRef.current === aiAssistantOpenToken) return;
+    handledAiAssistantOpenTokenRef.current = aiAssistantOpenToken;
+    if (readOnly || historyOpen || shareOpen || confirmDiscardOpen || mobileNotebookSheetOpen) return;
+    setAiSidebarOpen(true);
+    if (editorDirty) saveRef.current();
+  }, [aiAssistantOpenToken, confirmDiscardOpen, editorDirty, historyOpen, mobileNotebookSheetOpen, readOnly, setAiSidebarOpen, shareOpen]);
 
   useEffect(() => {
     appearanceRef.current = resolvedTheme;
@@ -3058,6 +3089,9 @@ export const DiagramEditorPane = ({
 
   if (!document) return null;
   const kindLabel = document.kind === "mind-map" ? t("diagram.mindMap") : document.kind === "architecture" ? t("diagram.architecture") : t("diagram.flowchart");
+  const assistantMarkdown = graphRef.current
+    ? serializeDiagramDocument(graphToDocument(graphRef.current, document.kind, themeRef.current, structureRef.current))
+    : memo.contentMarkdown;
   const currentMarkdown = historyOpen && dirty
     ? serializeDiagramDocument(graphRef.current ? graphToDocument(graphRef.current, document.kind, themeRef.current, structureRef.current) : document)
     : memo.contentMarkdown;
@@ -3077,7 +3111,8 @@ export const DiagramEditorPane = ({
 
   return (
     <TooltipProvider>
-      <div className="flex h-full min-h-0 flex-col bg-card">
+      <div className="relative flex h-full min-h-0 min-w-0 bg-card">
+      <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <header className="shrink-0 border-b border-slate-200 bg-card">
         <div className={cn(MEMO_EDITOR_TOP_ROW_CLASS_NAME, "border-b-0")}>
           <div
@@ -3389,7 +3424,7 @@ export const DiagramEditorPane = ({
           />
           {!readOnly && (
             <div
-              className="pointer-events-none absolute bottom-3 left-3 z-10 flex select-none items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-xs text-slate-500 shadow-xs backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-400"
+              className="pointer-events-none absolute bottom-3 left-3 z-10 flex max-w-[calc(100%-6.5rem)] flex-wrap select-none items-center gap-1.5 rounded-full border border-slate-200/80 bg-white/90 px-3 py-1 text-xs text-slate-500 shadow-xs backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-400"
               role="status"
               aria-live="polite"
             >
@@ -3533,6 +3568,46 @@ export const DiagramEditorPane = ({
             {t(memoIdCopyNotice === "copied" ? "editor.noteIdCopied" : "editor.noteIdCopyFailed", { id: memo.id })}
           </ClipboardCopyNotice>
         ) : null}
+        {!readOnly && !aiAssistantOpen ? (
+          <IconTooltip
+            side="left"
+            label={`${t("aiAssistant.open")} (${formatShortcutBinding(shortcutSettings.openAiAssistant)})`}
+          >
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              data-ai-assistant-launcher=""
+              className="absolute bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 z-30 size-11 rounded-full border-slate-200 bg-card text-slate-950 shadow-[0_8px_24px_rgba(15,23,42,0.14)] hover:bg-card hover:text-slate-950"
+              aria-label={t("aiAssistant.open")}
+              onClick={() => {
+                setAiSidebarOpen(true);
+                if (editorDirty) saveRef.current();
+              }}
+            >
+              <Sparkles className="size-5" strokeWidth={1.75} />
+            </Button>
+          </IconTooltip>
+        ) : null}
+      </div>
+      <AiSidebarErrorBoundary open={aiAssistantOpen} onOpenChange={setAiSidebarOpen}>
+        <AiSidebar
+          open={aiAssistantOpen}
+          onOpenChange={setAiSidebarOpen}
+          companionAvailable={companionAvailable}
+          contentMarkdown={assistantMarkdown}
+          memoId={memo.id}
+          notebookId={memo.notebookId}
+          notebookTitle={notebookOptions.find((notebook) => notebook.id === memo.notebookId)?.name}
+          noteTitle={title}
+          beforeCompanionApply={async () => {
+            if (editorDirty && !(await save())) throw new Error("save failed");
+            await beforeCompanionApply?.();
+          }}
+          onCompanionNotesChanged={onCompanionNotesChanged}
+          onOpenCompanionNote={onOpenCompanionNote}
+        />
+      </AiSidebarErrorBoundary>
       </div>
     </TooltipProvider>
   );

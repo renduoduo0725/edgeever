@@ -1,18 +1,18 @@
-name: 功能建议
-description: 希望增加或调整一个能力。
+name: Feature request
+description: Suggest a new capability or a change to an existing one.
 title: "[Feature] "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        请写清现在办不到什么，以及你希望怎么做。GitHub Issue 公开可见，不要附上密码、Token、实例地址或笔记正文。
+        Describe what you cannot do today and how you want it to work. GitHub Issues are public. Do not include passwords, tokens, instance URLs, or note contents.
 
-        系统信息用来确认当前版本是否已经支持。在「设置 → 系统信息」点「复制信息」后粘贴。
+        System information shows whether the current version already supports this. Copy it from Settings → System information and paste it here.
   - type: dropdown
     id: client
     attributes:
-      label: 用在哪个端
+      label: Which client
       description: Which client should have this?
       multiple: true
       options:
@@ -28,25 +28,25 @@ body:
   - type: textarea
     id: what-happened
     attributes:
-      label: 想要的能力
-      description: 做成之后，你可以完成哪件现在做不到的事。What should become possible?
-      placeholder: 例如：在手机上把一篇笔记从 Markdown 切回富文本继续改。
+      label: Requested capability
+      description: What should become possible?
+      placeholder: "For example: On mobile, switch a note from Markdown back to rich text and keep editing."
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: 现在怎么做
-      description: 你目前的做法，以及具体卡在哪一步。How do you handle this today, and where does it break down?
+      label: How you handle this today
+      description: How do you handle this today, and where does it break down?
     validations:
       required: true
   - type: textarea
     id: system-info
     attributes:
-      label: 系统信息
-      description: 粘贴「设置 → 系统信息」里复制的内容。应用内反馈会自动填入。Paste the copied system information.
+      label: System information
+      description: Paste the text copied from Settings → System information. In-app feedback fills this in automatically.
       placeholder: |
-        - 客户端版本: v1.93.0
-        - 系统: Android
+        - Client version: v1.93.0
+        - System: Android
     validations:
       required: true

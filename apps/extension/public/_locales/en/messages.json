@@ -12,7 +12,7 @@
     "message": "Web Clipper"
   },
   "popupDescription": {
-    "message": "Clip the current page or selection. Right-click selected text to save that passage, right-click an image to save it, or right-click a post on X to save that post."
+    "message": "Clip the current page or selection. Right-click selected text to save that passage, right-click an image to save it, right-click a post on X to save that post, right-click a Xiaohongshu note to save that note, or right-click a GitHub repository page to save its address and description."
   },
   "saveCurrentPage": {
     "message": "Clip current page"
@@ -320,5 +320,122 @@
   },
   "tweetTimeLabel": {
     "message": "Time"
+  },
+  "saveGithubRepoToEdgeEver": {
+    "message": "Save this repository to EdgeEver"
+  },
+  "githubRepoSaveHint": {
+    "message": "On a GitHub repository page or code tree, right-click the page background, the description, or the README text and choose “Save this repository to EdgeEver”. The address and description are saved as a new note in the default notebook selected above. Issue, discussion, and single-file pages are left unsaved."
+  },
+  "savingGithubRepo": {
+    "message": "Saving this repository…"
+  },
+  "githubRepoSaved": {
+    "message": "Saved this repository as a note."
+  },
+  "githubRepoNotPage": {
+    "message": "This is not a GitHub repository page or code tree, so nothing was saved."
+  },
+  "githubRepoUnreadable": {
+    "message": "The repository details could not be read, so nothing was saved."
+  },
+  "githubRepoHomepageLabel": {
+    "message": "Homepage"
+  },
+  "githubRepoLanguageLabel": {
+    "message": "Language"
+  },
+  "githubRepoLicenseLabel": {
+    "message": "License"
+  },
+  "githubRepoTopicsLabel": {
+    "message": "Topics"
+  },
+  "saveXhsToEdgeEver": {
+    "message": "Save this Xiaohongshu note to EdgeEver"
+  },
+  "xhsSaveHint": {
+    "message": "On Xiaohongshu, right-click the note text and choose “Save this Xiaohongshu note to EdgeEver”. The title, text, and photos go into one new note. Comments are left out. Right-clicking a photo still saves that image only."
+  },
+  "savingXhs": {
+    "message": "Saving this note…"
+  },
+  "xhsSaved": {
+    "message": "Saved this note."
+  },
+  "xhsNotFound": {
+    "message": "Could not find that note. Open it, then right-click the text."
+  },
+  "xhsNeedsOpen": {
+    "message": "Open the note, then right-click its text."
+  },
+  "xhsPermissionIntro": {
+    "message": "The feed has many notes. Allow access to Xiaohongshu so the clipper can remember the note under the pointer. After that, right-click the same note once more. Only the note you choose is saved to the clipper's default notebook."
+  },
+  "xhsPermissionToast": {
+    "message": "Allow access to Xiaohongshu to choose a note on the feed. Then right-click that note again."
+  },
+  "xhsRightClickAgain": {
+    "message": "Notes on the feed can be recognized now. Right-click that note again."
+  },
+  "allowXhsAccess": {
+    "message": "Allow access to Xiaohongshu"
+  },
+  "xhsPermissionDenied": {
+    "message": "Access was not allowed. Right-click the note again to retry."
+  },
+  "xhsPermissionReady": {
+    "message": "Access allowed. Go back and right-click that note again."
+  },
+  "xhsNoteFallbackTitle": {
+    "message": "Xiaohongshu note"
+  },
+  "xhsSaveWindowTitle": {
+    "message": "Save this Xiaohongshu note to EdgeEver"
+  },
+  "xhsLocationLabel": {
+    "message": "Location"
+  },
+  "saveZhihuToEdgeEver": {
+    "message": "Save this Zhihu answer or article to EdgeEver"
+  },
+  "zhihuSaveHint": {
+    "message": "On Zhihu, right-click the answer or article text and choose “Save this Zhihu answer or article to EdgeEver”. The title, author, text, and photos go into one new note. Comments are left out. Right-clicking a photo still saves that image only."
+  },
+  "savingZhihu": {
+    "message": "Saving this Zhihu answer or article…"
+  },
+  "zhihuSaved": {
+    "message": "Saved this Zhihu answer or article."
+  },
+  "zhihuNotFound": {
+    "message": "Could not find that answer or article. Right-click its text."
+  },
+  "zhihuUnreadable": {
+    "message": "Could not read that answer or article, so nothing was saved."
+  },
+  "zhihuPermissionIntro": {
+    "message": "This page lists more than one answer or article. Allow access to Zhihu so the clipper can remember the one under the pointer. After that, right-click the same text once more. Only the item you choose is saved to the clipper's default notebook."
+  },
+  "zhihuPermissionToast": {
+    "message": "Allow access to Zhihu to choose an answer or article in the list. Then right-click that text again."
+  },
+  "zhihuRightClickAgain": {
+    "message": "Answers and articles on this page can be recognized now. Right-click that text again."
+  },
+  "allowZhihuAccess": {
+    "message": "Allow access to Zhihu"
+  },
+  "zhihuPermissionDenied": {
+    "message": "Access was not allowed. Right-click the text again to retry."
+  },
+  "zhihuPermissionReady": {
+    "message": "Access allowed. Go back and right-click that text again."
+  },
+  "zhihuNoteFallbackTitle": {
+    "message": "Zhihu answer or article"
+  },
+  "zhihuSaveWindowTitle": {
+    "message": "Save this Zhihu answer or article to EdgeEver"
   }
 }

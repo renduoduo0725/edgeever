@@ -3,6 +3,8 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export type NotebookNode = Notebook & {
+  // memoCount holds the subtree total; this keeps the notebook's own count.
+  directMemoCount: number;
   children: NotebookNode[];
 };
 
@@ -16,7 +18,7 @@ export const buildNotebookTree = (notebooks: Notebook[], compareNodes: NotebookN
   const nodes = new Map<string, NotebookNode>();
 
   for (const notebook of notebooks) {
-    nodes.set(notebook.id, { ...notebook, children: [] });
+    nodes.set(notebook.id, { ...notebook, directMemoCount: notebook.memoCount, children: [] });
   }
 
   const roots: NotebookNode[] = [];

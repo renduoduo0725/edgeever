@@ -43,6 +43,11 @@ final class PreferencesStore {
         didSet { defaults.set(useCompression, forKey: Keys.compression) }
     }
 
+    /// Parent notebooks keep listing their sub-notebooks' notes unless turned off.
+    var showDescendantNotes: Bool {
+        didSet { defaults.set(showDescendantNotes, forKey: Keys.showDescendantNotes) }
+    }
+
     /// system | light | dark
     var theme: String {
         didSet { defaults.set(theme, forKey: Keys.theme) }
@@ -60,6 +65,7 @@ final class PreferencesStore {
         self.defaults = defaults
         self.localeCode = defaults.string(forKey: Keys.locale) ?? "system"
         self.useCompression = defaults.object(forKey: Keys.compression) as? Bool ?? true
+        self.showDescendantNotes = defaults.object(forKey: Keys.showDescendantNotes) as? Bool ?? true
         self.theme = defaults.string(forKey: Keys.theme) ?? "system"
         let densityRaw = defaults.string(forKey: Keys.density) ?? ListDensity.preview.rawValue
         // Migrate legacy "comfortable" → preview
@@ -147,6 +153,7 @@ final class PreferencesStore {
     private enum Keys {
         static let locale = "edgeever.ios.locale"
         static let compression = "edgeever.ios.imageCompression"
+        static let showDescendantNotes = "edgeever.ios.showDescendantNotes"
         static let theme = "edgeever.ios.theme"
         static let density = "edgeever.ios.listDensity"
         static let aiAssistantLastAction = "edgeever.aiAssistant.lastAction"

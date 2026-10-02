@@ -37,7 +37,7 @@ EdgeEver P0 扩展 API 支持受信任的客户端插件和无代码主题包。
 
 Manifest 和 JavaScript 模块必须返回允许 EdgeEver 来源访问的 CORS 响应头。相对 `entry` 地址基于 Manifest 地址解析。
 
-顶层必填的 `name` 与可选的 `description` 保持为回退文案。插件与主题可以增加以 BCP 47 语言标签为键的 `locales` 对象，例如 `zh-CN`、`en-US` 或 `ja`；每种语言可覆盖 `name`、`description` 或两者。EdgeEver 会先匹配当前界面语言，再匹配相同基础语言，最后回退到顶层字段。这里本地化的是插件市场与插件管理页的元数据；运行时命令、面板、通知及宿主渲染的设置项标签仍由插件自行负责本地化。
+顶层必填的 `name` 与可选的 `description` 保持为回退文案。插件与主题可以增加以 BCP 47 语言标签为键的 `locales` 对象，例如 `zh-CN`、`en-US` 或 `ja`；每种语言可覆盖 `name`、`description` 或两者。EdgeEver 会先匹配当前界面语言，再匹配相同基础语言，最后回退到顶层字段。这里本地化的是插件市场与插件管理页的元数据。插件设置字段也可通过 `locales` 提供翻译后的 `label`、`description` 和（文本输入框的）`placeholder`；下拉选项可使用以选项值为键的 `options` 对象翻译标签。宿主按相同规则选择设置文案。运行时命令、面板和通知仍由插件自行负责本地化。
 
 ## 通过 GitHub 分发
 

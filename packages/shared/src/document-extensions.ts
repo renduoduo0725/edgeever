@@ -1,6 +1,6 @@
 import type { AnyExtension } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
-import { TaskItem, TaskList } from "@tiptap/extension-list";
+import { TaskList } from "@tiptap/extension-list";
 import { TableKit } from "@tiptap/extension-table";
 import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
@@ -12,6 +12,7 @@ import { PdfAttachment } from "./pdf-attachment";
 import { PluginEmbed } from "./plugin-embed";
 import { EmptyExternalLink } from "./empty-external-link";
 import { EdgeEverLink } from "./editor-link";
+import { createEdgeEverTaskItem } from "./task-item-input";
 
 export type CreateEdgeEverDocumentExtensionsOptions = {
   mathematics: AnyExtension[];
@@ -44,7 +45,7 @@ export const createEdgeEverDocumentExtensions = (
   ...(options.markdown ? [EdgeEverLink] : []),
   EmptyExternalLink,
   TaskList,
-  TaskItem.configure({ nested: true }),
+  createEdgeEverTaskItem(),
   options.table === undefined ? TableKit : TableKit.configure(options.table),
   ...withOptional(options.image, Image),
   ...withOptional(options.gallery, ImageGallery),

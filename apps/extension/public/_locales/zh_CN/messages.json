@@ -12,7 +12,7 @@
     "message": "网页剪藏"
   },
   "popupDescription": {
-    "message": "剪藏当前网页或选中内容。选中文字后右键可以保存这段文字；在图片上右键可以保存图片；在 X 上右键可以保存这条推文。"
+    "message": "剪藏当前网页或选中内容。选中文字后右键可以保存这段文字；在图片上右键可以保存图片；在 X 上右键可以保存这条推文；在小红书笔记正文上右键可以保存这篇笔记；在 GitHub 仓库页上右键可以保存仓库地址和简介。"
   },
   "saveCurrentPage": {
     "message": "剪藏当前网页"
@@ -320,5 +320,122 @@
   },
   "tweetTimeLabel": {
     "message": "时间"
+  },
+  "saveGithubRepoToEdgeEver": {
+    "message": "保存这个仓库到 EdgeEver"
+  },
+  "githubRepoSaveHint": {
+    "message": "在 GitHub 仓库主页或代码目录上，右键页面空白、简介或 README 正文，选择“保存这个仓库到 EdgeEver”。仓库地址和简介会存成一条新笔记，放进上面选择的默认笔记本。Issue、讨论和单个文件页不会保存。"
+  },
+  "savingGithubRepo": {
+    "message": "正在保存这个仓库……"
+  },
+  "githubRepoSaved": {
+    "message": "已把这个仓库存成一条笔记。"
+  },
+  "githubRepoNotPage": {
+    "message": "当前不是 GitHub 仓库主页或代码目录，没有保存。"
+  },
+  "githubRepoUnreadable": {
+    "message": "没有读到这个仓库的信息，没有保存。"
+  },
+  "githubRepoHomepageLabel": {
+    "message": "主页"
+  },
+  "githubRepoLanguageLabel": {
+    "message": "语言"
+  },
+  "githubRepoLicenseLabel": {
+    "message": "许可证"
+  },
+  "githubRepoTopicsLabel": {
+    "message": "话题"
+  },
+  "saveXhsToEdgeEver": {
+    "message": "保存这篇小红书笔记到 EdgeEver"
+  },
+  "xhsSaveHint": {
+    "message": "在小红书笔记正文上右键，选择“保存这篇小红书笔记到 EdgeEver”。标题、正文和笔记里的图片会存成一条新笔记，评论不会写入。右键图片仍然只保存这张图片。"
+  },
+  "savingXhs": {
+    "message": "正在保存这篇笔记……"
+  },
+  "xhsSaved": {
+    "message": "已把这篇笔记存成一条笔记。"
+  },
+  "xhsNotFound": {
+    "message": "没有定位到这篇笔记。请先打开笔记，再在正文上右键。"
+  },
+  "xhsNeedsOpen": {
+    "message": "请先打开这篇笔记，再在正文上右键。"
+  },
+  "xhsPermissionIntro": {
+    "message": "首页上有很多篇笔记。允许访问小红书之后，插件才能记住指针下的这一篇。允许后，请再在同一篇笔记上右键一次。只会把你选中的这篇存进剪藏插件的默认笔记本。"
+  },
+  "xhsPermissionToast": {
+    "message": "需要允许访问小红书，才能在首页上选中这篇笔记。允许后请再右键一次。"
+  },
+  "xhsRightClickAgain": {
+    "message": "已经可以识别首页上的笔记。请再在这篇笔记上右键一次。"
+  },
+  "allowXhsAccess": {
+    "message": "允许访问小红书"
+  },
+  "xhsPermissionDenied": {
+    "message": "没有获得访问权限。请再在笔记上右键一次来重新授权。"
+  },
+  "xhsPermissionReady": {
+    "message": "已允许。回到页面，再在这篇笔记上右键一次。"
+  },
+  "xhsNoteFallbackTitle": {
+    "message": "一篇小红书笔记"
+  },
+  "xhsSaveWindowTitle": {
+    "message": "保存这篇小红书笔记到 EdgeEver"
+  },
+  "xhsLocationLabel": {
+    "message": "地点"
+  },
+  "saveZhihuToEdgeEver": {
+    "message": "保存这篇知乎回答或文章到 EdgeEver"
+  },
+  "zhihuSaveHint": {
+    "message": "在知乎回答或文章的正文上右键，选择“保存这篇知乎回答或文章到 EdgeEver”。标题、作者、正文和图片会存成一条新笔记，评论不会写入。右键图片仍然只保存这张图片。"
+  },
+  "savingZhihu": {
+    "message": "正在保存这篇知乎内容……"
+  },
+  "zhihuSaved": {
+    "message": "已把这篇知乎内容存成一条笔记。"
+  },
+  "zhihuNotFound": {
+    "message": "没有定位到这篇回答或文章。请在正文上右键。"
+  },
+  "zhihuUnreadable": {
+    "message": "没有读到这篇回答或文章的正文，没有保存。"
+  },
+  "zhihuPermissionIntro": {
+    "message": "页面上有多篇回答或文章。允许访问知乎之后，插件才能记住指针下的这一篇。允许后，请再在同一篇正文上右键一次。只会把你选中的这一篇存进剪藏插件的默认笔记本。"
+  },
+  "zhihuPermissionToast": {
+    "message": "需要允许访问知乎，才能在列表里选中这一篇。允许后请再右键一次。"
+  },
+  "zhihuRightClickAgain": {
+    "message": "已经可以识别页面上的回答和文章。请再在正文上右键一次。"
+  },
+  "allowZhihuAccess": {
+    "message": "允许访问知乎"
+  },
+  "zhihuPermissionDenied": {
+    "message": "没有获得访问权限。请再在正文上右键一次来重新授权。"
+  },
+  "zhihuPermissionReady": {
+    "message": "已允许。回到页面，再在这篇正文上右键一次。"
+  },
+  "zhihuNoteFallbackTitle": {
+    "message": "一篇知乎内容"
+  },
+  "zhihuSaveWindowTitle": {
+    "message": "保存这篇知乎回答或文章到 EdgeEver"
   }
 }

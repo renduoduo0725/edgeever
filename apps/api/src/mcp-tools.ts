@@ -1,4 +1,4 @@
-import { ARCHITECTURE_RESOURCE_ICONS, TABLE_FIELD_TYPES } from "@edgeever/shared";
+import { ARCHITECTURE_RESOURCE_ICONS, INFOGRAPHIC_NOTE_TEMPLATES, TABLE_FIELD_TYPES } from "@edgeever/shared";
 
 const DIAGRAM_IR_NODE_TYPES = [
   "topic",
@@ -64,6 +64,82 @@ const tableFieldSchema = {
     name: { type: "string", minLength: 1, maxLength: 80 },
     type: { type: "string", enum: [...TABLE_FIELD_TYPES] },
     options: { type: "array", maxItems: 40, items: { type: "string", minLength: 1, maxLength: 80 } },
+  },
+};
+
+const infographicLabel = {
+  type: "object",
+  additionalProperties: false,
+  required: ["label"],
+  properties: {
+    label: { type: "string", minLength: 1, maxLength: 160 },
+    desc: { type: "string", maxLength: 240 },
+  },
+};
+
+const infographicChild = {
+  type: "object",
+  additionalProperties: false,
+  required: ["label"],
+  properties: {
+    label: { type: "string", minLength: 1, maxLength: 160 },
+    desc: { type: "string", maxLength: 240 },
+    children: { type: "array", maxItems: 8, items: infographicLabel },
+  },
+};
+
+const infographicDataSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["title"],
+  properties: {
+    title: { type: "string", minLength: 1, maxLength: 160 },
+    desc: { type: "string", maxLength: 240 },
+    values: {
+      type: "array",
+      maxItems: 12,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["label", "value"],
+        properties: {
+          label: { type: "string", minLength: 1, maxLength: 80 },
+          value: { type: "number" },
+        },
+      },
+    },
+    compares: { type: "array", maxItems: 4, items: infographicChild },
+    sequences: { type: "array", maxItems: 12, items: infographicLabel },
+    lists: { type: "array", maxItems: 12, items: infographicLabel },
+    root: infographicChild,
+    nodes: {
+      type: "array",
+      maxItems: 12,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["id", "label"],
+        properties: {
+          id: { type: "string", minLength: 1, maxLength: 40 },
+          label: { type: "string", minLength: 1, maxLength: 80 },
+          desc: { type: "string", maxLength: 240 },
+        },
+      },
+    },
+    relations: {
+      type: "array",
+      maxItems: 24,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["from", "to"],
+        properties: {
+          from: { type: "string", minLength: 1, maxLength: 40 },
+          to: { type: "string", minLength: 1, maxLength: 40 },
+          direction: { type: "string", maxLength: 20 },
+        },
+      },
+    },
   },
 };
 
@@ -231,6 +307,23 @@ const MCP_TOOL_DEFINITIONS = [
         memoId: { type: "string", minLength: 1 },
         recordId: { type: "string", minLength: 1 },
         expectedRevision: { type: "integer", minimum: 0 },
+      },
+    },
+  },
+  {
+    name: "create_infographic_memo",
+    description:
+      "Create an AntV infographic note (信息图). Use this for 信息图, infographic, 占比, 构成, 饼图, 柱状图, 折线图, 对比, 四象限, 时间线, and a process infographic. Do not use create_diagram_memo, create_memo, or a mind map. Use chart-pie-donut-plain-text with data.values for a share or 占比; chart-column-simple for columns; chart-line-plain-text for a trend; compare-binary-horizontal-badge-card-vs for two subjects with matched children; compare-quadrant-quarter-simple-card for four quadrants; sequence-timeline-rounded-rect-node for a timeline; sequence-steps-simple for steps; list-grid-simple for a parallel list; hierarchy-tree-tech-style-capsule-item for a tree; relation-network-simple-circle-node for a network. Fill only the data array that matches the template. data.title is the note title. If the user did not supply the figures, say in data.desc that the values are illustrative and are not an official disclosure. 思维导图, 流程图, and 架构图 still use create_diagram_memo.",
+    inputSchema: {
+      type: "object",
+      required: ["notebookId", "template", "data"],
+      additionalProperties: false,
+      properties: {
+        notebookId: { type: "string", minLength: 1 },
+        title: { type: "string", maxLength: 160 },
+        template: { type: "string", enum: [...INFOGRAPHIC_NOTE_TEMPLATES] },
+        data: infographicDataSchema,
+        tags: { type: "array", maxItems: 100, items: { type: "string" } },
       },
     },
   },
@@ -891,6 +984,7 @@ const NON_DESTRUCTIVE_MCP_TOOLS = new Set([
   "create_memo",
   "create_table_memo",
   "create_diagram_memo",
+  "create_infographic_memo",
   "import_memos",
   "restore_memos",
   "move_memos",

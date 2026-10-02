@@ -1,3 +1,37 @@
+/** beautiful-mermaid draws node labels at 13px. Wide diagrams shrink into the note column, but node text stays between these sizes. */
+export const MERMAID_DRAWN_NODE_TEXT_PX = 13;
+export const MERMAID_NODE_TEXT_MIN_PX = 8;
+export const MERMAID_NODE_TEXT_MAX_PX = 12;
+export const MERMAID_NODE_TEXT_PX = MERMAID_NODE_TEXT_MAX_PX;
+export const MERMAID_NODE_TEXT_SCALE = MERMAID_NODE_TEXT_MAX_PX / MERMAID_DRAWN_NODE_TEXT_PX;
+
+export const mermaidDisplayScale = (viewBoxWidth: number, containerWidth: number) => {
+  const maxScale = MERMAID_NODE_TEXT_MAX_PX / MERMAID_DRAWN_NODE_TEXT_PX;
+  const minScale = MERMAID_NODE_TEXT_MIN_PX / MERMAID_DRAWN_NODE_TEXT_PX;
+  if (!Number.isFinite(viewBoxWidth) || viewBoxWidth <= 0) return maxScale;
+  if (!Number.isFinite(containerWidth) || containerWidth <= 0) return maxScale;
+  return Math.min(maxScale, Math.max(minScale, containerWidth / viewBoxWidth));
+};
+
+const SVG_ROOT_TAG = /<svg\b([^>]*)>/i;
+const NUMERIC_LENGTH_ATTRIBUTE = /\b(width|height)\s*=\s*(["'])(\d+(?:\.\d+)?)(px)?\2/gi;
+
+export const scaleMermaidSvg = (
+  svg: string,
+  scale = MERMAID_NODE_TEXT_SCALE,
+) => {
+  if (!Number.isFinite(scale) || scale <= 0 || scale === 1) return svg;
+
+  return svg.replace(SVG_ROOT_TAG, (_match, attributes: string) => {
+    const scaled = attributes.replace(NUMERIC_LENGTH_ATTRIBUTE, (_attribute, name: string, quote: string, value: string, unit = "") => {
+      const length = Number.parseFloat(value);
+      const next = Math.round(length * scale * 100) / 100;
+      return `${name}=${quote}${next}${unit}${quote}`;
+    });
+    return `<svg${scaled}>`;
+  });
+};
+
 export interface MermaidSvgPresentation {
   width: number;
   height: number;

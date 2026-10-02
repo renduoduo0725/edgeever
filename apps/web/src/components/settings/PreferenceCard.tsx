@@ -1,4 +1,4 @@
-import { AlignHorizontalJustifyCenter, AlignVerticalSpaceAround, AppWindow, BookOpenText, ChartNoAxesCombined, Code2, Image, Keyboard, Languages, MousePointerClick, Palette, Sparkles, SunMoon, Type } from "lucide-react";
+import { AlignHorizontalJustifyCenter, AlignVerticalSpaceAround, AppWindow, BookOpenText, ChartNoAxesCombined, Code2, Image, Keyboard, Languages, ListTree, MousePointerClick, Palette, Sparkles, SunMoon, Type } from "lucide-react";
 import { useState, useEffect, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { EditorContentWidth } from "@/lib/editor-content-width";
@@ -23,7 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { SETTINGS_ITEM_TITLE_CLASSNAME } from "./settings-ui";
+import { SETTINGS_ITEM_DESCRIPTION_CLASSNAME, SETTINGS_ITEM_ICON_CLASSNAME, SETTINGS_ITEM_TITLE_CLASSNAME } from "./settings-ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -44,6 +44,7 @@ import {
 } from "@/lib/editor-body-font";
 import { applyUiFontPreference, readUiFontPreference, writeUiFontPreference } from "@/lib/ui-font";
 import { syncPublishedNoteBodyFont } from "@/lib/published-note-body-font";
+import { useShowDescendantNotesPreference, writeShowDescendantNotesPreference } from "@/lib/descendant-notes-preference";
 import { NoteProseCssEditor } from "./NoteProseCssEditor";
 import { NoteProseCssPreview } from "./NoteProseCssPreview";
 
@@ -210,6 +211,7 @@ export const PreferenceCard = ({
   onNoteProseChange,
 }: PreferenceCardProps) => {
   const { t } = useTranslation();
+  const showDescendantNotes = useShowDescendantNotesPreference();
   const { preference: appearancePreference, resolvedTheme, setPreference: setAppearancePreference } = useAppearanceTheme();
   const { mermaidThemePreference, setMermaidTheme } = useMermaidTheme();
   const [cssDialogOpen, setCssDialogOpen] = useState(false);
@@ -378,6 +380,22 @@ export const PreferenceCard = ({
             onChange={updateUiFont}
           />
         </div>
+
+        <div className="flex min-h-16 flex-col items-start gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <ListTree className={SETTINGS_ITEM_ICON_CLASSNAME} />
+            <div className="min-w-0">
+              <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.showDescendantNotesTitle")}</div>
+            </div>
+          </div>
+          <div className="flex w-full shrink-0 justify-start sm:w-44 sm:justify-end">
+            <Switch
+              checked={showDescendantNotes}
+              onCheckedChange={writeShowDescendantNotesPreference}
+              aria-label={t("settings.showDescendantNotesAria")}
+            />
+          </div>
+        </div>
       </PreferenceSection>
 
       <PreferenceSection title={t("settings.groups.reading")}>
@@ -386,7 +404,6 @@ export const PreferenceCard = ({
             <AlignHorizontalJustifyCenter className="h-4 w-4 shrink-0 text-slate-500" />
             <div className="min-w-0">
               <div className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("settings.editorContentWidthTitle")}</div>
-              <p className="text-xs leading-5 text-slate-500">{t("settings.editorContentWidthDescription")}</p>
             </div>
           </div>
           <div className="w-full shrink-0 sm:w-80">

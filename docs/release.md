@@ -87,6 +87,10 @@ actually needed.
   Issue closed; retry with
   `bun run publish:stores -- --release vX.Y.Z --platform ios`. See
   [Mobile Store Delivery](store-delivery.md).
+- Web Clipper store submission is a separate official-repository workflow.
+  Run **Submit Web Clipper** after increasing `apps/extension/package.json`.
+  It does not run as part of `bun run release`, and its review does not change
+  a GitHub Release. See [Web Clipper store submission](extension-store.md).
 - Published desktop and Android audits read asset names and download
   installers through the release API URL. `gh release view --json assets` and
   `gh release download` can stay empty after a draft is published, and treating

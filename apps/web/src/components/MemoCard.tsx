@@ -415,9 +415,9 @@ export const MemoCard = ({
               ) : null}
             </div>
           ) : memo.infographic ? (
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <div className="flex items-center text-xs text-slate-500">
               <PieChart className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>{t("infographic.name")}</span>
+              <span className="sr-only">{t("infographic.name")}</span>
             </div>
           ) : tableLabel ? (
             <div className="space-y-1.5">

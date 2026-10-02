@@ -74,6 +74,7 @@ interface PluginSettingBase {
   key: string;
   label: string;
   description?: string;
+  locales?: Record<string, { label?: string; description?: string; placeholder?: string; options?: Record<string, string> }>;
   required?: boolean;
   /** Host-rendered read-only items, opened from a small entry next to the field. */
   list?: PluginSettingList;
@@ -760,6 +761,43 @@ const normalizeThemeTokens = (value: unknown): ThemeTokens => {
 
 const SETTING_KEY_PATTERN = /^[a-z][a-z0-9._-]*$/;
 
+const normalizeSettingLocales = (value: unknown, key: string, type: string, optionValues: string[]) => {
+  if (value === undefined) return undefined;
+  if (!isRecord(value) || Object.keys(value).length > 50) throw new Error(`Plugin setting ${key} locales must be an object with at most 50 entries.`);
+  const locales: NonNullable<PluginSettingBase["locales"]> = {};
+  for (const [rawLocale, copy] of Object.entries(value)) {
+    let locale: string;
+    try { locale = Intl.getCanonicalLocales(rawLocale.trim().replaceAll("_", "-"))[0] ?? ""; } catch { locale = ""; }
+    if (!locale || Object.keys(locales).some((existing) => existing.toLocaleLowerCase() === locale.toLocaleLowerCase())) {
+      throw new Error(`Plugin setting ${key} has an invalid or duplicate locale: ${rawLocale}.`);
+    }
+    if (!isRecord(copy)) throw new Error(`Plugin setting ${key} locale ${locale} must be an object.`);
+    const localized: NonNullable<PluginSettingBase["locales"]>[string] = {};
+    for (const property of ["label", "description", "placeholder"] as const) {
+      if (copy[property] === undefined) continue;
+      const limit = property === "description" ? 1000 : 200;
+      if (typeof copy[property] !== "string" || !copy[property].trim() || copy[property].length > limit || (property === "placeholder" && type !== "text" && type !== "secret")) {
+        throw new Error(`Plugin setting ${key} locale ${locale} has an invalid ${property}.`);
+      }
+      localized[property] = copy[property].trim();
+    }
+    if (copy.options !== undefined) {
+      if (type !== "select" || !isRecord(copy.options) || Object.keys(copy.options).some((option) => !optionValues.includes(option))) {
+        throw new Error(`Plugin setting ${key} locale ${locale} has invalid options.`);
+      }
+      const translatedOptions: Array<[string, string]> = [];
+      for (const [option, label] of Object.entries(copy.options)) {
+        if (typeof label !== "string" || !label.trim() || label.length > 200) throw new Error(`Plugin setting ${key} locale ${locale} has an invalid option label.`);
+        translatedOptions.push([option, label.trim()]);
+      }
+      localized.options = Object.fromEntries(translatedOptions);
+    }
+    if (Object.keys(localized).length === 0) throw new Error(`Plugin setting ${key} locale ${locale} must include translated copy.`);
+    locales[locale] = localized;
+  }
+  return locales;
+};
+
 const normalizeSettingList = (field: Record<string, unknown>, key: string): PluginSettingList | undefined => {
   if (field.list === undefined) return undefined;
   if (!isRecord(field.list) || !Array.isArray(field.list.items) || field.list.items.length === 0 || field.list.items.length > 100) {
@@ -803,9 +841,13 @@ const normalizePluginSettings = (value: unknown): PluginSettingsSchema => {
     if (typeof field.label !== "string" || !field.label.trim() || field.label.length > 200) throw new Error(`Plugin setting ${field.key} requires a label of at most 200 characters.`);
     if (typeof field.description === "string" && field.description.length > 1000) throw new Error(`Plugin setting ${field.key} description is too long.`);
     const list = normalizeSettingList(field, field.key);
+    const optionValues = field.type === "select" && Array.isArray(field.options)
+      ? field.options.filter(isRecord).map((option) => String(option.value)) : [];
+    const locales = normalizeSettingLocales(field.locales, field.key, String(field.type), optionValues);
     const common = {
       key: field.key,
       label: field.label.trim(),
+      ...(locales ? { locales } : {}),
       ...(typeof field.description === "string" && field.description.trim() ? { description: field.description.trim() } : {}),
       ...(field.required === true ? { required: true } : {}),
       ...(list ? { list } : {}),

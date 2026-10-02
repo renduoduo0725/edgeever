@@ -96,6 +96,9 @@ describe("diagram editor canvas surface", () => {
     expect(source).not.toContain("attachDiagramScroll");
     expect(globalStyles).toContain(".edgeever-diagram-scroller");
     expect(globalStyles).toContain("scrollbar-gutter: stable");
+    expect(globalStyles).toContain("--edgeever-diagram-canvas");
+    expect(globalStyles).toContain("min-width: 100%");
+    expect(globalStyles).toContain("min-height: 100%");
     expect(globalStyles).toContain('data-panning="true"');
     expect(globalStyles).toContain("cursor: grabbing !important");
   });
@@ -454,7 +457,8 @@ describe("diagram editor canvas surface", () => {
   });
 
   test("paints diagram chrome from theme tokens instead of literal white", () => {
-    expect(source).toContain('className="flex h-full min-h-0 flex-col bg-card"');
+    expect(source).toContain('className="relative flex h-full min-h-0 min-w-0 bg-card"');
+    expect(source).toContain('className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col"');
     expect(source).toContain('className="shrink-0 border-b border-slate-200 bg-card"');
     expect(source).not.toContain("flex-col bg-white");
     expect(source).not.toContain("border-slate-200 bg-white");

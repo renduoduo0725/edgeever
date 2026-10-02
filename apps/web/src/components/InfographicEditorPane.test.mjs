@@ -35,6 +35,7 @@ describe("infographic editor header", () => {
     expect(source).toContain("data-ai-assistant-launcher");
     expect(source).toContain("<AiSidebar");
     expect(source).toContain("infographic={infographicAssistant}");
+    expect(source).toContain("nextInfographicNoteTitle");
     expect(source).toContain("edgeever-infographic-preview");
   });
 });

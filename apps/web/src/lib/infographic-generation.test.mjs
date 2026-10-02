@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { parseSyntax, getTemplate, getTemplates } from "@antv/infographic";
+import { compileInfographicNote, INFOGRAPHIC_NOTE_TEMPLATES } from "@edgeever/shared";
 import {
   buildInfographicSyntax,
   buildOfficialInfographicSyntax,
@@ -9,6 +10,9 @@ import {
   inferInfographicKind,
   infographicFamilyChoices,
   officialTemplateFamily,
+  infographicNoteTitleIsAutomatic,
+  infographicSyntaxTitle,
+  nextInfographicNoteTitle,
   parseGeneratedInfographicContent,
   parseGeneratedOfficialData,
   parseGeneratedOfficialSelection,
@@ -220,6 +224,18 @@ describe("infographic generation", () => {
     expect(new Set(candidates.map(officialTemplateFamily))).toEqual(new Set(["chart", "comparison", "hierarchy", "list", "quadrant", "relation", "sequence"]));
   });
 
+  test("companion infographic templates render with AntV", () => {
+    for (const template of INFOGRAPHIC_NOTE_TEMPLATES) {
+      const compiled = compileInfographicNote(template, sampleOfficialData(template));
+      expect(compiled.ok).toBe(true);
+      if (!compiled.ok) continue;
+      const parsed = parseSyntax(compiled.syntax);
+      expect(parsed.errors).toEqual([]);
+      expect(parsed.options.template).toBe(template);
+      expect(getTemplate(template)).toBeTruthy();
+    }
+  });
+
   test("development history prioritizes timeline templates over the current comparison", () => {
     const current = "compare-binary-horizontal-badge-card-vs";
     expect(inferInfographicFamily("给我换成字节的发展历程")).toBe("sequence");
@@ -227,5 +243,66 @@ describe("infographic generation", () => {
     expect(candidates[0].startsWith("sequence-timeline-")).toBe(true);
     expect(candidates).toContain(current);
     expect(shortlistOfficialTemplates("给我换成字节的发展历程", getTemplates(), current, "sequence").every((id) => id.startsWith("sequence-timeline-"))).toBe(true);
+  });
+
+  test("a conversation that changes the infographic subject renames the note", () => {
+    expect(nextInfographicNoteTitle({
+      noteTitle: "DIKW 知识层级金字塔",
+      previousGraphicTitle: "DIKW 知识层级金字塔",
+      nextGraphicTitle: "腾讯与字节跳动对比",
+      defaultTitle: "信息图",
+    })).toBe("腾讯与字节跳动对比");
+    expect(nextInfographicNoteTitle({
+      noteTitle: "DIKW 知识层级金字塔",
+      previousGraphicTitle: "DIKW 金字塔",
+      nextGraphicTitle: "腾讯与字节跳动对比",
+      defaultTitle: "信息图",
+    })).toBe("腾讯与字节跳动对比");
+    expect(nextInfographicNoteTitle({
+      noteTitle: "信息图",
+      previousGraphicTitle: "",
+      nextGraphicTitle: "腾讯与字节跳动对比",
+      defaultTitle: "信息图",
+    })).toBe("腾讯与字节跳动对比");
+    expect(nextInfographicNoteTitle({
+      noteTitle: "竞品备忘",
+      previousGraphicTitle: "腾讯与字节跳动对比",
+      nextGraphicTitle: "腾讯与字节跳动对比",
+      defaultTitle: "信息图",
+      keepCustomTitle: true,
+    })).toBe("竞品备忘");
+    expect(nextInfographicNoteTitle({
+      noteTitle: "竞品备忘",
+      previousGraphicTitle: "",
+      nextGraphicTitle: "腾讯与字节跳动对比",
+      defaultTitle: "信息图",
+      keepCustomTitle: true,
+    })).toBe("竞品备忘");
+    expect(nextInfographicNoteTitle({
+      noteTitle: "DIKW 知识层级金字塔",
+      previousGraphicTitle: "腾讯与字节跳动对比",
+      nextGraphicTitle: "腾讯与字节跳动对比",
+      defaultTitle: "信息图",
+    })).toBe("腾讯与字节跳动对比");
+    expect(nextInfographicNoteTitle({
+      noteTitle: "竞品备忘",
+      previousGraphicTitle: "DIKW 知识层级金字塔",
+      nextGraphicTitle: "腾讯与字节跳动对比",
+      defaultTitle: "信息图",
+      keepCustomTitle: true,
+    })).toBe("腾讯与字节跳动对比");
+    expect(infographicSyntaxTitle("infographic list-row-simple-horizontal-arrow\ndata\n  title 发布流程\n  lists")).toBe("发布流程");
+    expect(infographicNoteTitleIsAutomatic({
+      noteTitle: "DIKW 知识层级金字塔",
+      graphicTitle: "腾讯与字节跳动对比",
+      defaultTitle: "信息图",
+      earlierTitles: ["DIKW 知识层级金字塔"],
+    })).toBe(true);
+    expect(nextInfographicNoteTitle({
+      noteTitle: "腾讯与字节跳动对比",
+      previousGraphicTitle: "腾讯与字节跳动对比",
+      nextGraphicTitle: "  ",
+      defaultTitle: "信息图",
+    })).toBe("腾讯与字节跳动对比");
   });
 });

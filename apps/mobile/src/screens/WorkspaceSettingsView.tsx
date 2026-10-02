@@ -89,7 +89,10 @@ export const SettingsView = ({
   onClose,
   onImageCompressionChange,
   onLocalePreferenceChange,
+  onShowDescendantNotesChange,
   onSignOut,
+  showDescendantNotes,
+  showDescendantNotesSaveFailed,
 }: {
   currentUser: AuthUser | null;
   imageCompressionEnabled: boolean;
@@ -97,7 +100,10 @@ export const SettingsView = ({
   onClose: () => void;
   onImageCompressionChange: (enabled: boolean) => void;
   onLocalePreferenceChange: (locale: MobileLocaleMode) => void;
+  onShowDescendantNotesChange: (enabled: boolean) => void;
   onSignOut: () => void;
+  showDescendantNotes: boolean;
+  showDescendantNotesSaveFailed: boolean;
 }) => {
   const { resolvedTheme, toggleTheme } = useMobileTheme();
   const { translate } = useMobileLocale();
@@ -217,6 +223,17 @@ export const SettingsView = ({
                 </View>
                 <View style={styles.settingsSwitchStart}>
                   <Switch accessibilityLabel={translate("是否压缩笔记内图片")} onValueChange={onImageCompressionChange} value={imageCompressionEnabled} />
+                </View>
+              </View>
+            </View>
+            <View style={styles.settingsContentRow}>
+              <View style={styles.preferenceStack}>
+                <View style={styles.preferenceText}>
+                  <Text style={styles.settingsRowTitle}>父笔记本中显示子笔记本笔记</Text>
+                  {showDescendantNotesSaveFailed ? <Text accessibilityRole="alert" style={styles.errorText}>无法保存“父笔记本中显示子笔记本笔记”设置，请稍后重试</Text> : null}
+                </View>
+                <View style={styles.settingsSwitchStart}>
+                  <Switch accessibilityLabel={translate("是否在父笔记本中显示子笔记本中的笔记")} onValueChange={onShowDescendantNotesChange} value={showDescendantNotes} />
                 </View>
               </View>
             </View>

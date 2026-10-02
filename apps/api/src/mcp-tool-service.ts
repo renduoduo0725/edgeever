@@ -4,7 +4,12 @@ import {
   ARCHITECTURE_RESOURCE_ICONS,
   TemplateCreateSchema,
   TemplateUpdateSchema,
+  compileInfographicNote,
   docToText,
+  hasInfographicDocumentMarker,
+  INFOGRAPHIC_SCHEMA_VERSION,
+  infographicFallbackMarkdown,
+  infographicSyntaxTemplate,
   markdownToDoc,
   addTableField,
   addTableRecord,
@@ -17,13 +22,16 @@ import {
   TABLE_SCHEMA_VERSION,
   hasTableDocumentMarker,
   parseDiagramDocument,
+  parseInfographicDocument,
   parseTableDocument,
   listTableAttachmentResourceIds,
   removeTableField,
   removeTableRecord,
   serializeDiagramDocument,
+  serializeInfographicDocument,
   serializeTableDocument,
   stripDiagramDocumentMarker,
+  stripInfographicDocumentMarker,
   stripTableDocumentMarker,
   tableFallbackMarkdown,
   updateTableField,
@@ -407,6 +415,12 @@ const memoWithoutDiagramPayload = (memo: MemoDetail) => {
 
 const memoWithoutTablePayload = (memo: MemoDetail) => {
   const contentMarkdown = stripTableDocumentMarker(memo.contentMarkdown);
+  const contentJson = markdownToDoc(contentMarkdown);
+  return { ...memo, contentMarkdown, contentJson, contentText: docToText(contentJson) };
+};
+
+const memoWithoutInfographicPayload = (memo: MemoDetail) => {
+  const contentMarkdown = stripInfographicDocumentMarker(memo.contentMarkdown);
   const contentJson = markdownToDoc(contentMarkdown);
   return { ...memo, contentMarkdown, contentJson, contentText: docToText(contentJson) };
 };
@@ -938,6 +952,13 @@ export const callMcpTool = async (
       if (diagram) return { memo: memoWithoutDiagramPayload(memo), diagram: diagramSemanticGraph(diagram) };
       const table = parseTableDocument(memo.contentMarkdown);
       if (table) return { memo: memoWithoutTablePayload(memo), structuredTable: getTableSummary(memo.contentMarkdown).tablePreview };
+      const infographic = parseInfographicDocument(memo.contentMarkdown);
+      if (infographic) {
+        return {
+          memo: memoWithoutInfographicPayload(memo),
+          infographic: { template: infographicSyntaxTemplate(infographic.syntax) },
+        };
+      }
       return { memo };
     }
     case "get_table_records": {
@@ -1082,6 +1103,27 @@ export const callMcpTool = async (
 
       return { memo };
     }
+    case "create_infographic_memo": {
+      assertScope(auth, "write:memos");
+      const notebookId = getRequiredString(args.notebookId, "notebookId");
+      const template = getRequiredString(args.template, "template");
+      const compiled = compileInfographicNote(template, args.data);
+      if (!compiled.ok) throw new AppError("invalid_params", compiled.message, 400);
+      const document = { schemaVersion: INFOGRAPHIC_SCHEMA_VERSION, syntax: compiled.syntax };
+      const memo = await createMemoRecord(c.env.storage.db, auth.workspaceId, {
+        notebookId,
+        title: getOptionalString(args.title) ?? compiled.title,
+        contentMarkdown: serializeInfographicDocument(document),
+        contentJson: markdownToDoc(infographicFallbackMarkdown(document)),
+        tags: getOptionalStringArray(args.tags),
+      }, getAuditActor(c), getActorLabel(c));
+      return {
+        memo: memoWithoutInfographicPayload(memo),
+        infographic: true,
+        template,
+        revision: memo.revision,
+      };
+    }
     case "create_diagram_memo": {
       assertScope(auth, "write:memos");
       const notebookId = getRequiredString(args.notebookId, "notebookId");
@@ -1179,6 +1221,13 @@ export const callMcpTool = async (
           throw new AppError(
             "table_update_required",
             "Structured table content cannot be replaced through update_memo.",
+            400,
+          );
+        }
+        if (existing && hasInfographicDocumentMarker(existing.contentMarkdown)) {
+          throw new AppError(
+            "infographic_update_required",
+            "Infographic content cannot be replaced through update_memo.",
             400,
           );
         }

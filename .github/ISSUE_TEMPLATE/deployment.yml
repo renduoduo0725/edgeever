@@ -1,33 +1,33 @@
-name: 部署与连接
-description: 自托管实例无法安装、更新或连接。
+name: Deployment and connection
+description: A self-hosted instance cannot be installed, updated, or reached.
 title: "[Deploy] "
 labels: ["question"]
 body:
   - type: markdown
     attributes:
       value: |
-        先看仓库文档里的 Cloudflare 或 Docker 部署说明。仍然失败时再提交。
+        Check the Cloudflare or Docker deployment docs in this repository first. Open an issue if it still fails.
 
-        GitHub Issue 公开可见。不要附上密码、Token、实例地址或笔记正文。需要对照地址时，维护者会在评论里单独询问。
+        GitHub Issues are public. Do not include passwords, tokens, instance URLs, or note contents. A maintainer will ask in a comment if an address is needed for comparison.
   - type: dropdown
     id: deploy-method
     attributes:
-      label: 部署方式
+      label: Deployment method
       description: How is this instance deployed?
       multiple: false
       options:
-        - Cloudflare 一键部署
-        - Cloudflare 手动部署
+        - Cloudflare one-click deploy
+        - Cloudflare manual deploy
         - Docker
-        - 官方 Demo
-        - 不确定
+        - Official demo
+        - Not sure
     validations:
       required: true
   - type: dropdown
     id: client
     attributes:
-      label: 出问题的客户端
-      description: Which client cannot connect? 纯服务端问题时选你用来访问的那个端。
+      label: Affected client
+      description: Which client cannot connect? For a server-only problem, choose the client you use to reach the instance.
       multiple: true
       options:
         - Web
@@ -42,26 +42,26 @@ body:
   - type: textarea
     id: what-happened
     attributes:
-      label: 发生了什么
-      description: 实际看到的结果、报错原文。What did you see, including the exact error text?
-      placeholder: 例如：桌面端登录一直显示 network_unreachable，浏览器打开同一地址可以登录。
+      label: What happened
+      description: What did you see, including the exact error text?
+      placeholder: "For example: Desktop sign-in stays on network_unreachable, while the browser can sign in at the same address."
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: 已经试过什么
-      description: 包括文档中的哪一步、命令输出，以及是否用浏览器对照过。What have you already tried?
+      label: What you already tried
+      description: Include which doc step you followed, any command output, and whether you compared it in a browser.
     validations:
       required: true
   - type: textarea
     id: system-info
     attributes:
-      label: 系统信息
-      description: 能打开应用时，粘贴「设置 → 系统信息」里复制的内容。应用还打不开时，写上实例版本、数据库后端和部署平台。
+      label: System information
+      description: If you can open the app, paste the text copied from Settings → System information. If you cannot, include the instance version, database backend, and deployment platform.
       placeholder: |
-        - 实例构建: v1.93.0
-        - 数据库后端: D1
-        - 部署平台: Cloudflare
+        - Instance build: v1.93.0
+        - Database backend: D1
+        - Deployment platform: Cloudflare
     validations:
       required: true

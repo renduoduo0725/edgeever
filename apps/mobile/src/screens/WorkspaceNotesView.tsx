@@ -1,6 +1,6 @@
 import { memo, useRef, type ReactNode } from "react";
 import type { MemoFilterMode, MemoSortMode } from "@edgeever/client";
-import { DEFAULT_MEMO_TITLE, getMemoListTimestamp, type MemoSummary, type Notebook } from "@edgeever/shared";
+import { DEFAULT_MEMO_TITLE, getMemoListTimestamp, getNotebookDescendantMemoCount, type MemoSummary, type Notebook } from "@edgeever/shared";
 import { MOBILE_UI_METRICS, toggleMobileMemoFilterMode } from "@edgeever/shared/mobile-ui";
 import { FlatList, Platform, RefreshControl, View } from "react-native";
 import Animated, { FadeInDown, FadeOutUp, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
@@ -46,6 +46,7 @@ export const NotesView = ({
   onSetMemoView,
   searchText,
   selectedTag,
+  showDescendantNotes,
   totalMemoCount,
   selectedMemoIds,
   selectionMode,
@@ -80,6 +81,7 @@ export const NotesView = ({
   onSetMemoView: (memoView: MemoView) => void;
   searchText: string;
   selectedTag: string | null;
+  showDescendantNotes: boolean;
   totalMemoCount: number;
   selectionMode: boolean;
   selectedMemoIds: Set<string>;
@@ -88,6 +90,10 @@ export const NotesView = ({
   const { preference: localePreference, translate } = useMobileLocale();
   const searchActive = searchText.trim().length > 0;
   const filterActive = memoFilterMode !== "all" || Boolean(selectedTag);
+  // With sub-notebooks hidden, an empty parent must not look like its notes are gone.
+  const hiddenDescendantMemoCount = !showDescendantNotes && memoView === "notebook" && activeNotebook && !searchActive && !filterActive
+    ? getNotebookDescendantMemoCount(notebooks, activeNotebook.id)
+    : 0;
   const searchStatusLabel = translate("正在搜索");
   const searchResultLabel = translate(`${totalMemoCount} 条结果`);
   const exitSearchLabel = translate("退出搜索");
@@ -199,8 +205,8 @@ export const NotesView = ({
             : []),
         ]
         : undefined}
-      emptyDescription={searchActive ? "换个关键词再试" : filterActive ? "试试切换筛选条件，或调整搜索关键词。" : memoView === "trash" ? "删除的笔记会显示在这里。" : "先创建一条笔记，之后可以在这里快速预览、搜索和批量整理。"}
-      emptyTitle={searchActive ? "没有找到匹配笔记" : filterActive ? "没有符合筛选的笔记" : memoView === "trash" ? "回收站为空" : "暂无笔记"}
+      emptyDescription={hiddenDescendantMemoCount > 0 ? `子笔记本中还有 ${hiddenDescendantMemoCount} 条笔记。可以打开子笔记本查看，或在设置中开启“父笔记本中显示子笔记本笔记”。` : searchActive ? "换个关键词再试" : filterActive ? "试试切换筛选条件，或调整搜索关键词。" : memoView === "trash" ? "删除的笔记会显示在这里。" : "先创建一条笔记，之后可以在这里快速预览、搜索和批量整理。"}
+      emptyTitle={hiddenDescendantMemoCount > 0 ? "本级暂无笔记" : searchActive ? "没有找到匹配笔记" : filterActive ? "没有符合筛选的笔记" : memoView === "trash" ? "回收站为空" : "暂无笔记"}
       error={error}
       initialSyncProgress={initialSyncProgress}
       isError={isError}

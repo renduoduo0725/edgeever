@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { globSync, readFileSync } from "node:fs";
 import { Database } from "bun:sqlite";
 import { callMcpTool } from "./index.ts";
-import { addTableField, parseDiagramDocument, parseTableDocument, serializeTableDocument, createDefaultTableDocument } from "@edgeever/shared";
+import { addTableField, parseDiagramDocument, parseInfographicDocument, parseTableDocument, serializeTableDocument, createDefaultTableDocument } from "@edgeever/shared";
 
 class SqliteD1PreparedStatement {
   constructor(db, sql, bindings = []) {
@@ -122,6 +122,47 @@ describe("MCP template and AI instruction management", () => {
       expect(boundary.y).toBeLessThan(api.y);
       expect(boundary.x + boundary.width).toBeGreaterThan(api.x + api.width);
     }
+  });
+
+  test("creates a revenue-share infographic and refuses to overwrite it as markdown", async () => {
+    const { sqlite, auth, context } = createFixture();
+    sqlite.query("INSERT INTO notebooks (id, workspace_id, name) VALUES (?, ?, ?)")
+      .run("nb_graphics", "ws_mcp", "Graphics");
+    const created = await callMcpTool(context, auth, "create_infographic_memo", {
+      notebookId: "nb_graphics",
+      template: "chart-pie-donut-plain-text",
+      data: {
+        title: "腾讯 2025 年营收占比",
+        desc: "图中比例为演示用估算，不代表腾讯官方披露数据。",
+        values: [
+          { label: "增值服务", value: 52 },
+          { label: "金融科技与企业服务", value: 30 },
+          { label: "网络广告", value: 16 },
+          { label: "其他业务", value: 2 },
+        ],
+      },
+    });
+    expect(created).toMatchObject({ infographic: true, template: "chart-pie-donut-plain-text", memo: { title: "腾讯 2025 年营收占比" } });
+    expect(JSON.stringify(created.memo)).not.toContain("edgeever-infographic-v1");
+    const stored = sqlite.query("SELECT content_markdown FROM memo_contents WHERE memo_id = ?").get(created.memo.id);
+    const infographic = parseInfographicDocument(stored.content_markdown);
+    expect(infographic.syntax).toContain("value 52");
+    const read = await callMcpTool(context, auth, "get_memo", { memoId: created.memo.id });
+    expect(read.infographic).toEqual({ template: "chart-pie-donut-plain-text" });
+    expect(read.memo.contentMarkdown).not.toContain("edgeever-infographic-v1");
+    await expect(callMcpTool(context, auth, "update_memo", {
+      memoId: created.memo.id, contentMarkdown: "# replaced",
+    })).rejects.toMatchObject({ code: "infographic_update_required" });
+    await expect(callMcpTool(context, auth, "create_infographic_memo", {
+      notebookId: "nb_graphics",
+      template: "chart-pie-donut-plain-text",
+      data: { title: "坏占比", values: [{ label: "甲", value: -5 }] },
+    })).rejects.toMatchObject({ code: "invalid_params" });
+    await expect(callMcpTool(context, { ...auth, scopes: ["read:memos"] }, "create_infographic_memo", {
+      notebookId: "nb_graphics",
+      template: "chart-pie-donut-plain-text",
+      data: { title: "占比", values: [{ label: "甲", value: 1 }] },
+    })).rejects.toMatchObject({ code: "forbidden" });
   });
 
   test("rejects invalid diagram graphs before creating a memo", async () => {

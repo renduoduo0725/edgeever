@@ -724,6 +724,15 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   height: auto !important;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  background-color: var(--edgeever-diagram-canvas, transparent);
+}
+
+/* The scroller sizes its paper once. When the editor column later grows
+ * (assistant sidebar closing, pane resize), keep the dotted surface covering
+ * the viewport instead of leaving the card color exposed on the right. */
+.edgeever-diagram-scroller > .x6-graph-scroller-content {
+  min-width: 100%;
+  min-height: 100%;
 }
 
 .edgeever-diagram-scroller .edgeever-diagram-canvas {
@@ -1700,13 +1709,6 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   background: transparent;
 }
 
-@media (min-width: 1280px) {
-  .ProseMirror .edgeever-mermaid-code-block {
-    max-width: min(60vw, 52rem);
-    margin-inline: auto;
-  }
-}
-
 .ProseMirror .edgeever-mermaid-toolbar {
   position: absolute;
   top: 0.5rem;
@@ -1715,7 +1717,7 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   display: flex;
   gap: 0.25rem;
   padding: 0.25rem;
-  border: 1px solid #d9e2dc;
+  border: 1px solid #e3ece7;
   border-radius: 7px;
   background: rgb(255 255 255 / 0.94);
   box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
@@ -1766,15 +1768,15 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   display: flex;
   max-height: min(70vh, 44rem);
   min-height: 6rem;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-start;
+  justify-content: flex-start;
   overflow: auto;
   overscroll-behavior-x: contain;
   overscroll-behavior-y: auto;
-  padding: 3.25rem 1rem 1rem;
-  border: 1px solid #d9e2dc;
+  padding: 1rem;
+  border: 1px solid #e3ece7;
   border-radius: 8px;
-  background: #fbfdfb;
+  background: var(--workspace-editor);
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
@@ -1791,18 +1793,29 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 
 .ProseMirror .edgeever-mermaid-svg {
   display: flex;
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: 100%;
+  flex: none;
   align-self: flex-start;
   justify-content: center;
 }
 
 .ProseMirror .edgeever-mermaid-svg svg {
   display: block;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  max-height: 30rem;
+  width: var(--mermaid-display-width, auto);
+  max-width: none;
+  height: var(--mermaid-display-height, auto);
+  max-height: none;
+  flex: none;
+}
+
+.ProseMirror .edgeever-mermaid-svg text {
+  font-family: var(--editor-body-font-family, var(--edgeever-system-font-family));
+  font-synthesis: weight;
+}
+
+.ProseMirror .edgeever-mermaid-svg text[font-weight="500"] {
+  font-weight: 550;
 }
 
 .ProseMirror .edgeever-mermaid-source {
@@ -2734,10 +2747,6 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
     width: 2.75rem;
     height: 2.75rem;
     flex-basis: 2.75rem;
-  }
-
-  .ProseMirror .edgeever-mermaid-preview {
-    padding-top: 4rem;
   }
 }
 
