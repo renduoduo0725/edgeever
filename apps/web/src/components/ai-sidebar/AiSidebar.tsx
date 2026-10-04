@@ -69,6 +69,7 @@ import {
   type ChatThreadSummary,
 } from "@/lib/local-agent-threads";
 import { LocalAgentImageStore } from "@/lib/local-agent-images";
+import { appendLocalAgentText } from "@/lib/local-agent-response";
 import { sidebarRevealTransition } from "@/lib/motion";
 import {
   SELECTION_AI_LANGUAGES,
@@ -132,6 +133,8 @@ type LocalTurn = {
   threadId: string;
   message: string;
   response: string;
+  responseMessageId?: string;
+  adapterId?: string;
   reasoning: string;
   tools: LocalToolRow[];
   images: LocalImage[];
@@ -921,7 +924,7 @@ function AiSidebarSession({
     if (!turnId || !alive.current) return;
     if (event.type === "text-delta") {
       setLocalTurns((previous) => previous.map((turn) => turn.id === turnId && turn.status !== "cancelled"
-        ? { ...turn, response: turn.response + event.text }
+        ? appendLocalAgentText(turn, event.text, event.messageId, turn.adapterId === "codex")
         : turn));
       return;
     }
@@ -1146,6 +1149,7 @@ function AiSidebarSession({
           threadId: activeLocalThreadId,
           message: text,
           response: "",
+          adapterId: adapter.id,
           reasoning: "",
           tools: [],
           images: [],

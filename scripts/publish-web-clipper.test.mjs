@@ -231,7 +231,7 @@ describe("web clipper store command", () => {
     );
   });
 
-  test("asks Chrome to publish after review and Firefox for both apps", async () => {
+  test("publishes Chrome and leaves Firefox compatibility to the manifest", async () => {
     const calls = [];
     const fetchImpl = async (url, options = {}) => {
       calls.push({ url, body: options.body, method: options.method });
@@ -260,16 +260,24 @@ describe("web clipper store command", () => {
       releaseNotes: "Notes",
       approvalNotes: "Build it",
     });
+    await firefox.attachSource({
+      version: "0.1.9",
+      sourcePath: packagePath,
+      releaseNotes: "Notes",
+      approvalNotes: "Build it",
+    });
 
     const publish = calls.find((call) => String(call.url).endsWith(":publish"));
     expect(JSON.parse(publish.body).publishType).toBe("DEFAULT_PUBLISH");
     const created = calls.find((call) => String(call.url).endsWith("/versions/"));
     expect(JSON.parse(created.body)).toMatchObject({
       upload: "upload-1",
-      compatibility: ["firefox", "android"],
       license: FIREFOX_LICENSE_SLUG,
       release_notes: { "en-US": "Notes" },
     });
+    expect(JSON.parse(created.body)).not.toHaveProperty("compatibility");
+    const edited = calls.find((call) => String(call.url).endsWith("/versions/0.1.9/") && typeof call.body === "string");
+    expect(JSON.parse(edited.body)).not.toHaveProperty("compatibility");
     const upload = calls.find((call) => String(call.url).endsWith("/upload/"));
     expect(upload.method).toBe("POST");
     expect(upload.body).toBeInstanceOf(FormData);

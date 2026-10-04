@@ -495,7 +495,6 @@ export const createFirefoxClient = ({
         },
         body: JSON.stringify({
           upload: uploadUuid,
-          compatibility: ["firefox", "android"],
           license: FIREFOX_LICENSE_SLUG,
           release_notes: { "en-US": releaseNotes },
           approval_notes: approvalNotes,
@@ -520,7 +519,6 @@ export const createFirefoxClient = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          compatibility: ["firefox", "android"],
           release_notes: { "en-US": releaseNotes },
           approval_notes: approvalNotes,
         }),

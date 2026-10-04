@@ -1,5 +1,5 @@
 import "./styles.css";
-import { getSettings, requestInstancePermission } from "./extension";
+import { getSettings, requestInstancePermission, type ExtensionSettings } from "./extension";
 import { localizeDocument, t } from "./i18n";
 
 localizeDocument();
@@ -7,6 +7,7 @@ localizeDocument();
 const saveButton = document.querySelector<HTMLButtonElement>("#save");
 const settingsButton = document.querySelector<HTMLButtonElement>("#settings");
 const status = document.querySelector<HTMLParagraphElement>("#status");
+let settings: ExtensionSettings | null = null;
 
 const setStatus = (message: string, kind: "normal" | "error" | "success" = "normal") => {
   if (status) {
@@ -15,12 +16,20 @@ const setStatus = (message: string, kind: "normal" | "error" | "success" = "norm
   }
 };
 
+if (saveButton) saveButton.disabled = true;
+void getSettings().then((loadedSettings) => {
+  settings = loadedSettings;
+  if (saveButton) saveButton.disabled = false;
+}).catch((error: unknown) => {
+  setStatus(error instanceof Error ? error.message : t("saveFailed"), "error");
+});
+
 saveButton?.addEventListener("click", async () => {
+  if (!settings) return;
   saveButton.disabled = true;
   setStatus(t("readingAndSaving"));
 
   try {
-    const settings = await getSettings();
     if (!settings.instanceUrl || !settings.token) {
       throw new Error(t("completePluginConfiguration"));
     }

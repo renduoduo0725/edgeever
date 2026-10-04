@@ -339,11 +339,12 @@ const rejectAttachment = (attachment, reason) => ({
   reason,
 });
 
-export function buildPromptContent({ prompt, contextText, attachments, promptCapabilities = {} } = {}) {
+export function buildPromptContent({ prompt, contextText, attachments, promptCapabilities = {}, promptFirst = false } = {}) {
   const blocks = [];
   const rejectedAttachments = [];
+  if (promptFirst) blocks.push({ type: "text", text: typeof prompt === "string" ? prompt : "" });
   if (typeof contextText === "string" && contextText.length > 0) blocks.push({ type: "text", text: contextText });
-  blocks.push({ type: "text", text: typeof prompt === "string" ? prompt : "" });
+  if (!promptFirst) blocks.push({ type: "text", text: typeof prompt === "string" ? prompt : "" });
   const list = Array.isArray(attachments) ? attachments : [];
   list.forEach((attachment, index) => {
     if (index >= MAX_ATTACHMENTS) {
@@ -462,7 +463,8 @@ export function eventsFromSessionUpdate(requestId, params) {
   }
   if (update.sessionUpdate === "agent_message_chunk") {
     if (update.content?.type === "text" && typeof update.content.text === "string" && update.content.text.length > 0) {
-      return [{ requestId, type: "text-delta", text: update.content.text }];
+      return [{ requestId, type: "text-delta", text: update.content.text,
+        ...(typeof update.messageId === "string" && update.messageId ? { messageId: update.messageId } : {}) }];
     }
     const image = imageEventFromBlock(requestId, update.content, "");
     if (!image) return [];
@@ -935,9 +937,11 @@ export function createAcpHostRuntime(options = {}) {
           contextText: input.contextText,
           attachments: input.attachments,
           promptCapabilities: connected.promptCapabilities,
+          // Codex derives its thread title from the start of the first user turn.
+          promptFirst: input.adapterId === "codex",
         });
         if (mcpBridge) {
-          content.blocks.unshift({
+          content.blocks.splice(input.adapterId === "codex" ? 1 : 0, 0, {
             type: "text",
             text: "For EdgeEver note operations in this conversation, use only the session-provided MCP server named edgeever-current-workspace. It is connected to the account currently signed in to EdgeEver. Ignore any EdgeEver MCP server from your persistent configuration, which may target a different instance or account.",
           });

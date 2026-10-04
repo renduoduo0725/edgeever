@@ -83,7 +83,8 @@ The public demo resets every day at 3:00 AM (China Standard Time) and restores s
 - **Visual Diagram Notes**: Ditch external drawing tools and sketch mind maps, flowcharts, and architecture diagrams directly in notes. Backed by a structured IR, the built-in assistant and external AI agents can generate and refine diagrams from a single prompt, complete with smart auto-layout, cross-device sync, and vector export. See the [visual diagram notes design](docs/visual-diagram-notes.md).
 - **Revision History**: Inspect and restore previous iterations of your notes with built-in version tracking.
 - **Public Note Sharing**: Share a note publicly and stop sharing it at any time. Optionally protect the link with an auto-generated access password.
-- **WeChat Article Clipping on Mobile**: Share a WeChat Official Account article to EdgeEver on your phone to extract its content and save it as an editable note.
+- **WeChat Article Clipping**: Share a WeChat Official Account article to EdgeEver on your phone to extract its content and save it as an editable note.
+- **WeChat Chat Archive Import**: On macOS, share chat history from WeChat via "Forward to Other Apps → EdgeEver" to import the entire conversation into a structured note with one click, preserving senders, timelines, quoted replies, and WeChat emojis, with images embedded and videos/files attached automatically.
 - **Smart Local Image Compression**: Client-side WebP compression reduces file sizes by 50%-90% before uploading, saving storage and speeding up page loads without extra server costs.
 - **Universal File Attachments**: Attach and preview PDFs, Office documents, zip files, audio, and video directly within notes. Chunked uploads and streaming safely support files up to 1 GiB.
 - **Batch Operations & Flexible Sorting**: Easily merge or relocate multiple notes, with drag-and-drop notebook reordering.

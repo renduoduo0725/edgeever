@@ -1,23 +1,23 @@
 {
-  "version": "1.99.0",
+  "version": "1.99.1",
   "changes": {
     "en-US": [
-      "The AI assistant can apply requested note content edits directly, with more reliable translation follow-ups and clearer selection prompts. Note revisions remain available.",
-      "The browser clipper adds a Reddit post action to the context menu and improves the Xiaohongshu and Zhihu clipping menus. Update the extension to use these changes.",
-      "Editor changes prevent unsaved title and tag details from carrying over to another note, and preserve external links whose labels resemble file names.",
-      "Android and iOS sign-in screens now leave the username field blank for account selection."
+      "Codex progress in the AI sidebar now stays in the process view, while the final reply appears separately.",
+      "Desktop Codex sessions now use the first user prompt for their titles.",
+      "Downloaded file attachments and PDFs on desktop now keep their original filenames.",
+      "Firefox Web Clipper 0.1.15 now requests site access when saving from its popup and improves add-on submission compatibility."
     ],
     "zh-CN": [
-      "AI 助手可直接应用用户要求的笔记正文修改；翻译后续操作和选中文本提示更准确，笔记修订记录仍可使用。",
-      "网页剪藏插件新增右键保存 Reddit 帖子，并改进小红书和知乎的剪藏菜单；更新插件后即可使用。",
-      "编辑器修复了未保存标题和标签串到另一篇笔记的问题，并保留标签看起来像文件名的外部链接。",
-      "Android 和 iOS 登录页现在将用户名留空，方便选择自己的账户。"
+      "AI 侧边栏中的 Codex 过程消息现显示在过程区域，最终回复单独呈现。",
+      "桌面端 Codex 会话现在根据用户的首条提问生成标题。",
+      "桌面端下载文件附件和 PDF 时，现在会保留原始文件名。",
+      "Firefox 网页剪藏插件 0.1.15 现可在弹窗保存时正确请求网站访问权限，并改进扩展提交兼容性。"
     ],
     "ja": [
-      "AI アシスタントが依頼されたノート本文の変更を直接反映できるようになりました。翻訳後の操作と選択テキストの案内も改善し、改訂履歴は引き続き利用できます。",
-      "Web クリッパーに Reddit 投稿を保存する右クリックメニューを追加し、小紅書と知乎のメニューを改善しました。利用するには拡張機能を更新してください。",
-      "未保存のタイトルやタグが別のノートへ引き継がれる問題を修正し、ファイル名のようなラベルを持つ外部リンクを保持します。",
-      "Android と iOS のログイン画面でユーザー名を空欄にし、使用するアカウントを選べるようにしました。"
+      "AI サイドバーでは Codex の進行メッセージを処理欄に表示し、最終回答を分けて表示します。",
+      "デスクトップ版の Codex セッション名に、最初のユーザープロンプトが反映されます。",
+      "デスクトップ版でファイル添付と PDF をダウンロードする際、元のファイル名が保持されます。",
+      "Firefox Web Clipper 0.1.15 では、ポップアップから保存する際にサイトへのアクセス許可を求め、アドオンの提出互換性を改善しました。"
     ]
   }
 }

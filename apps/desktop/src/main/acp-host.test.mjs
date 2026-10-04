@@ -430,6 +430,14 @@ describe("ACP prompt blocks", () => {
     expect(JSON.stringify(blocked.blocks)).not.toContain("resource_link");
   });
 
+  test("puts a Codex user's request before context for a useful thread title", () => {
+    const content = buildPromptContent({ prompt: "分析资金往来", contextText: "Current note and earlier turns", promptFirst: true });
+    expect(content.blocks).toEqual([
+      { type: "text", text: "分析资金往来" },
+      { type: "text", text: "Current note and earlier turns" },
+    ]);
+  });
+
   test("includes images and embedded PDFs without a filesystem path", () => {
     const allowed = buildPromptContent({
       prompt: "go",
@@ -502,6 +510,9 @@ describe("ACP spawn and failure mapping", () => {
     expect(eventsFromSessionUpdate("r1", {
       update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "hello" } },
     })).toEqual([{ requestId: "r1", type: "text-delta", text: "hello" }]);
+    expect(eventsFromSessionUpdate("r1", {
+      update: { sessionUpdate: "agent_message_chunk", messageId: "message-1", content: { type: "text", text: "hello" } },
+    })).toEqual([{ requestId: "r1", type: "text-delta", text: "hello", messageId: "message-1" }]);
     expect(eventsFromSessionUpdate("r1", {
       update: { sessionUpdate: "agent_thought_chunk", content: { type: "text", text: "hmm" } },
     })).toEqual([{ requestId: "r1", type: "reasoning", text: "hmm" }]);
@@ -667,6 +678,35 @@ describe("ACP stdio session", () => {
       expect(servers[0].env).toContainEqual({ name: "EDGEEVER_TOKEN", value: "temporary-secret" });
       expect(JSON.stringify(servers)).not.toContain("login-secret");
       expect(closed).toBe(true);
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  }, 15_000);
+
+  sessionTest("starts Codex prompts with the request while preserving workspace MCP guidance", async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-codex-title-"));
+    const reportPath = path.join(directory, "report.json");
+    try {
+      const scriptPath = await writeFakeAgent(directory, {
+        reportPath,
+        secretPath: path.join(directory, "secret.txt"),
+        allowImage: false,
+        allowEmbedded: false,
+        hold: false,
+      });
+      const runtime = createAcpHostRuntime({
+        adapterManager: { get: (id) => id === "codex" ? { version: "test", command: { command: scriptPath, args: [] } } : null },
+        mcpAccess: () => ({ baseUrl: "https://notes.example", sessionToken: "login-secret" }),
+        startMcpBridge: () => ({ url: "http://127.0.0.1:12345", secret: "temporary-secret", close: async () => {} }),
+      });
+      const events = collector();
+      await runtime.prompt({ adapterId: "codex", prompt: "分析资金往来", contextText: "Current note and earlier turns" }, events.emit);
+      await events.waitFor((event) => event.type === "done");
+      const report = await readReport(reportPath);
+      expect(report.prompt[0]).toEqual({ type: "text", text: "分析资金往来" });
+      expect(report.prompt[1].text).toContain("edgeever-current-workspace");
+      expect(report.prompt[2]).toEqual({ type: "text", text: "Current note and earlier turns" });
+      expect(report.newSession.mcpServers[0].name).toBe("edgeever-current-workspace");
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

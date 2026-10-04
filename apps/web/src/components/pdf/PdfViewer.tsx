@@ -21,7 +21,7 @@ import { AttachmentFileIcon } from "@/components/attachments/AttachmentFileIcon"
 import { COMPACT_ATTACHMENT_WIDTH_CLASS } from "@/components/attachments/attachment-layout";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { useAttachmentByteSize } from "@/hooks/useAttachmentByteSize";
-import { isDesktopResourceRuntime, toApiResourceUrl } from "@/lib/desktop-resources";
+import { isDesktopResourceRuntime, toApiResourceUrl, toDesktopResourceDownloadUrl } from "@/lib/desktop-resources";
 import { cn } from "@/lib/utils";
 import { loadPdfJs } from "./pdfjs-loader";
 import { canPreviewPdfInline, loadPdfDocumentSource } from "./pdf-document-source";
@@ -310,7 +310,7 @@ export const PdfViewer = ({
             </>
           ) : null}
           <ButtonTooltip title={t("pdfViewer.download")}>
-            <a className="pdf-viewer-action" href={resolvedUrl} download={label} aria-label={t("pdfViewer.download")}><Download aria-hidden="true" /></a>
+            <a className="pdf-viewer-action" href={toDesktopResourceDownloadUrl(resolvedUrl, filename || label)} download={filename || label} aria-label={t("pdfViewer.download")}><Download aria-hidden="true" /></a>
           </ButtonTooltip>
           <ButtonTooltip title={t("pdfViewer.openExternal")}>
             <a className="pdf-viewer-action" href={resolvedUrl} target="_blank" rel="noreferrer" aria-label={t("pdfViewer.openExternal")}><ExternalLink aria-hidden="true" /></a>

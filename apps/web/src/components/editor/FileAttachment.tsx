@@ -14,7 +14,7 @@ import { COMPACT_ATTACHMENT_WIDTH_CLASS } from "@/components/attachments/attachm
 import { VideoAttachmentPlayer } from "@/components/attachments/VideoAttachmentPlayer";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { useAttachmentByteSize } from "@/hooks/useAttachmentByteSize";
-import { isDesktopResourceRuntime, toApiResourceUrl } from "@/lib/desktop-resources";
+import { isDesktopResourceRuntime, toApiResourceUrl, toDesktopResourceDownloadUrl } from "@/lib/desktop-resources";
 import { cn } from "@/lib/utils";
 
 const FileAttachmentNodeView = ({ node, updateAttributes }: NodeViewProps) => {
@@ -26,6 +26,7 @@ const FileAttachmentNodeView = ({ node, updateAttributes }: NodeViewProps) => {
     : getAttachmentFilenameFromLabel(label);
   const mimeType = typeof node.attrs.mimeType === "string" ? node.attrs.mimeType : "";
   const resolvedUrl = isDesktopResourceRuntime() ? url : toApiResourceUrl(url);
+  const downloadUrl = toDesktopResourceDownloadUrl(resolvedUrl, filename || label);
   const byteSize = useAttachmentByteSize(resolvedUrl, node.attrs.byteSize);
   const metadata = formatAttachmentMetadata(mimeType, filename || label, byteSize);
   const attachmentKind = resolveAttachmentKind(mimeType, filename || label);
@@ -76,7 +77,7 @@ const FileAttachmentNodeView = ({ node, updateAttributes }: NodeViewProps) => {
             </a>
           )}
           <ButtonTooltip title={t("editor.resourceActions.download")}>
-            <a className="pdf-viewer-action" href={resolvedUrl} download={filename || label} aria-label={t("editor.resourceActions.download")}>
+            <a className="pdf-viewer-action" href={downloadUrl} download={filename || label} aria-label={t("editor.resourceActions.download")}>
               <Download aria-hidden="true" />
             </a>
           </ButtonTooltip>
