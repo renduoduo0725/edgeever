@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, type ClipboardEvent as ReactClipboardEvent } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type ClipboardEvent as ReactClipboardEvent } from "react";
 import CodeMirror, {
   EditorView,
   type ReactCodeMirrorRef,
@@ -35,6 +35,7 @@ export interface MarkdownSourceEditorRef {
   getScrollContainer: () => HTMLElement | null;
   getSelection: () => { from: number; to: number };
   setSelection: (from: number, to: number) => void;
+  replaceDocument: (value: string) => void;
   focus: () => void;
   insertText: (text: string, from?: number, to?: number) => void;
   sliceText: (from: number, to: number) => string;
@@ -55,6 +56,7 @@ export interface MarkdownSourceEditorProps {
   onSlashCommandTrigger?: (commandStart: number) => void;
   onLinkShortcut?: () => void;
   onSelectionChange?: () => void;
+  onReady?: () => void;
 }
 
 export const CODE_MIRROR_THEME_MAP: Record<MarkdownThemeName, Extension> = {
@@ -96,7 +98,7 @@ const baseEditorTheme = EditorView.theme({
   },
   "@media (min-width: 1024px)": {
     ".cm-scroller": {
-      scrollbarGutter: "stable both-edges",
+      scrollbarGutter: "stable",
     },
   },
   ".cm-line": {
@@ -126,6 +128,7 @@ export const MarkdownSourceEditor = forwardRef<MarkdownSourceEditorRef, Markdown
       onSlashCommandTrigger,
       onLinkShortcut,
       onSelectionChange,
+      onReady,
     },
     ref,
   ) => {
@@ -135,6 +138,22 @@ export const MarkdownSourceEditor = forwardRef<MarkdownSourceEditorRef, Markdown
     const pendingPastesRef = useRef(new Set<PendingPaste>());
     const onSelectionChangeRef = useRef(onSelectionChange);
     onSelectionChangeRef.current = onSelectionChange;
+
+    useEffect(() => {
+      let frame = 0;
+      let cancelled = false;
+      let attempts = 0;
+      const notifyWhenReady = () => {
+        if (cancelled) return;
+        if (cmRef.current?.view) onReady?.();
+        else if (attempts++ < 120) frame = window.requestAnimationFrame(notifyWhenReady);
+      };
+      notifyWhenReady();
+      return () => {
+        cancelled = true;
+        window.cancelAnimationFrame(frame);
+      };
+    }, [onReady]);
 
     useImperativeHandle(
       ref,
@@ -159,6 +178,15 @@ export const MarkdownSourceEditor = forwardRef<MarkdownSourceEditorRef, Markdown
           view.dispatch({
             selection: { anchor: safeFrom, head: safeTo },
             scrollIntoView: true,
+          });
+        },
+        replaceDocument: (value: string) => {
+          const view = cmRef.current?.view;
+          if (!view || view.state.doc.toString() === value) return;
+          const anchor = Math.min(view.state.selection.main.anchor, value.length);
+          view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: value },
+            selection: { anchor },
           });
         },
         focus: () => {

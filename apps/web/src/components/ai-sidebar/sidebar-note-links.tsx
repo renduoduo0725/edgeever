@@ -1,5 +1,6 @@
-import { createMemoLinkHref, parseMemoLinkHref } from "@edgeever/shared";
+import { createMemoLinkHref } from "@edgeever/shared";
 import type { ComponentProps, ReactNode } from "react";
+import { parseAssistantNoteLinkHref } from "@/lib/assistant-note-links";
 
 const CODE_REGION = /(```[\s\S]*?```|```[\s\S]*$|`[^`\n]*`)/g;
 const MARKDOWN_LINK = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
@@ -18,9 +19,14 @@ const escapeAttr = (value: string) => escapeText(value).replace(/"/g, "&quot;");
  */
 export function rewriteSidebarNoteLinks(markdown: string): string {
   return markdown.split(CODE_REGION).map((part, index) => {
-    if (index % 2 === 1) return part;
+    if (index % 2 === 1) {
+      // Local agents sometimes report a new note only as an inline-code ID.
+      // Turn that exact ID into the same workspace link as a Markdown citation.
+      const memoId = /^`(memo_[0-9a-f]{32})`$/i.exec(part)?.[1];
+      return memoId ? `<edgeever-note data-memo-id="${memoId}">${memoId}</edgeever-note>` : part;
+    }
     return part.replace(MARKDOWN_LINK, (match, label: string, href: string) => {
-      const memoId = parseMemoLinkHref(href);
+      const memoId = parseAssistantNoteLinkHref(href);
       if (!memoId) return match;
       return `<edgeever-note data-memo-id="${escapeAttr(memoId)}">${escapeAttr(label)}</edgeever-note>`;
     });
@@ -67,9 +73,9 @@ export function memoIdFromSidebarLinkEvent(event: {
   if (!(target instanceof Element)) return "";
   const link = target.closest("a");
   if (!(link instanceof HTMLAnchorElement)) return "";
-  const linkedId = parseMemoLinkHref(link.getAttribute("href"))
-    ?? parseMemoLinkHref(link.hash)
-    ?? parseMemoLinkHref(link.href);
+  const linkedId = parseAssistantNoteLinkHref(link.getAttribute("href"))
+    ?? parseAssistantNoteLinkHref(link.hash)
+    ?? parseAssistantNoteLinkHref(link.href);
   if (!linkedId) return "";
   event.preventDefault();
   return linkedId;

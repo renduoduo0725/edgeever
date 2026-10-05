@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { api, ApiRequestError } from "@/lib/api";
 import { companionLocale } from "@/lib/companion-locale";
 import { CompanionActionCard } from "./CompanionActionCard";
+import { CompanionCreatedNoteLinks } from "./CompanionCreatedNoteLinks";
 import { CompanionNoteText } from "./CompanionNoteText";
 import { CompanionQuestionForm } from "./CompanionQuestionForm";
 import { CompanionRunTimeline } from "./CompanionRunTimeline";
@@ -323,6 +324,7 @@ export function CompanionChat({
           onNotesChanged={onNotesChanged}
         />
         {turn.response ? <CompanionNoteText text={turn.response} sources={turn.sources} onOpenNote={onOpenNote} /> : null}
+        <CompanionCreatedNoteLinks response={turn.response} tools={turn.tools ?? []} onOpenNote={onOpenNote} />
         {turn.status === "interrupted" && turn.questions?.length && !running ? (
           <CompanionQuestionForm questions={turn.questions} busy={busy} onSubmit={answers => resume(turn, answers)} />
         ) : null}

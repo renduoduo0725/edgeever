@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from "node:url";
+import { build as buildStandaloneScript } from "esbuild";
 import { defineConfig } from "vite";
 import extensionPackage from "./package.json";
 import { buildExtensionManifest, type ExtensionTarget } from "./manifest";
@@ -12,11 +13,29 @@ export default defineConfig({
   plugins: [
     {
       name: "edgeever-extension-manifest",
-      generateBundle() {
+      async generateBundle() {
         this.emitFile({
           type: "asset",
           fileName: "manifest.json",
           source: `${JSON.stringify(buildExtensionManifest(target, extensionPackage.version), null, 2)}\n`,
+        });
+
+        // chrome.scripting.executeScript({ files }) loads classic scripts, so
+        // capture must not inherit Vite's shared ESM chunks.
+        const capture = await buildStandaloneScript({
+          entryPoints: [fileURLToPath(new URL("./src/capture.ts", import.meta.url))],
+          outfile: "capture.js",
+          bundle: true,
+          format: "iife",
+          platform: "browser",
+          target: "es2022",
+          minify: true,
+          write: false,
+        });
+        this.emitFile({
+          type: "asset",
+          fileName: "assets/capture.js",
+          source: capture.outputFiles[0].contents,
         });
       },
     },
@@ -30,7 +49,6 @@ export default defineConfig({
         options: fileURLToPath(new URL("./options.html", import.meta.url)),
         "image-save": fileURLToPath(new URL("./image-save.html", import.meta.url)),
         background: fileURLToPath(new URL("./src/background.ts", import.meta.url)),
-        capture: fileURLToPath(new URL("./src/capture.ts", import.meta.url)),
         "capture-image": fileURLToPath(new URL("./src/capture-image.ts", import.meta.url)),
         "capture-tweet": fileURLToPath(new URL("./src/capture-tweet.ts", import.meta.url)),
         "capture-github": fileURLToPath(new URL("./src/capture-github.ts", import.meta.url)),

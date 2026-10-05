@@ -705,6 +705,7 @@ describe("ACP stdio session", () => {
       const report = await readReport(reportPath);
       expect(report.prompt[0]).toEqual({ type: "text", text: "分析资金往来" });
       expect(report.prompt[1].text).toContain("edgeever-current-workspace");
+      expect(report.prompt[1].text).toContain("[note title](#memo=exact_memo_id_from_tool_result)");
       expect(report.prompt[2]).toEqual({ type: "text", text: "Current note and earlier turns" });
       expect(report.newSession.mcpServers[0].name).toBe("edgeever-current-workspace");
     } finally {

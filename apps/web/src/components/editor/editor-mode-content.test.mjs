@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { docToMarkdown, markdownToDoc } from "@edgeever/shared";
 import {
+  analyzeMarkdownModeContent,
   createMarkdownModeSnapshot,
+  docToEditableMarkdown,
   isMarkdownSourceUnchanged,
   resolveMarkdownModeContent,
   selectMarkdownSourceForDocument,
@@ -39,6 +41,36 @@ const tableTaskListDocument = {
 };
 
 describe("Markdown editor mode content preservation", () => {
+  test("shows literal brackets and ampersands when they remain plain text", () => {
+    const content = markdownToDoc("Alpha [ ] & Bravo");
+
+    expect(docToMarkdown(content)).toBe("Alpha \\[ \\] &amp; Bravo");
+    expect(docToEditableMarkdown(content)).toBe("Alpha [ ] & Bravo");
+    expect(markdownToDoc(docToEditableMarkdown(content))).toEqual(content);
+  });
+
+  test("keeps escapes when removing them would create a link or change literal entities", () => {
+    const content = markdownToDoc("Literal \\[link\\](https://example.com) and &amp;amp;");
+    const canonical = docToMarkdown(content);
+
+    expect(docToEditableMarkdown(content)).toBe(canonical);
+  });
+
+  test("retains the stored source of an older note until its rich content changes", () => {
+    const storedSource = "Alpha \\[ \\] &amp; Bravo";
+    const content = markdownToDoc(storedSource);
+    const snapshot = createMarkdownModeSnapshot("memo-1", content, storedSource);
+    const changedContent = markdownToDoc("Alpha [ ] & Bravo updated");
+
+    expect(selectMarkdownSourceForDocument(snapshot, "memo-1", content, docToEditableMarkdown(content))).toBe(storedSource);
+    expect(selectMarkdownSourceForDocument(
+      snapshot,
+      "memo-1",
+      changedContent,
+      docToEditableMarkdown(changedContent),
+    )).toBe("Alpha [ ] & Bravo updated");
+  });
+
   test("preserves rich-only table task lists when source was only viewed", () => {
     const snapshot = createMarkdownModeSnapshot("memo-1", tableTaskListDocument);
     const restored = resolveMarkdownModeContent(snapshot, "memo-1", snapshot.markdownSource);
@@ -66,13 +98,31 @@ describe("Markdown editor mode content preservation", () => {
     expect(docToMarkdown(resolved)).toContain("新增段落");
   });
 
-  test("parses a rich table cell only when that cell was actually edited", () => {
+  test("preserves a rich table task item when its source text changes", () => {
     const snapshot = createMarkdownModeSnapshot("memo-1", tableTaskListDocument);
     const changedSource = snapshot.markdownSource.replace("待办", "待办 updated");
-    const resolved = resolveMarkdownModeContent(snapshot, "memo-1", changedSource);
+    const result = analyzeMarkdownModeContent(snapshot, "memo-1", changedSource);
 
-    expect(docToMarkdown(resolved)).toContain("updated");
-    expect(resolved.content[0].content[1].content[0].content[0].type).toBe("paragraph");
+    expect(result.hasUnsafeRichTableEdit).toBe(false);
+    expect(docToMarkdown(result.contentJson)).toContain("updated");
+    expect(result.contentJson.content[0].content[1].content[0].content[0].type).toBe("taskList");
+    expect(result.contentJson.content[0].content[1].content[0].content[0].content[0].attrs.checked).toBe(false);
+  });
+
+  test("updates a rich table task item when its Markdown checkbox is toggled", () => {
+    const snapshot = createMarkdownModeSnapshot("memo-1", tableTaskListDocument);
+    const changedSource = snapshot.markdownSource.replace("- [ ] 待办", "- [x] 待办");
+    const result = analyzeMarkdownModeContent(snapshot, "memo-1", changedSource);
+
+    expect(result.hasUnsafeRichTableEdit).toBe(false);
+    expect(result.contentJson.content[0].content[1].content[0].content[0].content[0].attrs.checked).toBe(true);
+  });
+
+  test("flags table shape changes rather than silently discarding a rich cell", () => {
+    const snapshot = createMarkdownModeSnapshot("memo-1", tableTaskListDocument);
+    const changedSource = snapshot.markdownSource.replace("| - [ ] 待办 |", "");
+
+    expect(analyzeMarkdownModeContent(snapshot, "memo-1", changedSource).hasUnsafeRichTableEdit).toBe(true);
   });
 
   test("never reuses a snapshot belonging to another memo", () => {

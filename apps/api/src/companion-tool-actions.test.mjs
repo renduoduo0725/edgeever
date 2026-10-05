@@ -198,6 +198,7 @@ describe("shared companion MCP adapter", () => {
       notebookId: "ideas",
       title: "RAG 原理思维导图",
       kind: "mind-map",
+      theme: "mint",
       nodes: [
         { id: "root", label: "RAG" },
         { id: "retrieve", label: "检索", parentId: "root" },
@@ -208,7 +209,7 @@ describe("shared companion MCP adapter", () => {
     expect(created.id).toBeTruthy();
     expect(JSON.stringify(created)).not.toContain("edgeever-diagram-v1");
     const memo = await getMemoDetail(f.db, scope.workspaceId, created.id);
-    expect(parseDiagramDocument(memo.contentMarkdown)).toMatchObject({ kind: "mind-map" });
+    expect(parseDiagramDocument(memo.contentMarkdown)).toMatchObject({ kind: "mind-map", theme: "plain" });
     expect(memo.contentMarkdown).not.toContain("## RAG");
     expect(sources.map(source => source.id)).toContain(created.id);
     const diagramMemo = await tools.get_memo.execute({ memoId: created.id });

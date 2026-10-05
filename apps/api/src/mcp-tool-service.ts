@@ -4,6 +4,7 @@ import {
   TemplateCreateSchema,
   TemplateUpdateSchema,
   compileInfographicNote,
+  DIAGRAM_DEFAULT_THEME,
   docToText,
   hasInfographicDocumentMarker,
   INFOGRAPHIC_SCHEMA_VERSION,
@@ -484,7 +485,11 @@ export const callMcpTool = async (
       const notebookId = getRequiredString(args.notebookId, "notebookId");
       const ir = parseDiagramMemoIr(args);
       const { compileDiagramIr } = await import("@edgeever/shared/diagram-layout");
-      const document = compileDiagramIr(ir);
+      // Generated mind maps and flowcharts start with the editor's default
+      // theme even when an agent supplies an arbitrary color scheme.
+      const document = compileDiagramIr(ir.kind === "mind-map" || ir.kind === "flowchart"
+        ? { ...ir, theme: DIAGRAM_DEFAULT_THEME }
+        : ir);
       const contentMarkdown = serializeDiagramDocument(document);
       if (!parseDiagramDocument(contentMarkdown)) {
         throw new AppError("invalid_params", "The diagram graph could not be compiled", 400);

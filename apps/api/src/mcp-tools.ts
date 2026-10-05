@@ -330,7 +330,7 @@ const MCP_TOOL_DEFINITIONS = [
   {
     name: "create_diagram_memo",
     description:
-      "Create an editable visual diagram memo from a semantic graph; EdgeEver generates node sizes, coordinates, edge IDs, and a deterministic layout. For mind maps, omit node type and use parentId for hierarchy. Flowchart node types are process, decision, start, or end. Architecture node types are client, frontend, service, database, storage, queue, security, external, or boundary; boundary nodes may contain nodes through parentId but cannot be edge endpoints.",
+      "Create an editable visual diagram memo from a semantic graph; EdgeEver generates node sizes, coordinates, edge IDs, and a deterministic layout. Mind maps and flowcharts always start with the default plain theme; any supplied theme is ignored for those kinds. For mind maps, omit node type and use parentId for hierarchy. Flowchart node types are process, decision, start, or end. Architecture node types are client, frontend, service, database, storage, queue, security, external, or boundary; boundary nodes contain components through those components' parentId and cannot be edge endpoints. Give every architecture boundary at least one contained component, or omit the boundary rather than creating an empty section.",
     inputSchema: {
       type: "object",
       required: ["notebookId", "kind", "nodes"],
@@ -339,7 +339,7 @@ const MCP_TOOL_DEFINITIONS = [
         notebookId: { type: "string", minLength: 1 },
         title: { type: "string", maxLength: 160 },
         kind: { type: "string", enum: ["mind-map", "flowchart", "architecture"] },
-        theme: { type: "string", enum: ["plain", "brand", "sun", "wa", "island", "rose", "mint", "cosmos", "tea", "naive", "macaron", "ocean", "ink", "classic", "paper"] },
+        theme: { type: "string", description: "Color scheme for architecture diagrams. Mind maps and flowcharts always start with the default plain theme.", enum: ["plain", "brand", "sun", "wa", "island", "rose", "mint", "cosmos", "tea", "naive", "macaron", "ocean", "ink", "classic", "paper"] },
         structure: { type: "string", enum: ["map", "line", "capsule", "box", "circle", "ellipse", "hexagon", "logic", "tree", "brace", "org", "timeline", "fishbone"] },
         layout: {
           type: "object",

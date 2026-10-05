@@ -35,4 +35,25 @@ describe("sidebar note links", () => {
     expect(rewritten).toContain("a&lt;b &quot;c&quot;");
     expect(rewritten).not.toContain("<b");
   });
+
+  test("turns a local agent's inline-code note ID into a workspace link", () => {
+    const id = "memo_b99f11cbeae74e558df1a1ce96ab8381";
+    const markdown = `已新建思维导图笔记（ID：\`${id}\`）。\n\n\`普通代码\`\n\n\`\`\`\n${id}\n\`\`\``;
+    const rewritten = rewriteSidebarNoteLinks(markdown);
+    expect(rewritten).toContain(`<edgeever-note data-memo-id="${id}">${id}</edgeever-note>`);
+    expect(rewritten).toContain("`普通代码`");
+    expect(rewritten).toContain(`\`\`\`\n${id}\n\`\`\``);
+    expect(render(markdown)).toContain(`href="#memo=${id}"`);
+  });
+
+  test("opens an agent's EdgeEver URL inside the current workspace", () => {
+    const id = "memo_328cb20d4b4040edb3ecb24638abc2d5";
+    const markdown = `已创建 [大模型蒸馏流程图](https://edgeever.ai/memo/${id})。`;
+    const rewritten = rewriteSidebarNoteLinks(markdown);
+    expect(rewritten).toContain(`<edgeever-note data-memo-id="${id}">大模型蒸馏流程图</edgeever-note>`);
+    const markup = render(markdown);
+    expect(markup).toContain(`href="#memo=${id}"`);
+    expect(markup).not.toContain("Open external link");
+    expect(markup).not.toContain("https://edgeever.ai/memo/");
+  });
 });

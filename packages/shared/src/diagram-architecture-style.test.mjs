@@ -7,6 +7,9 @@ import {
   ARCHITECTURE_EDGE_LABEL_LINE_HEIGHT,
   ARCHITECTURE_SURFACES,
   architectureEdgePorts,
+  architectureEdgeRouter,
+  architectureEdgeTerminals,
+  architectureTerminalAnchor,
   architectureEdgeVisual,
   architectureIconElements,
   architectureMermaidClassDefs,
@@ -40,6 +43,46 @@ describe("architecture semantic paint", () => {
     const lowerLeft = { x: 194, y: 711, width: 170, height: 64 };
     const upperRight = { x: 446, y: 658, width: 170, height: 68 };
     expect(architectureEdgePorts(lowerLeft, upperRight)).toEqual({ source: "right", target: "left" });
+  });
+
+  test("exits leftward connections from the side facing their target", () => {
+    const source = { x: 520, y: 340, width: 156, height: 64 };
+    const target = { x: 240, y: 700, width: 156, height: 64 };
+    expect(architectureEdgePorts(source, target)).toEqual({ source: "left", target: "right" });
+  });
+
+  test("approaches a nearby column from below when the target is far above", () => {
+    const source = { x: 68, y: 1264, width: 156, height: 60 };
+    const target = { x: 246, y: 908, width: 156, height: 64 };
+    expect(architectureEdgePorts(source, target)).toEqual({ source: "right", target: "bottom" });
+  });
+
+  test("keeps architecture endpoints and group containers out of obstacle routing", () => {
+    const router = architectureEdgeRouter("from", "to", ["group", "group"], { source: "left", target: "right" });
+    expect(router.name).toBe("manhattan");
+    expect(router.args.excludeNodes).toEqual(["from", "to", "group"]);
+    expect(router.args.padding).toBeGreaterThan(0);
+    expect(router.args.startDirections).toEqual(["left"]);
+    expect(router.args.endDirections).toEqual(["right"]);
+  });
+
+  test("fans out connections in opposite-node order on a shared face", () => {
+    const nodes = [
+      { id: "hub", x: 100, y: 100, width: 156, height: 64 },
+      { id: "upper", x: 420, y: 0, width: 156, height: 64 },
+      { id: "middle", x: 420, y: 100, width: 156, height: 64 },
+      { id: "lower", x: 420, y: 200, width: 156, height: 64 },
+    ];
+    const terminals = architectureEdgeTerminals(nodes, [
+      { id: "lower-edge", source: "hub", target: "lower" },
+      { id: "upper-edge", source: "hub", target: "upper" },
+      { id: "middle-edge", source: "hub", target: "middle" },
+    ]);
+    expect(terminals.get("upper-edge")?.source).toEqual({ side: "right", offset: -16 });
+    expect(terminals.get("middle-edge")?.source).toEqual({ side: "right", offset: 0 });
+    expect(terminals.get("lower-edge")?.source).toEqual({ side: "right", offset: 16 });
+    expect(architectureTerminalAnchor(terminals.get("upper-edge").source)).toEqual({ name: "right", args: { dy: -16 } });
+    expect(terminals.get("upper-edge")?.target.offset).toBe(0);
   });
 
   test("keeps every component fill distinct in light and dark", () => {

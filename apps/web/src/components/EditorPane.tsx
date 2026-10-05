@@ -63,6 +63,7 @@ import {
   remapEditorInstanceMemoIdentity,
 } from "./editor/editor-instance-identity";
 import {
+  analyzeMarkdownModeContent,
   isMarkdownSourceUnchanged,
   resolveMarkdownModeContent,
 } from "./editor/editor-mode-content";
@@ -454,6 +455,8 @@ const RichEditorPane = ({
     setSaveState,
   } = useEditorSaveStatus();
   const [storageSaveError, setStorageSaveError] = useState(false);
+  const [richTableEditBlocked, setRichTableEditBlocked] = useState(false);
+  const revertingUnsafeMarkdownRef = useRef(false);
   const [hydratedEditorMemoId, setHydratedEditorMemoId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1346,6 +1349,8 @@ const RichEditorPane = ({
   const {
     clearMarkdownSnapshot,
     handleMarkdownModeChange,
+    handleMarkdownSourceReady,
+    getMarkdownSource,
     hydrateMarkdownSource,
     isMarkdownMode,
     markdownModeSnapshotRef,
@@ -1360,6 +1365,7 @@ const RichEditorPane = ({
     effectiveReadOnly: readOnly || (isMobileViewport && !mobileEditingActive),
     getMemoId: () => memoRef.current?.id,
     hydratingRef,
+    onUnsafeRichTableEdit: setRichTableEditBlocked,
   });
   const useMarkdownSourceEditor = !useMobilePlainTextEditor && isMarkdownMode;
 
@@ -2672,9 +2678,18 @@ const RichEditorPane = ({
   }, []);
 
   const handleMarkdownSourceChange = useCallback((value: string) => {
-    setMarkdownSource(value);
+    if (revertingUnsafeMarkdownRef.current) return;
+    if (!setMarkdownSource(value)) {
+      revertingUnsafeMarkdownRef.current = true;
+      try {
+        markdownSourceEditorRef.current?.replaceDocument(getMarkdownSource());
+      } finally {
+        revertingUnsafeMarkdownRef.current = false;
+      }
+      return;
+    }
     markDirty();
-  }, [markDirty]);
+  }, [getMarkdownSource, markDirty, setMarkdownSource]);
 
   const {
     handleCopyToWeChat,
@@ -2744,6 +2759,14 @@ const RichEditorPane = ({
   const saveMutation = useMutation({
     mutationFn: async () => {
       const currentMemo = memoRef.current;
+      if (useMarkdownSourceEditor && analyzeMarkdownModeContent(
+        markdownModeSnapshotRef.current,
+        currentMemo?.id,
+        markdownSource,
+      ).hasUnsafeRichTableEdit) {
+        setRichTableEditBlocked(true);
+        throw new Error("Rich table cell cannot be safely converted from Markdown");
+      }
       const contentJson = getCurrentContentJson();
       const editSession = editSessionRef.current;
       const writableFields = getWritableEditorMemoFields(
@@ -4202,6 +4225,11 @@ const RichEditorPane = ({
               </>
             ) : useMarkdownSourceEditor ? (
               <div ref={markdownMenuAnchorRef} className="relative min-h-0 flex-1">
+                {richTableEditBlocked ? (
+                  <div role="alert" className="absolute inset-x-3 bottom-3 z-50 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 shadow-sm dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+                    {t("editor.richTableSourceProtection")}
+                  </div>
+                ) : null}
                 <Suspense fallback={<div className="h-full w-full" />}>
                   <MarkdownSourceEditor
                     ref={markdownSourceEditorRef}
@@ -4218,6 +4246,7 @@ const RichEditorPane = ({
                     }}
                     onLinkShortcut={openExternalLinkDialog}
                     onSelectionChange={syncMarkdownAiMenu}
+                    onReady={handleMarkdownSourceReady}
                     className="absolute inset-0 h-full w-full"
                   />
                 </Suspense>

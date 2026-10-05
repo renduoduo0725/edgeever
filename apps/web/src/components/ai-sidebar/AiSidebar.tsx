@@ -81,6 +81,7 @@ import {
 } from "@/lib/selection-ai";
 import { cn } from "@/lib/utils";
 import { CompanionQuestionForm } from "../CompanionQuestionForm";
+import { CompanionCreatedNoteLinks } from "../CompanionCreatedNoteLinks";
 import { AiSidebarMessage } from "./AiSidebarMessage";
 import { AiSidebarLocalProcess } from "./AiSidebarLocalProcess";
 import { BuiltinAgentStatus } from "./BuiltinAgentStatus";
@@ -1596,6 +1597,9 @@ function AiSidebarSession({
                   <AiSidebarMessage isAnimating={turn.status === "running"}>
                     {linkedCompanionText(turn.response, turn)}
                   </AiSidebarMessage>
+                ) : null}
+                {onOpenCompanionNote ? (
+                  <CompanionCreatedNoteLinks response={turn.response} tools={turn.tools ?? []} onOpenNote={onOpenCompanionNote} />
                 ) : null}
                 {turn.status === "interrupted" && turn.questions?.length && !running ? (
                   <CompanionQuestionForm questions={turn.questions} busy={busy || acting} onSubmit={(answers) => resume(turn, answers)} />

@@ -143,6 +143,7 @@ describe("NotebookPane client downloads", () => {
     expect(source).toContain('<BrandIcon path={LINUX_ICON_PATH} className="h-4 w-4"');
     expect(source).toContain("<GooglePlayIcon />");
     expect(source).toContain("<AppStoreIcon />");
+    expect(source).toContain("<ChromeIcon />");
     expect(source).not.toContain('src="/icons/platforms/');
   });
 });

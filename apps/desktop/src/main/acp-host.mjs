@@ -943,7 +943,7 @@ export function createAcpHostRuntime(options = {}) {
         if (mcpBridge) {
           content.blocks.splice(input.adapterId === "codex" ? 1 : 0, 0, {
             type: "text",
-            text: "For EdgeEver note operations in this conversation, use only the session-provided MCP server named edgeever-current-workspace. It is connected to the account currently signed in to EdgeEver. Ignore any EdgeEver MCP server from your persistent configuration, which may target a different instance or account.",
+            text: "For EdgeEver note operations in this conversation, use only the session-provided MCP server named edgeever-current-workspace. It is connected to the account currently signed in to EdgeEver. Ignore any EdgeEver MCP server from your persistent configuration, which may target a different instance or account. When you create a note, include a clickable Markdown link to it in your final answer: [note title](#memo=exact_memo_id_from_tool_result). Do not show the note ID as plain text or use an https://edgeever.ai/memo/ URL; that URL opens an external website instead of the current workspace.",
           });
         }
       } catch (error) {

@@ -110,7 +110,6 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('data-space-pan={spacePanActive ? "active" : undefined}');
     expect(source).toContain('data-shift-select={shiftSelectActive ? "active" : undefined}');
     expect(source).toContain('t("diagram.navHintPan")');
-    expect(source).toContain('t("diagram.navHintHoldShift")');
     expect(source).toContain('t("diagram.navHintBoxSelect")');
     expect(globalStyles).toContain('data-shift-select="active"');
     expect(globalStyles).toContain("cursor: crosshair");

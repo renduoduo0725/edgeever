@@ -8,9 +8,24 @@ export type MarkdownModeSnapshot = {
   memoId: string;
   contentJson: TiptapDoc;
   markdownSource: string;
+  hasRichOnlyTableCells: boolean;
 };
 
 const normalizeMarkdownSource = (value: string) => value.replace(/\r\n?/g, "\n");
+
+/** Keep harmless punctuation readable in the source editor without changing the shared export codec. */
+export const docToEditableMarkdown = (contentJson: TiptapDoc): string => {
+  const serialized = docToMarkdown(contentJson);
+  const readable = serialized
+    .replaceAll("\\[", "[")
+    .replaceAll("\\]", "]")
+    .replaceAll("&amp;", "&");
+
+  return readable !== serialized
+    && JSON.stringify(markdownToDoc(readable)) === JSON.stringify(markdownToDoc(serialized))
+    ? readable
+    : serialized;
+};
 
 const cloneContentJson = (contentJson: TiptapDoc): TiptapDoc =>
   JSON.parse(JSON.stringify(contentJson)) as TiptapDoc;
@@ -23,12 +38,6 @@ type ContentNode = {
 
 const isTableCell = (node: ContentNode) =>
   node.type === "tableCell" || node.type === "tableHeader";
-
-const hasBlockContent = (node: ContentNode) => isTableCell(node) && (
-  !Array.isArray(node.content)
-  || node.content.length !== 1
-  || node.content[0]?.type !== "paragraph"
-);
 
 const collectTables = (value: unknown): ContentNode[] => {
   const tables: ContentNode[] = [];
@@ -61,21 +70,128 @@ const collectCells = (table: ContentNode): ContentNode[] => {
 const nodesEqual = (left: ContentNode, right: ContentNode) =>
   JSON.stringify(left) === JSON.stringify(right);
 
+const hasRichOnlyTableCells = (original: TiptapDoc, projection: TiptapDoc): boolean => {
+  const originalTables = collectTables(original);
+  const projectedTables = collectTables(projection);
+  return originalTables.some((table, tableIndex) => {
+    const originalCells = collectCells(table);
+    const projectedCells = collectCells(projectedTables[tableIndex] ?? {});
+    return originalCells.length !== projectedCells.length
+      || originalCells.some((cell, cellIndex) => !nodesEqual(cell, projectedCells[cellIndex] ?? {}));
+  });
+};
+
+const RICH_CELL_MARKER = "\uE000EDGEEVERRICHCELL\uE001";
+
+const cellText = (cell: ContentNode): string | null => {
+  if (cell.content?.length !== 1 || cell.content[0]?.type !== "paragraph") return null;
+  const inline = cell.content[0].content ?? [];
+  return inline.every((node) => node.type === "text" && typeof node.text === "string")
+    ? inline.map((node) => node.text).join("")
+    : null;
+};
+
+const textNodePaths = (node: ContentNode, path: number[] = []): number[][] => {
+  if (node.type === "text" && typeof node.text === "string") return [path];
+  return node.content?.flatMap((child, index) => textNodePaths(child, [...path, index])) ?? [];
+};
+
+const taskItemPaths = (node: ContentNode, path: number[] = []): number[][] => [
+  ...(node.type === "taskItem" && typeof (node.attrs as { checked?: unknown } | undefined)?.checked === "boolean"
+    ? [path]
+    : []),
+  ...(node.content?.flatMap((child, index) => taskItemPaths(child, [...path, index])) ?? []),
+];
+
+const nodeAtPath = (node: ContentNode, path: number[]): ContentNode | null =>
+  path.reduce<ContentNode | null>((current, index) => current?.content?.[index] ?? null, node);
+
+const projectedCell = (doc: TiptapDoc, tableIndex: number, cellIndex: number): ContentNode | null => {
+  const parsed = markdownToDoc(docToMarkdown(doc));
+  const table = collectTables(parsed)[tableIndex];
+  return table ? collectCells(table)[cellIndex] ?? null : null;
+};
+
+/** Change one rich text leaf only when its Markdown projection exactly matches the edited cell. */
+const restoreEditedRichCell = (
+  original: TiptapDoc,
+  originalCell: ContentNode,
+  originalProjectionCell: ContentNode,
+  editedCell: ContentNode,
+  tableIndex: number,
+  cellIndex: number,
+): ContentNode | null => {
+  const before = cellText(originalProjectionCell);
+  const after = cellText(editedCell);
+  if (before === null || after === null) return null;
+
+  for (const path of textNodePaths(originalCell)) {
+    const marked = cloneContentJson(original);
+    const markedCell = collectCells(collectTables(marked)[tableIndex]!)[cellIndex]!;
+    const markedTextNode = nodeAtPath(markedCell, path);
+    const oldText = markedTextNode?.text;
+    if (typeof oldText !== "string") continue;
+    markedTextNode!.text = RICH_CELL_MARKER;
+    const markedText = cellText(projectedCell(marked, tableIndex, cellIndex) ?? {});
+    const markerAt = markedText?.indexOf(RICH_CELL_MARKER) ?? -1;
+    if (
+      markerAt < 0
+      || markedText!.indexOf(RICH_CELL_MARKER, markerAt + RICH_CELL_MARKER.length) !== -1
+      || markedText!.replace(RICH_CELL_MARKER, oldText) !== before
+    ) continue;
+
+    const prefix = markedText!.slice(0, markerAt);
+    const suffix = markedText!.slice(markerAt + RICH_CELL_MARKER.length);
+    if (!after.startsWith(prefix) || !after.endsWith(suffix)) continue;
+    const replacement = after.slice(prefix.length, after.length - suffix.length);
+    if (!replacement) continue;
+
+    const candidate = cloneContentJson(original);
+    const candidateCell = collectCells(collectTables(candidate)[tableIndex]!)[cellIndex]!;
+    nodeAtPath(candidateCell, path)!.text = replacement;
+    const projection = projectedCell(candidate, tableIndex, cellIndex);
+    if (projection && nodesEqual(projection, editedCell)) return candidateCell;
+  }
+
+  for (const path of taskItemPaths(originalCell)) {
+    const candidate = cloneContentJson(original);
+    const candidateCell = collectCells(collectTables(candidate)[tableIndex]!)[cellIndex]!;
+    const taskItem = nodeAtPath(candidateCell, path);
+    const attrs = taskItem?.attrs as { checked: boolean } | undefined;
+    if (!attrs) continue;
+    attrs.checked = !attrs.checked;
+    const projection = projectedCell(candidate, tableIndex, cellIndex);
+    if (projection && nodesEqual(projection, editedCell)) return candidateCell;
+  }
+
+  return null;
+};
+
+export type MarkdownModeContentResult = {
+  contentJson: TiptapDoc;
+  hasUnsafeRichTableEdit: boolean;
+};
+
 /**
- * Markdown flattens block nodes inside GFM table cells. Rehydrate an original
- * rich cell only when its Markdown projection is still byte-for-byte
- * equivalent to the parsed edited cell. Edits elsewhere in the source can
- * therefore round-trip without damaging the untouched cell.
+ * GFM flattens rich table cells. Restore untouched cells and edits that map to
+ * exactly one rich text leaf or task checkbox; report every other change so
+ * the source editor can reject it before autosave or mode switching.
  */
-const restoreUnchangedRichTableCells = (
+const restoreRichTableCells = (
   original: TiptapDoc,
   originalProjection: TiptapDoc,
   editedProjection: TiptapDoc,
-): TiptapDoc => {
+): MarkdownModeContentResult => {
   const restored = cloneContentJson(editedProjection);
   const originalTables = collectTables(original);
   const projectedTables = collectTables(originalProjection);
   const editedTables = collectTables(restored);
+
+  let hasUnsafeRichTableEdit = false;
+
+  if (originalTables.length !== projectedTables.length || originalTables.length !== editedTables.length) {
+    return { contentJson: restored, hasUnsafeRichTableEdit: hasRichOnlyTableCells(original, originalProjection) };
+  }
 
   originalTables.forEach((originalTable, tableIndex) => {
     const projectedTable = projectedTables[tableIndex];
@@ -88,25 +204,41 @@ const restoreUnchangedRichTableCells = (
     if (
       originalCells.length !== projectedCells.length
       || projectedCells.length !== editedCells.length
-    ) return;
+    ) {
+      if (originalCells.some((cell, index) => !nodesEqual(cell, projectedCells[index] ?? {}))) {
+        hasUnsafeRichTableEdit = true;
+      }
+      return;
+    }
 
     originalCells.forEach((originalCell, cellIndex) => {
-      if (
-        hasBlockContent(originalCell)
-        && nodesEqual(projectedCells[cellIndex]!, editedCells[cellIndex]!)
-      ) {
+      if (!nodesEqual(originalCell, projectedCells[cellIndex]!)) {
+        const replacement = nodesEqual(projectedCells[cellIndex]!, editedCells[cellIndex]!)
+          ? originalCell
+          : restoreEditedRichCell(
+              original,
+              originalCell,
+              projectedCells[cellIndex]!,
+              editedCells[cellIndex]!,
+              tableIndex,
+              cellIndex,
+            );
+        if (!replacement) {
+          hasUnsafeRichTableEdit = true;
+          return;
+        }
         Object.keys(editedCells[cellIndex]!).forEach((key) => {
           delete editedCells[cellIndex]![key];
         });
         Object.assign(
           editedCells[cellIndex]!,
-          JSON.parse(JSON.stringify(originalCell)) as ContentNode,
+          JSON.parse(JSON.stringify(replacement)) as ContentNode,
         );
       }
     });
   });
 
-  return restored;
+  return { contentJson: restored, hasUnsafeRichTableEdit };
 };
 
 /**
@@ -117,11 +249,12 @@ const restoreUnchangedRichTableCells = (
 export const createMarkdownModeSnapshot = (
   memoId: string,
   contentJson: TiptapDoc,
-  markdownSource = docToMarkdown(contentJson),
+  markdownSource = docToEditableMarkdown(contentJson),
 ): MarkdownModeSnapshot => ({
   memoId,
   contentJson: cloneContentJson(contentJson),
   markdownSource,
+  hasRichOnlyTableCells: hasRichOnlyTableCells(contentJson, markdownToDoc(markdownSource)),
 });
 
 export const isMarkdownSourceUnchanged = (
@@ -136,26 +269,36 @@ export const isMarkdownSourceUnchanged = (
 );
 
 /** Resolve the document used by mode switching, drafts, autosave, and recovery. */
-export const resolveMarkdownModeContent = (
+export const analyzeMarkdownModeContent = (
   snapshot: MarkdownModeSnapshot | null,
   memoId: string | null | undefined,
   markdownSource: string,
-): TiptapDoc => {
+): MarkdownModeContentResult => {
   if (isMarkdownSourceUnchanged(snapshot, memoId, markdownSource)) {
-    return snapshot!.contentJson;
+    return { contentJson: snapshot!.contentJson, hasUnsafeRichTableEdit: false };
   }
 
   const editedProjection = markdownToDoc(markdownSource);
   if (!snapshot || !memoId || snapshot.memoId !== memoId) {
-    return editedProjection;
+    return { contentJson: editedProjection, hasUnsafeRichTableEdit: false };
   }
 
-  return restoreUnchangedRichTableCells(
+  if (!snapshot.hasRichOnlyTableCells) {
+    return { contentJson: editedProjection, hasUnsafeRichTableEdit: false };
+  }
+
+  return restoreRichTableCells(
     snapshot.contentJson,
     markdownToDoc(snapshot.markdownSource),
     editedProjection,
   );
 };
+
+export const resolveMarkdownModeContent = (
+  snapshot: MarkdownModeSnapshot | null,
+  memoId: string | null | undefined,
+  markdownSource: string,
+): TiptapDoc => analyzeMarkdownModeContent(snapshot, memoId, markdownSource).contentJson;
 
 /**
  * After autosave the editor hydrates from JSON. Serialization is lossy (extra

@@ -1,7 +1,8 @@
 import type { CompanionSource } from "@edgeever/shared";
-import { createMemoLinkHref, parseMemoLinkHref } from "@edgeever/shared";
+import { createMemoLinkHref } from "@edgeever/shared";
 import { marked } from "marked";
 import { useMemo, type MouseEvent } from "react";
+import { parseAssistantNoteLinkHref } from "@/lib/assistant-note-links";
 
 const NOTE_TOKEN = /\[note:([^\]]+)\]/g;
 
@@ -33,9 +34,9 @@ export function CompanionNoteText({
     if (!(target instanceof Element)) return;
     const link = target.closest("a");
     if (!(link instanceof HTMLAnchorElement)) return;
-    const memoId = parseMemoLinkHref(link.getAttribute("href"))
-      ?? parseMemoLinkHref(link.hash)
-      ?? parseMemoLinkHref(link.href);
+    const memoId = parseAssistantNoteLinkHref(link.getAttribute("href"))
+      ?? parseAssistantNoteLinkHref(link.hash)
+      ?? parseAssistantNoteLinkHref(link.href);
     if (!memoId) return;
     event.preventDefault();
     event.stopPropagation();

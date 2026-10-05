@@ -119,7 +119,7 @@
     },
     "apps/extension": {
       "name": "@edgeever/extension",
-      "version": "0.1.15",
+      "version": "0.1.16",
       "dependencies": {
         "@mixmark-io/domino": "2.2.0",
         "@mozilla/readability": "^0.6.0",

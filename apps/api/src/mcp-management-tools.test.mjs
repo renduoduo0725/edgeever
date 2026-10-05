@@ -105,7 +105,7 @@ describe("MCP template and AI instruction management", () => {
     expect(created.diagram.nodes[0].layout).toBeUndefined();
     const stored = sqlite.query("SELECT content_markdown FROM memo_contents WHERE memo_id = ?").get(created.memo.id);
     const diagram = parseDiagramDocument(stored.content_markdown);
-    expect(diagram).toMatchObject({ kind, theme: "brand" });
+    expect(diagram).toMatchObject({ kind, theme: kind === "architecture" ? "brand" : "plain" });
     expect(diagram.nodes.map((node) => node.id)).toEqual(nodes.map((node) => node.id));
     expect(diagram.nodes.every((node) => Number.isFinite(node.x) && Number.isFinite(node.y))).toBeTrue();
     expect(diagram.nodes.every((node) => node.width > 0 && node.height > 0)).toBeTrue();

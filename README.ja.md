@@ -11,15 +11,16 @@
     <a href="https://github.com/tianma-if/edgeever/pkgs/container/edgeever"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fghcr-badge.elias.eu.org%2Fapi%2Ftianma-if%2Fedgeever%2Fedgeever&query=downloadCount&style=social&logo=docker&label=Docker%20Pulls" alt="Docker Pulls" /></a>
     <a href="https://www.producthunt.com/products/edgeever?utm_source=other&utm_medium=social"><img src="https://img.shields.io/badge/Product%20Hunt-ea532a?style=social&logo=product-hunt" alt="Product Hunt" /></a>
     <a href="https://hellogithub.com/repository/tianma-if/edgeever" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=150fee4403f6433880bda91e9576ac06&claim_uid=TWNAjisURpnhL1l&theme=small" alt="Featured｜HelloGitHub" /></a>
-    <a href="https://afdian.com/a/tianma-if"><img src="https://img.shields.io/badge/Afdian-946ce6?style=social&logo=github-sponsors" alt="Sponsor on Afdian" /></a>
+    <a href="#スポンサーと支援"><img src="https://img.shields.io/badge/Sponsor-EdgeEver-ea4aaa?logo=github-sponsors" alt="スポンサーと支援" /></a>
   </p>
   <p>
     <a href="README.zh-CN.md">简体中文</a> | <a href="README.zh-TW.md">繁體中文</a> | <a href="README.md">English</a> | <b>日本語</b>
   </p>
   <p>
-    <a href="https://t.me/+wwUx1BYLrIdiZjY1">💬 Telegram グループ</a> &nbsp;|&nbsp;
+    <a href="https://t.me/+wwUx1BYLrIdiZjY1"><img src="assets/readme/community/telegram.svg" alt="Telegram" width="16" height="16" align="absmiddle" /> Telegram グループ</a> &nbsp;|&nbsp;
     <a href="https://demo.edgeever.org">🌐 オンラインデモ</a> &nbsp;|&nbsp;
-    <a href="#クライアントのダウンロード">📱 ダウンロード</a>
+    <a href="#クライアントのダウンロード">📱 ダウンロード</a> &nbsp;|&nbsp;
+    <a href="docs/best-practices.md">✨ 活用シーンとショーケース</a>
   </p>
 </div>
 
@@ -84,7 +85,7 @@ EdgeEver は、オープンソースのノートと知識ベースの作業領�
 - **版履歴**：過去の版を見て、戻せます。
 - **公開共有**：ノートを公開し、いつでも止められます。必要なら共有リンクに自動生成のアクセスパスワードを付けられます。
 - **微信公式アカウント記事の取り込み**：スマホから微信公式アカウントの記事を EdgeEver に共有すると、本文を取り出して編集できるノートにします。
-- **微信チャット履歴の取り込み**：macOS 版では、微信でチャット履歴を「他のアプリへ転送 → EdgeEver」するだけで、会話全体を構造化ノートとして一括取り込めます。発言者、タイムライン、引用返信、絵文字を保持し、画像は自動で埋め込まれ、動画やファイルは添付ファイルに変換されます。
+- **微信チャット履歴の取り込み**：macOS 版では、微信でチャット履歴を「他のアプリへ転送 → EdgeEver」するだけで、会話全体を構造化ノートとして一括取り込めます。発言者、タイムライン、引用返信、絵文字を保持し、画像は自動で埋め込まれ、動画やファイルは添付ファイルに変換されます。[ベストプラクティスはこちら](docs/best-practices.md)。
 - **クライアント側の画像圧縮**：アップロード前に WebP 圧縮し、よくある画像で 50%〜90% 小さくします。サーバー追加料金はかかりません。
 - **汎用添付**：PDF、Office、zip、音声、動画をノートに付けてプレビューできます。分割アップロードとストリーミングで最大 1 GiB まで扱えます。
 - **一括操作と並び替え**：複数ノートの結合や移動、ノートブックのドラッグ並べ替え。
@@ -276,6 +277,13 @@ Docker は Cloudflare と同じフロントエンド、API、サービス、認�
 ## 同期のタイミング
 
 Web、PWA、デスクトップは、編集が 30 秒止まったあとでノートをアップロードし、表示中は 5 分ごとに遠隔の変更を見ます。フォーカスと手動更新はすぐです。`DEFERRED_MEMO_SYNC_DELAY_MS` と `BACKGROUND_WORKSPACE_REFRESH_INTERVAL_MS` は [`apps/web/src/lib/workspace-refresh.ts`](apps/web/src/lib/workspace-refresh.ts) で変えられます。
+
+## スポンサーと支援
+
+EdgeEver は無料のオープンソースプロジェクトです。クロスプラットフォームクライアント（macOS、Windows、Linux、iOS、Android）の継続的な開発、実機テスト、コード署名、複数ランタイムのエコシステム維持には、継続的な時間とリソースの投入が必要です。
+
+- [EdgeEver を支援する](docs/sponsor.md) — WeChat Pay または Alipay による自发的な寄付
+- [スポンサーとパートナー](docs/partners.md) — インフラ、開発ツール、サービス、コミュニティ連携の支援
 
 ## 謝辞
 
