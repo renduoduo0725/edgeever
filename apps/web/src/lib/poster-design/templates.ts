@@ -22,6 +22,8 @@ import { TEMPLATES, sourceOf, templatesFor } from "./vendor/qiaomu/templates";
 import { BadgeBox } from "./vendor/qiaomu/badge";
 import { resolvePair, usePairing } from "./vendor/qiaomu/typeset";
 import { POSTER_FONTS, loadDesignFonts } from "./fonts";
+import { matchesImageSlot, type ImageSlot } from "../poster-image-replacement";
+import { composePosterTemplate, posterTemplateHeaderHeight } from "../poster-template-content";
 export { PLATFORMS, platformFor } from "./vendor/qiaomu/platforms";
 export const DESIGN_TEMPLATES = TEMPLATES;
 export { templatesFor };
@@ -223,6 +225,11 @@ export async function buildPosterDesign(input: {
     const elements = built.objects
       .map(posterPrimitiveFromObject)
       .filter((value): value is PosterElement => Boolean(value));
+    const slot = template.slot?.(input);
+    if (slot) {
+      const region = { x: slot.x, y: slot.y, width: slot.w, height: slot.h };
+      for (const element of elements) if (matchesImageSlot(element, region)) element.imagePlaceholder = true;
+    }
     const background =
       built.background.kind === "solid"
         ? built.background.color
@@ -254,4 +261,24 @@ export async function buildPosterDesign(input: {
   } finally {
     usePairing(undefined);
   }
+}
+
+export async function applyPosterDesign(document: PosterDocument, templateId: string, zh: boolean, width = document.width, height = document.height) {
+  if (!TEMPLATES.some(template => template.id === templateId)) throw new Error("Unknown poster template");
+  if (document.elements.some(element => element.locked)) throw new Error("Locked poster elements");
+  const headerHeight = posterTemplateHeaderHeight(document, height);
+  const cover = await buildPosterDesign({ id: templateId, ...posterCopy(document), width, height: Math.max(320, headerHeight), zh });
+  return composePosterTemplate(document, cover, width, height, headerHeight);
+}
+
+// Legacy saved templates did not persist a placeholder marker. Derive only the
+// template's declared image slot, with the same header transform as its artwork.
+export function posterImageSlot(document: PosterDocument): ImageSlot | undefined {
+  const template = TEMPLATES.find(entry => entry.id === document.templateId);
+  if (!template?.slot) return;
+  const header = posterTemplateHeaderHeight(document, document.height);
+  const buildHeight = Math.max(320, header);
+  const slot = template.slot({ ...posterCopy(document), width: document.width, height: buildHeight, zh: true });
+  if (!slot) return;
+  return { x: slot.x, y: slot.y * header / buildHeight, width: slot.w, height: slot.h * header / buildHeight };
 }

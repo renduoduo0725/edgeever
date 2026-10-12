@@ -59,6 +59,7 @@ const geometry = {
   name: z.string().max(120),
   role: z.enum(["title", "subtitle", "badge", "decor"]).optional(),
   visible: z.boolean().optional(),
+  imagePlaceholder: z.boolean().optional(),
   flipX: z.boolean().optional(),
   flipY: z.boolean().optional(),
   stroke: strokeColor.optional(),

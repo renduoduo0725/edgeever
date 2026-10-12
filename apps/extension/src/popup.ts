@@ -7,7 +7,10 @@ localizeDocument();
 const saveButton = document.querySelector<HTMLButtonElement>("#save");
 const settingsButton = document.querySelector<HTMLButtonElement>("#settings");
 const status = document.querySelector<HTMLParagraphElement>("#status");
+const captureMode = document.querySelector<HTMLElement>("#capture-mode");
+const captureContext = document.querySelector<HTMLElement>("#capture-context");
 let settings: ExtensionSettings | null = null;
+let pageUnavailable = false;
 
 const setStatus = (message: string, kind: "normal" | "error" | "success" = "normal") => {
   if (status) {
@@ -17,9 +20,24 @@ const setStatus = (message: string, kind: "normal" | "error" | "success" = "norm
 };
 
 if (saveButton) saveButton.disabled = true;
+void chrome.runtime.sendMessage({ type:"getCurrentPageCaptureMode" }).then((mode: { kind?: string; platform?: string } | undefined) => {
+  pageUnavailable = mode?.kind === 'unavailable';
+  if (pageUnavailable && saveButton) saveButton.disabled=true;
+  if (captureContext) captureContext.dataset.kind=mode?.platform ? 'adapted' : 'generic';
+  if (!captureMode) return;
+  captureMode.textContent = !mode || mode.kind === 'unknown' ? t('pageCaptureUnknown')
+    : mode.kind === 'unavailable' ? t('pageCaptureUnavailable')
+    : mode?.kind === 'social-feed' ? t('pageCaptureSelectPost')
+    : mode?.platform ? t('pageCaptureAdapted',mode.platform) : t('pageCaptureGeneric');
+  if (captureContext && mode?.platform) {
+    captureContext.setAttribute('aria-label', `${mode.platform} · ${captureMode.textContent}`);
+  }
+}).catch(() => {
+  if (captureMode) captureMode.textContent=t('pageCaptureUnknown');
+});
 void getSettings().then((loadedSettings) => {
   settings = loadedSettings;
-  if (saveButton) saveButton.disabled = false;
+  if (saveButton) saveButton.disabled = pageUnavailable;
 }).catch((error: unknown) => {
   setStatus(error instanceof Error ? error.message : t("saveFailed"), "error");
 });
@@ -44,7 +62,7 @@ saveButton?.addEventListener("click", async () => {
   } catch (error) {
     setStatus(error instanceof Error ? error.message : t("saveFailed"), "error");
   } finally {
-    saveButton.disabled = false;
+    saveButton.disabled = pageUnavailable;
   }
 });
 

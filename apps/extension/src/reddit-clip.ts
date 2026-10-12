@@ -1,3 +1,4 @@
+import { clipDateTimeText } from "./clip-time";
 import type { ImageNoteClient } from "./image-clip";
 
 export type RedditPost = {
@@ -130,8 +131,8 @@ export const redditPostMarkdown = (post: RedditPost, input: {
     return `![${label(image.alt || post.title)}](${destination(url)})`;
   }).join("\n\n"));
   parts.push(`${input.sourceLabel}: [${label(post.url)}](${destination(post.url)})`);
-  if (post.datetime) parts.push(`${input.timeLabel}: ${post.datetime}`);
-  parts.push(`${input.capturedAtLabel}: ${input.capturedAt}`);
+  if (post.datetime) parts.push(`${input.timeLabel}: ${clipDateTimeText(post.datetime)}`);
+  parts.push(`${input.capturedAtLabel}: ${clipDateTimeText(input.capturedAt)}`);
   return parts.join("\n\n");
 };
 

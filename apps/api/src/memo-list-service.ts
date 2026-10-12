@@ -18,6 +18,7 @@ export type MemoSummaryRow = {
   title: string | null;
   excerpt: string;
   content_text?: string | null;
+  is_poster?: number;
   content_markdown?: string | null;
   tags_json: string;
   is_pinned: number;
@@ -75,6 +76,7 @@ export const mapMemoSummary = (row: MemoSummaryRow): MemoSummary => ({
   ...getDiagramSummary(row.content_markdown),
   ...getInfographicSummary(row.content_markdown),
   ...getPosterSummary(row.content_markdown),
+  ...(row.is_poster !== undefined ? { poster: Boolean(row.is_poster) } : {}),
   ...getTableSummary(row.content_markdown),
   tags: parseJsonArray(row.tags_json),
   isPinned: Boolean(row.is_pinned),

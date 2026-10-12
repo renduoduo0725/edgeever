@@ -1,5 +1,9 @@
+import { articlePlatform } from "./article-platform";
+import { platformHtmlMarkdown } from "./platform-clip";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
+import { mediumContent } from "./medium-content";
+import { substackContent } from "./substack-content";
 
 // This file is injected with chrome.scripting.executeScript({ files }). It
 // must remain self-contained because injected files are not loaded as ES
@@ -82,8 +86,19 @@ const textFallback = () => {
   return text ? text.replace(/([\\`*_{}[\]()#+.!|])/g, "\\$1") : t("emptyPageContent");
 };
 
-const capturePage = (): CapturedPage => {
+let readingAdaptedArticle = false;
+type CaptureReply = CapturedPage | { error: "unreadable" };
+
+const capturePage = (): CaptureReply => {
   const selectionHtml = getSelectionHtml();
+  const platform = !selectionHtml ? articlePlatform(document,location.href) : null;
+  if (platform) {
+    readingAdaptedArticle = true;
+    const adapted = platform === "Medium" ? mediumContent(document,location.href) : substackContent(document,location.href);
+    const markdown = adapted ? normalizeMarkdown(platformHtmlMarkdown(adapted.body,location.href)) : "";
+    if (!adapted || !markdown) return {error:"unreadable"};
+    return {title:adapted.title,url:location.href,markdown,kind:"page"};
+  }
   let article: ReturnType<Readability["parse"]> = null;
   let sourceHtml = selectionHtml;
 
@@ -105,7 +120,7 @@ const capturePage = (): CapturedPage => {
   };
 };
 
-const sendCapturedPage = (page: CapturedPage) => {
+const sendCapturedPage = (page: CaptureReply) => {
   void chrome.runtime.sendMessage({ type: "capturedPage", page });
 };
 
@@ -116,7 +131,7 @@ try {
   // unusual DOM implementation. The background page will show its timeout
   // message, while ordinary pages still use the normal extraction path.
   // A selection save must not fall back to the whole page.
-  sendCapturedPage(selectionOnly ? {
+  sendCapturedPage(readingAdaptedArticle ? {error:"unreadable"} : selectionOnly ? {
     title: document.title.trim() || location.hostname,
     url: location.href,
     markdown: "",

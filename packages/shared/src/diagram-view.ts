@@ -114,14 +114,14 @@ export const diagramDocumentToX6Cells = (
       ...(architectureVisual ? { markup: architectureVisual.markup } : mindMapRole ? { markup: mindMapTopicMarkup(document.structure, mindMapRole) } : {}),
       attrs: {
         body: {
-          fill,
-          stroke,
-          strokeWidth: mindVisual?.body.strokeWidth ?? flowchartVisual?.body.strokeWidth ?? architectureVisual?.body.strokeWidth ?? 1,
           strokeDasharray: architectureVisual?.body.strokeDasharray ?? (isBoundary ? "7 5" : undefined),
           ...(mindVisual?.body ?? flowchartVisual?.body ?? architectureVisual?.body ?? {
             rx: isTerminator ? 24 : 11,
             ry: isTerminator ? 24 : 11,
           }),
+          fill,
+          stroke,
+          strokeWidth: mindVisual?.body.strokeWidth ?? flowchartVisual?.body.strokeWidth ?? architectureVisual?.body.strokeWidth ?? 1,
           ...(node.shape === "decision" ? { refPoints: "0,10 10,0 20,10 10,20" } : {}),
         },
         label: {
@@ -226,6 +226,7 @@ export const diagramDocumentToX6Cells = (
         }
         : { name: "rounded", args: { radius: 10 } },
       attrs: { line: {
+        ...(mindEdge ? mindMapEdgeLineAttrs(document.structure, stroke) : { fill: "none" }),
         stroke,
         strokeWidth: architectureEdge?.strokeWidth ?? (mindEdge ? mindMapEdgeLineAttrs(document.structure, stroke).strokeWidth : 1.5),
         strokeDasharray: architectureEdge?.strokeDasharray,
@@ -233,7 +234,6 @@ export const diagramDocumentToX6Cells = (
           ? architectureEdge.sourceMarker
           : edge.bidirectional ? { name: "block", width: 7, height: 5 } : null,
         targetMarker: document.kind === "mind-map" ? null : architectureEdge?.targetMarker ?? { name: "block", width: 7, height: 5 },
-        ...(mindEdge ? mindMapEdgeLineAttrs(document.structure, stroke) : { fill: "none" }),
       } },
       labels: edge.label ? [{ attrs: {
         label: {

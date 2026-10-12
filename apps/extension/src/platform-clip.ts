@@ -1,6 +1,8 @@
+import { clipDateTimeText } from "./clip-time";
+export { clipDateTimeText } from "./clip-time";
 import TurndownService from "turndown";
 
-export type ClipPlatform = "hacker-news";
+export type ClipPlatform = "hacker-news" | "v2ex" | "xiaoyuzhou" | "facebook" | "instagram" | "linkedin" | "threads" | "bluesky" | "substack-note";
 export type PlatformTarget = { platform: ClipPlatform; id: string; url: string };
 export type PublishedTime = { value: string; precision: "datetime" | "date" | "relative" };
 export type PlatformClip = PlatformTarget & {
@@ -9,19 +11,31 @@ export type PlatformClip = PlatformTarget & {
   author?: string;
   publishedAt?: PublishedTime;
   tags: string[];
-  completeness: "complete";
+  completeness: "complete" | "no-shownotes";
 };
 export type PlatformRead = { ok: true; clip: PlatformClip } | {
   ok: false;
-  reason: "not-target" | "unreadable" | "changed";
+  reason: "not-target" | "unreadable" | "changed" | "incomplete";
 };
 export type PlatformLabels = {
   score: string;
   externalLink: string;
+  supplement: string;
+  podcast: string;
+  noShowNotes: string;
+  relativeTime: string;
 };
 
 export const PLATFORM_MENUS = [
   { id: "save-hacker-news", title: "saveHackerNewsToEdgeEver", patterns: ["https://news.ycombinator.com/item?*"] },
+  { id: "save-v2ex", title: "saveV2exToEdgeEver", patterns: ["https://www.v2ex.com/t/*", "https://v2ex.com/t/*"] },
+  { id: "save-xiaoyuzhou", title: "saveXiaoyuzhouToEdgeEver", patterns: ["https://www.xiaoyuzhoufm.com/episode/*"] },
+  { id: "save-facebook", title: "saveFacebookToEdgeEver", patterns: ["https://www.facebook.com/*", "https://facebook.com/*", "https://m.facebook.com/*"] },
+  { id: "save-instagram", title: "saveInstagramToEdgeEver", patterns: ["https://www.instagram.com/*", "https://instagram.com/*"] },
+  { id: "save-linkedin", title: "saveLinkedinToEdgeEver", patterns: ["https://www.linkedin.com/*", "https://linkedin.com/*"] },
+  { id: "save-threads", title: "saveThreadsToEdgeEver", patterns: ["https://www.threads.com/*", "https://threads.com/*", "https://www.threads.net/*", "https://threads.net/*"] },
+  { id: "save-bluesky", title: "saveBlueskyToEdgeEver", patterns: ["https://bsky.app/*"] },
+  { id: "save-substack-note", title: "saveSubstackNoteToEdgeEver", patterns: ["https://substack.com/@*/note/*", "https://www.substack.com/@*/note/*"] },
 ] as const;
 
 export const platformTarget = (pageUrl: string): PlatformTarget | null => {
@@ -33,6 +47,59 @@ export const platformTarget = (pageUrl: string): PlatformTarget | null => {
     if (ids.length !== 1 || !/^[1-9]\d*$/.test(ids[0])) return null;
     return { platform: "hacker-news", id: ids[0], url: `https://news.ycombinator.com/item?id=${ids[0]}` };
   }
+  if (url.hostname === "v2ex.com" || url.hostname === "www.v2ex.com") {
+    const id = /^\/t\/([1-9]\d*)\/?$/.exec(url.pathname)?.[1];
+    return id ? { platform: "v2ex", id, url: `https://www.v2ex.com/t/${id}` } : null;
+  }
+  if (url.hostname === "www.xiaoyuzhoufm.com") {
+    const id = /^\/episode\/([a-f0-9]{24})\/?$/.exec(url.pathname)?.[1];
+    return id ? { platform: "xiaoyuzhou", id, url: `https://www.xiaoyuzhoufm.com/episode/${id}` } : null;
+  }
+  if (url.hostname === "substack.com" || url.hostname === "www.substack.com") {
+    const match = /^\/@([a-zA-Z0-9_-]+)\/note\/(c-[1-9]\d*)\/?$/.exec(url.pathname);
+    if (match) return { platform: "substack-note", id: `${match[1].toLowerCase()}/${match[2]}`, url: `https://substack.com/@${match[1].toLowerCase()}/note/${match[2]}` };
+  }
+  if (url.hostname === "bsky.app") {
+    const match = /^\/profile\/([a-zA-Z0-9.:%-]+)\/post\/([a-z2-7]{13})\/?$/.exec(url.pathname);
+    if (match) return { platform: "bluesky", id: `${match[1]}/${match[2]}`, url: `https://bsky.app/profile/${match[1]}/post/${match[2]}` };
+  }
+  if (["threads.com", "www.threads.com", "threads.net", "www.threads.net"].includes(url.hostname)) {
+    const match = /^\/@([a-zA-Z0-9._]+)\/post\/([a-zA-Z0-9_-]+)\/?$/.exec(url.pathname);
+    if (match) return { platform: "threads", id: `${match[1].toLowerCase()}/${match[2]}`, url: `https://www.threads.com/@${match[1].toLowerCase()}/post/${match[2]}` };
+  }
+  if (["instagram.com", "www.instagram.com"].includes(url.hostname)) {
+    const code = /^\/(?:[a-zA-Z0-9._]+\/)?(?:p|reel)\/([a-zA-Z0-9_-]+)\/?$/.exec(url.pathname)?.[1];
+    if (code) return { platform: "instagram", id: code, url: `https://www.instagram.com/p/${code}/` };
+  }
+  if (["facebook.com", "www.facebook.com", "m.facebook.com"].includes(url.hostname)) {
+    const match = /^\/([a-zA-Z0-9.]+)\/posts\/(?:[a-zA-Z0-9_-]+\/)?([1-9]\d*|pfbid[a-zA-Z0-9]+)\/?$/.exec(url.pathname);
+    if (match) return { platform: "facebook", id: match[2], url: `https://www.facebook.com/${match[1]}/posts/${match[2]}` };
+    if (["/permalink.php", "/story.php"].includes(url.pathname)) {
+      const id = url.searchParams.get("story_fbid"), owner = url.searchParams.get("id");
+      if (url.searchParams.getAll("story_fbid").length === 1 && url.searchParams.getAll("id").length === 1
+        && id && owner && /^(?:[1-9]\d*|pfbid[a-zA-Z0-9]+)$/.test(id) && /^[1-9]\d*$/.test(owner)) {
+        return { platform: "facebook", id, url: `https://www.facebook.com/${owner}/posts/${id}` };
+      }
+    }
+  }
+  if (["linkedin.com", "www.linkedin.com"].includes(url.hostname)) {
+    const match = /^\/feed\/update\/urn:li:(activity|ugcPost):([1-9]\d*)\/?$/.exec(url.pathname)
+      || /^\/posts\/[a-zA-Z0-9_-]+-(activity|ugcPost)-([1-9]\d*)-[a-zA-Z0-9_-]+\/?$/.exec(url.pathname);
+    if (match) return { platform: "linkedin", id: match[1] === "activity" ? match[2] : `ugcPost:${match[2]}`,
+      url: `https://www.linkedin.com/feed/update/urn:li:${match[1]}:${match[2]}/` };
+  }
+  return null;
+};
+
+export const socialPlatform = (pageUrl: string): ClipPlatform | null => {
+  let url: URL;
+  try { url = new URL(pageUrl); } catch { return null; }
+  if (url.protocol !== "https:" || url.username || url.password || url.port) return null;
+  if (["www.facebook.com", "facebook.com", "m.facebook.com"].includes(url.hostname)) return "facebook";
+  if (["www.instagram.com", "instagram.com"].includes(url.hostname)) return "instagram";
+  if (["www.linkedin.com", "linkedin.com"].includes(url.hostname)) return "linkedin";
+  if (["www.threads.com", "threads.com", "www.threads.net", "threads.net"].includes(url.hostname)) return "threads";
+  if (url.hostname === "bsky.app") return "bluesky";
   return null;
 };
 
@@ -54,7 +121,8 @@ export const publishedTime = (node: Element | null): PublishedTime | undefined =
   if (!node) return undefined;
   const machine = (node.getAttribute("datetime") || node.getAttribute("title") || "").trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(machine)) return { value: machine, precision: "date" };
-  // HN's ISO-shaped title has no zone; preserve it instead of guessing one.
+  // Preserve the source timezone here. Known site-specific conventions are
+  // handled by the dedicated reader, never inferred from the device timezone.
   const normalized = machine.replace(/^(\d{4}-\d{2}-\d{2}) /, "$1T").replace(/ (?=[+-]\d{2}:\d{2}$)/, "");
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/.test(normalized)) {
     return { value: normalized, precision: "datetime" };
@@ -64,7 +132,8 @@ export const publishedTime = (node: Element | null): PublishedTime | undefined =
 };
 
 export const publishedTimeText = (time: PublishedTime, relativeLabel: string) =>
-  time.precision === "relative" ? `${time.value} (${relativeLabel})` : time.value;
+  time.precision === "relative" ? `${time.value} (${relativeLabel})`
+    : time.precision === "datetime" ? clipDateTimeText(time.value) : time.value;
 
 /** Converts a detached copy only. Links and images never keep active protocols. */
 export const platformHtmlMarkdown = (body: Element | DocumentFragment, baseUrl: string): string => {
@@ -112,5 +181,5 @@ export const isPlatformClip = (value: unknown, expected: PlatformTarget): value 
     && (clip.author === undefined || typeof clip.author === "string")
     && (!time || (typeof time.value === "string" && ["datetime", "date", "relative"].includes(time.precision)))
     && Array.isArray(clip.tags) && clip.tags.length === 2 && clip.tags[0] === "web-clip" && clip.tags[1] === expected.platform
-    && clip.completeness === "complete";
+    && (clip.completeness === "complete" || (clip.platform === "xiaoyuzhou" && clip.completeness === "no-shownotes"));
 };

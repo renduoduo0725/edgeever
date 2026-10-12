@@ -1,8 +1,9 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Bot, Info } from "lucide-react";
+import { Bot, ChevronDown, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -56,7 +57,7 @@ const statusKey = (adapter: DesktopAcpAdapter | undefined, probing: boolean) => 
   if (adapter.id === "deepseekHarness" && adapter.state === "not_installed") return "aiAssistant.agentSource.deepseekHarnessNotFound";
   if (adapter.id === "piAgent" && adapter.state === "not_installed") return adapter.detail === "adapter_missing" ? "aiAssistant.agentSource.piAgentAdapterMissing" : "aiAssistant.agentSource.piAgentNotFound";
   if ((adapter.id === "workbuddyCn" || adapter.id === "workbuddyIntl") && adapter.state === "not_installed") return "aiAssistant.agentSource.workbuddyNotFound";
-  if ((adapter.id === "workbuddyCn" || adapter.id === "workbuddyIntl") && adapter.state === "available") return "aiAssistant.agentSource.workbuddyConnectionReady";
+  if ((adapter.id === "workbuddyCn" || adapter.id === "workbuddyIntl") && adapter.state === "needs_login") return "aiAssistant.agentSource.workbuddyLoginRequired";
   return `aiAssistant.agentSource.states.${adapter.state}`;
 };
 
@@ -64,18 +65,15 @@ const getStatusTone = ({
   probing,
   installing,
   installError,
-  handshakeOnly,
   state,
 }: {
   probing: boolean;
   installing: boolean;
   installError: boolean;
-  handshakeOnly: boolean;
   state?: DesktopAcpAdapter["state"];
 }) => {
   if (installing || probing) return "loading";
   if (installError || state === "failed") return "error";
-  if (handshakeOnly) return "neutral";
   if (state === "available") return "success";
   if (state === "needs_login" || state === "not_installed") return "warning";
   return "neutral";
@@ -146,7 +144,6 @@ const DesktopAcpAgentCardBody = ({ bridge }: { bridge: boolean }) => {
     probing,
     installing,
     installError,
-    handshakeOnly: isWorkBuddy && shown?.state === "available",
     state: shown?.state,
   });
   const authMethods = shown?.authMethods?.filter((method) => (
@@ -155,10 +152,22 @@ const DesktopAcpAgentCardBody = ({ bridge }: { bridge: boolean }) => {
   const hasDetails = Boolean(
     shown?.state === "not_installed" ||
     shown?.state === "needs_login" ||
-    (shown?.state === "available" && authMethods.length > 0) ||
+    (shown?.state === "available" && (isWorkBuddy || authMethods.length > 0)) ||
     shown?.updateError ||
     adapterId === "openClaw" ||
     (adapterId === "hermesAgent" && shown?.state === "failed")
+  );
+
+  const authButtons = (
+    <div className="flex flex-wrap gap-2 pt-0.5">
+      {authMethods.map((method) => (
+        <Button key={method.id} type="button" variant="outline" size="sm" className="h-8 bg-card text-xs font-normal" disabled={Boolean(authenticating)} onClick={() => void authenticate(method.id)}>
+          {authenticating === method.id ? t("aiAssistant.agentSource.authenticating") : isWorkBuddy
+            ? t("aiAssistant.agentSource.workbuddyAuthenticateWith", { method: method.name.replace(/^Login with\s+/i, "").replace(/Google\/Github/gi, "Google / GitHub") })
+            : t("aiAssistant.agentSource.authenticateWith", { method: method.name })}
+        </Button>
+      ))}
+    </div>
   );
 
   const selectAdapter = (id: DesktopAcpAdapterId) => {
@@ -391,21 +400,26 @@ const DesktopAcpAgentCardBody = ({ bridge }: { bridge: boolean }) => {
                   {shown?.state === "needs_login" && adapterId === "piAgent" ? (
                     <p>{t("aiAssistant.agentSource.piAgentLoginHint")}</p>
                   ) : null}
-                  {(shown?.state === "needs_login" || shown?.state === "available") && isWorkBuddy ? (
+                  {shown?.state === "available" && isWorkBuddy ? (
+                    <p>{t("aiAssistant.agentSource.workbuddyConnectedHint")}</p>
+                  ) : null}
+                  {shown?.state === "needs_login" && isWorkBuddy ? (
                     <p>{t(adapterId === "workbuddyCn" ? "aiAssistant.agentSource.workbuddyCnLoginHint" : "aiAssistant.agentSource.workbuddyIntlLoginHint")}</p>
                   ) : null}
                   {shown?.state === "available" && !isWorkBuddy && authMethods.length ? (
                     <p>{t("aiAssistant.agentSource.authAvailableHint")}</p>
                   ) : null}
-                  {(shown?.state === "needs_login" || shown?.state === "available") && authMethods.length ? (
-                    <div className="flex flex-wrap gap-2 pt-0.5">
-                      {authMethods.map((method) => (
-                        <Button key={method.id} type="button" variant="outline" size="sm" className="h-8 bg-card text-xs font-normal" disabled={Boolean(authenticating)} onClick={() => void authenticate(method.id)}>
-                          {authenticating === method.id ? t("aiAssistant.agentSource.authenticating") : t("aiAssistant.agentSource.authenticateWith", { method: method.name })}
+                  {shown?.state === "available" && isWorkBuddy && authMethods.length ? (
+                    <Collapsible key={`${adapterId}:${adapterPath}:${shown.state}`}>
+                      <CollapsibleTrigger asChild>
+                        <Button type="button" variant="ghost" size="sm" className="group h-7 px-0 text-xs font-normal text-slate-500 hover:bg-transparent">
+                          {t("aiAssistant.agentSource.workbuddyLoginOptions")}
+                          <ChevronDown aria-hidden="true" className="ml-1 h-3 w-3 group-data-[state=open]:rotate-180" />
                         </Button>
-                      ))}
-                    </div>
-                  ) : null}
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>{authButtons}</CollapsibleContent>
+                    </Collapsible>
+                  ) : (shown?.state === "needs_login" || shown?.state === "available") && authMethods.length ? authButtons : null}
                   {shown?.state === "needs_login" && !authMethods.length && adapterId !== "piAgent" ? (
                     <p className="text-xs text-amber-700" role="status">{t("aiAssistant.agentSource.loginUnavailable")}</p>
                   ) : null}

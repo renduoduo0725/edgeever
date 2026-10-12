@@ -13,17 +13,13 @@
           <h1>EdgeEver</h1>
           <p class="hint" data-i18n="webClipper">Web Clipper</p>
         </div>
-      </header>
-      <div class="popup-features">
-        <span class="features-label" data-i18n="supportedPlatformsLabel">支持专标剪藏：</span>
-        <div class="platform-tags">
-          <span class="platform-tag">X / Twitter</span>
-          <span class="platform-tag" data-i18n="platformXiaohongshu">小红书</span>
-          <span class="platform-tag" data-i18n="platformZhihu">知乎</span>
-          <span class="platform-tag">GitHub</span>
-          <span class="platform-tag">Hacker News</span>
+        <div id="capture-context" class="popup-context" aria-live="polite">
+          <svg class="capture-check" aria-hidden="true" viewBox="0 0 16 16" width="12" height="12">
+            <path d="m3.5 8 3 3 6-6" />
+          </svg>
+          <span id="capture-mode" class="capture-mode" data-i18n="checkingPageCapture">识别中</span>
         </div>
-      </div>
+      </header>
       <button id="save" class="save-button" type="button" disabled>
         <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
           <path d="M5 4.75A1.75 1.75 0 0 1 6.75 3h8.836c.464 0 .91.184 1.238.513l1.663 1.663c.329.328.513.774.513 1.238v12.836A1.75 1.75 0 0 1 17.25 21H6.75A1.75 1.75 0 0 1 5 19.25V4.75Z" />

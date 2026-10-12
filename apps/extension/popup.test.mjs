@@ -10,6 +10,7 @@ test("requests instance permission during the popup click user action", async ()
   };
   const settingsButton = { addEventListener: () => {} };
   const status = { textContent: "", dataset: {} };
+  const captureMode = { textContent:"" };
   let finishLoadingSettings;
   let insideClick = false;
   let permissionRequests = 0;
@@ -18,7 +19,7 @@ test("requests instance permission during the popup click user action", async ()
   globalThis.document = {
     documentElement: { lang: "", dir: "" },
     querySelectorAll: () => [],
-    querySelector: (selector) => ({ "#save": saveButton, "#settings": settingsButton, "#status": status })[selector],
+    querySelector: (selector) => ({ "#save": saveButton, "#settings": settingsButton, "#status": status, "#capture-mode":captureMode })[selector],
   };
   globalThis.chrome = {
     i18n: { getMessage: (key) => key, getUILanguage: () => "en" },
@@ -33,6 +34,7 @@ test("requests instance permission during the popup click user action", async ()
     },
     runtime: {
       sendMessage: async (message) => {
+        if (message.type === 'getCurrentPageCaptureMode') return {kind:'platform',platform:'Threads'};
         expect(message).toEqual({ type: "captureCurrentPage" });
         captures += 1;
         return { ok: true };
@@ -47,6 +49,7 @@ test("requests instance permission during the popup click user action", async ()
     finishLoadingSettings({ instanceUrl: "https://example.com", token: "token", notebookId: "" });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(saveButton.disabled).toBe(false);
+    expect(captureMode.textContent).toBe('pageCaptureAdapted');
 
     insideClick = true;
     const click = listeners.get("save:click")();

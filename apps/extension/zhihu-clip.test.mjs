@@ -1,3 +1,4 @@
+import { clipDateTimeText } from "./src/clip-time.ts";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -135,7 +136,7 @@ describe("zhihu note content", () => {
     expect(markdown.startsWith("## 问题\n\n> 谁叫我上来的？\n\n**作者：** 苏澄宇\n\n## 回答\n\n岸上没有人。")).toBe(true);
     expect(markdown).toContain("\n\n---\n\n来源:");
     expect(markdown).toContain(`(${answerUrl})`);
-    expect(markdown).toContain("时间: 2026-09-30T03:40:45.000Z");
+    expect(markdown).toContain("时间: " + clipDateTimeText("2026-09-30T03:40:45.000Z"));
     expect(replaceZhihuImageUrls(markdown, [{ url: imageUrl, resourceId: "res 1" }])).toContain(
       "![岸边](/api/v1/resources/res%201/blob)",
     );

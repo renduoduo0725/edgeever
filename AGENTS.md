@@ -18,6 +18,12 @@
 
 - **USB 真机优先**：Android 功能调测必须使用通过 USB 连接的真实设备和 `adb`，不得启动或使用 QEMU、AVD 等 Android 模拟器；未连接可用真机时，明确标注真机验证未完成，不得以模拟器结果替代。
 
+## GitHub 沟通语言
+
+- 回复 Issue、PR 或提交 PR Review（含行内审查意见）时，使用对方正文或当前讨论的主要语言：英文用英文回复，中文用中文回复。
+- 对方明确指定沟通语言时，遵循其要求；中英混合或无法判断时，默认使用英文。
+- 不得因与仓库维护者的本地对话使用中文，就在英文 Issue 或 PR 中使用中文回复。
+
 ## GitHub Actions 与 Release 约束及流程
 
 1. **Fork 工作流边界**：配置 GitHub Actions 时必须考虑大量用户会 Fork 仓库进行自部署；仅官方仓库需要的 Job 必须使用 `github.repository == 'tianma-if/edgeever'` 门禁，严禁在下游 Fork 中分配 Runner 或执行。

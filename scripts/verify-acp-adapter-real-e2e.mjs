@@ -67,6 +67,7 @@ export async function executeRealAcpHandshake(commandSpec, { timeoutMs = 25_000 
   }
 
   const child = spawn(binaryPath, args, {
+    env: { ...process.env, ...commandSpec.env },
     stdio: ["pipe", "pipe", "ignore"],
     windowsHide: true,
     shell: false,

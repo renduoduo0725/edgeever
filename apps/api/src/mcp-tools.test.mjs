@@ -52,6 +52,8 @@ describe("MCP tool catalog", () => {
       idempotentHint: false,
     });
     expect(byName.get("create_infographic_memo")?.inputSchema.properties.template.enum).toContain("chart-pie-donut-plain-text");
+    expect(byName.get("create_poster_memo")?.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, idempotentHint: false });
+    expect(COMPANION_MCP_TOOLS.some(tool => tool.name === "create_poster_memo")).toBe(true);
     expect(byName.get("create_diagram_memo")?.annotations).toMatchObject({
       readOnlyHint: false,
       destructiveHint: false,

@@ -1,3 +1,4 @@
+import { clipDateTimeText } from "./clip-time";
 import { imageAltText, type ImageNoteClient } from "./image-clip";
 
 const TWEET_HOSTS = new Set([
@@ -176,8 +177,8 @@ export const tweetNoteMarkdown = (input: {
   }
   const footer = [
     `${input.sourceLabel}: [${escapeMarkdownLabel(input.statusUrl)}](${markdownDestination(input.statusUrl)})`,
-    input.datetime ? `${input.timeLabel}: ${input.datetime}` : "",
-    `${input.capturedAtLabel}: ${input.capturedAt}`,
+    input.datetime ? `${input.timeLabel}: ${clipDateTimeText(input.datetime)}` : "",
+    `${input.capturedAtLabel}: ${clipDateTimeText(input.capturedAt)}`,
   ].filter(Boolean);
   blocks.push(footer.join("\n\n"));
   return blocks.join("\n\n");

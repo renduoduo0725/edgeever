@@ -421,6 +421,17 @@ describe("ACP command allow-list", () => {
       expect(international.command.args).toEqual([realpathSync(bundled), "--acp"]);
       expect(international.command.unsetEnv).toEqual(["CODEBUDDY_INTERNET_ENVIRONMENT"]);
       expect(createAcpSpawnPlan(international.command, directory).options.env.CODEBUDDY_INTERNET_ENVIRONMENT).toBeUndefined();
+      // New encrypted builds need their own native key provider, unavailable in
+      // EdgeEver's Electron. Keep the CLI and edition while changing the host.
+      const nativeHost = path.resolve(path.dirname(bundled), "../../../../MacOS/Electron");
+      await mkdir(path.dirname(nativeHost), { recursive: true });
+      await writeFile(nativeHost, "// fake WorkBuddy Electron");
+      const nativeInternational = resolveAcpCommand({ id: "workbuddyIntl" }, deps);
+      expect(nativeInternational.command.command).toBe(realpathSync(nativeHost));
+      expect(nativeInternational.command.args[0]).toEndWith("workbuddy-launch.cjs");
+      expect(nativeInternational.command.args.slice(1)).toEqual([realpathSync(bundled), "--acp"]);
+      expect(nativeInternational.command.env).toEqual({ ELECTRON_RUN_AS_NODE: "1" });
+      expect(nativeInternational.command.unsetEnv).toEqual(["CODEBUDDY_INTERNET_ENVIRONMENT"]);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

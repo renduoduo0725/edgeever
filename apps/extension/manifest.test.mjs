@@ -61,6 +61,26 @@ describe("extension manifests", () => {
           js: ["assets/reddit-target.js"],
           run_at: "document_start",
         },
+        {
+          "matches": [
+                    "https://www.facebook.com/*",
+                    "https://facebook.com/*",
+                    "https://m.facebook.com/*",
+                    "https://www.instagram.com/*",
+                    "https://instagram.com/*",
+                    "https://www.linkedin.com/*",
+                    "https://linkedin.com/*",
+                    "https://www.threads.com/*",
+                    "https://threads.com/*",
+                    "https://www.threads.net/*",
+                    "https://threads.net/*",
+                    "https://bsky.app/*"
+          ],
+          "js": [
+                    "assets/social-target.js"
+          ],
+          "run_at": "document_start"
+},
       ]);
     }
   });

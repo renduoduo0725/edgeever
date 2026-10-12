@@ -1,3 +1,4 @@
+import { clipDateTimeText } from "./clip-time";
 import { imageAltText, type ImageNoteClient } from "./image-clip";
 
 const XHS_HOSTS = new Set([
@@ -291,9 +292,9 @@ export const xhsNoteMarkdown = (input: {
   }
   const footer = [
     input.noteUrl ? `${input.sourceLabel}: [${escapeMarkdownLabel(input.noteUrl)}](${markdownDestination(input.noteUrl)})` : "",
-    input.datetime ? `${input.timeLabel}: ${input.datetime}` : "",
+    input.datetime ? `${input.timeLabel}: ${clipDateTimeText(input.datetime)}` : "",
     input.location ? `${input.locationLabel}: ${input.location}` : "",
-    `${input.capturedAtLabel}: ${input.capturedAt}`,
+    `${input.capturedAtLabel}: ${clipDateTimeText(input.capturedAt)}`,
   ].filter(Boolean);
   blocks.push(footer.join("\n\n"));
   return blocks.join("\n\n");

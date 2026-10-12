@@ -1,3 +1,4 @@
+import { posterDesignTemplate } from "@edgeever/shared";
 import { BadgeBox } from './badge';
 import { arch, barcode, blob, burst, cropMarks, dotGrid, glow as kitGlow, grain, metaBlock, paper, rays, regMark, rule, seal, sideText, sparkle, stickerDot, tape, ticker } from './kit';
 import { ghost } from './kit';
@@ -23,7 +24,6 @@ export interface Template {
   slot?(i: TemplateInput): Slot | undefined;
   build(i: TemplateInput): TemplateResult;
 }
-const XHS = ['xhs', 'xhs-square', 'portrait', 'square']; const VIDEO = ['youtube', 'bilibili', 'bilibili-43', 'bilibili-hd', 'wide']; const SHORT = ['vertical']; const BANNER = ['wechat', 'x'];
 
 import { titleFace, typeFor } from './typeset';
 const SANS = 'sans-serif';
@@ -176,7 +176,7 @@ const shadowHard = (u: number, c = '#000000', d = 8): Shadow => new Shadow({ col
 
 export const TEMPLATES: Template[] = [
   {
-    id: 'minimal', zh: '简约白', en: 'Minimal', fit: [...XHS, ...BANNER], zhUse: '干净克制，适合观点、读书、知识类', enUse: 'Clean and restrained; opinions, reading, knowledge',
+    ...posterDesignTemplate("minimal"),
     build(i) {
       const p = palette(i, { bg: '#ffffff', bg2: '#ffffff', ink: '#171717', sub: '#737373', accent: '#171717', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2; const titleH = h * (wide ? 0.55 : 0.5);
@@ -190,7 +190,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'editorial', zh: '杂志', en: 'Editorial', fit: [...BANNER, ...XHS], zhUse: '衬线大标题 + 细线，有质感，适合深度内容与公众号', enUse: 'Serif headline with rules; essays and articles',
+    ...posterDesignTemplate("editorial"),
     build(i) {
       const p = palette(i, { bg: '#f4efe4', bg2: '#f4efe4', ink: '#171717', sub: '#404040', accent: '#171717', accentInk: '#f4efe4' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 2;
@@ -205,7 +205,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'bold', zh: '醒目黄', en: 'Loud yellow', fit: [...XHS, ...VIDEO, ...SHORT], zhUse: '高饱和纯色 + 黑字，信息流里最抢眼', enUse: 'Saturated flat colour with black type; stops the scroll',
+    ...posterDesignTemplate("bold"),
     build(i) {
       const p = palette(i, { bg: '#ffe04b', bg2: '#ffe04b', ink: '#111111', sub: '#111111', accent: '#111111', accentInk: '#ffe04b' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 2;
@@ -219,7 +219,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'dark', zh: '深色科技', en: 'Dark tech', fit: [...VIDEO, ...BANNER, ...XHS], zhUse: '深底荧光点缀，适合 AI、编程、效率工具', enUse: 'Dark with a neon glow; AI, code, tools',
+    ...posterDesignTemplate("dark"),
     build(i) {
       const p = palette(i, { bg: '#0a0a0a', bg2: '#1c1c22', ink: '#fafafa', sub: '#a1a1aa', accent: '#5eead4', accentInk: '#0a0a0a' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 2;
@@ -233,7 +233,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'poster', zh: '大字报', en: 'Poster', fit: [...XHS, ...SHORT], zhUse: '满屏居中大字，情绪强，适合金句、避坑、警告', enUse: 'Full-bleed centred type; punchy statements',
+    ...posterDesignTemplate("poster"),
     build(i) {
       const p = palette(i, { bg: '#e11d2e', bg2: '#e11d2e', ink: '#ffffff', sub: '#ffe4e6', accent: '#ffe04b', accentInk: '#111111' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 2;
@@ -246,7 +246,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'split', zh: '左文右图', en: 'Split', fit: [...VIDEO, ...BANNER], zhUse: '左文案右主体，右侧可放人像或产品图', enUse: 'Copy left, subject right; leaves room for a portrait or product',
+    ...posterDesignTemplate("split"),
     slot: i => { const { w, h } = metrics(i); const x = w * 0.54; return { x, y: 0, w: w - x, h, radius: 0 }; },
     build(i) {
       const p = palette(i, { bg: '#fff7ed', bg2: '#fff7ed', ink: '#1c1917', sub: '#57534e', accent: '#f97316', accentInk: '#ffffff' });
@@ -262,7 +262,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'sticker', zh: '便签', en: 'Sticky note', fit: XHS, zhUse: '粉底便签纸，生活感，适合种草、日常、分享', enUse: 'Pink backdrop, paper note; lifestyle posts',
+    ...posterDesignTemplate("sticker"),
     build(i) {
       const p = palette(i, { bg: '#fda4af', bg2: '#fda4af', ink: '#292524', sub: '#78716c', accent: '#fcd34d', accentInk: '#292524' });
       const { u, m, w, h } = metrics(i); const pad = m * 1.4; const cardW = w - m * 2; const cardH = h - m * 2;
@@ -277,7 +277,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'gradient', zh: '渐变光感', en: 'Soft gradient', fit: [...VIDEO, ...BANNER, ...XHS], zhUse: '蓝青渐变 + 白字，通用、稳、不出错', enUse: 'Blue-cyan gradient with white type; safe and versatile',
+    ...posterDesignTemplate("gradient"),
     build(i) {
       const p = palette(i, { bg: '#2563eb', bg2: '#06b6d4', ink: '#ffffff', sub: '#e0f2fe', accent: '#ffffff', accentInk: '#1d4ed8' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 2;
@@ -291,7 +291,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'center', zh: '居中标签', en: 'Centered', fit: [...XHS, ...VIDEO], zhUse: '细框居中，黄色高亮副标，通用百搭', enUse: 'Thin frame, centred, highlighted subtitle; all-purpose',
+    ...posterDesignTemplate("center"),
     build(i) {
       const p = palette(i, { bg: '#fafafa', bg2: '#fafafa', ink: '#171717', sub: '#262626', accent: '#ffe04b', accentInk: '#171717' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 3.2;
@@ -306,7 +306,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'checklist', zh: '清单笔记', en: 'Checklist', fit: [...XHS], zhUse: '标题 + 3~4 条要点，信息密度高，小红书干货首选', enUse: 'Headline plus 3–4 points; dense and useful',
+    ...posterDesignTemplate("checklist"),
     build(i) {
       const p = palette(i, { bg: '#ecfdf3', bg2: '#ecfdf3', ink: '#052e16', sub: '#166534', accent: '#16a34a', accentInk: '#ffffff' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 2;
@@ -323,7 +323,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'number', zh: '数字干货', en: 'Big number', fit: [...XHS, ...SHORT, 'youtube', 'bilibili', 'bilibili-43'], zhUse: '超大数字做钩子（7 个技巧 / 3 步），点击率高的榜单体', enUse: 'A huge numeral as the hook; listicles',
+    ...posterDesignTemplate("number"),
     slot: i => { const { w, h, wide } = metrics(i); return wide ? undefined : { x: 0, y: h * 0.68, w, h: h * 0.32, radius: 0 }; },
     build(i) {
       const p = palette(i, { bg: '#fff7e6', bg2: '#fff7e6', ink: '#1a1a1a', sub: '#6b6b6b', accent: '#ef4444', accentInk: '#ffffff' });
@@ -349,7 +349,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'impact', zh: '油管冲击', en: 'Impact', fit: ['youtube', 'bilibili', 'bilibili-43', 'bilibili-hd', 'wide', 'vertical'], zhUse: '黄字黑描边 + 红标，右侧留人像位；短标题（≤8 字）效果最好', enUse: 'Yellow type with a black outline, red tag, subject area on the right; keep titles short',
+    ...posterDesignTemplate("impact"),
     photo: true,
     slot: i => { const { w, h, wide } = metrics(i); return wide ? { x: w * 0.6, y: 0, w: w * 0.4, h, radius: 0 } : undefined; },
     build(i) {
@@ -369,7 +369,7 @@ export const TEMPLATES: Template[] = [
   },
 
   {
-    id: 'compare', zh: '对比', en: 'Versus', fit: [...XHS, ...VIDEO], zhUse: '左右两栏对比：副标题用 “A | B” 或“前 | 后”，评测 / 前后效果', enUse: 'Two panels; subtitle as “A | B”; reviews and before/after',
+    ...posterDesignTemplate("compare"),
     build(i) {
       const p = palette(i, { bg: '#f8fafc', bg2: '#f8fafc', ink: '#0f172a', sub: '#334155', accent: '#16a34a', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2;
@@ -395,7 +395,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'neo', zh: '新粗野', en: 'Neo-brutal', fit: [...XHS, ...VIDEO, ...SHORT], zhUse: '黑粗框 + 硬阴影 + 荧光底，年轻、有趣、辨识度高', enUse: 'Thick black borders, hard shadows, bright backdrop',
+    ...posterDesignTemplate("neo"),
     build(i) {
       const p = palette(i, { bg: '#a3e635', bg2: '#a3e635', ink: '#111111', sub: '#111111', accent: '#ff5fa2', accentInk: '#111111' });
       const { u, m, w, h } = metrics(i); const bw = Math.max(5, 8 * u); const cx = m * 0.9; const cw = w - cx * 2; const ch = h - cx * 2; const pad = m * 0.9;
@@ -411,7 +411,7 @@ export const TEMPLATES: Template[] = [
     },
   },
   {
-    id: 'soft', zh: '柔雾莫兰迪', en: 'Soft haze', fit: [...XHS, ...BANNER], zhUse: '低饱和柔光，适合生活方式、情绪、穿搭、女性向', enUse: 'Muted haze; lifestyle, mood, fashion',
+    ...posterDesignTemplate("soft"),
     build(i) {
       const p = palette(i, { bg: '#f6e7e3', bg2: '#e4dcf3', ink: '#3b2f4a', sub: '#7a6b8a', accent: '#b794d6', accentInk: '#ffffff' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 2; const size = fitTitle(i.title, inner, h * 0.46, 118 * u);
@@ -434,7 +434,7 @@ const sub = (i: TemplateInput, left: number, top: number, width: number, size: n
 
 const PREMIUM: Template[] = [
   {
-    id: 'swiss', zh: '瑞士网格', en: 'Swiss grid', fit: [...XHS, ...BANNER, ...VIDEO], zhUse: '米白底 + 红圆 + 极粗无衬线 + 网格细线，国际主义风格', enUse: 'Off-white, a red disc, ultra-bold sans and grid hairlines',
+    ...posterDesignTemplate("swiss"),
     build(i) {
       const p = palette(i, { bg: '#f3f1ea', bg2: '#f3f1ea', ink: '#111111', sub: '#555555', accent: '#e63312', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2; const tw = wide ? inner * 0.7 : inner;
@@ -453,7 +453,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'acid', zh: '酸性渐变', en: 'Acid mesh', fit: [...XHS, ...VIDEO, ...SHORT], zhUse: '浅粉紫弥散光斑 + 颗粒 + 居中深紫大字 + 一枚闪光；潮流、音乐、AI 话题', enUse: 'Pastel mesh glows and grain, a centred deep-violet headline and one sparkle; trendy, music, AI',
+    ...posterDesignTemplate("acid"),
     build(i) {
       const p = palette(i, { bg: '#ffe3ef', bg2: '#ddd3ff', ink: '#24104a', sub: '#5b3f8c', accent: '#ff3d8b', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2; const tw = wide ? inner * 0.82 : inner;
@@ -471,7 +471,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'collage', zh: '拼贴手账', en: 'Paper collage', fit: [...XHS, 'bilibili', 'wechat'], zhUse: '牛皮纸 + 撕纸色块 + 胶带 + 贴纸，生活、手账、种草', enUse: 'Kraft paper, torn colour blocks, tape and stickers; lifestyle and journaling',
+    ...posterDesignTemplate("collage"),
     build(i) {
       const p = palette(i, { bg: '#e6d5b8', bg2: '#e6d5b8', ink: '#2b2118', sub: '#6e5b45', accent: '#ef6f4f', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const pw = w - m * 2.2; const ph = h * (wide ? 0.7 : 0.52); const px = (w - pw) / 2; const py = (h - ph) / 2;
@@ -490,7 +490,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'mega', zh: '大字满版', en: 'Mega type', fit: [...XHS, ...SHORT, 'youtube'], zhUse: '标题放大到撑满画面，高饱和纯色底，最强的信息流冲击力', enUse: 'The headline fills the artboard on a saturated colour; maximum scroll-stopping force',
+    ...posterDesignTemplate("mega"),
     build(i) {
       const p = palette(i, { bg: '#ff4d2e', bg2: '#ff4d2e', ink: '#fff4e6', sub: '#1a1209', accent: '#1a1209', accentInk: '#fff4e6' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 1.6;
@@ -503,7 +503,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'ticker', zh: '跑马灯', en: 'Ticker', fit: [...VIDEO, ...XHS], zhUse: '奶黄底 + 斜向滚动字带 + 硬阴影大字，B 站 / YouTube 的信息流利器', enUse: 'Cream with diagonal ticker bands and hard-shadow type; built for video feeds',
+    ...posterDesignTemplate("ticker"),
     build(i) {
       const p = palette(i, { bg: '#fff1c9', bg2: '#ffd9b3', ink: '#ffffff', sub: '#2a1d0c', accent: '#111111', accentInk: '#facc15' });
       const { u, m, w, h } = metrics(i); const inner = w - m * 2; const word = (i.badge?.trim() || i.subtitle.trim() || 'NEW').slice(0, 14); const bh = Math.max(70, 100 * u);
@@ -517,7 +517,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'memo', zh: '便签笔记', en: 'Memo paper', fit: [...XHS, 'wechat'], zhUse: '横线笔记纸 + 红色页边线 + 荧光笔划重点，学习、笔记、干货', enUse: 'Ruled notebook paper with a margin line and a highlighter; study notes and tips',
+    ...posterDesignTemplate("memo"),
     build(i) {
       const p = palette(i, { bg: '#fbf8ef', bg2: '#fbf8ef', ink: '#1d2a44', sub: '#5b6a86', accent: '#fde047', accentInk: '#1d2a44' });
       const { u, m, w, h } = metrics(i); const left = m * 1.9; const inner = w - left - m; const size = fitTitle(i.title, inner, h * 0.42, 150 * u, 36, 1.12); const th = textHeight(i.title, inner, size, 1.12);
@@ -535,7 +535,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'pop', zh: '贴纸波普', en: 'Pop sticker', fit: [...XHS, ...VIDEO, ...SHORT], zhUse: '明黄底 + 黑色粗标题 + 几枚歪贴的粉、蓝、绿色块贴纸 + 白色胶囊副标题；年轻好玩，但不靠描边、硬投影和爆炸星', enUse: 'Yellow, heavy black type, a few tilted pink, blue and green stickers and a white pill subtitle; playful without outlines, hard shadows or bursts',
+    ...posterDesignTemplate("pop"),
     build(i) {
       const p = palette(i, { bg: '#ffd23f', bg2: '#ffd23f', ink: '#151515', sub: '#151515', accent: '#ff4f8b', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m * 1.1; const tw = (w - x0 * 2) * (wide ? 0.7 : 1); const s0 = Math.min(w, h);
@@ -553,7 +553,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'mag', zh: '杂志封面', en: 'Magazine', fit: [...BANNER, ...XHS, 'bilibili'], zhUse: '纸质底 + 衬线巨标题 + 巨型虚影期号 + 报头细线，像一本真杂志', enUse: 'Paper, a huge serif headline, a ghost issue numeral and masthead rules; a real magazine cover',
+    ...posterDesignTemplate("mag"),
     build(i) {
       const p = palette(i, { bg: '#efe7d8', bg2: '#e5dac4', ink: '#17130d', sub: '#6b5f4b', accent: '#b6402a', accentInk: '#fff7ea' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2; const tw = wide ? inner * 0.62 : inner * 0.94; const topY = m * 0.7; const num = digits(i, false);
@@ -575,7 +575,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'print', zh: '印刷海报', en: 'Print poster', fit: [...XHS, ...BANNER, ...VIDEO], zhUse: '黑 + 米白 + 一抹朱红，裁切线、套准标、沿边文字、条码，欧洲字体海报的语汇', enUse: 'Black, paper and one vermilion; crop marks, registration target, edge text and barcode: the European typographic poster vocabulary',
+    ...posterDesignTemplate("print"),
     build(i) {
       const p = palette(i, { bg: '#f2efe6', bg2: '#f2efe6', ink: '#0d0d0d', sub: '#4a4a4a', accent: '#ff3b1f', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2.4; const x0 = m * 1.2; const tw = wide ? inner * 0.78 : inner;
@@ -597,7 +597,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'glass', zh: '玻璃卡片', en: 'Glass card', fit: [...XHS, ...VIDEO, ...BANNER], zhUse: '粉蓝弥散背景 + 大幅磨砂玻璃卡片 + 悬浮小胶囊，现代、产品、App 感', enUse: 'Pastel mesh background, a large frosted glass card and floating pills; modern, product, app',
+    ...posterDesignTemplate("glass"),
     build(i) {
       const p = palette(i, { bg: '#ffd1e8', bg2: '#c7d7ff', ink: '#2b1b57', sub: 'rgba(43,27,87,0.78)', accent: '#2b1b57', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const cw = w - m * 1.6; const ch = h * (wide ? 0.8 : 0.64); const cx = (w - cw) / 2; const cy = (h - ch) / 2; const pad = m * 0.85; const inner = cw - pad * 2;
@@ -617,7 +617,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'bento', zh: '便当清单', en: 'Bento list', fit: [...XHS, 'wechat'], zhUse: '深色标题卡 + 三张彩色要点卡拼成便当格，信息密度高又好看', enUse: 'A dark headline card and three colour cards in a bento grid; dense and good looking',
+    ...posterDesignTemplate("bento"),
     build(i) {
       const p = palette(i, { bg: '#ecebe4', bg2: '#ecebe4', ink: '#141414', sub: '#6b6b6b', accent: '#ffd23f', accentInk: '#141414' });
       const { u, m, w, h, wide } = metrics(i); const gap = 20 * u; const rows = (i.points?.length ? i.points : i.subtitle.split(/[\n,，、；;]/)).map(x => x.trim()).filter(Boolean).slice(0, 3);
@@ -641,7 +641,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'neon', zh: '霓虹网格', en: 'Neon grid', fit: [...VIDEO, ...BANNER, ...XHS], zhUse: '深色透视网格 + 霓虹发光字 + 取景框角标，AI、编程、赛博', enUse: 'Dark perspective grid, neon glow type and viewfinder corners; AI, code, cyber',
+    ...posterDesignTemplate("neon"),
     build(i) {
       const p = palette(i, { bg: '#05060d', bg2: '#0b1226', ink: '#f8fafc', sub: '#7dd3fc', accent: '#22d3ee', accentInk: '#02131a' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2; const tw = wide ? inner * 0.74 : inner;
@@ -660,7 +660,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'calm', zh: '松弛留白', en: 'Calm paper', fit: [...XHS, ...BANNER], zhUse: '云舞白纸 + 大号衬线标题 + 竖线与弧线 + 沿边小字，克制的“冷静风”', enUse: 'Cloud-white paper, a large serif headline, a vertical rule, an arc and edge text; quiet and restrained',
+    ...posterDesignTemplate("calm"),
     build(i) {
       const p = palette(i, { bg: '#ebe8e0', bg2: '#ebe8e0', ink: '#24211b', sub: '#7a7466', accent: '#8a6f4d', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2.4; const tw = wide ? inner * 0.62 : inner * 0.9; const x0 = m * 1.5;
@@ -679,7 +679,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'folio', zh: '编辑大标题', en: 'Editorial headline', fit: [...XHS, ...BANNER, ...VIDEO], zhUse: '纸面编辑版式：顶部粗线 + 栏目名与期号、贴左黑体大标题、宋体导语、底部细线收边；只有一个焦点，留白占一半', enUse: 'An editorial page: a heavy top rule with section and issue, a flush-left heavy headline, a serif standfirst and a hairline foot; one focal point, half the page left empty',
+    ...posterDesignTemplate("folio"),
     build(i) {
       const p = palette(i, { bg: '#f3efe6', bg2: '#f3efe6', ink: '#191714', sub: '#5c574f', accent: '#c2410c', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m * 1.3; const inner = w - x0 * 2; const tw = wide ? inner * 0.7 : inner;
@@ -705,7 +705,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'numeral', zh: '单色大数字', en: 'Big numeral', fit: [...XHS, ...VIDEO, ...BANNER], zhUse: '一个巨型数字做钩子 + 其下小标题；单一强调色，适合清单、教程、数字干货', enUse: 'One oversized numeral as the hook, a quiet headline beneath; a single accent colour for lists, tutorials and number posts',
+    ...posterDesignTemplate("numeral"),
     build(i) {
       const p = palette(i, { bg: '#eef0ea', bg2: '#eef0ea', ink: '#1f2a24', sub: '#6b756e', accent: '#3f6b55', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m * 1.3; const num = (/\d+/.exec(i.badge ?? '') ?? /\d+/.exec(i.title) ?? ['01'])[0].slice(0, 2);
@@ -722,7 +722,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'sage', zh: '纸质卡片', en: 'Paper card', fit: [...XHS, ...BANNER, ...VIDEO], zhUse: '低饱和鼠尾草底 + 一张米白纸卡，标题落在卡片上；温和、干净、有质感', enUse: 'A muted sage ground with one warm paper card carrying the headline; gentle, clean and tactile',
+    ...posterDesignTemplate("sage"),
     build(i) {
       const p = palette(i, { bg: '#d9e1d3', bg2: '#d9e1d3', ink: '#26302a', sub: '#6d786f', accent: '#b4572f', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const cx = m * 1.1; const cy = m * 1.1; const cw = w - cx * 2; const ch = h - cy * 2; const pad = m * 1.1;
@@ -738,7 +738,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'seal', zh: '书法印章', en: 'Ink & seal', fit: [...XHS, ...BANNER, 'vertical'], zhUse: '宣纸底 + 淡墨巨圆 + 大号衬线标题 + 红印章；纯中文短标题自动改竖排', enUse: 'Rice paper, a huge ink wash disc, a big serif headline and a red seal; short Chinese titles run vertically',
+    ...posterDesignTemplate("seal"),
     build(i) {
       const p = palette(i, { bg: '#f1ead8', bg2: '#f1ead8', ink: '#1b1814', sub: '#5d5446', accent: '#c0392b', accentInk: '#f6efe0' });
       const { u, m, w, h, wide } = metrics(i); const flat = i.title.replace(/\s+/g, ''); const vertical = /^[㐀-鿿]{2,7}$/.test(flat); const stamp = (i.badge?.trim() || [...flat][0] || '印').slice(0, 2);
@@ -759,7 +759,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'quote', zh: '金句海报', en: 'Quote poster', fit: [...XHS, ...BANNER], zhUse: '墨黑底 + 巨型金色引号 + 衬线金句，一句话撑满一张海报', enUse: 'Ink black, a giant gold quotation mark and a serif statement; one line carries the poster',
+    ...posterDesignTemplate("quote"),
     build(i) {
       const p = palette(i, { bg: '#121212', bg2: '#121212', ink: '#f5efe2', sub: '#b9ad94', accent: '#e8b960', accentInk: '#111111' });
       const { u, m, w, h, wide } = metrics(i); const inner = w - m * 2.2; const tw = wide ? inner * 0.8 : inner;
@@ -781,7 +781,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'compare', zh: '对比', en: 'Versus', fit: [...XHS, ...VIDEO], zhUse: '斜切分屏：左边黯淡的“之前”，右边鲜亮的“之后”，中间一枚 VS；副标题写成「A | B」', enUse: 'A slanted split: dull “before” against vivid “after” with a VS burst; write the subtitle as “A | B”',
+    ...posterDesignTemplate("compare"),
     build(i) {
       const p = palette(i, { bg: '#0f0f12', bg2: '#0f0f12', ink: '#ffffff', sub: '#d4d4d8', accent: '#ffd23f', accentInk: '#111111' });
       const { u, m, w, h, wide } = metrics(i); const parts = i.subtitle.split(/\s*[|｜]\s*|\s+vs\.?\s+/i).map(x => x.trim()).filter(Boolean);
@@ -806,7 +806,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'cinema', zh: '电影感', en: 'Cinematic', fit: [...VIDEO, ...BANNER], zhUse: '青橙调光 + 镜头光晕 + 金色取景角 + 字距拉开的衬线片名，纪录片、Vlog、深度内容', enUse: 'Teal-and-orange light, lens flare, gold viewfinder corners and a wide-tracked serif title; documentary and vlog', photo: true,
+    ...posterDesignTemplate("cinema"), photo: true,
     build(i) {
       const p = palette(i, { bg: '#06141a', bg2: '#10303a', ink: '#f6ead2', sub: '#c9bda3', accent: '#e8b960', accentInk: '#111111' });
       const { u, m, w, h } = metrics(i); const bar = h * 0.13; const inner = w - m * 2;
@@ -826,7 +826,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'split', zh: '左文右图', en: 'Arch split', fit: [...VIDEO, ...BANNER, ...XHS], zhUse: '左文案右拱门：奶油底 + 橙色拱门窗 + 太阳圆 + 细线，右侧放人像或产品最好看', enUse: 'Copy on the left, an orange arch window on the right for a portrait or product; cream paper, a sun disc and fine rules',
+    ...posterDesignTemplate("split"),
     slot: i => { const { w, h } = metrics(i); const x = w * 0.54; return { x, y: 0, w: w - x, h, radius: 0 }; },
     build(i) {
       const p = palette(i, { bg: '#f6efe3', bg2: '#f6efe3', ink: '#1c1917', sub: '#6b5f55', accent: '#ff7a3d', accentInk: '#1c1917' }); // white on this orange is 2.6:1
@@ -847,7 +847,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'impact', zh: '油管冲击', en: 'Thumbnail punch', fit: ['youtube', 'bilibili', 'bilibili-43', 'bilibili-hd', 'wide', 'vertical'], zhUse: '深蓝放射光 + 黄字黑描边硬阴影 + 红色角标，右侧留主体位；短标题效果最好', enUse: 'Blue sunburst, yellow type with a black outline and hard shadow, a red arrow and burst badge; room for a subject on the right',
+    ...posterDesignTemplate("impact"),
     photo: true,
     slot: i => { const { w, h, wide } = metrics(i); return wide ? { x: w * 0.6, y: 0, w: w * 0.4, h, radius: 0 } : undefined; },
     build(i) {
@@ -865,7 +865,7 @@ const PREMIUM: Template[] = [
     },
   },
   {
-    id: 'bili', zh: 'B 站知识区', en: 'Bilibili explainer', fit: ['bilibili', 'bilibili-43', 'bilibili-hd', 'youtube', 'wide', ...SHORT, ...XHS], zhUse: '浅灰底 + B 站粉蓝双色 + 粉色分区标签 + 黑色大标题 + 小电视画框（屏幕是图位）；知识区、科普、测评的干净信息感', enUse: 'Light grey with Bilibili pink and blue, a section tag, a bold headline and a little-TV frame whose screen takes a picture; explainers and reviews',
+    ...posterDesignTemplate("bili"),
     slot: i => biliTv(i).screen,
     build(i) {
       // Bilibili's pink and blue, a shade deeper where they carry words: the brand hexes are under 3:1 on light grey.
@@ -916,7 +916,7 @@ function biliTv(i: TemplateInput): { x: number; y: number; w: number; h: number;
 
 const STUDIO: Template[] = [
   {
-    id: 'highlight', zh: '荧光标题', en: 'Highlighter', fit: [...XHS, ...VIDEO, ...SHORT, 'wechat'], zhUse: '白纸黑字 + 每行标题下一道圆头荧光笔（每行微微不同的倾斜），像在笔记上划重点；干货、观点、教程都稳', enUse: 'Black type on white with a round-ended highlighter stroke under every line, each at its own slight tilt; tips, opinions and tutorials',
+    ...posterDesignTemplate("highlight"),
     build(i) {
       const p = palette(i, { bg: '#fffdf7', bg2: '#fffdf7', ink: '#111111', sub: '#4a4a4a', accent: '#ffe14d', accentInk: '#111111' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m * 1.1; const tw = (w - x0 * 2) * (wide ? 0.8 : 1); const lh = 1.2;
@@ -935,7 +935,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'notes', zh: '备忘录', en: 'Notes app', fit: [...XHS, 'wechat', ...VIDEO], zhUse: '手机备忘录截图：黄色返回键 + 日期 + 黑色大标题 + 勾选清单（要点写在 points 里）；小红书“截图型”，亲切可信', enUse: 'A phone notes screenshot: yellow back button, date, bold headline and a checklist from the points; personal and trustworthy',
+    ...posterDesignTemplate("notes"),
     build(i) {
       const p = palette(i, { bg: '#fbfaf6', bg2: '#fbfaf6', ink: '#1c1c1e', sub: '#7c7c80', accent: '#e2a300', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m; const inner = w - m * 2; const bar = Math.max(26, 44 * u); const dateS = Math.max(18, 26 * u);
@@ -955,7 +955,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'chat', zh: '聊天截图', en: 'Chat bubbles', fit: [...XHS, ...VIDEO, ...SHORT], zhUse: '一问一答的聊天气泡：副标题是提问，标题是回答；对话感强，适合问答、AI、情感、职场', enUse: 'A chat exchange: the subtitle asks, the headline answers; Q&A, AI, relationships and work',
+    ...posterDesignTemplate("chat"),
     build(i) {
       const p = palette(i, { bg: '#ededed', bg2: '#ededed', ink: '#111111', sub: '#111111', accent: '#95ec69', accentInk: '#111111' });
       const { u, m, w, h, wide } = metrics(i); const av = Math.max(56, 92 * u); const gap = 22 * u; const pad = Math.max(22, 32 * u); const head = Math.max(22, 30 * u); const barH = head * 2.6;
@@ -979,7 +979,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'keyword', zh: '一词冲击', en: 'Keyword punch', fit: ['youtube', 'bilibili', 'bilibili-43', 'bilibili-hd', 'wide', ...SHORT, ...XHS], zhUse: '缩略图式三词标题：饱和蓝底 + 超粗白字 + 一块黄色关键词标签（副标题）+ 主体位上一枚浅色圆盘（有图时主体站在上面）；不靠描边和爆炸星也抢眼', enUse: 'A three-word thumbnail: saturated blue, heavy white type, one yellow keyword tag (the subtitle) and a pale disc where the subject stands; loud without outlines or bursts',
+    ...posterDesignTemplate("keyword"),
     photo: true,
     slot: i => { const { w, h } = metrics(i); return w / h > 1.2 ? { x: w * 0.56, y: 0, w: w * 0.44, h, radius: 0 } : { x: 0, y: h * 0.5, w, h: h * 0.5, radius: 0 }; },
     build(i) {
@@ -1003,7 +1003,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'riso', zh: '孔版印刷', en: 'Risograph', fit: [...XHS, ...BANNER, ...VIDEO], zhUse: '再生纸 + 荧光粉与蓝两种专色叠印 + 轻微错版 + 颗粒；独立杂志、展览、文艺与潮流话题', enUse: 'Recycled paper, fluorescent pink and blue overprinting with slight misregistration and grain; zines, shows and culture',
+    ...posterDesignTemplate("riso"),
     build(i) {
       const p = palette(i, { bg: '#f3eee4', bg2: '#f3eee4', ink: '#1f4fd1', sub: '#1f4fd1', accent: '#ff4fa3', accentInk: '#ffffff' });
       const { u, m, w, h } = metrics(i); const side = w / h > 1.2; const x0 = m * 1.1;
@@ -1027,7 +1027,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'ticket', zh: '票根', en: 'Ticket stub', fit: [...XHS, ...BANNER, ...VIDEO], zhUse: '一张带缺口和齿孔的入场券：主券写标题，存根放标签与条码；活动、课程、展览、旅行', enUse: 'An admission ticket with notches and perforation: headline on the main part, label and barcode on the stub; events, courses, travel',
+    ...posterDesignTemplate("ticket"),
     build(i) {
       const p = palette(i, { bg: '#ff6a3d', bg2: '#ff6a3d', ink: '#1f1a17', sub: '#6b6158', accent: '#ff6a3d', accentInk: '#fff6ea' });
       const { u, m, w, h } = metrics(i); const side = w / h > 1.05; const card = '#fff6ea';
@@ -1058,7 +1058,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'window', zh: '窗口教程', en: 'App window', fit: [...VIDEO, ...XHS, ...BANNER], zhUse: '柔和渐变底上一扇 macOS 风格窗口：红黄绿三点 + 文件名标签 + 窗口里的大标题；教程、工具、编程、效率', enUse: 'A macOS-style window on a soft gradient: traffic lights, a file tab and the headline inside; tutorials, tools and code',
+    ...posterDesignTemplate("window"),
     build(i) {
       const p = palette(i, { bg: '#dfe3fb', bg2: '#dfe3fb', ink: '#111827', sub: '#4b5563', accent: '#6366f1', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const cx = m * (wide ? 1.4 : 0.9); const cw = w - cx * 2; const ch = h * (wide ? 0.76 : 0.6); const cy = (h - ch) / 2;
@@ -1079,7 +1079,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'newspaper', zh: '报纸头版', en: 'Front page', fit: [...BANNER, ...XHS, ...VIDEO], zhUse: '新闻纸 + 衬线报头（标签做报名）+ 双线 + 期号栏 + 分栏灰条；把观点做成“头版头条”，评论、深度、年度盘点', enUse: 'Newsprint, a serif masthead (the label), double rules, a dateline and greeked columns; opinion, analysis, annual reviews',
+    ...posterDesignTemplate("newspaper"),
     build(i) {
       const p = palette(i, { bg: '#efeadf', bg2: '#efeadf', ink: '#141210', sub: '#4d4740', accent: '#b3261e', accentInk: '#ffffff' });
       const { u, m, w, h } = metrics(i); const side = w / h > 1.2; const x0 = m; const inner = w - m * 2;
@@ -1106,7 +1106,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'polaroid', zh: '拍立得', en: 'Polaroid', fit: [...XHS, ...VIDEO, 'wechat'], zhUse: '一张贴着胶带的拍立得相纸（相纸里是图位）+ 标签写在相纸下沿 + 旁边大标题；旅行、Vlog、生活记录', enUse: 'A taped instant photo (the print is a picture slot), the label on its lip and a big headline beside it; travel, vlogs, everyday life',
+    ...posterDesignTemplate("polaroid"),
     slot: i => polaroidFrame(i).photo,
     build(i) {
       const p = palette(i, { bg: '#e7e0d3', bg2: '#e7e0d3', ink: '#2a241d', sub: '#6e6457', accent: '#d9653b', accentInk: '#ffffff' });
@@ -1128,7 +1128,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'stack', zh: '叠字海报', en: 'Echo stack', fit: [...XHS, ...SHORT, ...BANNER], zhUse: '同一句标题上下重复、逐层变淡，中间一行是红色实字；字体海报的节奏感，适合短标题、口号、金句', enUse: 'The headline repeated in fading layers around one solid red line; a rhythmic type poster for short titles and slogans',
+    ...posterDesignTemplate("stack"),
     build(i) {
       const p = palette(i, { bg: '#ece6da', bg2: '#ece6da', ink: '#16130f', sub: '#5f574c', accent: '#e8432b', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m; const tw = w - m * 2; const lh = 0.98;
@@ -1147,7 +1147,7 @@ const STUDIO: Template[] = [
     },
   },
   {
-    id: 'serial', zh: '栏目头图', en: 'Column header', fit: [...BANNER, ...VIDEO, ...XHS], zhUse: '深绿栏目条（栏目名 + 大期号，标签写“周刊 12”）+ 标题；公众号系列文章、周刊、播客的固定头图，转发裁成方图时标题仍在中间', enUse: 'A dark column band with the series name and a big issue number (label like “Weekly 12”) beside the headline; recurring newsletters and podcasts',
+    ...posterDesignTemplate("serial"),
     build(i) {
       const p = palette(i, { bg: '#f4f1ea', bg2: '#f4f1ea', ink: '#1a1a1a', sub: '#6b6560', accent: '#1f4d3a', accentInk: '#f4f1ea' });
       const { u, m, w, h } = metrics(i); const side = w / h > 1.25; const num = digits(i, false).padStart(2, '0');

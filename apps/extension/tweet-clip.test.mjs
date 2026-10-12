@@ -1,3 +1,4 @@
+import { clipDateTimeText } from "./src/clip-time.ts";
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
 import {
@@ -56,7 +57,7 @@ describe("tweet note content", () => {
     expect(markdown).toContain("> Jianying (@jianying)\n> 无界面后台版");
     expect(markdown).toContain("![卡片 图](/api/v1/resources/res_1/blob)");
     expect(markdown).toContain("(https://x.com/huoshan007/status/123)");
-    expect(markdown).toContain("时间: 2026-09-26T01:00:00.000Z");
+    expect(markdown).toContain("时间: " + clipDateTimeText("2026-09-26T01:00:00.000Z"));
     expect(markdown).not.toContain("pbs.twimg.com");
   });
 

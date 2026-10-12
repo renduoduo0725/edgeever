@@ -11,12 +11,6 @@
   "webClipper": {
     "message": "Web Clipper"
   },
-  "supportedPlatformsLabel": {
-    "message": "最適化された主要プラットフォーム："
-  },
-  "platformXiaohongshu": {
-    "message": "小紅書"
-  },
   "platformZhihu": {
     "message": "知乎"
   },
@@ -564,11 +558,17 @@
   "saveHackerNewsToEdgeEver": {
     "message": "Hacker News の投稿を EdgeEver に保存"
   },
+  "saveV2exToEdgeEver": {
+    "message": "V2EX のトピックを EdgeEver に保存"
+  },
+  "saveXiaoyuzhouToEdgeEver": {
+    "message": "小宇宙のエピソードを EdgeEver に保存"
+  },
   "savingPlatformClip": {
     "message": "このページを EdgeEver に保存中…"
   },
   "platformNotDetail": {
-    "message": "Hacker News の投稿詳細ページを開いて、もう一度お試しください。"
+    "message": "対応する投稿、トピック、エピソードの詳細ページを開いて、もう一度お試しください。"
   },
   "platformUnreadable": {
     "message": "内容を読み取れません。必要に応じてログインし、詳細ページの読み込み後にもう一度お試しください。"
@@ -576,11 +576,17 @@
   "platformPageChanged": {
     "message": "保存中にページが切り替わりました。保存は行われていません。目的の詳細ページで再試行してください。"
   },
+  "platformIncomplete": {
+    "message": "内容の全文を読み取れませんでした。保存は行われていません。全文を展開し、画像の読み込みを待ってから再試行してください。"
+  },
   "platformImagesPartial": {
     "message": "本文を保存しました。一部の画像は外部リンクのままです。"
   },
   "platformSavedWithImages": {
     "message": "すべての画像とともに EdgeEver に保存しました。"
+  },
+  "platformNoShowNotes": {
+    "message": "このエピソードには Show Notes がありません。"
   },
   "platformAuthorLabel": {
     "message": "投稿者"
@@ -596,5 +602,53 @@
   },
   "platformExternalLinkLabel": {
     "message": "元の外部リンク"
+  },
+  "platformSupplementLabel": {
+    "message": "追記"
+  },
+  "platformPodcastLabel": {
+    "message": "番組"
+  },
+  "saveFacebookToEdgeEver": {
+    "message": "Facebook の投稿を EdgeEver に保存"
+  },
+  "saveInstagramToEdgeEver": {
+    "message": "Instagram の投稿を EdgeEver に保存"
+  },
+  "saveLinkedinToEdgeEver": {
+    "message": "LinkedIn の投稿を EdgeEver に保存"
+  },
+  "saveThreadsToEdgeEver": {
+    "message": "Threads の投稿を EdgeEver に保存"
+  },
+  "saveBlueskyToEdgeEver": {
+    "message": "Bluesky の投稿を EdgeEver に保存"
+  },
+  "socialSelectPost": {
+    "message": "投稿の詳細ページを開くか、対象の投稿をもう一度右クリックして保存してください。"
+  },
+  "checkingPageCapture": {
+    "message": "確認中"
+  },
+  "pageCaptureAdapted": {
+    "message": "対応済み"
+  },
+  "pageCaptureGeneric": {
+    "message": "汎用収集"
+  },
+  "pageCaptureSelectPost": {
+    "message": "投稿・文字を選択"
+  },
+  "pageCaptureUnavailable": {
+    "message": "保存不可"
+  },
+  "pageCaptureUnknown": {
+    "message": "未確認"
+  },
+  "platformXiaoyuzhou": {
+    "message": "Xiaoyuzhou"
+  },
+  "saveSubstackNoteToEdgeEver": {
+    "message": "Substack Note を EdgeEver に保存"
   }
 }

@@ -1,3 +1,4 @@
+import { posterDesignTemplate } from "@edgeever/shared";
 /**
  * Layouts drawn from the formats that dominate the Gaoding (稿定设计) recommended feed for Xiaohongshu and WeChat, kept to the
  * ones that live on type and flat shapes alone (no stock photo, no illustration), redrawn to the design rules: one focal
@@ -7,7 +8,6 @@ import { Circle, FabricObject, Line, Path, Polygon, Rect, Shadow } from 'fabric'
 import { grain } from './kit';
 import { badge, dot, FABRIC_LINE, fitTitle, hasCjk, keep, lineW, metrics, meta, pill, rect, solid, sub, Template, textbox, textHeight, wrapLines, palette } from './templates';
 
-const XHS = ['xhs', 'xhs-square', 'portrait', 'square']; const VIDEO = ['youtube', 'bilibili', 'bilibili-43', 'bilibili-hd', 'wide']; const BANNER = ['wechat', 'x'];
 /** Items for a checklist row: the points, or a subtitle written as a list. */
 const items = (points: string[] | undefined, subtitle: string, max: number): string[] => {
   const xs = (points?.length ? points : subtitle.split(/[\n,，、；;|｜]/)).map(s => s.trim()).filter(Boolean);
@@ -34,7 +34,7 @@ function brushBlock(x: number, y: number, w: number, h: number, color: string, s
 
 export const GAODING: Template[] = [
   {
-    id: 'regeng', zh: '热梗卡', en: 'Daily drop', fit: [...XHS, 'wechat'], zhUse: '黑色话题条（#标签#）+ 三层错位描边卡片里的粗黑大字 + 左下“No.期号”；每日热梗、资讯速递、系列笔记，小红书辨识度很高', enUse: 'A black hashtag bar, a heavy headline in a stack of three offset outlined cards and an issue number; daily drops, news and series notes',
+    ...posterDesignTemplate("regeng"),
     build(i) {
       const p = palette(i, { bg: '#f2f2ef', bg2: '#f2f2ef', ink: '#111111', sub: '#4b4b4b', accent: '#e8432b', accentInk: '#ffffff' });
       const { u, m, w, h } = metrics(i); const side = w / h > 1.25; const bar = Math.max(56, 88 * u); const sw = Math.max(4, 6 * u); const off = Math.max(8, 14 * u);
@@ -61,7 +61,7 @@ export const GAODING: Template[] = [
     },
   },
   {
-    id: 'interview', zh: '黑黄箭头', en: 'Black & yellow', fit: [...XHS, ...VIDEO, 'vertical'], zhUse: '黑底 + 黄色超粗标题 + 一条手绘大箭头指向标题 + 白框英文标签 + 角落笑脸；面试、考试、干货清单，强对比又不土', enUse: 'Black, a heavy yellow headline, one big hand-drawn arrow pointing at it, a boxed label and a corner smiley; interviews, exams and checklists',
+    ...posterDesignTemplate("interview"),
     build(i) {
       const p = palette(i, { bg: '#0f0f0f', bg2: '#0f0f0f', ink: '#ffe14a', sub: '#ffffff', accent: '#ffe14a', accentInk: '#0f0f0f' });
       const { u, m, w, h } = metrics(i); const side = w / h > 1.25; const x0 = m * 1.1; const tw = side ? w * 0.62 - x0 : w - x0 * 2;
@@ -84,7 +84,7 @@ export const GAODING: Template[] = [
     },
   },
   {
-    id: 'brush', zh: '笔刷收藏', en: 'Brush highlight', fit: [...XHS, 'wechat', ...VIDEO], zhUse: '白底粗黑标题 + 最后一行压一道绿色笔刷 + 歪贴的“建议收藏!”标签 + 底部 ✓ 清单（points）；副业、避坑、干货，最像小红书爆款笔记', enUse: 'Heavy black type on white, a green brush stroke under the last line, a tilted “save this” tag and a check row from the points; tips and side hustles',
+    ...posterDesignTemplate("brush"),
     build(i) {
       const p = palette(i, { bg: '#ffffff', bg2: '#ffffff', ink: '#111111', sub: '#4b4b4b', accent: '#3ddc84', accentInk: '#111111' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m * 1.1; const tw = (w - x0 * 2) * (wide ? 0.82 : 1); const lh = 1.12;
@@ -110,7 +110,7 @@ export const GAODING: Template[] = [
     },
   },
   {
-    id: 'calendar', zh: '日历页', en: 'Calendar page', fit: [...XHS, 'wechat', ...VIDEO], zhUse: '纯蓝底 + 一张带装订环的白色日历页 + 页里的粗黑大字；每日一句、打卡、待办、节日，干净有仪式感', enUse: 'Flat blue with a white calendar page and binding rings, a heavy headline on the page; daily lines, check-ins and to-dos',
+    ...posterDesignTemplate("calendar"),
     build(i) {
       const p = palette(i, { bg: '#2f6bff', bg2: '#2f6bff', ink: '#111111', sub: '#555555', accent: '#2f6bff', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const cw = wide ? w * 0.7 : w - m * 2.2; const ch = wide ? h - m * 2.4 : h * 0.66; const cx = (w - cw) / 2; const cy = (h - ch) / 2 + m * 0.3;
@@ -131,7 +131,7 @@ export const GAODING: Template[] = [
     },
   },
   {
-    id: 'frame', zh: '框线大字', en: 'Framed type', fit: [...XHS, ...BANNER, ...VIDEO], zhUse: '纯色底 + 一圈细内框 + 撑满框的超大标题 + 一角出血的太阳圆；招聘、开学、通知、活动，最简单也最醒目', enUse: 'Flat colour, a thin inset frame, a headline that fills it and a sun disc bleeding off a corner; hiring, launches and notices',
+    ...posterDesignTemplate("frame"),
     build(i) {
       const p = palette(i, { bg: '#22b573', bg2: '#22b573', ink: '#0f2a1d', sub: '#0f2a1d', accent: '#f4e04d', accentInk: '#0f2a1d' });
       const { u, m, w, h, wide } = metrics(i); const f = m * 0.55; const pad = m * 0.9; const tw = w - (f + pad) * 2;
@@ -152,7 +152,7 @@ export const GAODING: Template[] = [
     },
   },
   {
-    id: 'kicker', zh: '粗细引题', en: 'Kicker headline', fit: [...XHS, 'wechat', ...VIDEO], zhUse: '浅灰底：副标题当细字引题写在上面，标题粗黑放大 + 双线胶囊标签 + 底部“右滑查看 ››››”；经验、问答、职场，信息感强', enUse: 'Light grey: the subtitle as a thin kicker above a heavy headline, a double-ring pill tag and a “swipe” cue; experience posts, Q&A, work',
+    ...posterDesignTemplate("kicker"),
     build(i) {
       const p = palette(i, { bg: '#ececea', bg2: '#ececea', ink: '#111111', sub: '#2b2b2b', accent: '#111111', accentInk: '#ffffff' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m * 1.1; const tw = (w - x0 * 2) * (wide ? 0.72 : 1);
@@ -174,7 +174,7 @@ export const GAODING: Template[] = [
     },
   },
   {
-    id: 'corner', zh: '斜角色块', en: 'Corner wedge', fit: [...XHS, ...VIDEO, 'wechat'], zhUse: '白底 + 右下一大块斜切薄荷色 + 左上粗黑大字 + 黑色胶囊副标题 + 一条弯箭头；计划、清单、自律、学习，清爽有节奏', enUse: 'White with a big mint wedge from the lower right, a heavy headline top left, a black pill subtitle and a curved arrow; plans, lists and study',
+    ...posterDesignTemplate("corner"),
     build(i) {
       const p = palette(i, { bg: '#ffffff', bg2: '#ffffff', ink: '#111111', sub: '#ffffff', accent: '#7ee0c3', accentInk: '#111111' });
       const { u, m, w, h, wide } = metrics(i); const x0 = m * 1.1; const tw = (w - x0 * 2) * (wide ? 0.6 : 0.86);

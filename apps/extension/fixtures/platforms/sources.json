@@ -6,7 +6,111 @@
       "url": "https://news.ycombinator.com/item?id=40380738",
       "state": "Public, signed out; main post with both text and an external link.",
       "expected": "Keep title, jnnnthnn, original time, score 92, complete toptext and hackersearch.net/ask. Exclude the separate comment tree."
+    },
+    {
+      "file": "v2ex.html",
+      "url": "https://www.v2ex.com/t/1000000",
+      "state": "Public, signed out; HTML retrieved directly after browser navigation timed out.",
+      "expected": "Keep the topic, toubi, original time and both supplements in order with their own times. Exclude reply_content."
+    },
+    {
+      "file": "xiaoyuzhou.html",
+      "url": "https://www.xiaoyuzhoufm.com/episode/62ad4ae5f9b62781ea058a02",
+      "state": "Public, signed out; collapsed Show Notes already contain the complete HTML. Clicking the local expand control removes the mask without adding text.",
+      "expected": "Keep episode and podcast titles, original time, cover and all Show Notes through the final music credit. Keep timestamps in place as text where no href exists. Exclude comments, player and podcast avatar; do not infer a host from podcast authors or commenters."
+    },
+    {
+      "file": "facebook.html",
+      "url": "https://www.facebook.com/NASA/posts/pfbid0dPToN66CzcAHGMoaNe3jszH4FfBKvqkE5gogCNJkTxXDPsSGYrGvcVwsLgByyMQQl",
+      "capturedOn": "2026-10-10",
+      "state": "Public, signed out; sampled in Ego Chromium through the existing local SOCKS proxy.",
+      "expected": "NASA author, full baby-star body, original time and one image; exclude comments."
+    },
+    {
+      "file": "instagram.html",
+      "url": "https://www.instagram.com/p/DeAYvsnn4la/",
+      "capturedOn": "2026-10-10",
+      "state": "Public, signed out; sampled in Ego Chromium through the existing local SOCKS proxy.",
+      "expected": "nasa handle, full Swipe for countless stars caption, original time and three carousel images."
+    },
+    {
+      "file": "threads.html",
+      "url": "https://www.threads.com/@nasa/post/DZceA72Drjf",
+      "capturedOn": "2026-10-10",
+      "state": "Public, signed out; sampled in Ego Chromium through the existing local SOCKS proxy.",
+      "expected": "nasa handle, full Moon Joy caption, original time and four carousel images."
+    },
+    {
+      "file": "bluesky.html",
+      "url": "https://bsky.app/profile/bsky.app/post/3mhgg5ja5gc2w",
+      "capturedOn": "2026-10-10",
+      "state": "Public, signed out; sampled in Ego Chromium through the existing local SOCKS proxy.",
+      "expected": "Bluesky author, v1.119 announcement, original time and one image."
+    },
+    {
+      "file": "bluesky-feed.html",
+      "url": "https://bsky.app/profile/bsky.app",
+      "capturedOn": "2026-10-10",
+      "state": "Public, signed out; sampled in Ego Chromium through the existing local SOCKS proxy.",
+      "expected": "Five real feed cards; select an exact timestamp permalink, preserve quoted body and image without SEO JSON."
+    },
+    {
+      "file": "linkedin.html",
+      "url": "https://www.linkedin.com/posts/friends-of-nasa_nasa-space-astronomy-activity-7497764718095323136-NRvr",
+      "capturedOn": "2026-10-10",
+      "state": "Public, signed out; sampled in Ego Chromium through the existing local SOCKS proxy.",
+      "expected": "Friends of NASA, full telescope post, original time and all eight images; exclude comments."
+    },
+    {
+      "file": "instagram-slide-captions.html",
+      "url": "https://www.instagram.com/p/DeKe6teEpya/",
+      "capturedOn": "2026-10-11",
+      "state": "Public post, sampled in signed-in Ego Chromium. Parent caption combines all slide captions; visible DOM shows only the selected slide caption.",
+      "expected": "Keep google, the complete combined caption and all 20 media covers (one video and 19 photos). Any visible slide caption establishes identity only alongside the exact target permalink. Reject hidden cards, unrelated captions and missing carousel items."
+    },
+    {
+      "file": "linkedin-ugc.html",
+      "url": "https://www.linkedin.com/posts/nasa-space-astronomy-ugcPost-7497764716677758977-qmKO/",
+      "capturedOn": "2026-10-11",
+      "state": "Public post, sampled in signed-in Ego Chromium. SDUI listitem has its exact UGC ID in translatable-commentary; main body and all eight carousel images are loaded.",
+      "expected": "Keep Friends of NASA, complete telescope commentary, visible relative time and eight images. Keep UGC and activity identities distinct. Exclude sidebar, account details and comments; unwrap safety links to their destinations."
+    },
+    {
+      "file": "linkedin-ugc-guest.html",
+      "url": "https://www.linkedin.com/posts/nasa-space-astronomy-ugcPost-7497764716677758977-qmKO/",
+      "capturedOn": "2026-10-11",
+      "state": "Public signed-out response retrieved with browser fetch credentials omitted and independently with curl without cookies. Guest card declares both activity and attributed UGC URNs; JSON-LD uses its activity URL.",
+      "expected": "Keep the requested UGC identity, full JSON-LD text, Friends of NASA, exact publication time and all eight images. Accept only the card-root declared alias; body references and mismatched attribution cannot bind another post."
+    },
+    {
+      "file": "threads-short-link.html",
+      "url": "https://www.threads.com/@nasa/post/DeMqtuYgkaL",
+      "capturedOn": "2026-10-11",
+      "state": "Public NASA post in signed-in Ego Chromium. Caption link label is shortened; href retains the full public URL.",
+      "expected": "Complete caption, NASA, original publication time and one video cover. Wrong link targets remain unreadable. Only main-post DOM and relevant media JSON retained; no account state or replies."
+    },
+    {
+      "file": "medium-article.html",
+      "url": "https://medium.com/@scott.batson_76410/what-should-programmers-do-while-the-ai-writes-code-a2ce2e6de88e",
+      "capturedOn": "2026-10-11",
+      "state": "Redirects to scottbatson.dev, a Medium custom domain with og:site_name=Medium. The browser can read the complete rendered story, with a visible free-story entitlement notice.",
+      "expected": "Article title, subtitle, every loaded body block, two images and captions. Exclude highlights UI, member notices, author controls, reaction counts and image-viewer prompts. No hidden paid content or account/session data retained."
+    },
+    {
+      "file": "substack-note.html",
+      "url": "https://substack.com/@tedgioia/note/c-357811021",
+      "capturedOn": "2026-10-11",
+      "state": "Public signed-out Note. The hydrated detail uses feedPermalinkUnit; a separate feed card with the same ID is truncated. Fixture retains the complete detail DOM and relevant JSON-LD only.",
+      "expected": "Ted Gioia, all five paragraphs including P.S., exact source time and one attached image; exclude avatar, publication link, reactions, replies and sidebar. Wrong headers, hidden cards and incomplete text must fail."
+    },
+    {
+      "file": "substack-article.html",
+      "url": "https://www.oneusefulthing.org/p/the-dot-and-the-swarm",
+      "capturedOn": "2026-10-11",
+      "state": "Public article on a Substack custom domain. Sanitized structural excerpt retains beginning/final paragraphs, three sections, three images and caption, plus subscription/share UI for exclusion tests.",
+      "expected": "Clean article title, subtitle, retained paragraphs, sections, three images and caption. No subscription widgets, Share controls, header anchor buttons or comments; selection still takes priority. Not a full-article fixture or paid-content acceptance."
     }
   ],
-  "redaction": "Only relevant main-post DOM and one comment excerpt remain. Tests derive synthetic boundary states from this fixture; these variants are not live-site acceptance evidence."
+  "redaction": "Only relevant DOM containers and one comment excerpt remain. Controls, unrelated sections, scripts, event attributes and auth-bearing links were removed. Xiaoyuzhou JSON retains only query.id and episode eid/title/shownotes, used to verify identity and completeness. Tests derive synthetic boundary states from these real DOM fixtures; those variants are not live-site acceptance evidence. Phase 1 fixtures retain the actual target DOM and only post-relevant JSON records. Authentication, session, tracking and unrelated records are excluded. Reader and pointer tests use these structures; boundary mutations are synthetic.",
+  "updatedOn": "2026-10-11"
 }

@@ -45,39 +45,45 @@ body {
   line-height: 1.4;
 }
 
-.popup-features {
-  margin: 16px 0 16px;
-  padding: 10px 12px;
-  background: #f1f5f9;
-  border-radius: 8px;
-}
-
-.features-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 6px;
-  letter-spacing: 0.2px;
-}
-
-.platform-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.platform-tag {
+.popup-context {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-shrink: 0;
+  max-width: 108px;
+  margin-left: auto;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #eef1f4;
+  color: #64748b;
+}
+
+.capture-check {
+  display: none;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.popup-context[data-kind="adapted"] {
+  background: #e7f5ee;
+  color: #13885e;
+}
+
+.popup-context[data-kind="adapted"] .capture-check {
+  display: block;
+}
+
+.capture-mode {
   font-size: 11px;
   font-weight: 500;
-  color: #0f766e;
-  background: #e6f4f2;
-  border: 1px solid #ccede8;
-  padding: 2px 7px;
-  border-radius: 9999px;
-  line-height: 1.3;
+  line-height: 1.4;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .save-button {
@@ -88,6 +94,17 @@ body {
   gap: 8px;
   min-height: 42px;
   box-shadow: 0 1px 2px rgb(15 118 110 / 18%);
+}
+
+.popup-shell .save-button {
+  margin-top: 24px;
+  min-height: 44px;
+  background: #16a06e;
+  border-radius: 10px;
+}
+
+.popup-shell .save-button:hover:not(:disabled) {
+  background: #13885e;
 }
 
 .save-button svg,
@@ -114,13 +131,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  margin-top: 16px;
-  border-top: 1px solid #e2e8f0;
+  margin-top: 12px;
+  border-top: 0;
   border-radius: 0;
   background: transparent;
-  color: #0f766e;
-  padding: 15px 0 0;
-  font-size: 13px;
+  color: #64748b;
+  padding: 8px 0;
+  font-size: 12px;
 }
 
 .settings-button:hover {

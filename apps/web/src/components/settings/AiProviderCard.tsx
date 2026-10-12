@@ -1,9 +1,10 @@
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AiModelConfig, AiProvider, AiProviderConfig, AuthSession } from "@edgeever/shared";
 import { CheckCircle2, Loader2, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { aiErrorMessage, isLegacyProviderDisplayName, providerDefaults, trimAiText } from "@/components/settings/ai-provider-options";
+import { AiModelIdInput } from "@/components/settings/AiModelIdInput";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,7 +47,6 @@ export const AiProviderCard = ({ provider: saved, defaultDisplayName, defaultMod
   const queryClient = useQueryClient();
   const addModelDialogRef = useRef<HTMLDivElement>(null);
   const addModelTriggerRef = useRef<HTMLButtonElement>(null);
-  const datalistId = `ai-models-${useId().replaceAll(":", "")}`;
   const effectiveDisplayName = isLegacyProviderDisplayName(saved.displayName, saved.provider)
     ? defaultDisplayName
     : (saved.displayName || defaultDisplayName);
@@ -410,6 +410,11 @@ export const AiProviderCard = ({ provider: saved, defaultDisplayName, defaultMod
       <Dialog open={showAddModel} onOpenChange={handleAddModelChange}>
         <DialogContent
           ref={addModelDialogRef}
+          onEscapeKeyDown={(event) => {
+            if (event.target instanceof Element && event.target.closest('[cmdk-root][data-state="open"]')) {
+              event.preventDefault();
+            }
+          }}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             addModelDialogRef.current?.focus();
@@ -424,18 +429,15 @@ export const AiProviderCard = ({ provider: saved, defaultDisplayName, defaultMod
               <DialogTitle>{t("aiModel.addModel")}</DialogTitle>
               <DialogDescription>{t("aiModel.addModelDescription")}</DialogDescription>
             </DialogHeader>
-            <Field label={t("aiModel.modelId")} hint={discoveryLoading
+            <Field as="div" label={t("aiModel.modelId")} hint={discoveryLoading
               ? t("aiModel.discoveryLoading")
               : discoveryQuery.data ? t("aiModel.discoveryComplete", { count: discoveredModels.length }) : undefined}>
-              <Input
-                list={datalistId}
+              <AiModelIdInput
                 value={modelId}
-                onChange={(event) => setModelId(event.target.value)}
+                onValueChange={setModelId}
+                models={discoveredModels}
                 placeholder={t("aiModel.modelIdPlaceholder")}
               />
-              <datalist id={datalistId}>
-                {discoveredModels.map((model) => <option key={model.modelId} value={model.modelId}>{model.displayName}</option>)}
-              </datalist>
             </Field>
             {discoveryError || addModelMutation.error ? (
               <p className="text-xs font-medium text-rose-600" role="alert">
@@ -475,8 +477,8 @@ const formatBaseUrl = (baseUrl: string) => {
   }
 };
 
-const Field = ({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) => (
-  <label className="grid gap-1.5 text-xs font-normal leading-5 text-slate-700">
+const Field = ({ as: Comp = "label", label, hint, children }: { as?: "label" | "div"; label: string; hint?: string; children: ReactNode }) => (
+  <Comp className="grid gap-1.5 text-xs font-normal leading-5 text-slate-700">
     {label}{children}{hint ? <span className="text-xs font-normal leading-4 text-slate-500">{hint}</span> : null}
-  </label>
+  </Comp>
 );

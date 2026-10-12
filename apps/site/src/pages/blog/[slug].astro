@@ -6,7 +6,7 @@ import BlogLayout from "@/layouts/BlogLayout.astro";
 export async function getStaticPaths() {
   const entries = await getCollection("blog", ({ data }) => !data.draft);
   return entries.map((entry) => ({
-    params: { slug: entry.slug },
+    params: { slug: entry.id },
     props: { entry },
   }));
 }
@@ -16,6 +16,6 @@ const { Content } = await render(entry);
 ---
 
 <BlogLayout frontmatter={entry.data}>
-  {entry.slug === "ai-agent-deploy-cloudflare" && <AgentInstallTabs />}
+  {entry.id === "ai-agent-deploy-cloudflare" && <AgentInstallTabs />}
   <Content />
 </BlogLayout>

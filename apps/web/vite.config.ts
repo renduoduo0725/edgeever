@@ -307,6 +307,8 @@ export default defineConfig({
           : {}),
       },
       output: {
+        // Preserve initialization order when manual vendor groups form cycles.
+        strictExecutionOrder: true,
         codeSplitting: {
           groups: [
             {

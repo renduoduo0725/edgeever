@@ -6,7 +6,7 @@ import BlogLayout from "@/layouts/BlogLayout.astro";
 export async function getStaticPaths() {
   const entries = await getCollection("blog_en", ({ data }) => !data.draft);
   return entries.map((entry) => ({
-    params: { slug: entry.slug },
+    params: { slug: entry.id },
     props: { entry },
   }));
 }
@@ -19,6 +19,6 @@ const { Content } = await render(entry);
   <p class="not-prose mb-8 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
     Treść artykułu jest po angielsku. Nawigacja jest po polsku.
   </p>
-  {entry.slug === "ai-agent-deploy-cloudflare" && <AgentInstallTabs locale="pl" />}
+  {entry.id === "ai-agent-deploy-cloudflare" && <AgentInstallTabs locale="pl" />}
   <Content />
 </BlogLayout>

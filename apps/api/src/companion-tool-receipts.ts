@@ -36,7 +36,7 @@ export function describeCompanionTool(
   if (name === "get_memo" || name === "get_diagram" || name === "get_poster" || name === "get_table_records") {
     return [effect("read", memo ?? { id: String(args.memoId ?? record?.memoId ?? record?.id ?? "") })];
   }
-  if (name === "create_memo" || name === "create_table_memo" || name === "create_diagram_memo" || name === "create_infographic_memo" || name === "use_note_template") {
+  if (name === "create_memo" || name === "create_table_memo" || name === "create_diagram_memo" || name === "create_infographic_memo" || name === "create_poster_memo" || name === "use_note_template") {
     return [effect("created", memo)];
   }
   if (name === "update_memo" || name === "update_diagram" || name === "update_poster" || name === "restore_memo_revision") {

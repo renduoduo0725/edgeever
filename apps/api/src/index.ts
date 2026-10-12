@@ -88,6 +88,7 @@ import {
   uploadResourcePart,
 } from "./resource-upload-service";
 import { registerPluginDistributionRoutes } from "./plugin-distribution-routes";
+import { registerPosterRenderRoutes } from "./poster-render-routes";
 import { registerSyncRoutes } from "./sync-routes";
 import { registerMemoRoutes } from "./memo-routes";
 import { registerScheduledTaskRoutes } from "./scheduled-task-routes";
@@ -331,6 +332,7 @@ registerSyncRoutes(app, {
   mapMemoDetail: (...args) => mapMemoDetail(...args),
 });
 registerTagRoutes(app);
+registerPosterRenderRoutes(app);
 registerPluginDistributionRoutes(app);
 registerScheduledTaskRoutes(app);
 registerWorkspaceExtensionRoutes(app, { isDemoMode: (...args) => isDemoMode(...args) });

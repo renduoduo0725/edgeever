@@ -1,3 +1,4 @@
+import { startPosterClientRenderer } from "@/lib/poster-client-render";
 import {
   lazy,
   Suspense,
@@ -589,6 +590,14 @@ export const WorkspaceApp = ({
       queryClient.invalidateQueries({ queryKey: ["resources"], refetchType: "all" }),
     ]);
   }, [queryClient]);
+
+  useEffect(() => {
+    if (demoMode || (authRequired && !user) || isLoggingOut) return;
+    return startPosterClientRenderer(async () => {
+      await repository.sync();
+      await invalidateWorkspaceQueries();
+    }, i18n.language.startsWith("zh"));
+  }, [demoMode, authRequired, user?.id, isLoggingOut, repository, invalidateWorkspaceQueries, i18n.language]);
 
   const refreshWorkspaceFromServer = useCallback(async (mode: WorkspaceRefreshMode) => {
     if (isBrowserOffline()) {

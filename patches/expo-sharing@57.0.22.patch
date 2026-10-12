@@ -1,8 +1,7 @@
 diff --git a/android/src/main/java/expo/modules/sharing/ShareIntoUtils.kt b/android/src/main/java/expo/modules/sharing/ShareIntoUtils.kt
-index 041daea..59faa23 100644
 --- a/android/src/main/java/expo/modules/sharing/ShareIntoUtils.kt
 +++ b/android/src/main/java/expo/modules/sharing/ShareIntoUtils.kt
-@@ -50,6 +50,20 @@ internal fun isShareIntent(intent: Intent): Boolean {
+@@ -50,6 +50,20 @@
    return intent.type != null && allowedShareActions.contains(intent.action)
  }
  
@@ -24,10 +23,9 @@ index 041daea..59faa23 100644
    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
      getParcelableExtra(name, T::class.java)
 diff --git a/android/src/main/java/expo/modules/sharing/dataParsers/ResolvingShareIntentDataParser.kt b/android/src/main/java/expo/modules/sharing/dataParsers/ResolvingShareIntentDataParser.kt
-index 5f4d942..eb1b18d 100644
 --- a/android/src/main/java/expo/modules/sharing/dataParsers/ResolvingShareIntentDataParser.kt
 +++ b/android/src/main/java/expo/modules/sharing/dataParsers/ResolvingShareIntentDataParser.kt
-@@ -6,9 +6,11 @@ import android.content.Context
+@@ -6,9 +6,11 @@
  import android.net.Uri
  import android.provider.OpenableColumns
  import java.io.File
@@ -39,7 +37,7 @@ index 5f4d942..eb1b18d 100644
  import kotlin.text.indexOf
  import kotlin.text.substring
  
-@@ -25,21 +27,22 @@ class ResolvingShareIntentDataParser {
+@@ -25,21 +27,22 @@
      }
  
      private fun handleSendAction(context: Context, intent: Intent, type: String): List<ResolvedSharePayload> {
@@ -70,7 +68,7 @@ index 5f4d942..eb1b18d 100644
  
        if (android.util.Patterns.WEB_URL.matcher(text).matches()) {
          return listOf(resolveUrlContext(text))
-@@ -58,19 +61,27 @@ class ResolvingShareIntentDataParser {
+@@ -58,19 +61,27 @@
        val contentResolver = context.contentResolver
        val fileName = getFileName(contentResolver, uri) ?: "unknown"
        val fileSize = getFileSize(contentResolver, uri)
@@ -103,10 +101,9 @@ index 5f4d942..eb1b18d 100644
  
        return ResolvedSharePayload().apply {
 diff --git a/android/src/main/java/expo/modules/sharing/dataParsers/SimpleShareIntentDataParser.kt b/android/src/main/java/expo/modules/sharing/dataParsers/SimpleShareIntentDataParser.kt
-index 8dd50e8..6193748 100644
 --- a/android/src/main/java/expo/modules/sharing/dataParsers/SimpleShareIntentDataParser.kt
 +++ b/android/src/main/java/expo/modules/sharing/dataParsers/SimpleShareIntentDataParser.kt
-@@ -17,8 +17,13 @@ internal class SimpleShareIntentDataParser {
+@@ -17,8 +17,13 @@
      }
  
      private fun handleSendAction(context: Context, intent: Intent, type: String): List<SharePayload> {
@@ -122,7 +119,7 @@ index 8dd50e8..6193748 100644
          val isUrl = android.util.Patterns.WEB_URL.matcher(text).matches()
  
          listOf(
-@@ -28,19 +33,17 @@ internal class SimpleShareIntentDataParser {
+@@ -28,19 +33,17 @@
              mimeType = "text/plain"
            }
          )
@@ -148,10 +145,9 @@ index 8dd50e8..6193748 100644
          value = uri.toString()
          shareType = ShareType.fromMimeType(specificType)
 diff --git a/src/useIncomingShare.ts b/src/useIncomingShare.ts
-index b5431e6..3cd662f 100644
 --- a/src/useIncomingShare.ts
 +++ b/src/useIncomingShare.ts
-@@ -60,6 +60,9 @@ export function useIncomingShare(): UseIncomingShareResult {
+@@ -60,6 +60,9 @@
          setIsResolving(true);
          try {
            const resolved = await getResolvedSharedPayloadsAsync();

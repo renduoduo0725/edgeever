@@ -24,6 +24,8 @@ import {
   parsePublishArgs,
   resolveReleaseNotes,
   shouldCopyExtensionSource,
+  submitChrome,
+  submitFirefox,
   workspacePackageManifests,
 } from "./publish-web-clipper.mjs";
 
@@ -51,7 +53,7 @@ describe("web clipper store command", () => {
     expect(() => compareVersions("1", "0.1.8")).toThrow("X.Y.Z");
   });
 
-  test("blocks a Chrome package that is not newer than the public version", () => {
+  test("skips a Chrome package that is already public", () => {
     const plan = chromeSubmissionPlan({
       packageVersion: "0.1.8",
       status: {
@@ -62,8 +64,8 @@ describe("web clipper store command", () => {
       },
     });
 
-    expect(plan.action).toBe("blocked");
-    expect(plan.reason).toContain("0.1.8");
+    expect(plan.action).toBe("already-published");
+    expect(plan.published).toBe("0.1.8");
   });
 
   test("uploads a newer Chrome package when nothing is pending", () => {
@@ -92,7 +94,7 @@ describe("web clipper store command", () => {
     }).action).toBe("already-submitted");
   });
 
-  test("blocks a different Chrome version that is already pending", () => {
+  test("defers a different Chrome version that is already pending", () => {
     expect(chromeSubmissionPlan({
       packageVersion: "0.2.0",
       status: {
@@ -101,7 +103,7 @@ describe("web clipper store command", () => {
           distributionChannels: [{ crxVersion: "0.1.9" }],
         },
       },
-    }).action).toBe("blocked");
+    }).action).toBe("waiting-review");
   });
 
   test("uses the highest Chrome channel version", () => {
@@ -124,14 +126,76 @@ describe("web clipper store command", () => {
     expect(firefoxSubmissionPlan({
       packageVersion: "0.1.8",
       versions: [{ version: "0.1.8", file: { status: "public" }, source: "https://example.test/source" }],
-    }).action).toBe("blocked");
+    }).action).toBe("already-published");
   });
 
-  test("blocks a second Firefox upload while another version awaits review", () => {
+  test("defers a second Firefox upload while another version awaits review", () => {
     expect(firefoxSubmissionPlan({
       packageVersion: "0.1.10",
       versions: [{ version: "0.1.9", file: { status: "unreviewed" }, source: "https://example.test/source" }],
     }).reason).toContain("0.1.9");
+  });
+
+  test("skips older release packages after a newer version is public", () => {
+    expect(chromeSubmissionPlan({
+      packageVersion: "0.1.8",
+      status: { publishedItemRevisionStatus: { distributionChannels: [{ crxVersion: "0.1.9" }] } },
+    }).action).toBe("already-published");
+    expect(firefoxSubmissionPlan({
+      packageVersion: "0.1.8",
+      versions: [{ version: "0.1.9", file: { status: "public" } }],
+    }).action).toBe("already-published");
+  });
+
+  test("does not hide rejected Firefox versions as successful skips", () => {
+    expect(firefoxSubmissionPlan({
+      packageVersion: "0.1.9",
+      versions: [{ version: "0.1.9", file: { status: "disabled" } }],
+    }).action).toBe("blocked");
+  });
+
+  test("Firefox skips public and pending packages without any write request", async () => {
+    for (const [status, version, action] of [
+      ["public", "0.1.9", "already-published"],
+      ["unreviewed", "0.1.9", "already-submitted"],
+      ["unreviewed", "0.1.8", "waiting-review"],
+    ]) {
+      const calls = [];
+      const result = await submitFirefox({
+        version: "0.1.9",
+        env: { AMO_JWT_ISSUER: "test", AMO_JWT_SECRET: "test" },
+        fetchImpl: async (url, options) => {
+          calls.push({ url, method: options.method ?? "GET" });
+          return jsonResponse({ results: [{ version, file: { status }, source: "source.zip" }] });
+        },
+      });
+      expect(result.action).toBe(action);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].method).toBe("GET");
+    }
+  });
+
+  test("Chrome skips public and pending packages without upload or publish", async () => {
+    for (const [revision, version, action] of [
+      ["publishedItemRevisionStatus", "0.1.9", "already-published"],
+      ["submittedItemRevisionStatus", "0.1.9", "already-submitted"],
+      ["submittedItemRevisionStatus", "0.1.8", "waiting-review"],
+    ]) {
+      const calls = [];
+      const result = await submitChrome({
+        version: "0.1.9",
+        env: {},
+        fetchImpl: async (url) => {
+          calls.push(String(url));
+          return jsonResponse(String(url).endsWith("/token")
+            ? { access_token: "test" }
+            : { [revision]: { state: "PENDING_REVIEW", distributionChannels: [{ crxVersion: version }] } });
+        },
+      });
+      expect(result.action).toBe(action);
+      expect(calls).toHaveLength(2);
+      expect(calls[1]).toEndWith(":fetchStatus");
+    }
   });
 
   test("reads a finished Chrome upload without treating every status item as finished", () => {
@@ -287,6 +351,11 @@ describe("web clipper store command", () => {
   test("keeps store submission on the official repository workflow", () => {
     expect(workflow).toContain("github.repository == 'tianma-if/edgeever'");
     expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).toContain("- published");
+    expect(workflow).toContain("!github.event.release.prerelease");
+    expect(workflow).toContain("!github.event.release.draft");
+    expect(workflow).toContain("ref: ${{ github.event.release.tag_name || inputs.release_tag || github.sha }}");
+    expect(workflow).toContain("inputs.platform || 'both'");
     expect(workflow).toContain("CHROME_WEB_STORE_SERVICE_ACCOUNT_JSON");
     expect(workflow).toContain("AMO_JWT_ISSUER");
     expect(workflow).toContain("AMO_JWT_SECRET");

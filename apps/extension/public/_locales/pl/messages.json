@@ -11,12 +11,6 @@
   "webClipper": {
     "message": "Web Clipper"
   },
-  "supportedPlatformsLabel": {
-    "message": "Dopasowane przechwytywanie dla:"
-  },
-  "platformXiaohongshu": {
-    "message": "Xiaohongshu"
-  },
   "platformZhihu": {
     "message": "Zhihu"
   },
@@ -564,11 +558,17 @@
   "saveHackerNewsToEdgeEver": {
     "message": "Zapisz wpis Hacker News w EdgeEver"
   },
+  "saveV2exToEdgeEver": {
+    "message": "Zapisz temat V2EX w EdgeEver"
+  },
+  "saveXiaoyuzhouToEdgeEver": {
+    "message": "Zapisz odcinek Xiaoyuzhou w EdgeEver"
+  },
   "savingPlatformClip": {
     "message": "Zapisywanie strony w EdgeEver…"
   },
   "platformNotDetail": {
-    "message": "Otwórz stronę szczegółów wpisu Hacker News i spróbuj ponownie."
+    "message": "Otwórz stronę konkretnego wpisu, tematu lub odcinka i spróbuj ponownie."
   },
   "platformUnreadable": {
     "message": "Nie można odczytać treści. W razie potrzeby zaloguj się, poczekaj na załadowanie strony i spróbuj ponownie."
@@ -576,11 +576,17 @@
   "platformPageChanged": {
     "message": "Strona zmieniła się podczas zapisywania. Nic nie zapisano. Spróbuj ponownie na właściwej stronie."
   },
+  "platformIncomplete": {
+    "message": "Nie udało się odczytać pełnej treści. Nic nie zapisano. Rozwiń tekst i poczekaj na załadowanie obrazów, a następnie spróbuj ponownie."
+  },
   "platformImagesPartial": {
     "message": "Tekst zapisano. Część obrazów nadal korzysta z linków zewnętrznych."
   },
   "platformSavedWithImages": {
     "message": "Zapisano w EdgeEver wraz ze wszystkimi obrazami."
+  },
+  "platformNoShowNotes": {
+    "message": "Ten odcinek nie ma Show Notes."
   },
   "platformAuthorLabel": {
     "message": "Autor"
@@ -596,5 +602,53 @@
   },
   "platformExternalLinkLabel": {
     "message": "Link źródłowy"
+  },
+  "platformSupplementLabel": {
+    "message": "Uzupełnienie"
+  },
+  "platformPodcastLabel": {
+    "message": "Podcast"
+  },
+  "saveFacebookToEdgeEver": {
+    "message": "Zapisz post Facebooka w EdgeEver"
+  },
+  "saveInstagramToEdgeEver": {
+    "message": "Zapisz post Instagrama w EdgeEver"
+  },
+  "saveLinkedinToEdgeEver": {
+    "message": "Zapisz post LinkedIn w EdgeEver"
+  },
+  "saveThreadsToEdgeEver": {
+    "message": "Zapisz post Threads w EdgeEver"
+  },
+  "saveBlueskyToEdgeEver": {
+    "message": "Zapisz post Bluesky w EdgeEver"
+  },
+  "socialSelectPost": {
+    "message": "Otwórz stronę posta lub kliknij wybrany post ponownie prawym przyciskiem, aby go zapisać."
+  },
+  "checkingPageCapture": {
+    "message": "Sprawdzanie"
+  },
+  "pageCaptureAdapted": {
+    "message": "Dostosowana"
+  },
+  "pageCaptureGeneric": {
+    "message": "Ogólna"
+  },
+  "pageCaptureSelectPost": {
+    "message": "Wybierz post / tekst"
+  },
+  "pageCaptureUnavailable": {
+    "message": "Niedostępna"
+  },
+  "pageCaptureUnknown": {
+    "message": "Nieznana"
+  },
+  "platformXiaoyuzhou": {
+    "message": "Xiaoyuzhou"
+  },
+  "saveSubstackNoteToEdgeEver": {
+    "message": "Zapisz notatkę Substack w EdgeEver"
   }
 }

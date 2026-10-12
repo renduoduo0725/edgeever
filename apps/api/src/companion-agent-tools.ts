@@ -15,7 +15,7 @@ import { AppError } from "./app-error";
 const AUTO_APPLY_WRITES = new Set(
   COMPANION_MCP_TOOLS.filter(tool => !tool.annotations.readOnlyHint).map(tool => tool.name),
 );
-const INBOX_DEFAULT_NOTEBOOK_TOOLS = new Set(["create_memo", "create_table_memo", "create_diagram_memo", "create_infographic_memo", "use_note_template"]);
+const INBOX_DEFAULT_NOTEBOOK_TOOLS = new Set(["create_memo", "create_table_memo", "create_diagram_memo", "create_infographic_memo", "create_poster_memo", "use_note_template"]);
 
 export async function resolveWorkspaceInboxId(db: DatabaseAdapter, workspaceId: string) {
   const preferred = workspaceInboxId(workspaceId);
@@ -114,15 +114,17 @@ export const parseCompanionAgentSession = (value: unknown): CompanionAgentSessio
 
 const TOOL_HINTS: Record<string, string> = {
   find_notebooks: " Use this whenever the user names a notebook. Notebook names are not IDs.",
+  delete_notebook: " Delete an empty notebook using its exact ID from find_notebooks or resolve_notebook_path. This is separate from emptying the trash. Never trash or move its notes to make it empty unless the user explicitly requests that. If lookup is ambiguous, ask which notebook; do not guess.",
   list_notebooks: " Use this to list every notebook name. Do not guess names from the open note.",
   list_memos: " To list a named notebook, call find_notebooks first and pass that id. Without notebookId this lists the whole workspace, newest updated first. For newly created notes in a time range, use search_memos with createdAfter. If hasMore is true, say the list is incomplete.",
   search_memos: " Searches note titles and bodies, not notebook names. query is optional. For recently created or added notes, pass createdAfter (YYYY-MM-DD or ISO date-time) and omit query; never put this week/最近/新增 in query. For recently edited notes, use updatedAfter. Do not pass notebookId unless find_notebooks or list_notebooks returned it. For notes in a named notebook, find_notebooks then list_memos. If hasMore is true, say the list is incomplete.",
   list_tags: " Use this when the user names a tag.",
-  create_memo: " For prose Markdown notes only. Never use this for structured tables/多维表格, 思维导图/mind maps, 流程图/flowcharts, 架构图, or 信息图/infographics. Use create_table_memo for tables, create_diagram_memo for diagrams, and create_infographic_memo for infographics. If the user did not name a notebook, omit notebookId. The note is saved in the inbox (等待分类). Do not ask which notebook.",
+  create_memo: " For prose Markdown notes only. Never use this for structured tables/多维表格, 思维导图/mind maps, 流程图/flowcharts, 架构图, 信息图/infographics, or 海报/posters. Use create_poster_memo for posters. Use create_table_memo for tables, create_diagram_memo for diagrams, and create_infographic_memo for infographics. If the user did not name a notebook, omit notebookId. The note is saved in the inbox (等待分类). Do not ask which notebook.",
   create_table_memo: " Create an editable structured table/多维表格 from the user's requested field plan. Infer useful field names and types when unspecified. Select fields need explicit options. This creates an empty table; only add records if the user requested example or supplied records. If the user did not name a notebook, omit notebookId so it is saved in the inbox (等待分类). Do not ask which notebook, and do not use the open notebook unless the user named it.",
   get_table_records: " Read an existing structured table's fields, record IDs, and revision. Use this before adding a record so cell keys are actual field IDs. Do not infer field IDs from names.",
   add_table_record: " Add one requested record to a structured table. First call get_table_records, then use its field IDs and latest revision. Do not invent factual records to fill a new table.",
   create_diagram_memo: " Create an editable visual diagram note. kind=mind-map for 思维导图/mind map, flowchart for 流程图, architecture for 架构图. Never use this for 信息图/infographic; call create_infographic_memo. Omit edge ids; EdgeEver generates them. For mind maps, give a root and children with parentId; omit node type. If the user did not name a notebook, omit notebookId. The diagram is saved in the inbox (等待分类). Do not ask which notebook, and do not use the open notebook unless the user named it. Build nodes from the open note body in Focus DATA when the user refers to this note.",
+  create_poster_memo: " Create a real editable poster (海报笔记), never poster-style Markdown. Plan the key takeaway first. For informative topics such as 产业布局, summaries, comparisons and guides, provide 3–6 useful heading/body sections, not just a heading and generic subtitle. Choose grid for categories, list for steps, and a style suited to the subject. Use referenced note content and do not invent figures or sources. Quotes/slogans/minimal covers can omit sections. The tool handles editable canvas layout and encoding. If no notebook was named, omit notebookId and use the inbox. Report failure instead of substituting prose.",
   create_infographic_memo: " Create an AntV infographic note (信息图). A share, proportion, or 占比 uses template chart-pie-donut-plain-text and numeric data.values, not a mind map. If the user did not supply the figures, say in data.desc that they are illustrative and are not an official disclosure. If the user did not name a notebook, omit notebookId. The infographic is saved in the inbox (等待分类). Do not ask which notebook, and do not use the open notebook unless the user named it.",
   get_poster: " Read the existing poster canvas and elements before editing. Do not use raw Markdown for posters.",
   update_poster: " Edit poster text, colors, typography and positions after get_poster. Preserve unmentioned and locked elements. Pass the revision you read.",
@@ -411,7 +413,7 @@ export function createCompanionTools(args: { db: DatabaseAdapter; scope: Compani
               nodeCount: Array.isArray(created.diagram?.nodes) ? created.diagram.nodes.length : undefined,
             });
           }
-          if (definition.name === "create_infographic_memo") {
+          if (definition.name === "create_infographic_memo" || definition.name === "create_poster_memo") {
             const created = result as { memo: MemoDetail; template?: string };
             remember(created.memo);
             return done({
@@ -422,7 +424,7 @@ export function createCompanionTools(args: { db: DatabaseAdapter; scope: Compani
               notebookName: await notebookName(created.memo.notebookId),
               revision: created.memo.revision,
               template: created.template,
-              infographic: true,
+              ...(definition.name === "create_poster_memo" ? { poster: true } : { infographic: true }),
             });
           }
           if (definition.name === "create_table_memo") {
@@ -491,6 +493,10 @@ export function createCompanionTools(args: { db: DatabaseAdapter; scope: Compani
               message: "This is an editable diagram. Change it with update_diagram, not update_memo.",
             });
           }
+          if (memo.poster) {
+            return done({ id: memo.id, title: memo.title, notebookId: memo.notebookId, tags: memo.tags, revision: memo.revision,
+              poster: true, message: "This is an editable poster. Read its canvas with get_poster and edit with update_poster; do not decode or replace Markdown." });
+          }
           const content = takeNoteText(memo.contentMarkdown, 8000);
           if (content.length === memo.contentMarkdown.length) inspected.set(memo.id, memo.revision); else inspected.delete(memo.id);
           return done({ id: memo.id, title: memo.title, notebookId: memo.notebookId, tags: memo.tags, revision: memo.revision,
@@ -516,12 +522,14 @@ export function createCompanionTools(args: { db: DatabaseAdapter; scope: Compani
               notebookId: memo.notebookId,
               notebookName: await notebookName(memo.notebookId),
               tags: memo.tags,
+              poster: memo.poster,
               createdAt: memo.createdAt,
               updatedAt: memo.updatedAt,
               excerpt: takeNoteText(memo.excerpt, 180),
             }))),
           });
         }
+        if (definition.name === "get_poster_capabilities" || definition.name === "get_poster_preview" || definition.name === "export_poster") return done(result);
         const serialized = JSON.stringify(result);
         const text = serialized.slice(0, Math.min(8000, session.metadataRemaining));
         session.metadataRemaining -= text.length;

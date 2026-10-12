@@ -46,6 +46,14 @@ test("registers context menus on install, not on background startup", async () =
       "save-reddit-link",
       "save-video",
       "save-hacker-news",
+      "save-v2ex",
+      "save-xiaoyuzhou",
+      "save-facebook",
+      "save-instagram",
+      "save-linkedin",
+      "save-threads",
+      "save-bluesky",
+      "save-substack-note",
     ]);
     expect(created.find((item) => item.id === "save-xhs")).toMatchObject({
       contexts: ["page", "video"],
@@ -82,10 +90,12 @@ test("registers context menus on install, not on background startup", async () =
     });
     expect(created.find((item) => item.id === "save-selection")?.contexts).toEqual(["selection"]);
     expect(created.find((item) => item.id === "save-image")?.contexts).toEqual(["image"]);
-    for (const id of ["save-hacker-news"]) {
+    for (const id of ["save-hacker-news", "save-v2ex", "save-xiaoyuzhou"]) {
       expect(created.find((item) => item.id === id)?.contexts).toEqual(["page"]);
     }
     expect(created.find((item) => item.id === "save-hacker-news")?.documentUrlPatterns).toEqual(["https://news.ycombinator.com/item?*"]);
+    expect(created.find((item) => item.id === "save-v2ex")?.documentUrlPatterns).toEqual(["https://www.v2ex.com/t/*", "https://v2ex.com/t/*"]);
+    expect(created.find((item) => item.id === "save-xiaoyuzhou")?.documentUrlPatterns).toEqual(["https://www.xiaoyuzhoufm.com/episode/*"]);
     const video = created.find((item) => item.id === "save-video");
     expect(video).toMatchObject({
       contexts: ["page", "video"],

@@ -18,11 +18,17 @@ export const readHackerNews = (doc: Document, pageUrl: string, labels: PlatformL
   if (!markdown && !externalLink) return { ok: false, reason: "unreadable" };
   const score = platformText(metadata?.querySelector(`#score_${target.id}`));
   const points = /^(\d+)\s+points?$/.exec(score)?.[1];
+  const publishedAt = publishedTime(metadata?.querySelector(".age") ?? null);
+  // HN's .age title renders UTC without a zone, matching its official API's
+  // Unix timestamp. Keep that instant explicit without using the device zone.
+  if (publishedAt?.precision === "datetime" && !/(?:Z|[+-]\d{2}:\d{2})$/.test(publishedAt.value)) {
+    publishedAt.value += "Z";
+  }
   return {
     ok: true,
     clip: {
       ...target, title, author: platformText(metadata?.querySelector(".hnuser")) || undefined,
-      publishedAt: publishedTime(metadata?.querySelector(".age") ?? null),
+      publishedAt,
       markdown: [
         points === undefined ? "" : `${markdownText(labels.score)}: ${points}`,
         externalLink ? `${markdownText(labels.externalLink)}: [${markdownText(externalLink)}](${markdownUrl(externalLink)})` : "",

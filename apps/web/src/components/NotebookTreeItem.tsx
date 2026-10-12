@@ -328,7 +328,26 @@ export const NotebookTreeItem = ({
                     <Pencil className="h-4 w-4" />
                     {t("notebookTree.rename")}
                   </button>
-                {!isInbox && (
+                {isInbox ? (
+                  <>
+                    <div className="-mx-1 my-1 h-px bg-slate-100" />
+                    <div
+                      className="flex w-full cursor-not-allowed flex-col gap-0.5 rounded-sm px-2 py-1.5 text-left text-xs text-slate-400"
+                      aria-disabled="true"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                      }}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        {t("notebookTree.deleteNotebook")}
+                      </span>
+                      <span className="pl-6 text-[11px] leading-4">
+                        {t("notebookTree.inboxDeleteHint")}
+                      </span>
+                    </div>
+                  </>
+                ) : (
                   <>
                     <div className="-mx-1 my-1 h-px bg-slate-100" />
                     <button
@@ -371,7 +390,23 @@ export const NotebookTreeItem = ({
             <Pencil className="h-4 w-4" />
             {t("notebookTree.rename")}
           </ContextMenuItem>
-          {!isInbox && (
+          {isInbox ? (
+            <>
+              <ContextMenuSeparator className="my-1 h-px bg-slate-100" />
+              <div
+                className="flex cursor-not-allowed flex-col gap-0.5 px-3 py-1.5 text-xs text-slate-400"
+                aria-disabled="true"
+              >
+                <span className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  {t("notebookTree.deleteNotebook")}
+                </span>
+                <span className="pl-6 text-[11px] leading-4">
+                  {t("notebookTree.inboxDeleteHint")}
+                </span>
+              </div>
+            </>
+          ) : (
             <>
               <ContextMenuSeparator className="my-1 h-px bg-slate-100" />
               <ContextMenuItem

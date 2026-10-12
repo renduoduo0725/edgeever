@@ -1,0 +1,51 @@
+# 浏览器剪藏平台扩展计划
+
+[English](browser-clipper-platform-expansion-plan.md)
+
+关联：[Issue #493](https://github.com/tianma-if/edgeever/issues/493)。更新于 2026-10-10。用户已确认 Phase 1 为 **Facebook、Instagram、LinkedIn、Threads 和 Bluesky** 五个平台。见[使用说明与验证记录](browser-clipper-platforms.zh-CN.md)。
+
+## 交付阶段
+
+| 阶段 | 平台 | 必须保留的内容 |
+| --- | --- | --- |
+| 1 | Facebook、Instagram、LinkedIn、Threads、Bluesky | 用户选中的单帖、完整可读正文、可用作者与发布时间、图片和明确引用。 |
+| 2 | BOSS 直聘、雪球、小宇宙 | 岗位详情；投资帖及明确股票标识；单集完整 Show Notes 和时间轴。 |
+| 3 | 微信公众号、即刻、V2EX、Substack、Medium | 文章、动态、主题附言，保留结构与原始元数据。 |
+| 待排期 | 少数派、掘金、豆瓣及 Hacker News 后续工作 | 文章与代码结构、评论、投稿元数据。 |
+
+各阶段独立提交 PR。先前本地 Hacker News、V2EX、小宇宙改动继续保留，但不再作为 Phase 1 的定义。
+
+## Phase 1 行为
+
+工具栏剪藏支持的单帖详情页；有效文本选区保持优先。页面右键菜单的平台命令定位指针下的帖子，也支持可识别的信息流卡片。小型内容脚本只记住被点击卡片的永久链接，不发起网络请求或自动抓取。信息流无法确定卡片时，提示打开单帖后重试。
+
+读取器使用帖头自身永久链接或 activity URN 校验目标 ID。正文、评论及引用帖中的链接不能证明父帖身份。创建笔记前再次检查页面导航与消息关联。已识别但不可读的帖子明确失败，不退回整页抓取。
+
+仅保存当前页面已可读的内容。Facebook、LinkedIn 必要时点击帖内展开按钮并限时等待。Instagram、Threads 只有在对应 DOM 卡片中可读相同配文时，才使用已加载的帖子数据。轮播缺项或图片合集仍有隐藏项时报告不完整。不会新增登录、私有 API、后台爬取、视频下载或转写。
+
+元数据包含规范来源 URL、可用作者、独立的发布时间与抓取时间、`web-clip` 和稳定平台标签。已知时间点按剪藏时浏览器系统时区格式化为 `yyyy-MM-dd HH:mm:ss`；不补造缺失信息、日期精度或相对时间。后续设备时区变化不会改变已保存正文。剔除评论、操作控件及其他信息流卡片，清理或转义脚本、危险协议和活动 HTML。
+
+## 实现边界
+
+复用实例 API、笔记本选择、保存队列、多语言文案和图片转存。`platform-clip.ts` 负责平台 URL 与共享元数据，`social-clip.ts` 实现五个平台读取器，`social-target.ts` 定位指针目标，`capture-platform.ts` 负责提取和帖内展开，`background.ts` 校验并保存。注入入口打包为 Chromium、Firefox 可用的独立 classic 脚本。不新增服务端接口、认证变化、Migration 或依赖。
+
+先保存正文，再转存图片，以现有编辑版本保护替换地址。限额保持为 30 张、单张 20 MiB、累计 60 MiB、总时限 45 秒。失败保留笔记与可用外链，提示部分成功，不重复建笔记、不覆盖用户并发编辑。脱离来源站的图片访问以实例资源 URL 验证，不承诺完整离线客户端缓存。
+
+## 验证与交付
+
+使用去敏后的真实页面 DOM、数据夹具，记录来源与预先确定的内容预期。覆盖各站成功、不可读、错误身份及内容不完整；验证实际打包脚本的菜单／工具栏保存、右键定位、消息身份、导航、附件失败及编辑冲突。使用已构建扩展验证本地 API 持久化及重新打开编辑器；屏蔽原始来源后检查所有预期图片附件。
+
+必要检查：
+
+```sh
+bun run test:extension
+bun run typecheck
+bun run typecheck:mobile
+bun run build:web
+bun run build:extension
+bun run build:extension:firefox
+bun run lint:extension:firefox
+bunx playwright test tests/e2e/web-clipper-platforms.spec.ts --project=chromium
+```
+
+分别记录代码／测试、提交、PR、商店发布和真实页面验收状态。未登录样本及 Chromium 集成结果不能证明登录后信息流或 Edge／Firefox 运行时已通过。页面结构变化可能导致拒绝或提取不全，以明确失败和图片部分成功反馈约束风险。回滚可移除对应路由、菜单、读取器，不改变已存笔记及数据。保护工作区其他改动。

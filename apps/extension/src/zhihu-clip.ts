@@ -1,3 +1,4 @@
+import { clipDateTimeText } from "./clip-time";
 import { createDocument } from "@mixmark-io/domino";
 import TurndownService from "turndown";
 import type { ImageNoteClient } from "./image-clip";
@@ -351,8 +352,8 @@ export const zhihuNoteMarkdown = (input: {
   if (contentBody) blocks.push(`## ${input.kind === "answer" ? input.answerLabel : input.articleBodyLabel}\n\n${contentBody}`);
   const footer = [
     input.noteUrl ? `${input.sourceLabel}: [${escapeMarkdownLabel(input.noteUrl)}](${markdownDestination(input.noteUrl)})` : "",
-    input.datetime ? `${input.timeLabel}: ${input.datetime}` : "",
-    `${input.capturedAtLabel}: ${input.capturedAt}`,
+    input.datetime ? `${input.timeLabel}: ${clipDateTimeText(input.datetime)}` : "",
+    `${input.capturedAtLabel}: ${clipDateTimeText(input.capturedAt)}`,
   ].filter(Boolean);
   blocks.push(`---\n\n${footer.join("\n\n")}`);
   return blocks.join("\n\n");

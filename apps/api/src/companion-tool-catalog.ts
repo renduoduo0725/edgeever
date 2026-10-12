@@ -5,12 +5,12 @@ import { AppError } from "./app-error";
 // Exposure policy, not a second tool implementation/schema registry. New MCP
 // capabilities must be reviewed rather than silently acquiring user authority.
 const allowed = new Set([
-  "get_current_user", "search_memos", "list_memos", "get_memo", "create_memo", "create_table_memo", "get_table_records", "add_table_record", "create_diagram_memo", "create_infographic_memo", "get_diagram",
-  "update_diagram", "get_poster", "update_poster",
+  "get_current_user", "search_memos", "list_memos", "get_memo", "create_memo", "create_table_memo", "get_table_records", "add_table_record", "create_diagram_memo", "create_infographic_memo", "create_poster_memo", "get_diagram",
+  "update_diagram", "get_poster", "update_poster", "get_poster_capabilities", "request_poster_render", "get_poster_render_job", "get_poster_preview", "export_poster",
   "import_memos", "update_memo",
   "trash_memos", "restore_memos", "move_memos", "add_tags_to_memos", "remove_tags_from_memos",
   "rename_tag", "delete_tag", "merge_memos", "list_memo_resources", "list_resources",
-  "list_memo_revisions", "restore_memo_revision", "move_notebook", "create_notebook", "rename_notebook",
+  "list_memo_revisions", "restore_memo_revision", "move_notebook", "create_notebook", "rename_notebook", "delete_notebook",
   "get_notebook", "find_notebooks", "resolve_notebook_path", "list_notebooks", "list_tags", "get_workspace_stats",
   "list_note_templates", "get_note_template", "create_note_template", "update_note_template", "delete_note_template",
   "use_note_template", "list_ai_instructions", "get_ai_instruction", "create_ai_instruction", "update_ai_instruction",

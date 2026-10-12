@@ -7,6 +7,7 @@ import type { DatabaseAdapter } from "./storage-contract";
 import type { CompanionScope, TurnRow } from "./companion-service";
 import type { AppContext } from "./api-context";
 import { companionToolDefinitions, createCompanionTools } from "./companion-agent-tools";
+import { posterToolImage } from "./poster-tool-output";
 import {
   companionAgentInstructions,
   companionExecutionReceipts,
@@ -69,6 +70,16 @@ export const streamCompanion = async (args: {
           if (!selected) throw new Error(`Missing companion tool: ${definition.name}`);
           return selected.execute(input);
         },
+        ...(definition.name === "get_poster_preview" || definition.name === "export_poster" ? {
+          toModelOutput: ({ output }: { output: unknown }) => {
+            const visual = posterToolImage(definition.name, output);
+            if (!visual) return { type: "text" as const, value: JSON.stringify(output) };
+            return { type: "content" as const, value: [
+              { type: "text" as const, text: JSON.stringify(visual.metadata) },
+              { type: "file" as const, mediaType: visual.image.mimeType, data: { type: "data" as const, data: visual.image.data } },
+            ] };
+          },
+        } : {}),
       }),
     ]),
   );

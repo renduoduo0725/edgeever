@@ -68,6 +68,12 @@ export const getRequiredStringArray = (value: unknown, name: string) => {
   return items;
 };
 
+export const encodeBase64Data = (bytes: Uint8Array) => {
+  const chunks: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += 4096) chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + 4096)));
+  return btoa(chunks.join(""));
+};
+
 export const decodeBase64Data = async (value: string) => {
   const [, dataUrlPayload] = value.match(/^data:[^;]+;base64,(.+)$/i) ?? [];
   const base64 = (dataUrlPayload ?? value).replace(/\s/g, "");

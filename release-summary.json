@@ -1,29 +1,20 @@
 {
-  "version": "1.109.0",
+  "version": "1.111.1",
   "changes": {
     "en-US": [
-      "Refresh note image sharing with refined themes, theme-matched typography, monogram avatars, and a streamlined preview.",
-      "Android fullscreen note images now support pinch zoom and dragging to inspect details (#520).",
-      "Make poster editing more reliable by avoiding false save and draft recovery conflicts, improving editor startup, and consolidating zoom controls.",
-      "Keep the AI assistant launcher consistently positioned across note editors.",
-      "Restore the all-notes view when the selected notebook is deleted from another client.",
-      "Improve WorkBuddy login checks so unusable saved credentials are reported instead of appearing connected."
+      "Explain why Inbox cannot be deleted in notebook menus and prevent the disabled action from changing notebook selection.",
+      "Use a consistent available status label for WorkBuddy in desktop agent settings.",
+      "Update application dependencies and fix known vulnerabilities in XML, ZIP, URI, CSS, SVG, and desktop agent package handling."
     ],
     "zh-CN": [
-      "升级笔记图片分享：精修主题、支持跟随主题的字体、字母头像，并简化预览操作。",
-      "Android 笔记图片全屏后支持双指缩放和拖动，便于查看大图细节（#520）。",
-      "提升海报编辑可靠性：避免误报保存及草稿恢复冲突，改善编辑器启动，并统一缩放操作。",
-      "统一各类笔记编辑器中 AI 助手入口的位置与间距。",
-      "选中的笔记本被其他客户端删除后，自动恢复全部笔记列表。",
-      "改善 WorkBuddy 登录检查，避免不可用的已保存凭据被误显示为连接成功。"
+      "笔记本菜单说明收件箱不可删除的原因，并修复点击禁用删除项时意外切换笔记本的问题。",
+      "统一桌面智能体设置中 WorkBuddy 的可用状态文案。",
+      "更新应用依赖，修复 XML、ZIP、URI、CSS、SVG 和桌面智能体软件包处理相关的已知安全漏洞。"
     ],
     "ja": [
-      "ノートの画像共有に洗練されたテーマ、テーマに合わせたフォント、イニシャルアイコン、使いやすいプレビューを追加しました。",
-      "Android の全画面画像でピンチズームとドラッグに対応し、細部を確認しやすくしました（#520）。",
-      "ポスター編集の保存・下書き復元時の誤った競合を修正し、起動とズーム操作を改善しました。",
-      "各ノート編集画面で AI アシスタントの位置と間隔を統一しました。",
-      "選択中のノートブックが別の端末で削除された場合、すべてのノート一覧に戻るよう修正しました。",
-      "WorkBuddy のログイン確認を改善し、使用できない保存済み認証情報を接続成功と表示する問題を修正しました。"
+      "ノートブックメニューで受信トレイを削除できない理由を表示し、無効な削除項目をクリックした際に選択が切り替わる問題を修正しました。",
+      "デスクトップのエージェント設定で WorkBuddy の利用可能ステータス表記を統一しました。",
+      "アプリの依存関係を更新し、XML、ZIP、URI、CSS、SVG、およびデスクトップエージェントのパッケージ処理に関連する既知の脆弱性を修正しました。"
     ]
   }
 }
