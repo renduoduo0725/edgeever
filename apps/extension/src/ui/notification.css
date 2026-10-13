@@ -1,0 +1,4 @@
+/* Sonner provides layout, motion and interaction. Only theme tokens vary here. */
+.toaster [data-sonner-toast] {
+  pointer-events: auto;
+}

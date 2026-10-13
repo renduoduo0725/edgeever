@@ -1,4 +1,4 @@
-export const createUpdateDiagnostic = (error, { stage, version, platform, arch, now = new Date() }) => {
+export const createUpdateDiagnostic = (error, { stage, version, platform, arch, network, now = new Date() }) => {
   // Keep actionable errors, not response bodies, stacks, credentials or local paths.
   const message = String(error?.message || error || "Unknown update error")
     .split(/\r?\n(?:XML:|Response:|Headers:|Body:|\s*at )/i, 1)[0]
@@ -18,5 +18,6 @@ export const createUpdateDiagnostic = (error, { stage, version, platform, arch, 
     code: /^[A-Z0-9_-]{1,80}$/.test(rawCode) ? rawCode : null,
     message,
     source: "https://github.com/tianma-if/edgeever/releases",
+    ...(network ? { network } : {}),
   };
 };

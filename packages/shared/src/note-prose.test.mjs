@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   MAX_NOTE_PROSE_CSS_BYTES,
+  NOTE_PROSE_PALETTES,
+  NOTE_PROSE_PALETTE_CHOICES,
+  NOTE_PROSE_DARK_ACCENTS,
+  accountNoteProseFromRow,
+  publicNoteProseFromAccount,
+  noteProseCssVariables,
   NoteProseUpdateSchema,
   noteProseCodeFontSize,
   noteProseMigrationPatch,
@@ -21,6 +27,52 @@ const emptyAccount = () => ({
 });
 
 describe("note prose", () => {
+  test("merges old red and orange choices without dropping account or public share preferences", () => {
+    expect(NOTE_PROSE_PALETTE_CHOICES).toContain("clay");
+    expect(NOTE_PROSE_PALETTE_CHOICES).not.toContain("orange");
+    for (const oldPalette of ["clay", "orange"]) {
+      const account = accountNoteProseFromRow({ note_prose_palette: oldPalette });
+      expect(account.palette).toBe("clay");
+      expect(resolveNoteProse(account).palette).toBe("clay");
+      expect(publicNoteProseFromAccount(account).palette).toBe("clay");
+      expect(NoteProseUpdateSchema.parse({ palette: oldPalette }).palette).toBe("clay");
+    }
+    expect(noteProseMigrationPatch(emptyAccount(), { palette: "orange", customCss: null, customColors: null }))
+      .toEqual({ palette: "clay" });
+  });
+
+  test("checks reading contrast with intentional bright teal and vermilion emphasis exceptions", () => {
+    const luminance = (hex) => {
+      const channels = [1, 3, 5].map((offset) => {
+        const value = parseInt(hex.slice(offset, offset + 2), 16) / 255;
+        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      });
+      return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+    };
+    const contrast = (foreground, background) => {
+      const values = [luminance(foreground), luminance(background)].sort((a, b) => a - b);
+      return (values[1] + 0.05) / (values[0] + 0.05);
+    };
+    for (const [id, colors] of Object.entries(NOTE_PROSE_PALETTES)) {
+      for (const background of ["#FFFFFF", "#F8FAFB"]) {
+        // Bright emphasis is intentional; links and code retain normal-text AA.
+        const minimumAccentContrast = id === "teal" ? 2.5 : id === "clay" ? 3 : 4.5;
+        expect(contrast(colors.accent, background)).toBeGreaterThanOrEqual(minimumAccentContrast);
+        for (const foreground of [colors.link, colors.codeText]) {
+          expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+      for (const background of ["#222325", "#333638"]) {
+        expect(contrast(NOTE_PROSE_DARK_ACCENTS[id], background)).toBeGreaterThanOrEqual(4.5);
+      }
+      const variables = noteProseCssVariables(resolveNoteProse({ palette: id }));
+      expect(variables["--note-palette-accent"]).toBe(colors.accent);
+      expect(variables["--note-palette-dark-accent"]).toBe(NOTE_PROSE_DARK_ACCENTS[id]);
+    }
+    expect(noteProseCssVariables(resolveNoteProse({ palette: "native" })))
+      .not.toHaveProperty("--note-palette-dark-accent");
+  });
+
   test("maps retired editor themes onto color names and leaves the native theme unset", () => {
     expect(paletteForLegacyEditorTheme("stance")).toBe("clay");
     expect(paletteForLegacyEditorTheme("stub")).toBe("dawn");

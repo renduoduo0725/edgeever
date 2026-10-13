@@ -15,7 +15,7 @@ import {
   FilePlus
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { marked } from "marked";
+import { safeMarkdownPreview } from "@/lib/safe-markdown-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -148,12 +148,12 @@ export const TemplatesPane = ({
   };
 
   const draftHtmlPreview = useMemo(
-    () => (draft.contentMarkdown ? (marked.parse(draft.contentMarkdown) as string) : ""),
+    () => (draft.contentMarkdown ? safeMarkdownPreview(draft.contentMarkdown) : ""),
     [draft.contentMarkdown]
   );
 
   const previewHtmlContent = useMemo(
-    () => (previewTemplate?.contentMarkdown ? (marked.parse(previewTemplate.contentMarkdown) as string) : ""),
+    () => (previewTemplate?.contentMarkdown ? safeMarkdownPreview(previewTemplate.contentMarkdown) : ""),
     [previewTemplate?.contentMarkdown]
   );
 

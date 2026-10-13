@@ -38,6 +38,6 @@ export async function nodePublicFetch(input, init = {}) {
       });
       resolve(new Response(body, { status, statusText: incoming.statusMessage, headers: responseHeaders }));
     });
-    req.on("error", reject); req.end();
+    req.on("error", reject); req.end(init.body ?? undefined);
   });
 }

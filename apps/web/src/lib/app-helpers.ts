@@ -142,6 +142,7 @@ export { DEFAULT_MEMO_TITLE };
 export const IMAGE_COMPRESSION_STORAGE_KEY = "edgeever.imageCompressionEnabled";
 export const DESKTOP_FOCUS_MODE_STORAGE_KEY = "edgeever.desktopFocusMode";
 export const NOTEBOOK_SIDEBAR_COLLAPSED_STORAGE_KEY = "edgeever.notebookSidebarCollapsed";
+export const NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY = "edgeever.notebookSidebarWidth";
 export const DESKTOP_READING_PROTECTION_STORAGE_KEY = "edgeever.desktopReadingProtection";
 export const EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY = "edgeever.editorOutlineCollapsed";
 export const EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY = "edgeever.editorContentAlignment";
@@ -155,7 +156,11 @@ export const NOTEBOOK_TREE_COLLAPSED_IDS_STORAGE_KEY = "edgeever.notebookTreeCol
 export const SHORTCUT_SETTINGS_STORAGE_KEY = "edgeever.shortcutSettings";
 export const DEFAULT_MEMO_LIST_WIDTH_PX = 360;
 export const MIN_MEMO_LIST_WIDTH_PX = 300;
-export const MAX_MEMO_LIST_WIDTH_PX = 540;
+export const MAX_MEMO_LIST_WIDTH_PX = 800;
+export const MIN_EDITOR_WIDTH_PX = 640;
+export const DEFAULT_NOTEBOOK_SIDEBAR_WIDTH_PX = 240;
+export const MIN_NOTEBOOK_SIDEBAR_WIDTH_PX = 180;
+export const MAX_NOTEBOOK_SIDEBAR_WIDTH_PX = 420;
 export const EDITOR_LOCAL_SAVE_DELAY_MS = 1_200;
 
 export const MEMO_DRAG_MIME = "application/x-edgeever-memos";
@@ -329,6 +334,28 @@ export const writeNotebookSidebarCollapsedPreference = (collapsed: boolean) => {
   }
 };
 
+export const clampNotebookSidebarWidth = (width: number) =>
+  Math.min(MAX_NOTEBOOK_SIDEBAR_WIDTH_PX, Math.max(MIN_NOTEBOOK_SIDEBAR_WIDTH_PX, Math.round(width)));
+
+export const readNotebookSidebarWidthPreference = () => {
+  try {
+    const storedWidth = window.localStorage.getItem(NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY);
+    if (storedWidth === null) return DEFAULT_NOTEBOOK_SIDEBAR_WIDTH_PX;
+    const width = Number(storedWidth);
+    return Number.isFinite(width) ? clampNotebookSidebarWidth(width) : DEFAULT_NOTEBOOK_SIDEBAR_WIDTH_PX;
+  } catch {
+    return DEFAULT_NOTEBOOK_SIDEBAR_WIDTH_PX;
+  }
+};
+
+export const writeNotebookSidebarWidthPreference = (width: number) => {
+  try {
+    window.localStorage.setItem(NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY, String(clampNotebookSidebarWidth(width)));
+  } catch {
+    // Local storage can be unavailable in private or restricted browser contexts.
+  }
+};
+
 export const readDesktopReadingProtectionPreference = () => {
   try {
     return window.localStorage.getItem(DESKTOP_READING_PROTECTION_STORAGE_KEY) === "true";
@@ -448,9 +475,26 @@ export const writeMemoListDensityPreference = (density: MemoListDensity) => {
 export const clampMemoListWidth = (width: number) =>
   Math.min(MAX_MEMO_LIST_WIDTH_PX, Math.max(MIN_MEMO_LIST_WIDTH_PX, Math.round(width)));
 
+export const getMaxMemoListWidthForViewport = (
+  viewportWidth: number,
+  notebookSidebarWidth: number,
+) => Math.min(MAX_MEMO_LIST_WIDTH_PX, Math.max(0, viewportWidth - notebookSidebarWidth - MIN_EDITOR_WIDTH_PX));
+
+/** Reserve the editor and a usable list on compact three-pane desktops.
+ * Keep the saved preferences intact when the window temporarily gets smaller.
+ */
+export const getEditorPaneWidths = (viewportWidth: number, sidebarWidth: number, listWidth: number) => {
+  const sidebar = Math.min(sidebarWidth, Math.max(0, viewportWidth - MIN_EDITOR_WIDTH_PX - 180));
+  const maximum = getMaxMemoListWidthForViewport(viewportWidth, sidebar);
+  const minimum = Math.min(MIN_MEMO_LIST_WIDTH_PX, maximum);
+  return { sidebar, minimum, maximum, list: Math.min(maximum, Math.max(minimum, listWidth)) };
+};
+
 export const readMemoListWidthPreference = () => {
   try {
-    const width = Number(window.localStorage.getItem(MEMO_LIST_WIDTH_STORAGE_KEY));
+    const storedWidth = window.localStorage.getItem(MEMO_LIST_WIDTH_STORAGE_KEY);
+    if (storedWidth === null) return DEFAULT_MEMO_LIST_WIDTH_PX;
+    const width = Number(storedWidth);
     return Number.isFinite(width) ? clampMemoListWidth(width) : DEFAULT_MEMO_LIST_WIDTH_PX;
   } catch {
     return DEFAULT_MEMO_LIST_WIDTH_PX;
@@ -872,8 +916,10 @@ export const setMemoDragPreview = (dataTransfer: DataTransfer, label: string) =>
     <svg style="width: 15px; height: 15px; color: var(--brand-green); flex-shrink: 0;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
     </svg>
-    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;">${label}</span>
+    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;"></span>
   `;
+
+  dragImage.querySelector("span")!.textContent = label;
 
   Object.assign(dragImage.style, {
     position: "fixed",

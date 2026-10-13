@@ -67,3 +67,10 @@ export * from "./poster";
 export * from "./poster-fonts";
 export * from "./poster-platforms";
 export * from "./poster-design-catalog";
+
+export * from "./structured-note-error";
+export * from "./diagram-operations";
+export * from "./table-operations";
+export * from "./poster-content-layout";
+export * from "./poster-operations";
+export * from "./infographic-operations";

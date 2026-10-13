@@ -56,7 +56,7 @@ test("desktop AI transport sends multipart audio bytes directly to the speech pr
   const form = new FormData();
   form.set("model", "whisper-1");
   form.set("file", new File(["audio bytes"], "clip.mp3", { type: "audio/mpeg" }));
-  const request = new Request("https://speech.example/v1/audio/transcriptions", { method: "POST", body: form });
+  const request = new Request("https://api.openai.com/v1/audio/transcriptions", { method: "POST", body: form });
   const headers = Object.fromEntries(request.headers);
   const bodyBytes = new Uint8Array(await request.arrayBuffer());
   const result = await new Promise((resolve, reject) => {
@@ -73,12 +73,12 @@ test("desktop AI transport sends multipart audio bytes directly to the speech pr
       onError: reject,
     }).catch(reject);
   });
-  expect(received.url).toBe("https://speech.example/v1/audio/transcriptions");
+  expect(received.url).toBe("https://api.openai.com/v1/audio/transcriptions");
   expect(received.body).toBeInstanceOf(Uint8Array);
   expect(received.headers["content-type"]).toMatch(/^multipart\/form-data; boundary=/);
   expect(JSON.parse(result).text).toBe("recognized");
   await expect(runtime.open("speech-invalid", {
-    url: "https://speech.example/v1/chat/completions",
+    url: "https://api.openai.com/v1/chat/completions",
     method: "POST",
     headers,
     body: "",

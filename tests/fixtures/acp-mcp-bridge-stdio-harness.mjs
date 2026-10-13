@@ -7,14 +7,27 @@ import { startAcpMcpBridge } from "../../apps/desktop/src/main/acp-mcp-bridge.mj
 
 const sessionToken = "long-lived-session";
 const authorizations = [];
+let failNextSession = false;
+let failToolCall = false;
+let toolCalls = 0;
 const upstream = createServer((request, response) => {
   authorizations.push(request.headers.authorization);
   response.setHeader("Content-Type", "application/json");
   if (request.url === "/api/v1/auth/session") {
+    if (failNextSession) {
+      failNextSession = false;
+      response.writeHead(503).end("temporary outage");
+      return;
+    }
     response.end(JSON.stringify({
       authenticated: request.headers.authorization === `Bearer ${sessionToken}`,
       user: { id: "account-one" },
     }));
+    return;
+  }
+  if (failToolCall) {
+    toolCalls++;
+    response.writeHead(503).end("write response unavailable");
     return;
   }
   response.end(JSON.stringify({ jsonrpc: "2.0", id: 1, result: { tools: [] } }));
@@ -54,13 +67,40 @@ try {
     baseUrl: upstreamUrl,
     sessionToken: "invalid-session",
     isCurrent: () => true,
-  }), /note_access_unavailable/);
+  }), /note_access_login_required/);
   await assert.rejects(startAcpMcpBridge({
     baseUrl: upstreamUrl,
     sessionToken,
     accountId: "account-two",
     isCurrent: () => true,
-  }), /note_access_unavailable/);
+  }), /note_access_changed/);
+
+  failNextSession = true;
+  const transportCalls = [];
+  const recoveredBridge = await startAcpMcpBridge({
+    baseUrl: upstreamUrl, sessionToken, accountId: "account-one", isCurrent: () => true,
+    fetchImpl: async (url, init) => {
+      transportCalls.push({ url, method: init.method ?? "GET" });
+      return fetch(url, init);
+    },
+  });
+  try {
+    assert.equal(transportCalls.length, 2);
+    assert.equal(transportCalls.every(call => call.method === "GET" && call.url.endsWith("/api/v1/auth/session")), true);
+    failToolCall = true;
+    const result = await fetch(`${recoveredBridge.url}/mcp`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${recoveredBridge.secret}`, "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "memo_create", arguments: {} } }),
+    });
+    assert.equal(result.status, 503);
+    assert.equal(toolCalls, 1);
+    assert.equal(transportCalls.length, 3);
+    assert.equal(transportCalls.at(-1).method, "POST");
+  } finally {
+    failToolCall = false;
+    await recoveredBridge.close();
+  }
 
   const script = fileURLToPath(new URL("../../scripts/edgeever-mcp-stdio.mjs", import.meta.url));
   child = spawn(process.execPath, [script], {
@@ -83,7 +123,7 @@ try {
   const response = await responsePromise;
   assert.deepEqual(response.result, { tools: [] });
   assert.equal(authorizations.at(-1), `Bearer ${sessionToken}`);
-  writeFileSync(process.env.EDGE_EVER_TEST_RESULT_PATH, JSON.stringify({ security: true, invalidSession: true, stdio: true }));
+  writeFileSync(process.env.EDGE_EVER_TEST_RESULT_PATH, JSON.stringify({ security: true, invalidSession: true, stdio: true, retryRecovery: true, noWriteReplay: true }));
 } catch (error) {
   console.error(error);
   process.exitCode = 1;

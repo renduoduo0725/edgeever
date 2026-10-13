@@ -56,6 +56,7 @@ afterAll(() => {
 });
 
 const repository = {
+  getMemo: async () => ({ memo: { id: "note-1", contentMarkdown: "hello" } }),
   listMemos: async () => ({ memos: [], totalCount: 0, nextCursor: null }),
 };
 
@@ -711,5 +712,238 @@ describe("EdgeEverPluginHost", () => {
     delete globalThis.edgeeverPluginObservedResource;
     delete globalThis.edgeeverPluginObservedSettings;
     await host.dispose();
+  });
+});
+
+const structured = await import("@edgeever/shared");
+describe("structured plugin note APIs", () => {
+  const setup = (contentMarkdown, contentJson = structured.markdownToDoc(contentMarkdown)) => {
+    let memo = { id: "note-1", notebookId: "book", title: "Original", excerpt: "", tags: ["keep"], isPinned: false,
+      createdAt: "2026-01-01", updatedAt: "2026-01-01", revision: 4, contentHash: "cloud-hash", contentMarkdown, contentJson, contentText: "" };
+    const saves = [];
+    const resources = [];
+    let onResourceRead = () => {};
+    const host = new EdgeEverPluginHost({ scope: "structured", repository: {
+      getMemo: async () => ({ memo: structuredClone(memo) }),
+      listResources: async () => { onResourceRead(); return { resources }; },
+      updateMemo: async (current, input) => {
+        saves.push(input);
+        // Simulate an offline Web write: cloud revision/hash have not advanced yet.
+        memo = { ...memo, ...input };
+        return { memo: structuredClone(memo) };
+      },
+    }});
+    const context = host.createContext({ id: "org.test.structured", permissions: [] }, []);
+    return { host, context, saves, resources, setResourceRead: (callback) => { onResourceRead = callback; }, getMemo: () => memo, change: (patch) => { memo = { ...memo, ...patch }; } };
+  };
+  const input = result => ({ expectedRevision: result.note.revision, expectedContentHash: result.note.contentHash, expectedEditToken: result.editToken });
+  const diagramMarkdown = () => structured.serializeDiagramDocument({ schemaVersion: 1, kind: "mind-map", theme: "slate", structure: "tree",
+    nodes: [{ id: "root", label: "Root", shape: "topic", x: 71, y: 22, width: 120, height: 40 }], edges: [] });
+  const tableMarkdown = () => structured.serializeTableDocument({ schemaVersion: 1,
+    fields: [{ id: "name", name: "Name", type: "text" }, { id: "file", name: "File", type: "attachment" }],
+    records: [{ id: "row", cells: { name: "Original", file: [] } }], view: { filters: [], sort: null } });
+
+  test("exposes full detached content and preserves special notes on metadata updates", async () => {
+    const originalDoc = { type: "doc", content: [{ type: "paragraph", attrs: { custom: "preserve" } }] };
+    const f = setup(diagramMarkdown(), originalDoc);
+    const read = await f.context.notes.get("note-1");
+    expect(read.kind).toBe("mind-map");
+    read.contentJson.content[0].attrs.custom = "changed";
+    expect(f.getMemo().contentJson).toEqual(originalDoc);
+    await f.context.notes.update("note-1", { title: "Renamed", tags: ["new"] });
+    expect(f.saves[0].contentJson).toEqual(originalDoc);
+    expect(f.saves[0].contentMarkdown).toBe(diagramMarkdown());
+    await expect(f.context.notes.update("note-1", { contentMarkdown: "oops" })).rejects.toMatchObject({ code: "STRUCTURED_NOTE_REQUIRED" });
+    await expect(f.context.notes.editMarkdown("note-1", { expectedRevision: 4, expectedContentHash: "cloud-hash", edits: [{ from: 0, to: 0, insert: "oops" }] })).rejects.toMatchObject({ code: "STRUCTURED_NOTE_REQUIRED" });
+    expect(f.saves).toHaveLength(1);
+  });
+
+  test("previews and edits diagrams while preserving styles and rejecting stale unsynced snapshots", async () => {
+    const f = setup(diagramMarkdown());
+    const snapshot = await f.context.diagrams.get("note-1", { includeLayout: true });
+    const edit = { ...input(snapshot), operations: [{ op: "update_node", nodeId: "root", changes: { label: "Edited" } }] };
+    const preview = await f.context.diagrams.edit("note-1", { ...edit, dryRun: true });
+    expect(preview.diagram.nodes[0].label).toBe("Edited");
+    expect(preview.note.contentMarkdown).toBe(snapshot.note.contentMarkdown);
+    expect(f.saves).toHaveLength(0);
+    const result = await f.context.diagrams.edit("note-1", edit);
+    expect(result.diagram).toMatchObject({ theme: "slate", structure: "tree" });
+    expect(result.diagram.nodes[0].layout).toMatchObject({ x: 71, y: 22 });
+    await expect(f.context.diagrams.edit("note-1", edit)).rejects.toMatchObject({ code: "NOTE_CONFLICT" });
+    expect(f.saves).toHaveLength(1);
+  });
+
+  test("rejects invalid diagram batches without a partial write", async () => {
+    const f = setup(diagramMarkdown());
+    const read = await f.context.diagrams.get("note-1");
+    await expect(f.context.diagrams.edit("note-1", { ...input(read), operations: [
+      { op: "update_node", nodeId: "root", changes: { label: "Must not save" } },
+      { op: "add_edge", edge: { source: "root", target: "missing" } },
+    ] })).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    expect(f.saves).toHaveLength(0);
+    expect((await f.context.diagrams.get("note-1")).diagram.nodes[0].label).toBe("Root");
+  });
+
+  test("applies table records and cells as one batch and rejects bad values atomically", async () => {
+    const f = setup(tableMarkdown());
+    let read = await f.context.tables.get("note-1");
+    await expect(f.context.tables.edit("note-1", { ...input(read), operations: [
+      { op: "update_record", recordId: "row", cells: { name: "Must not save" } },
+      { op: "update_record", recordId: "row", cells: { missing: "oops" } },
+    ] })).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    expect(f.saves).toHaveLength(0);
+    const result = await f.context.tables.edit("note-1", { ...input(read), operations: [
+      { op: "update_record", recordId: "row", cells: { name: "Edited" } },
+      { op: "add_record", recordId: "row2", cells: { name: "New" } },
+    ] });
+    expect(result.table.records.map(row => row.cells.name)).toEqual(["Edited", "New"]);
+    expect(f.saves).toHaveLength(1);
+    await expect(f.context.tables.edit("note-1", { ...input(read), operations: [{ op: "remove_record", recordId: "row" }] })).rejects.toMatchObject({ code: "NOTE_CONFLICT" });
+    read = await f.context.tables.get("note-1");
+    await f.context.tables.edit("note-1", { ...input(read), operations: [{ op: "remove_record", recordId: "row2" }] });
+    expect(f.getMemo().tags).toEqual(["keep"]);
+  });
+
+  test("previews destructive schema changes and requires explicit data conversion", async () => {
+    const f = setup(tableMarkdown());
+    const read = await f.context.tables.get("note-1");
+    const edit = { ...input(read), operations: [{ op: "update_field", fieldId: "name", changes: { type: "number" } }] };
+    const preview = await f.context.tables.edit("note-1", { ...edit, dryRun: true });
+    expect(preview.changedCellCount).toBe(1);
+    expect(f.saves).toHaveLength(0);
+    await expect(f.context.tables.edit("note-1", edit)).rejects.toMatchObject({ code: "TABLE_DATA_CHANGES_REQUIRED" });
+    await f.context.tables.edit("note-1", { ...edit, allowDataChanges: true });
+    expect(f.saves).toHaveLength(1);
+  });
+
+  test("validates attachment ownership and resolves metadata through the repository", async () => {
+    const f = setup(tableMarkdown());
+    const read = await f.context.tables.get("note-1");
+    const edit = { ...input(read), operations: [{ op: "update_record", recordId: "row", cells: { file: ["attachment"] } }] };
+    f.resources.push({ id: "attachment", memoId: "other-note", kind: "attachment", filename: "a.pdf", mimeType: "application/pdf", byteSize: 12 });
+    await expect(f.context.tables.edit("note-1", edit)).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    f.resources[0].memoId = "note-1";
+    const result = await f.context.tables.edit("note-1", edit);
+    expect(result.table.records[0].cells.file).toEqual([{ resourceId: "attachment", filename: "a.pdf", mimeType: "application/pdf", byteSize: 12 }]);
+  });
+
+  test("rejects dirty editors, wrong note types, and concurrent writes using the same snapshot", async () => {
+    const f = setup(tableMarkdown());
+    const read = await f.context.tables.get("note-1");
+    const edit = { ...input(read), operations: [{ op: "update_record", recordId: "row", cells: { name: "Edited" } }] };
+    f.host.setEditorAdapter({ getDocument: () => ({ noteId: "note-1", contentMarkdown: "draft", hasUnsavedChanges: true }) });
+    await expect(f.context.tables.edit("note-1", edit)).rejects.toMatchObject({ code: "NOTE_CONFLICT" });
+    await expect(f.context.editor.insertAtCursor("oops")).rejects.toMatchObject({ code: "STRUCTURED_NOTE_REQUIRED" });
+    await expect(f.context.editor.replaceSelection("oops")).rejects.toMatchObject({ code: "STRUCTURED_NOTE_REQUIRED" });
+    await expect(f.context.editor.editMarkdown([{ from: 0, to: 0, insert: "oops" }])).rejects.toMatchObject({ code: "STRUCTURED_NOTE_REQUIRED" });
+    f.host.setEditorAdapter(null);
+    await expect(f.context.diagrams.get("note-1")).rejects.toMatchObject({ code: "NOTE_TYPE_MISMATCH" });
+    const results = await Promise.allSettled([f.context.tables.edit("note-1", edit), f.context.tables.edit("note-1", edit)]);
+    expect(results.map(result => result.status)).toEqual(["fulfilled", "rejected"]);
+    expect(f.saves).toHaveLength(1);
+  });
+
+  test("rechecks the saved baseline after asynchronous attachment validation", async () => {
+    const f = setup(tableMarkdown());
+    const read = await f.context.tables.get("note-1");
+    f.resources.push({ id: "attachment", memoId: "note-1", kind: "attachment", filename: "file", mimeType: "text/plain", byteSize: 1 });
+    f.setResourceRead(() => f.change({ title: "Changed elsewhere" }));
+    await expect(f.context.tables.edit("note-1", { ...input(read), operations: [
+      { op: "update_record", recordId: "row", cells: { file: ["attachment"] } },
+    ] })).rejects.toMatchObject({ code: "NOTE_CONFLICT" });
+    expect(f.saves).toHaveLength(0);
+    expect(f.getMemo().title).toBe("Changed elsewhere");
+  });
+
+  test("rejects missing snapshot tokens and invalid typed cells", async () => {
+    const f = setup(tableMarkdown());
+    const read = await f.context.tables.get("note-1");
+    await expect(f.context.tables.edit("note-1", { expectedRevision: 4, expectedContentHash: "cloud-hash", operations: [] })).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    await expect(f.context.tables.edit("note-1", { ...input(read), operations: [
+      { op: "add_field", field: { name: "Count", type: "number" } },
+      { op: "update_record", recordId: "row", cells: { name: 42 } },
+    ] })).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    expect(f.saves).toHaveLength(0);
+  });
+
+  test("previews poster element changes, preserves locked elements and rejects stale snapshots", async () => {
+    const poster = structured.createPosterDocument("Original", "Keep subtitle");
+    poster.elements.find(element => element.id === "subtitle").locked = true;
+    poster.previewResourceId = "old-preview";
+    const f = setup(structured.serializePosterDocument(poster));
+    const read = await f.context.posters.get("note-1");
+    expect((await f.context.posters.capabilities()).editableFields).toContain("text");
+    const edit = { ...input(read), edits: [{ id: "heading", patch: { text: "Edited", fill: "#16A06E" } }] };
+    const preview = await f.context.posters.edit("note-1", { ...edit, dryRun: true });
+    expect(preview.poster.elements.find(element => element.id === "heading").text).toBe("Edited");
+    expect(preview.poster.previewResourceId).toBeUndefined();
+    expect(f.saves).toHaveLength(0);
+    const result = await f.context.posters.edit("note-1", edit);
+    expect(result.poster.elements.find(element => element.id === "subtitle")).toEqual(poster.elements.find(element => element.id === "subtitle"));
+    expect(f.getMemo().tags).toEqual(["keep"]);
+    await expect(f.context.posters.edit("note-1", edit)).rejects.toMatchObject({ code: "NOTE_CONFLICT" });
+    const fresh = await f.context.posters.get("note-1");
+    await expect(f.context.posters.edit("note-1", { ...input(fresh), operations: [{ op: "remove", ids: ["subtitle"] }] })).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    await expect(f.context.posters.edit("note-1", { ...input(fresh), operations: [{ op: "apply_template", template: "bold" }] })).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    expect(f.saves).toHaveLength(1);
+  });
+
+  test("rejects poster partial batches and foreign image resources", async () => {
+    const f = setup(structured.serializePosterDocument(structured.createPosterDocument("Original")));
+    const read = await f.context.posters.get("note-1");
+    const image = { id: "image", name: "Image", type: "image", resourceId: "resource", x: 0, y: 0, width: 100, height: 100, rotation: 0, opacity: 1 };
+    const edit = { ...input(read), operations: [{ op: "add", element: image }] };
+    f.resources.push({ id: "resource", memoId: "other-note", kind: "image" });
+    await expect(f.context.posters.edit("note-1", edit)).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    expect(f.saves).toHaveLength(0);
+    await expect(f.context.posters.edit("note-1", { ...input(read), edits: [{ id: "heading", patch: { text: "Must not save" } }], operations: [{ op: "remove", ids: ["missing"] }] })).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    expect(f.saves).toHaveLength(0);
+    f.resources[0].memoId = "note-1";
+    const result = await f.context.posters.edit("note-1", edit);
+    expect(result.poster.elements.find(element => element.id === "image")).toEqual(image);
+  });
+
+  test("reads and edits infographic data without losing styles or conversation history", async () => {
+    const infographic = { schemaVersion: 1, syntax: "infographic list-grid-simple\ndata\n  title Original\n  lists\n    - label First\n      desc Keep\ntheme dark\n  colorBg #123456", history: [
+      { id: "history", prompt: "Create", createdAt: "2026-01-01", kind: "generated", resultTitle: "Original" },
+    ] };
+    const f = setup(structured.serializeInfographicDocument(infographic));
+    const read = await f.context.infographics.get("note-1");
+    expect((await f.context.infographics.capabilities()).templates).toContain("list-grid-simple");
+    expect((await f.context.infographics.capabilities()).themes).toContain("dark");
+    expect(read).toMatchObject({ template: "list-grid-simple", theme: "dark", data: { title: "Original", lists: [{ label: "First", desc: "Keep" }] } });
+    const edit = { ...input(read), operations: [{ op: "set_data", path: ["lists", 0, "label"], value: "Edited" }] };
+    const preview = await f.context.infographics.edit("note-1", { ...edit, dryRun: true });
+    expect(preview.infographic.syntax).toContain("label Edited");
+    expect(f.saves).toHaveLength(0);
+    const result = await f.context.infographics.edit("note-1", edit);
+    expect(result.infographic.history).toEqual(infographic.history);
+    expect(result.infographic.syntax).toContain("theme dark\n  colorBg #123456");
+    expect(f.getMemo().title).toBe("Original");
+    await expect(f.context.infographics.edit("note-1", edit)).rejects.toMatchObject({ code: "NOTE_CONFLICT" });
+    const fresh = await f.context.infographics.get("note-1");
+    expect(fresh.data.lists[0].desc).toBe("Keep");
+    expect(f.saves).toHaveLength(1);
+  });
+
+  test("rejects wrong poster/infographic types, dirty editors and invalid infographic batches", async () => {
+    const f = setup(structured.serializeInfographicDocument({ schemaVersion: 1, syntax: "infographic list-grid-simple\ndata\n  lists\n    - label Original" }));
+    const read = await f.context.infographics.get("note-1");
+    await expect(f.context.posters.get("note-1")).rejects.toMatchObject({ code: "NOTE_TYPE_MISMATCH" });
+    await expect(f.context.infographics.edit("note-1", { ...input(read), operations: [
+      { op: "set_data", path: ["lists", 0, "label"], value: "Must not save" },
+      { op: "remove_data", path: ["lists", 8] },
+    ] })).rejects.toMatchObject({ code: "INVALID_STRUCTURED_EDIT" });
+    f.host.setEditorAdapter({ getDocument: () => ({ noteId: "note-1", contentMarkdown: "draft", hasUnsavedChanges: true }) });
+    await expect(f.context.infographics.edit("note-1", { ...input(read), operations: [{ op: "set_theme", theme: "dark" }] })).rejects.toMatchObject({ code: "NOTE_CONFLICT" });
+    expect(f.saves).toHaveLength(0);
+  });
+
+  test("protects poster and infographic markers, including malformed payloads", async () => {
+    for (const kind of ["poster", "infographic", "diagram", "table"]) {
+      const f = setup(`Body\n<!-- edgeever-${kind}-v1:invalid -->`);
+      await expect(f.context.notes.update("note-1", { contentMarkdown: "oops" })).rejects.toMatchObject({ code: "STRUCTURED_NOTE_REQUIRED" });
+      expect(f.saves).toHaveLength(0);
+    }
   });
 });

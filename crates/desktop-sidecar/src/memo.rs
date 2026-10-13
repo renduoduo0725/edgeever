@@ -547,7 +547,7 @@ pub(crate) fn create_memo(database: &Connection, params: &Value) -> Result<Value
 
 pub(crate) fn update_memo(database: &Connection, params: &Value) -> Result<Value, String> {
     let memo_id = string_param(params, "memoId")?;
-    let previous = memo_value(database, &memo_id, true)?;
+    let mut previous = memo_value(database, &memo_id, true)?;
     let requested_revision = params
         .get("expectedRevision")
         .and_then(Value::as_i64)
@@ -600,6 +600,40 @@ pub(crate) fn update_memo(database: &Connection, params: &Value) -> Result<Value
     let tx = database
         .unchecked_transaction()
         .map_err(|e| e.to_string())?;
+    let guarded = params.get("expectedLocalSnapshot");
+    if let Some(expected) = guarded {
+        previous = memo_value(&tx, &memo_id, true)?;
+        let fields = [
+            "revision",
+            "contentHash",
+            "title",
+            "tags",
+            "contentMarkdown",
+            "contentJson",
+        ];
+        if previous
+            .get("isDeleted")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+            || fields
+                .iter()
+                .any(|key| expected.get(*key).is_none() || previous.get(*key) != expected.get(*key))
+        {
+            return Err(
+                "NOTE_CONFLICT: The note changed locally. Read it again before editing.".to_owned(),
+            );
+        }
+        let conflicts: i64 = tx.query_row(
+            "SELECT COUNT(*) FROM _edgeever_sidecar_outbox WHERE entity_id = ?1 AND status = 'conflict'",
+            [&memo_id], |row| row.get(0),
+        ).map_err(|e| e.to_string())?;
+        if conflicts > 0 {
+            return Err(
+                "NOTE_CONFLICT: Resolve the note's sync conflict before editing from a plugin."
+                    .to_owned(),
+            );
+        }
+    }
     insert_revision(&tx, &previous, "desktop")?;
     let changed = tx.execute("UPDATE memos SET title = ?2, excerpt = ?3, tags_json = ?4, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_by = 'desktop' WHERE id = ?1 AND is_deleted = 0", rusqlite::params![memo_id, if title.is_empty() { None } else { Some(title) }, text.chars().take(180).collect::<String>(), tags.to_string()]).map_err(|e| e.to_string())?;
     if changed == 0 {
@@ -610,18 +644,21 @@ pub(crate) fn update_memo(database: &Connection, params: &Value) -> Result<Value
     // look newer than the cloud and produces a false revision conflict once
     // the coalesced outbox item is synced.
     tx.execute("UPDATE memo_contents SET content_json = ?2, content_markdown = ?3, content_text = ?4, content_hash = ?5, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE memo_id = ?1", rusqlite::params![memo_id, content_json_text, markdown, text, hash]).map_err(|e| e.to_string())?;
+    let payload = json!({
+        "memoId": memo_id, "expectedRevision": expected_revision,
+        "expectedContentHash": expected_content_hash,
+        "title": params.get("title").and_then(Value::as_str).unwrap_or(""),
+        "contentJson": content_json, "contentMarkdown": markdown, "tags": tags
+    });
+    // Plugin edits commit the memo, history and outbox together. Ordinary editor
+    // writes retain their established behavior.
+    if guarded.is_some() {
+        enqueue_change(&tx, "memo.update", &memo_id, &payload)?;
+    }
     tx.commit().map_err(|e| e.to_string())?;
-    enqueue_change(
-        database,
-        "memo.update",
-        &memo_id,
-        &json!({
-            "memoId": memo_id, "expectedRevision": expected_revision,
-            "expectedContentHash": expected_content_hash,
-            "title": params.get("title").and_then(Value::as_str).unwrap_or(""), "contentJson": content_json,
-            "contentMarkdown": markdown, "tags": tags
-        }),
-    )?;
+    if guarded.is_none() {
+        enqueue_change(database, "memo.update", &memo_id, &payload)?;
+    }
     if consumed_remap_base {
         database
             .execute(

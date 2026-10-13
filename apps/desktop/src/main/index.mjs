@@ -7,8 +7,9 @@ import { execFile, spawn } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { release as operatingSystemRelease } from "node:os";
 import { SidecarRpcClient } from "./rpc.mjs";
+import { instanceOrigin, encodeSessionCredential, decodeSessionCredential, credentialForUrl } from "./session-credential.mjs";
 import { resourceRequestHeaders } from "./resource-request.mjs";
-import { downloadContentDispositionFromRequest, isSafeResourceId, parseByteRangeHeader, resourceIdFromRequest } from "./resource-url.mjs";
+import { downloadContentDispositionFromRequest, isSafeResourceId, parseByteRangeHeader, resourceIdFromRequest, resourceResponseHeaders } from "./resource-url.mjs";
 import { isSupportedAssociatedFile } from "./file-association.mjs";
 import { createWeChatShareController } from "./wechat-share-import.mjs";
 import { enableMacShareExtension } from "./share-extension-registration.mjs";
@@ -29,7 +30,7 @@ import {
   mountedInstallerCandidates,
 } from "./installation-location.mjs";
 import { userDataDirectoryFromArguments } from "./user-data-directory.mjs";
-import { isAllowedPrintPreviewUrl } from "./window-open-policy.mjs";
+import { isAllowedAppNavigation, isAllowedPrintPreviewUrl, isResourceDownloadUrl } from "./window-open-policy.mjs";
 import { showWindow } from "./window-visibility.mjs";
 import { globalShortcutAccelerator, normalizeGlobalShortcutBinding, replaceGlobalShortcut, toggleMainWindow } from "./global-shortcut.mjs";
 import { trayIconPath } from "./tray-icon.mjs";
@@ -49,10 +50,13 @@ import {
 } from "./windows-update-trust.mjs";
 import electronUpdater from "electron-updater";
 import { createUpdateDiagnostic } from "./update-diagnostics.mjs";
+import { createUpdateNetworkDiagnostics } from "./update-network-diagnostics.mjs";
 import { normalizeUpdateProgress } from "./update-progress.mjs";
 import { inspectWindowsTaskbarShortcuts } from "./windows-taskbar-diagnostics.mjs";
+import { testPicGoConnection, createPicGoUploadQueue } from "./picgo.mjs";
 import { createPluginPublicNetworkRuntime } from "./plugin-public-network.mjs";
 import { createAiDirectRuntime } from "./ai-direct.mjs";
+import { createAcpPathStore, validateTrustedAcpPath } from "./acp-path-store.mjs";
 import { createAcpHostRuntime, registerAcpIpc } from "./acp-host.mjs";
 import { shouldQuitAfterAllWindowsClosed } from "./window-lifecycle.mjs";
 import {
@@ -182,6 +186,8 @@ const crashMarkerPath = () => join(app.getPath("userData"), "last-session-active
 const installationMarkerPath = () => join(app.getPath("userData"), "installation-confirmed");
 const logPath = () => join(app.getPath("userData"), "logs", "desktop.log");
 let desktopSessionToken = "";
+let desktopSessionTokenOrigin = null;
+let instanceChangePending = false;
 let configuredGlobalShortcut = null;
 let registeredGlobalShortcut = null;
 let globalShortcutUpdate = Promise.resolve();
@@ -557,24 +563,40 @@ const loadConfiguredApiBaseUrl = async () => {
 const loadDesktopSessionToken = async () => {
   try {
     const encrypted = await readFile(sessionTokenPath());
-    desktopSessionToken = safeStorage.decryptString(encrypted);
+    const plaintext = safeStorage.decryptString(encrypted);
+    const credential = decodeSessionCredential(plaintext, configuredApiBaseUrl);
+    desktopSessionToken = credentialForUrl(credential.token, credential.origin, configuredApiBaseUrl);
+    desktopSessionTokenOrigin = credential.origin;
+    if (desktopSessionToken && !plaintext.startsWith("{")) {
+      await saveDesktopSessionToken(desktopSessionToken);
+    }
   } catch {
     // Existing installations have no main-process credential until the
     // renderer migrates the legacy localStorage token after upgrading.
     desktopSessionToken = "";
+    desktopSessionTokenOrigin = null;
   }
 };
 
-const saveDesktopSessionToken = async (value) => {
+let sessionCredentialWrite = Promise.resolve();
+const saveDesktopSessionToken = (value) => {
+  const operation = sessionCredentialWrite.then(() => persistDesktopSessionToken(value));
+  sessionCredentialWrite = operation.catch(() => {});
+  return operation;
+};
+
+const persistDesktopSessionToken = async (value) => {
   const normalized = typeof value === "string" ? value.trim() : "";
   if (normalized.length > 4096) throw new Error("Desktop session token is too long");
-  desktopSessionToken = normalized;
-  const encrypted = safeStorage.encryptString(normalized);
+  const origin = instanceOrigin(configuredApiBaseUrl);
+  const encrypted = safeStorage.encryptString(encodeSessionCredential(normalized, configuredApiBaseUrl));
   const temporaryPath = `${sessionTokenPath()}.tmp`;
   await writeFile(temporaryPath, encrypted, { mode: 0o600 });
   await restrictFile(temporaryPath);
   await rename(temporaryPath, sessionTokenPath());
   await restrictFile(sessionTokenPath());
+  desktopSessionToken = normalized;
+  desktopSessionTokenOrigin = origin;
 };
 
 const pendingDesktopCommands = [];
@@ -902,12 +924,8 @@ const handleResourceProtocolRequest = async (request) => {
   const fileResponse = async (path, contentType, rangeHeader) => {
     const { size } = await stat(path);
     const range = parseByteRangeHeader(rangeHeader, size);
-    const headers = new Headers({
-      "Accept-Ranges": "bytes",
-      "Cache-Control": "no-store",
-      "Content-Type": contentType || "application/octet-stream",
-    });
-    if (downloadDisposition) headers.set("Content-Disposition", downloadDisposition);
+    const headers = resourceResponseHeaders(contentType, downloadDisposition);
+    headers.set("Accept-Ranges", "bytes");
     if (range.kind === "invalid") {
       headers.set("Content-Range", `bytes */${size}`);
       return new Response(null, { status: 416, headers });
@@ -938,18 +956,16 @@ const handleResourceProtocolRequest = async (request) => {
   if (!configuredApiBaseUrl) return new Response("Resource is not cached", { status: 504 });
   const sourceUrl = `${configuredApiBaseUrl}/api/v1/resources/${encodeURIComponent(resourceId)}/blob`;
   try {
+    const sessionToken = credentialForUrl(desktopSessionToken, desktopSessionTokenOrigin, sourceUrl);
     const cookies = await session.defaultSession.cookies.get({ url: sourceUrl });
-    const headers = resourceRequestHeaders({ cookies, sessionToken: desktopSessionToken });
+    const headers = resourceRequestHeaders({ cookies, sessionToken });
     const rangeHeader = request.headers.get("range");
     if (rangeHeader) headers.set("range", rangeHeader);
-    const response = await net.fetch(sourceUrl, { headers });
+    const response = await net.fetch(sourceUrl, { headers, redirect: "error" });
     if (!response.ok) return new Response("Resource request failed", { status: response.status });
     if (response.status === 206) {
-      const responseHeaders = new Headers({
-        "Accept-Ranges": response.headers.get("accept-ranges") || "bytes",
-        "Cache-Control": "no-store",
-        "Content-Type": response.headers.get("content-type") || "application/octet-stream",
-      });
+      const responseHeaders = resourceResponseHeaders(response.headers.get("content-type"), downloadDisposition);
+      responseHeaders.set("Accept-Ranges", response.headers.get("accept-ranges") || "bytes");
       for (const name of ["content-length", "content-range", "etag", "last-modified"]) {
         const value = response.headers.get(name);
         if (value) responseHeaders.set(name, value);
@@ -1026,13 +1042,8 @@ const registerResourceProtocol = () => {
       }
       if (size === null) throw new Error("Staged bytes are missing");
       const stream = createReadStream(path);
-      const headers = new Headers({
-        "Content-Type": metadata.type || "application/octet-stream",
-        "Content-Length": String(size),
-        "Cache-Control": "no-store",
-      });
-      const downloadDisposition = downloadContentDispositionFromRequest(request.url);
-      if (downloadDisposition) headers.set("Content-Disposition", downloadDisposition);
+      const headers = resourceResponseHeaders(metadata.type, downloadContentDispositionFromRequest(request.url));
+      headers.set("Content-Length", String(size));
       return new Response(Readable.toWeb(stream), {
         headers,
       });
@@ -1100,9 +1111,20 @@ const desktopUpdateStatus = () => ({
   progress: updateProgress,
 });
 
+const updateNetworkDiagnostics = createUpdateNetworkDiagnostics({
+  write: writeDiagnostic,
+  onChange: () => {
+    const network = updateNetworkDiagnostics.snapshot();
+    if (updateError?.network?.checkId !== network.checkId) return;
+    updateError = { ...updateError, network };
+    publishDesktopUpdateStatus();
+  },
+});
+
 const recordUpdateError = (error, stage) => {
   updateError = createUpdateDiagnostic(error, {
     stage, version: app.getVersion(), platform: process.platform, arch: process.arch,
+    network: updateNetworkDiagnostics.snapshot(),
   });
 };
 
@@ -1136,7 +1158,7 @@ const trackDesktopUpdateDownload = (downloadPromise, reason) => {
       publishDesktopUpdateStatus();
       await writeDiagnostic("update.download-failed", { reason, message: error.message });
     })
-    .finally(() => { updateDownloadInFlight = null; });
+    .finally(() => { updateDownloadInFlight = null; updateNetworkDiagnostics.stop(); });
   return updateDownloadInFlight;
 };
 
@@ -1145,6 +1167,7 @@ const downloadTrustedDesktopUpdate = (reason) => {
   if (process.platform === "win32" && !trustedWindowsUpdate) {
     return Promise.reject(new Error("Windows update metadata has not passed the signature gate"));
   }
+  updateNetworkDiagnostics.setStage("download");
   return trackDesktopUpdateDownload(autoUpdater.downloadUpdate(), reason);
 };
 
@@ -1188,6 +1211,7 @@ const checkForDesktopUpdate = (reason, { force = false, throwOnError = false } =
   if (!force && now - lastUpdateCheckAt < updateCheckFocusThrottleMs) return Promise.resolve(null);
   lastUpdateCheckAt = now;
   updateError = null;
+  updateNetworkDiagnostics.beginCheck();
   publishDesktopUpdateStatus();
   let diagnosticStage = "check";
   void writeDiagnostic("update.check-started", { reason });
@@ -1195,6 +1219,7 @@ const checkForDesktopUpdate = (reason, { force = false, throwOnError = false } =
     .then(async (result) => {
       if (process.platform === "win32" && result?.isUpdateAvailable) {
         diagnosticStage = "verify-windows-metadata";
+        updateNetworkDiagnostics.setStage(diagnosticStage);
         trustedWindowsUpdate = await fetchTrustedWindowsUpdate({
           version: result.updateInfo.version,
           updateInfo: result.updateInfo,
@@ -1208,6 +1233,7 @@ const checkForDesktopUpdate = (reason, { force = false, throwOnError = false } =
         void downloadTrustedDesktopUpdate(reason);
       }
       if (result?.downloadPromise) {
+        updateNetworkDiagnostics.setStage("download");
         trackDesktopUpdateDownload(result.downloadPromise, reason);
       }
       return result;
@@ -1224,12 +1250,28 @@ const checkForDesktopUpdate = (reason, { force = false, throwOnError = false } =
       await writeDiagnostic("update.check-failed", { reason, message: error.message });
       throw error;
     })
-    .finally(() => { updateCheckInFlight = null; });
+    .finally(() => {
+      updateCheckInFlight = null;
+      if (!updateDownloadInFlight) updateNetworkDiagnostics.stop();
+    });
   return throwOnError ? updateCheckInFlight : updateCheckInFlight.catch(() => null);
 };
 
 const configureAutoUpdater = () => {
   if (!app.isPackaged || process.env.EDGE_EVER_DISABLE_AUTO_UPDATE === "1") return;
+  // Observe the exact session used by electron-updater, plus net.fetch metadata.
+  // No setProxy, request headers, bodies, credentials or response bodies are collected.
+  for (const [name, getSession] of [
+    ["electron-updater", () => autoUpdater.netSession],
+    ["default-metadata", () => session.defaultSession],
+  ]) {
+    try { updateNetworkDiagnostics.observeSession(getSession(), name); }
+    catch (error) {
+      void writeDiagnostic("update.network-diagnostics-unavailable", {
+        session: name, code: createUpdateDiagnostic(error, { stage: "diagnostics" }).code,
+      });
+    }
+  }
   if (linuxUpdateTestMode) {
     if (!/^http:\/\/127\.0\.0\.1:\d+\/$/.test(linuxUpdateTestFeedUrl)) {
       throw new Error("Linux update verification requires a loopback HTTP feed");
@@ -1526,6 +1568,37 @@ const createWindow = async () => {
     void writeDiagnostic("renderer.responsive");
   });
 
+  const rendererEntryUrl = app.isPackaged && !process.env.EDGE_EVER_DESKTOP_WEB_URL
+    ? (usePrivateAppProtocol ? DESKTOP_APP_ENTRY_URL : pathToFileURL(join(process.resourcesPath, "web/index.html")).href)
+    : webUrl;
+  const guardNavigation = (event, url) => {
+    if (isAllowedAppNavigation(url, rendererEntryUrl)) return;
+    event.preventDefault();
+  };
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    guardNavigation(event, url);
+    if (isResourceDownloadUrl(url)) mainWindow.webContents.downloadURL(url);
+  });
+  mainWindow.webContents.on("will-redirect", guardNavigation);
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (isAllowedPrintPreviewUrl(url, mainWindow.webContents.getURL())) {
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: {
+          webPreferences: {
+            contextIsolation: true,
+            nodeIntegration: false,
+            sandbox: true,
+            preload: fileURLToPath(new URL("../preload/print.cjs", import.meta.url)),
+          },
+        },
+      };
+    }
+    if (url.startsWith("https://") || url.startsWith("http://")) void shell.openExternal(url);
+    return { action: "deny" };
+  });
+
   try {
     if (app.isPackaged && !process.env.EDGE_EVER_DESKTOP_WEB_URL) {
       if (usePrivateAppProtocol) await mainWindow.loadURL(DESKTOP_APP_ENTRY_URL);
@@ -1539,28 +1612,6 @@ const createWindow = async () => {
     });
     throw error;
   }
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("edgeever-resource://") || url.startsWith("edgeever-staged://")) return { action: "allow" };
-    if (isAllowedPrintPreviewUrl(url, mainWindow.webContents.getURL())) {
-      return {
-        action: "allow",
-        overrideBrowserWindowOptions: {
-          webPreferences: {
-            contextIsolation: true,
-            nodeIntegration: false,
-            sandbox: true,
-          },
-        },
-      };
-    }
-    if (url.startsWith("https://") || url.startsWith("http://")) void shell.openExternal(url);
-    return { action: "deny" };
-  });
-  mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (url.startsWith(webUrl) || url.startsWith(`${DESKTOP_APP_ORIGIN}/`) || url.startsWith("edgeever-resource://") || url.startsWith("edgeever-staged://")) return;
-    event.preventDefault();
-    if (url.startsWith("https://") || url.startsWith("http://")) void shell.openExternal(url);
-  });
   buildApplicationMenu();
 };
 
@@ -1708,19 +1759,45 @@ const startApplication = async () => {
     if (rendererStartupGuard?.complete()) void writeDiagnostic("renderer.bootstrap-ready");
   });
   ipcMain.on("desktop:api-base-url-sync", (event) => { event.returnValue = configuredApiBaseUrl; });
-  ipcMain.on("desktop:session-token-sync", (event) => { event.returnValue = desktopSessionToken; });
+  ipcMain.on("desktop:session-token-sync", (event) => {
+    event.returnValue = event.sender === mainWindow?.webContents && event.senderFrame === event.sender.mainFrame
+      ? credentialForUrl(desktopSessionToken, desktopSessionTokenOrigin, configuredApiBaseUrl) : "";
+  });
   ipcMain.on("desktop:recovered-after-abnormal-exit-sync", (event) => { event.returnValue = recoveredAfterAbnormalExit; });
   ipcMain.handle("desktop:copy-text", (_event, value) => writeTextClipboard(clipboard, value));
   ipcMain.handle("desktop:copy-html", (_event, input) => writeRichClipboard(clipboard, ClipboardItem, input));
   ipcMain.handle("desktop:copy-image", (_event, bytes) => writeImageClipboard(clipboard, ClipboardItem, bytes));
-  ipcMain.handle("desktop:set-session-token", async (_event, value) => {
+  ipcMain.handle("desktop:set-session-token", async (event, value) => {
+    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame || instanceChangePending) throw new Error("Session update forbidden");
     await saveDesktopSessionToken(value);
     return { stored: Boolean(desktopSessionToken) };
   });
-  ipcMain.handle("desktop:clear-session-token", async () => {
+  ipcMain.handle("desktop:clear-session-token", async (event) => {
+    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame || instanceChangePending) throw new Error("Session update forbidden");
     scheduledTaskScheduler.clear();
     await saveDesktopSessionToken("");
     return { stored: false };
+  });
+  ipcMain.handle("desktop:picgo-test", (event, endpoint) => {
+    if (event.sender !== mainWindow?.webContents) throw new Error("PicGo requests must come from the main window");
+    return testPicGoConnection(endpoint);
+  });
+  // Serialize uploads and error dialogs across rapid pastes and multi-image batches.
+  const queuePicGoUpload = createPicGoUploadQueue({
+    isActive: () => Boolean(mainWindow && !mainWindow.webContents.isDestroyed()),
+    chooseFailure: async (input) => {
+      const copy = input.copy;
+      const { response } = await dialog.showMessageBox(mainWindow, {
+        type: "warning", title: copy.title, message: copy.message,
+        detail: String(input.filename), buttons: [copy.retry, copy.fallback, copy.cancel],
+        defaultId: 2, cancelId: 2, noLink: true,
+      });
+      return response;
+    },
+  });
+  ipcMain.handle("desktop:picgo-upload", (event, input) => {
+    if (event.sender !== mainWindow?.webContents) throw new Error("PicGo requests must come from the main window");
+    return queuePicGoUpload(input, () => event.sender === mainWindow?.webContents && !event.sender.isDestroyed());
   });
   ipcMain.handle("desktop:public-network-fetch", async (event, requestId, input) => {
     if (event.sender !== mainWindow?.webContents) throw new Error("Public network requests must come from the main window");
@@ -1755,21 +1832,34 @@ const startApplication = async () => {
   });
   const acpRuntime = registerAcpIpc(ipcMain, createAcpHostRuntime({
     adapterStore: join(app.getPath("userData"), "acp-adapters"),
+    onDiagnostic: (details) => { void writeDiagnostic("acp.adapter-stderr", details); },
     mcpScriptPath: app.isPackaged
       ? join(process.resourcesPath, "mcp-bridge", "edgeever-mcp-stdio.mjs")
       : join(projectRoot, "scripts", "edgeever-mcp-stdio.mjs"),
     mcpAccess: () => {
       const baseUrl = configuredApiBaseUrl;
-      const sessionToken = desktopSessionToken;
+      const sessionToken = credentialForUrl(desktopSessionToken, desktopSessionTokenOrigin, baseUrl);
       const accountId = activeAccountId;
       return {
         baseUrl,
         sessionToken,
         accountId,
+        // Share the renderer's system proxy and desktop network behavior.
+        fetchImpl: (url, init) => net.fetch(url, { ...init, credentials: "omit" }),
+        onDiagnostic: (details) => { void writeDiagnostic("acp.note-access-failed", details); },
         isCurrent: () => configuredApiBaseUrl === baseUrl && desktopSessionToken === sessionToken && activeAccountId === accountId,
       };
     },
-  }), { allowInstall: (sender) => sender === mainWindow?.webContents });
+  }), {
+    allowInstall: (sender, event) => sender === mainWindow?.webContents && event?.senderFrame === sender.mainFrame,
+    adapterPathStore: createAcpPathStore(join(app.getPath("userData"), "acp-adapters", "chosen-path.json")),
+    validateAdapterPath: (filename) => validateTrustedAcpPath(filename, { excludedRoot: app.getPath("userData") }),
+    chooseAdapterPath: async () => {
+      const selection = await dialog.showOpenDialog(mainWindow, { properties: ["openFile"], title: app.getLocale().startsWith("zh") ? "选择受信任的 Antigravity ACP 程序" : "Select a trusted Antigravity ACP executable" });
+      if (selection.canceled || !selection.filePaths[0]) return null;
+      return validateTrustedAcpPath(selection.filePaths[0], { excludedRoot: app.getPath("userData") });
+    },
+  });
   await acpRuntime.pruneAdapters().catch(() => {});
   const refreshAdapters = () => { void acpRuntime.installDetected().catch(() => []).then(() => acpRuntime.updateInstalled()).catch(() => {}); };
   const firstAdapterRefresh = setTimeout(refreshAdapters, 10_000);
@@ -1856,24 +1946,43 @@ const startApplication = async () => {
     setTimeout(() => app.exit(0), 50).unref();
     return { scheduled: true };
   });
-  ipcMain.handle("desktop:set-api-base-url", async (_event, value) => {
+  ipcMain.handle("desktop:set-api-base-url", async (event, value) => {
+    if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame) throw new Error("Instance changes must come from the main window");
+    if (instanceChangePending) throw new Error("An instance change is already in progress");
     const normalized = typeof value === "string" ? value.trim().replace(/\/$/, "") : "";
     if (normalized) {
       let parsed;
       try { parsed = new URL(normalized); } catch { throw new Error("Desktop API URL must be a valid HTTP(S) URL"); }
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("Desktop API URL must use HTTP(S)");
+      if (!instanceOrigin(parsed.href) || parsed.hash || parsed.search) throw new Error("Desktop API URL must use HTTP(S) without credentials, query, or fragment");
     }
     if (normalized === configuredApiBaseUrl) return configuredApiBaseUrl;
-    scheduledTaskScheduler.clear();
-    configuredApiBaseUrl = normalized;
-    await writeFile(instanceUrlPath(), configuredApiBaseUrl);
-    if (sidecar) {
-      await stopSidecar();
-      const nextSidecar = await startSidecar(activeAccountId);
-      if (!nextSidecar) throw new Error("EdgeEver sidecar is unavailable after changing instance");
-      await nextSidecar.waitUntilReady();
-    }
-    return configuredApiBaseUrl;
+    instanceChangePending = true;
+    try {
+      if (configuredApiBaseUrl && instanceOrigin(normalized) !== instanceOrigin(configuredApiBaseUrl)) {
+        const chinese = app.getLocale().startsWith("zh");
+        const answer = await dialog.showMessageBox(mainWindow, {
+          type: "warning",
+          title: chinese ? "切换 EdgeEver 实例" : "Switch EdgeEver instance",
+          message: chinese ? "切换实例后需要重新登录。" : "You will need to sign in again after switching instances.",
+          detail: `${configuredApiBaseUrl} → ${normalized}`,
+          buttons: chinese ? ["取消", "切换实例"] : ["Cancel", "Switch instance"], defaultId: 0, cancelId: 0,
+        });
+        if (answer.response !== 1) throw new Error("Instance change cancelled");
+        await saveDesktopSessionToken("");
+      }
+      scheduledTaskScheduler.clear();
+      const temporaryInstancePath = `${instanceUrlPath()}.tmp`;
+      await writeFile(temporaryInstancePath, normalized, { mode: 0o600 });
+      await rename(temporaryInstancePath, instanceUrlPath());
+      configuredApiBaseUrl = normalized;
+      if (sidecar) {
+        await stopSidecar();
+        const nextSidecar = await startSidecar(activeAccountId);
+        if (!nextSidecar) throw new Error("EdgeEver sidecar is unavailable after changing instance");
+        await nextSidecar.waitUntilReady();
+      }
+      return configuredApiBaseUrl;
+    } finally { instanceChangePending = false; }
   });
   ipcMain.handle("desktop:update-status", () => desktopUpdateStatus());
   ipcMain.handle("desktop:check-update", async () => {

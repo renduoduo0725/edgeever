@@ -93,7 +93,7 @@ const harness = (options = {}) => {
       }
       if (files?.[0] === "assets/capture-platform.js") runInContext(captureScript, pageContext);
       else if (files?.[0] === "assets/capture.js") runInContext(pageCaptureScript, pageContext);
-      else if (files?.[0] !== "assets/capture-image.js") throw new Error(`Unexpected generic fallback: ${files}`);
+      else if (!["assets/capture-image.js", "assets/clip-feedback.js"].includes(files?.[0])) throw new Error(`Unexpected generic fallback: ${files}`);
       return [];
     } },
     action: { setBadgeBackgroundColor: async () => {}, setBadgeText: async () => {} },

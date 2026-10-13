@@ -35,9 +35,6 @@
   "optionsTitle": {
     "message": "Ustawienia EdgeEver Web Clipper"
   },
-  "optionsSubtitle": {
-    "message": "Skonfiguruj połączenie z samodzielnie hostowaną instancją EdgeEver i domyślny notatnik."
-  },
   "diagnosticsTitle": {
     "message": "Informacje i diagnostyka"
   },
@@ -650,5 +647,65 @@
   },
   "saveSubstackNoteToEdgeEver": {
     "message": "Zapisz notatkę Substack w EdgeEver"
+  },
+  "adaptedPlatformsTitle": {
+    "message": "Platformy z dedykowaną obsługą"
+  },
+  "platformXiaohongshu": {
+    "message": "Xiaohongshu"
+  },
+  "platformBilibili": {
+    "message": "Bilibili"
+  },
+  "platformPosts": {
+    "message": "Posty"
+  },
+  "platformNotes": {
+    "message": "Notatki i zdjęcia"
+  },
+  "platformAnswersArticles": {
+    "message": "Odpowiedzi i artykuły"
+  },
+  "platformRepositories": {
+    "message": "Informacje o repozytorium"
+  },
+  "platformCaptionsImages": {
+    "message": "Podpisy i zdjęcia"
+  },
+  "platformMainPosts": {
+    "message": "Główne posty"
+  },
+  "platformTopics": {
+    "message": "Tematy i uzupełnienia"
+  },
+  "platformShowNotes": {
+    "message": "Show Notes odcinka"
+  },
+  "platformArticles": {
+    "message": "Artykuły"
+  },
+  "platformArticlesNotes": {
+    "message": "Artykuły i Notes"
+  },
+  "platformVideoCaptions": {
+    "message": "Napisy do filmów"
+  },
+  "viewDiagnostics": {
+    "message": "Pokaż diagnostykę"
+  },
+  "socialPlatformsTitle": {
+    "message": "Posty społecznościowe"
+  },
+  "readingPlatformsTitle": {
+    "message": "Artykuły i społeczności"
+  },
+  "mediaPlatformsTitle": {
+    "message": "Filmy i podcasty"
+  },
+  "closeNotification": {
+    "message": "Zamknij powiadomienie"
+  },
+  "clipNotifications": {
+    "message": "Powiadomienia o zapisywaniu"
   }
 }

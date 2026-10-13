@@ -3408,11 +3408,11 @@ export const DiagramEditorPane = ({
       <header className="shrink-0 border-b border-slate-200 bg-card">
         <div className={cn(MEMO_EDITOR_TOP_ROW_CLASS_NAME, "border-b-0")}>
           <div
+            ref={setHeaderTitleSlot}
             className="min-w-0 w-full"
             style={titleStatusClearancePx > 0 ? { paddingRight: titleStatusClearancePx } : undefined}
           >
           <div
-            ref={setHeaderTitleSlot}
             className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-4 sm:flex-nowrap"
           >
           <MemoEditorTopRowLeading

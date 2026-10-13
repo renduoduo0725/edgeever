@@ -43,37 +43,6 @@
     return btoa(binary);
   };
 
-  const showToast = (message: string, kind: string) => {
-    document.getElementById("edgeever-clipper-toast")?.remove();
-    const host = document.createElement("div");
-    host.id = "edgeever-clipper-toast";
-    host.style.position = "fixed";
-    host.style.zIndex = "2147483647";
-    host.style.right = "16px";
-    host.style.bottom = "16px";
-    host.style.pointerEvents = "none";
-    const shadow = host.attachShadow({ mode: "open" });
-    const toast = document.createElement("div");
-    toast.textContent = message;
-    toast.style.cssText = [
-      "max-width:280px",
-      "padding:12px 14px",
-      "border-radius:10px",
-      `background:${kind === "error" ? "#b91c1c" : "#0f766e"}`,
-      "color:#fff",
-      "font:600 13px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif",
-      "box-shadow:0 8px 24px rgb(15 23 42 / 24%)",
-    ].join(";");
-    shadow.appendChild(toast);
-    (document.documentElement ?? document.body).appendChild(host);
-    window.setTimeout(() => host.remove(), kind === "error" ? 8000 : 4000);
-  };
-
-  if (payload.action === "toast") {
-    showToast(typeof payload.message === "string" ? payload.message : "", payload.kind === "error" ? "error" : "success");
-    return;
-  }
-
   if (payload.action !== "read" || typeof payload.requestId !== "string") return;
   const requestId = payload.requestId;
 

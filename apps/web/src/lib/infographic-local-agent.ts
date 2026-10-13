@@ -1,6 +1,7 @@
 import { infographicRequestsTimeline } from "@edgeever/shared";
 import {
   cancelDesktopAcp,
+  desktopAcpNoteAccessErrorKey,
   promptDesktopAcp,
   subscribeDesktopAcp,
   type DesktopAcpEvent,
@@ -110,7 +111,8 @@ export const infographicLocalAgentErrorKey = (message: string, adapterId: string
       : "aiAssistant.sidebar.localLoginRequired";
   }
   if (message === "agent_refused") return "aiAssistant.sidebar.agentRefused";
-  if (message === "note_access_unavailable") return "aiAssistant.sidebar.noteAccessUnavailable";
+  const noteAccessErrorKey = desktopAcpNoteAccessErrorKey(message);
+  if (noteAccessErrorKey) return noteAccessErrorKey;
   if (message === "not_installed" || message === "desktop_acp_unavailable") return "aiAssistant.sidebar.localMissing";
   return null;
 };

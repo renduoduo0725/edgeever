@@ -1,0 +1,4 @@
+Brand icons: Simple Icons (CC0-1.0), https://github.com/simple-icons/simple-icons
+SVGs from develop; LinkedIn from 11.15.0; Hacker News uses Y Combinator.
+Colors added for display. Brand trademarks remain with their owners.
+Xiaoyuzhou favicon: https://www.xiaoyuzhoufm.com/favicon-32x32.png

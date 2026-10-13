@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
   buildInfographicLocalAgentContext,
+  infographicLocalAgentErrorKey,
   collectInfographicLocalAgentText,
   parseInfographicLocalReply,
   visibleInfographicAgentReply,
@@ -88,4 +89,10 @@ test("local infographic text follows one ACP request and can be cancelled", asyn
     },
   })).rejects.toThrow("aborted");
   expect(cancelId).toBe("req-2");
+});
+
+test("infographic requests use the same note access errors without blaming the agent login", () => {
+  expect(infographicLocalAgentErrorKey("note_access_network", "workbuddyIntl")).toBe("aiAssistant.sidebar.noteAccessNetwork");
+  expect(infographicLocalAgentErrorKey("note_access_login_required", "workbuddyIntl")).toBe("aiAssistant.sidebar.noteAccessLoginRequired");
+  expect(infographicLocalAgentErrorKey("note_access_changed", "codex")).toBe("aiAssistant.sidebar.noteAccessChanged");
 });

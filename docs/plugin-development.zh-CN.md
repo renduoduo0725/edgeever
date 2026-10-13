@@ -5,7 +5,7 @@
 EdgeEver 提供客户端插件与无代码主题扩展能力。用户可从官方市场、公开 GitHub 仓库或 Manifest 地址安装扩展。已安装扩展随当前工作区在 Web 与桌面端之间同步，在应用打开期间运行；Android 与 iOS 原生端暂不运行插件。
 
 > [!NOTE]
-> **安全模型**：客户端插件采用受信任代码模型（类似 Obsidian）。启用插件即代表信任其在客户端 JavaScript 环境中运行并调用插件 API。清单中的能力声明（Permissions）用于向用户披露插件涉及的功能范围，不构成强制安全沙箱。主题包为纯声明式 JSON，不执行任何 JavaScript。
+> **安全模型**：客户端插件采用受信任代码模型（类似 Obsidian）。启用插件即代表信任其在客户端 JavaScript 环境中运行并调用插件 API。清单中的能力声明（Permissions）用于向用户披露插件涉及的功能范围，不构成强制安全沙箱。主题包为纯声明式 JSON，不执行任何 JavaScript。 `networkHosts` 同样只是用途声明，不限制插件代码的网络访问。桌面插件还可以通过客户端桥访问登录凭据、本地数据及 Agent 能力。
 
 ---
 
@@ -143,6 +143,10 @@ export default definePlugin({
 | 命名空间 | 对应权限（披露用） | 核心方法 | 职责说明 |
 | :--- | :--- | :--- | :--- |
 | **`context.notes`** | `notes:read`<br>`notes:write`<br>`notes:delete` | `query()`, `queryContent()`, `get()`, `create()`, `update()`, `editMarkdown()`, `delete()`, `move()`, `pin()`, `restore()`, `revisions` | 笔记查询、正文读取、乐观并发编辑与版本管理 |
+| **`context.diagrams`** | `notes:read`<br>`notes:write` | `get()`, `edit()` | 读取图表语义结构与布局，批量编辑节点和连线 |
+| **`context.tables`** | `notes:read`<br>`notes:write` | `get()`, `edit()` | 读取完整表格，批量编辑字段、记录和单元格 |
+| **`context.posters`** | `notes:read`<br>`notes:write` | `capabilities()`, `get()`, `edit()` | 海报元素、图层、分组、样式与画布编辑 |
+| **`context.infographics`** | `notes:read`<br>`notes:write` | `capabilities()`, `get()`, `edit()` | 信息图嵌套数据项、模板与主题编辑 |
 | **`context.notebooks`** | `metadata:read`<br>`metadata:write` | `list()`, `create()`, `update()`, `delete()` | 笔记本树状层级维护与增删改查 |
 | **`context.tags`** | `metadata:read`<br>`metadata:write` | `list()`, `rename()`, `delete()` | 标签全局查询、重命名与删除 |
 | **`context.templates`** | `templates:read`<br>`templates:write` | `list()`, `create()`, `update()`, `delete()`, `use()` | 模板增删改查及一键套用创建笔记 |
@@ -240,6 +244,65 @@ await context.tags.delete("unused-tag");
 ```
 
 ---
+
+#### 特殊笔记的读取与细项编辑
+
+`notes.query()` / `queryContent()` / `get()` 返回 `kind`（`text`、`mind-map`、`flowchart`、`architecture`、`table`、`poster`、`infographic` 或 `video`）；完整笔记还包含独立副本 `contentJson`。特殊笔记的完整持久化载荷也保留在 `contentMarkdown` 中，读取这些字段不会修改笔记。
+
+图表、表格、海报和信息图必须先调用专用 `get()`，再以返回的 `note.revision`、`note.contentHash` 和 `editToken` 调用 `edit()`。快照令牌还会检测尚未同步、云端版本号未递增的本地内容变化。批量操作全部验证成功后才写入一次；`dryRun: true` 返回预览结构，不保存，不产生笔记变更事件。预览返回的 `note` 和 `editToken` 仍对应保存前的基线。
+
+```ts
+const snapshot = await context.diagrams.get(noteId, { includeLayout: true });
+const result = await context.diagrams.edit(noteId, {
+  expectedRevision: snapshot.note.revision,
+  expectedContentHash: snapshot.note.contentHash,
+  expectedEditToken: snapshot.editToken,
+  reflow: "preserve",
+  operations: [{ op: "update_node", nodeId: "root", changes: { label: "Updated" } }],
+});
+
+const table = await context.tables.get(tableNoteId);
+await context.tables.edit(tableNoteId, {
+  expectedRevision: table.note.revision,
+  expectedContentHash: table.note.contentHash,
+  expectedEditToken: table.editToken,
+  operations: [
+    { op: "update_record", recordId: "row-1", cells: { "field-1": "Updated" } },
+    { op: "add_record", recordId: "row-2", cells: { "field-1": "New" } },
+  ],
+});
+```
+
+- 图表操作：`add_node`、`update_node`、`remove_node`、`add_edge`、`update_edge`、`remove_edge`。每批 1–100 项；删除包含子节点的节点须显式设置 `cascade: true`。默认保留已有布局；`reflow: "all"` 重新布局，主题与结构保持不变。
+- 表格操作：`add_field`、`update_field`、`remove_field`、`add_record`、`update_record`、`remove_record`，每批 1–100 项。单元格以字段 ID 为键；附件写入使用资源 ID 数组，宿主核验其属于当前笔记并补全元数据。新增记录可以指定唯一 `recordId`，省略则自动生成。
+- 字段类型转换、删字段等操作影响已有非空单元格时，先用 `dryRun` 查看 `changedCellCount` / `removedAttachmentCount`，确认后显式传入 `allowDataChanges: true`。记录删除仍会直接执行，须由插件自身提供适当的交互。
+- 海报支持 `edits: [{ id, patch }]` 和 `operations`：`add`、`remove`、`duplicate`、`reorder`、`group`、`ungroup`、`align`、`lock`、`apply_template`。先处理元素属性修改，再依序执行操作，最后调整画布/平台尺寸。数组顺序由底层到顶层；可编辑字段、平台和字体见 `posters.capabilities()`。锁定元素不能直接修改或删除，须先显式解锁。`apply_template` 会替换全部元素，只有用户要求替换版式时才调用。图片必须属于当前笔记；修改后清除旧预览引用，但不生成新预览图片。
+- 信息图支持 `set_data` / `remove_data` / `insert_data` 操作嵌套数据，路径是字段名与数组下标组成的数组；数组插入使用独立 `index`。每批 1–100 项。`set_template` / `set_theme` 显式修改模板/主题，名称见 `infographics.capabilities()`。普通数据编辑保留模板、主题覆盖、画布配置和会话历史；笔记标题保持不变，若需要同步标题请另用 `notes.update()`。使用现有 AntV 解析器校验；数据段可能重新格式化，但解析后的未指定数据与样式必须保持一致。不能无损回读的值（如不受支持的数组或多行标量）会抛出 `INVALID_STRUCTURED_EDIT`，不会截断或静默丢弃。主题修改只更换主题名，保留显式颜色等覆盖项。
+
+```ts
+const poster = await context.posters.get(posterNoteId);
+await context.posters.edit(posterNoteId, {
+  expectedRevision: poster.note.revision,
+  expectedContentHash: poster.note.contentHash,
+  expectedEditToken: poster.editToken,
+  edits: [{ id: "heading", patch: { text: "Updated", fill: "#16A06E" } }],
+});
+
+const infographic = await context.infographics.get(infographicNoteId);
+await context.infographics.edit(infographicNoteId, {
+  expectedRevision: infographic.note.revision,
+  expectedContentHash: infographic.note.contentHash,
+  expectedEditToken: infographic.editToken,
+  operations: [{ op: "set_data", path: ["lists", 0, "label"], value: "Updated" }],
+});
+```
+
+**兼容性与错误**：`notes.update()` 修改标题/标签会保留原始正文；对特殊笔记传入 `contentMarkdown`，或用 `notes.editMarkdown()`、编辑器 Markdown/嵌入写入接口操作特殊正文，会抛出 `STRUCTURED_NOTE_REQUIRED`。通用 Markdown 创建/写入也拒绝特殊笔记标记。已有插件须按 `kind` 选择接口。类型不符为 `NOTE_TYPE_MISMATCH`；非法批量操作为 `INVALID_STRUCTURED_EDIT`；需确认字段数据变化为 `TABLE_DATA_CHANGES_REQUIRED`；快照过期或编辑器有未保存内容为 `NOTE_CONFLICT`，须先保存并重新读取。专用写入沿用宿主仓库的同步、历史版本与刷新机制，离线返回并不表示云端已同步成功。
+
+插件保存还会在本地仓库事务内检查内容快照，防止多个窗口在宿主校验后互相覆盖；未解决的同步冲突会拒绝后续插件写入，并保留冲突队列的草稿与诊断。桌面插件保存使用专用原生接口，将正文、历史快照和同步入队一起提交；不支持该接口的旧宿主会抛出 `HOST_UPGRADE_REQUIRED`，不会回退到无保护写入。原有普通编辑器保存行为保持不变。服务器历史版本沿用现有五分钟快照规则，不保证每次插件写入都产生独立云端版本。
+
+维护者可在构建 sidecar 后运行 `bun run test:plugin-sync`，验证隔离的 Web IndexedDB → 本地 API/SQLite → 原生 sidecar → Web 往返、离线持久化、重启与冲突恢复。`test:desktop:sidecar` 已包含此验证。设置 `EDGE_EVER_LEGACY_SIDECAR_PATH` 和可选的 `EDGE_EVER_LEGACY_MIGRATIONS_PATH` 可额外验证旧原生服务创建的数据升级到当前构建；所有原生进程只访问临时测试目录，不启动已安装的桌面应用，不读取真实账户数据。该验证覆盖当前主机的原生服务，不替代其他平台的实机与应用内验收。
+
 
 ### 2. 模板管理（Templates）
 

@@ -8,7 +8,6 @@ export const DEFAULT_NOTE_PROSE_LINE_HEIGHT: NoteProseLineHeight = 1.65;
 
 export const NOTE_PROSE_PALETTE_IDS = [
   "clay",
-  "orange",
   "dawn",
   "teal",
   "azure",
@@ -110,29 +109,18 @@ const palette = (colors: NoteProsePaletteColors): NoteProsePaletteColors => colo
 
 export const NOTE_PROSE_PALETTES: Record<NoteProsePaletteId, NoteProsePaletteColors> = {
   clay: palette({
-    accent: "#E02D32",
-    text: "#374151",
-    muted: "#374151",
-    surface: "#FFF7F7",
-    divider: "#FFD6D6",
-    link: "#B42318",
-    codeBackground: "#FFF1F1",
-    codeText: "#B42318",
-    background: "#FFFFFF",
-  }),
-  orange: palette({
-    accent: "#E07A2D",
+    accent: "#FF4C01",
     text: "#3A2E28",
     muted: "#746055",
-    surface: "#FFF4EA",
-    divider: "#F6D7BE",
-    link: "#B45309",
-    codeBackground: "#FFF4EA",
-    codeText: "#B45309",
+    surface: "#FFF4EE",
+    divider: "#F6D5C6",
+    link: "#C63C00",
+    codeBackground: "#FFF4EE",
+    codeText: "#C63C00",
     background: "#FFFFFF",
   }),
   dawn: palette({
-    accent: "#D9A521",
+    accent: "#8A6716",
     text: "#3D2A1B",
     muted: "#74613C",
     surface: "#FFFDF8",
@@ -143,18 +131,18 @@ export const NOTE_PROSE_PALETTES: Record<NoteProsePaletteId, NoteProsePaletteCol
     background: "#FFFFFF",
   }),
   teal: palette({
-    accent: "#22B8A7",
+    accent: "#20AD9D",
     text: "#3E4C4A",
     muted: "#5C6E6B",
     surface: "#F2FBFA",
     divider: "#CDEFEA",
-    link: "#1A8F82",
+    link: "#14796E",
     codeBackground: "#ECFBF8",
-    codeText: "#1A8F82",
+    codeText: "#14796E",
     background: "#FFFFFF",
   }),
   azure: palette({
-    accent: "#2F80ED",
+    accent: "#2663EB",
     text: "#374151",
     muted: "#4B5563",
     surface: "#F5F8FC",
@@ -165,7 +153,7 @@ export const NOTE_PROSE_PALETTES: Record<NoteProsePaletteId, NoteProsePaletteCol
     background: "#FFFFFF",
   }),
   violet: palette({
-    accent: "#656FE6",
+    accent: "#7351CF",
     text: "#3F3F46",
     muted: "#3F3F46",
     surface: "#F4F4F5",
@@ -176,7 +164,7 @@ export const NOTE_PROSE_PALETTES: Record<NoteProsePaletteId, NoteProsePaletteCol
     background: "#FFFFFF",
   }),
   pink: palette({
-    accent: "#D4537E",
+    accent: "#BB456E",
     text: "#3A2E34",
     muted: "#746068",
     surface: "#FDF2F6",
@@ -187,7 +175,7 @@ export const NOTE_PROSE_PALETTES: Record<NoteProsePaletteId, NoteProsePaletteCol
     background: "#FFFFFF",
   }),
   slate: palette({
-    accent: "#89798B",
+    accent: "#796B7C",
     text: "#5C505E",
     muted: "#5C505E",
     surface: "#FAFAFA",
@@ -197,6 +185,17 @@ export const NOTE_PROSE_PALETTES: Record<NoteProsePaletteId, NoteProsePaletteCol
     codeText: "#6B5C6D",
     background: "#FFFFFF",
   }),
+};
+
+// Dark reading surfaces need lighter accents than the white-background palette.
+export const NOTE_PROSE_DARK_ACCENTS: Record<NoteProsePaletteId, string> = {
+  clay: "#FF996E",
+  dawn: "#D9B65C",
+  teal: "#70C7B8",
+  azure: "#8CB4F0",
+  violet: "#B39AE8",
+  pink: "#E794B0",
+  slate: "#BCACBF",
 };
 
 const LEGACY_EDITOR_THEME_PALETTES: Record<string, NoteProsePaletteChoice> = {
@@ -250,6 +249,8 @@ export const parseNoteProseLineHeight = (value: unknown): NoteProseLineHeight | 
 };
 
 export const parseNoteProsePalette = (value: unknown): NoteProsePaletteChoice | null => {
+  // Red and orange now share the existing red identifier for older clients.
+  if (value === "orange") return "clay";
   // Removed palettes and the custom color editor read as native.
   if (value === "emerald" || value === "green" || value === "plum" || value === "custom") return "native";
   return typeof value === "string" && (NOTE_PROSE_PALETTE_CHOICES as readonly string[]).includes(value)
@@ -362,6 +363,10 @@ export const noteProseCssVariables = (prose: ResolvedNoteProse): Record<string, 
   const colors = noteProsePaletteColors(prose);
   if (!colors) return variables;
   variables["--note-palette-accent"] = colors.accent;
+  variables["--note-palette-light-accent"] = colors.accent;
+  if (prose.palette !== "native") {
+    variables["--note-palette-dark-accent"] = NOTE_PROSE_DARK_ACCENTS[prose.palette];
+  }
   variables["--note-palette-text"] = colors.text;
   variables["--note-palette-muted"] = colors.muted;
   variables["--note-palette-surface"] = colors.surface;

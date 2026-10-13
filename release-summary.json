@@ -1,20 +1,23 @@
 {
-  "version": "1.111.1",
+  "version": "1.113.0",
   "changes": {
     "en-US": [
-      "Explain why Inbox cannot be deleted in notebook menus and prevent the disabled action from changing notebook selection.",
-      "Use a consistent available status label for WorkBuddy in desktop agent settings.",
-      "Update application dependencies and fix known vulnerabilities in XML, ZIP, URI, CSS, SVG, and desktop agent package handling."
+      "Let trusted plugins edit diagrams, tables, posters, and infographics with conflict checks that protect newer note changes.",
+      "Harden desktop template previews, resource handling, agent execution, and instance credentials against unsafe content and cross-instance credential exposure. (#546)",
+      "Improve update failure diagnostics so network connection problems are easier to investigate. (#513)",
+      "Refine note reading colors in light and dark modes, combine red and orange into vermilion orange, and keep inline code colors neutral."
     ],
     "zh-CN": [
-      "笔记本菜单说明收件箱不可删除的原因，并修复点击禁用删除项时意外切换笔记本的问题。",
-      "统一桌面智能体设置中 WorkBuddy 的可用状态文案。",
-      "更新应用依赖，修复 XML、ZIP、URI、CSS、SVG 和桌面智能体软件包处理相关的已知安全漏洞。"
+      "受信插件可编辑图表、表格、海报和信息图，并通过冲突检查保护笔记中的较新改动。",
+      "加固桌面模板预览、资源处理、智能体执行及实例凭据边界，降低不安全内容和跨实例凭据泄露风险。（#546）",
+      "完善更新失败诊断，便于排查网络连接问题。（#513）",
+      "优化浅色与深色模式下的正文配色，将红色和橙色合并为朱橙，并统一行内代码的中性配色。"
     ],
     "ja": [
-      "ノートブックメニューで受信トレイを削除できない理由を表示し、無効な削除項目をクリックした際に選択が切り替わる問題を修正しました。",
-      "デスクトップのエージェント設定で WorkBuddy の利用可能ステータス表記を統一しました。",
-      "アプリの依存関係を更新し、XML、ZIP、URI、CSS、SVG、およびデスクトップエージェントのパッケージ処理に関連する既知の脆弱性を修正しました。"
+      "信頼されたプラグインから図、表、ポスター、インフォグラフィックを編集でき、競合チェックで新しい変更を保護します。",
+      "デスクトップのテンプレート表示、リソース処理、エージェント実行、インスタンス認証情報の境界を強化します。",
+      "更新失敗時の診断を改善し、ネットワーク接続の問題を調べやすくしました。",
+      "ライト・ダークモードの本文配色を改善し、赤とオレンジを朱色に統合して、インラインコードを中立色に統一しました。"
     ]
   }
 }

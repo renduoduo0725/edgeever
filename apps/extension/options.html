@@ -3,58 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title data-i18n="optionsTitle">EdgeEver Web Clipper settings</title>
+    <title>EdgeEver Web Clipper settings</title>
   </head>
   <body>
-    <main class="options-shell">
-      <h1 data-i18n="extensionName">EdgeEver Web Clipper</h1>
-      <p class="hint" data-i18n="optionsSubtitle">配置自托管 EdgeEver 实例连接与默认剪藏笔记本。</p>
-      <form id="settings-form">
-        <label>
-          <span data-i18n="instanceAddress">EdgeEver instance URL</span>
-          <input id="instance-url" type="url" placeholder="https://notes.example.com" required />
-        </label>
-        <label>
-          API Token
-          <input id="token" type="password" placeholder="Create one in EdgeEver settings" data-i18n-placeholder="tokenPlaceholder" required />
-        </label>
-        <label>
-          <span data-i18n="defaultNotebook">Default notebook</span>
-          <select id="notebook-id">
-            <option value="" data-i18n="autoFirstNotebook">Use the first notebook automatically after connecting</option>
-          </select>
-        </label>
-        <div class="actions">
-          <button id="test" type="button" class="secondary" data-i18n="testConnection">Test connection</button>
-          <button id="save" type="submit" data-i18n="saveSettings">Save settings</button>
-        </div>
-        <p id="status" class="status" role="status"></p>
-      </form>
-      <section class="diagnostics-panel" aria-labelledby="diagnostics-title">
-        <h2 id="diagnostics-title" data-i18n="diagnosticsTitle">About &amp; diagnostics</h2>
-        <p class="hint" data-i18n="diagnosticsDescription">View basic extension, browser, system, and connection information. API tokens are never included.</p>
-        <dl class="diagnostics-list">
-          <div><dt data-i18n="extensionVersion">Extension version</dt><dd id="extension-version">—</dd></div>
-          <div><dt data-i18n="manifestVersion">Manifest version</dt><dd id="manifest-version">—</dd></div>
-          <div><dt data-i18n="browserVersion">Browser</dt><dd id="browser-version">—</dd></div>
-          <div><dt data-i18n="systemVersion">System</dt><dd id="system-version">—</dd></div>
-          <div><dt data-i18n="extensionId">Extension ID</dt><dd id="extension-id">—</dd></div>
-          <div><dt data-i18n="instanceOrigin">Instance origin</dt><dd id="instance-origin">—</dd></div>
-          <div><dt data-i18n="instancePermission">Instance permission</dt><dd id="instance-permission">—</dd></div>
-        </dl>
-        <div class="diagnostics-actions">
-          <button id="copy-diagnostics" type="button" class="secondary" data-i18n="copyDiagnostics">Copy diagnostics</button>
-          <span id="copy-status" class="status" role="status"></span>
-        </div>
-      </section>
-      <p class="about-links">
-        <a href="https://github.com/tianma-if/edgeever" target="_blank" rel="noopener noreferrer" data-i18n="projectAndSource">GitHub project &amp; source</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://github.com/tianma-if/edgeever/issues" target="_blank" rel="noopener noreferrer" data-i18n="reportIssue">Report an issue</a>
-        <span aria-hidden="true">·</span>
-        <a href="https://edgeever.org/privacy" target="_blank" rel="noopener noreferrer" data-i18n="privacyPolicy">Privacy policy</a>
-      </p>
-    </main>
-    <script type="module" src="/src/options.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/ui/main.tsx"></script>
   </body>
 </html>

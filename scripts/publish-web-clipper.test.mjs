@@ -1,5 +1,5 @@
 import { createHmac, createVerify, generateKeyPairSync } from "node:crypto";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -8,10 +8,12 @@ import {
   amoValidationErrors,
   assertCredentials,
   assertOfficialRepository,
+  assertIdenticalBuildDirectories,
   buildApprovalNotes,
   chromeSubmissionPlan,
   chromeUploadFinished,
   compareVersions,
+  copySourceArchive,
   createAmoJwt,
   createChromeClient,
   createFirefoxClient,
@@ -24,6 +26,8 @@ import {
   parsePublishArgs,
   resolveReleaseNotes,
   shouldCopyExtensionSource,
+  SHARED_EXTENSION_SOURCE_FILES,
+  sourceRebuildEnvironment,
   submitChrome,
   submitFirefox,
   workspacePackageManifests,
@@ -260,6 +264,50 @@ describe("web clipper store command", () => {
     expect(manifests).toContain("apps/web/package.json");
     expect(manifests).toContain("packages/shared/package.json");
     expect(manifests).not.toContain("apps/extension/package.json");
+  });
+
+  test("review source contains shared UI imports without copying the whole Web app", () => {
+    const staging = mkdtempSync(join(tmpdir(), "edgeever-source-test-"));
+    try {
+      copySourceArchive(new URL("..", import.meta.url).pathname, staging);
+      for (const file of SHARED_EXTENSION_SOURCE_FILES) {
+        expect(readFileSync(join(staging, file), "utf8")).toBe(readFileSync(new URL(`../${file}`, import.meta.url), "utf8"));
+      }
+      expect(existsSync(join(staging, "apps/web/src/components/EditorPane.tsx"))).toBe(false);
+      expect(existsSync(join(staging, ".env.local"))).toBe(false);
+      expect(existsSync(join(staging, "apps/extension/dist"))).toBe(false);
+      expect(existsSync(join(staging, "apps/extension/node_modules"))).toBe(false);
+    } finally { rmSync(staging, { recursive: true, force: true }); }
+  });
+
+  test("source rebuild audit rejects missing, extra and changed artifacts", () => {
+    const staging = mkdtempSync(join(tmpdir(), "edgeever-rebuild-test-"));
+    const expected = join(staging, "expected"), rebuilt = join(staging, "rebuilt");
+    mkdirSync(expected); mkdirSync(rebuilt);
+    try {
+      writeFileSync(join(expected, "manifest.json"), "manifest");
+      expect(() => assertIdenticalBuildDirectories(expected, rebuilt)).toThrow("manifest.json");
+      writeFileSync(join(rebuilt, "manifest.json"), "changed");
+      expect(() => assertIdenticalBuildDirectories(expected, rebuilt)).toThrow("manifest.json");
+      writeFileSync(join(rebuilt, "manifest.json"), "manifest");
+      expect(assertIdenticalBuildDirectories(expected, rebuilt)).toBe(1);
+      writeFileSync(join(rebuilt, "extra.js"), "extra");
+      expect(() => assertIdenticalBuildDirectories(expected, rebuilt)).toThrow("extra.js");
+    } finally { rmSync(staging, { recursive: true, force: true }); }
+  });
+
+  test("extension CI covers shared UI and verifies the review archive on the official repository", () => {
+    const build = readFileSync(new URL("../.github/workflows/extension-build.yml", import.meta.url), "utf8");
+    expect(build.match(/"apps\/web\/src\/components\/ui\/\*\*"/g)).toHaveLength(2);
+    expect(build.match(/"apps\/web\/src\/lib\/utils.ts"/g)).toHaveLength(2);
+    expect(build).toContain("if: github.repository == 'tianma-if/edgeever'");
+    expect(build).toContain("run: bun scripts/verify-extension-source.mjs");
+    expect(build).toContain("bun-version-file: package.json");
+  });
+
+  test("independent builds do not inherit store credentials or external module paths", () => {
+    const environment = sourceRebuildEnvironment({ PATH: "/usr/bin", HOME: "/tmp/example", CHROME_WEB_STORE_CLIENT_SECRET: "secret", AMO_JWT_SECRET: "secret", EDGE_EVER_REVIEW_API_TOKEN: "secret", GITHUB_TOKEN: "secret", GH_TOKEN: "secret", NODE_PATH: "/original/node_modules", NODE_OPTIONS: "--require external.js" });
+    expect(environment).toEqual({ PATH: "/usr/bin", HOME: "/tmp/example", NODE_PATH: "", NODE_OPTIONS: "" });
   });
 
   test("signs Firefox and Chrome credentials", () => {

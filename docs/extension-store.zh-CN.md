@@ -1,8 +1,8 @@
 # 网页剪藏插件商店提交
 
 Chrome、Edge 和 Firefox 的上架由官方仓库工作流 **Submit Web Clipper** 提交。
-它和 `bun run release` 分开。产品正式发布不会上传浏览器插件，商店审核也不会
-改变 GitHub Release。
+它和 `bun run release` 分开。正式 GitHub Release 发布后会异步触发商店工作流；
+商店提交不阻塞 GitHub Release，审核结果也不会改变已发布的 Release。
 
 Edge 用户安装的是 Chrome 网上应用店商品
 `gjadpfmanienmlofajibkfkkpfdkclgo`。一次 Chrome 提交覆盖这个商品。Firefox
@@ -12,6 +12,12 @@ Edge 用户安装的是 Chrome 网上应用店商品
 工作流会构建安装包、上传并提交审核。它不能代替商店审核。用户会留在各自商店
 最后一个已通过的版本，直到 Chrome 和 Mozilla 分别审核完成。已经上传过的版本号
 不能重复使用。提交改动前要先提高 `apps/extension/package.json` 里的版本。
+
+调用任何商店接口前，命令会把 Firefox 审核源码 ZIP 解压到干净目录，使用冻结的
+锁文件安装依赖并重新构建。每个产物文件的 SHA-256 必须与提交版本一致，否则停止
+提交。源码包包含插件引用的 Web 共享 UI 组件；构建 CI 会监听这些依赖的变化，
+并执行相同的重建检查。两个工作流均使用检出代码中根目录 `package.json` 指定的
+Bun 版本。
 
 ## 运行
 

@@ -35,9 +35,6 @@
   "optionsTitle": {
     "message": "EdgeEver Web Clipper settings"
   },
-  "optionsSubtitle": {
-    "message": "Configure your self-hosted EdgeEver instance connection and default notebook."
-  },
   "diagnosticsTitle": {
     "message": "About & diagnostics"
   },
@@ -650,5 +647,65 @@
   },
   "saveSubstackNoteToEdgeEver": {
     "message": "Save Substack Note to EdgeEver"
+  },
+  "adaptedPlatformsTitle": {
+    "message": "Deeply adapted platforms"
+  },
+  "platformXiaohongshu": {
+    "message": "Xiaohongshu"
+  },
+  "platformBilibili": {
+    "message": "Bilibili"
+  },
+  "platformPosts": {
+    "message": "Posts"
+  },
+  "platformNotes": {
+    "message": "Notes & images"
+  },
+  "platformAnswersArticles": {
+    "message": "Answers & articles"
+  },
+  "platformRepositories": {
+    "message": "Repository details"
+  },
+  "platformCaptionsImages": {
+    "message": "Captions & images"
+  },
+  "platformMainPosts": {
+    "message": "Main posts"
+  },
+  "platformTopics": {
+    "message": "Topics & supplements"
+  },
+  "platformShowNotes": {
+    "message": "Episode Show Notes"
+  },
+  "platformArticles": {
+    "message": "Articles"
+  },
+  "platformArticlesNotes": {
+    "message": "Articles & Notes"
+  },
+  "platformVideoCaptions": {
+    "message": "Video captions"
+  },
+  "viewDiagnostics": {
+    "message": "View diagnostics"
+  },
+  "socialPlatformsTitle": {
+    "message": "Social posts"
+  },
+  "readingPlatformsTitle": {
+    "message": "Articles & communities"
+  },
+  "mediaPlatformsTitle": {
+    "message": "Videos & podcasts"
+  },
+  "closeNotification": {
+    "message": "Close notification"
+  },
+  "clipNotifications": {
+    "message": "Clipping notifications"
   }
 }

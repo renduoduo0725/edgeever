@@ -1,3 +1,4 @@
+import { memoLocalSnapshot } from "./local-memo-guard";
 import type {
   DesktopMemoCreateParams,
   DesktopMemoListParams,
@@ -297,7 +298,7 @@ export const createDesktopRepository = (): EdgeEverRepository => ({
     });
   },
 
-  updateMemo: async (memo: MemoDetail, input) => {
+  updateMemo: async (memo: MemoDetail, input, options) => {
     const needsStagedRepair = contentReferencesStagedResourceUrl(input.contentJson)
       || contentReferencesStagedResourceUrl(input.contentMarkdown);
     const aliasedInput = needsStagedRepair
@@ -332,7 +333,26 @@ export const createDesktopRepository = (): EdgeEverRepository => ({
       contentText: docToText(portableContentJson),
       tags: input.tags,
     };
-    const result = await request("memo.update", rpcParams);
+    let result;
+    if (options?.guardLocalSnapshot) {
+      const snapshot = memoLocalSnapshot(memo);
+      try {
+        result = await request("memo.updateGuarded", {
+          ...rpcParams,
+          expectedLocalSnapshot: { ...snapshot,
+            contentJson: mapTiptapResourceUrls(snapshot.contentJson, toApiResourceUrl),
+            contentMarkdown: mapMarkdownResourceUrls(snapshot.contentMarkdown, toApiResourceUrl) ?? snapshot.contentMarkdown,
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes("NOTE_CONFLICT:")) throw Object.assign(new Error(message), { code: "NOTE_CONFLICT" });
+        if (message.includes("Unknown sidecar method: memo.updateGuarded")) throw Object.assign(new Error("Upgrade the desktop host before using guarded plugin note edits."), { code: "HOST_UPGRADE_REQUIRED" });
+        throw error;
+      }
+    } else {
+      result = await request("memo.update", rpcParams);
+    }
     notifySyncQueueDeferred();
     return { memo: await repairDisplayedMemo(result.memo), queued: true as const };
   },

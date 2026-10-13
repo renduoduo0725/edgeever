@@ -1,3 +1,4 @@
+import { assertLocalMemoSnapshot } from "./local-memo-guard";
 import { markdownToDoc, type MemoDetail, type MemoRevision, type MemoSummary, type MemoTemplate, type Notebook, type Resource, type ResourceListItem, type ResourceStorageSummary, type TagSummary, type TiptapDoc } from "@edgeever/shared";
 import { api } from "@/lib/api";
 import {
@@ -79,7 +80,7 @@ export type EdgeEverRepository = {
   listMemos(params: LocalMemoListParams): Promise<LocalMemoListResponse>;
   getMemo(memoId: string, includeDeleted?: boolean): Promise<{ memo: MemoDetail }>;
   createMemo(input: { notebookId: string; title?: string; contentJson?: TiptapDoc; contentMarkdown?: string; tags?: string[] }): Promise<{ memo: MemoDetail }>;
-  updateMemo(memo: MemoDetail, input: Omit<MemoUpdateSyncPayload, "memoId">): Promise<{ memo: MemoDetail; queued: true }>;
+  updateMemo(memo: MemoDetail, input: Omit<MemoUpdateSyncPayload, "memoId">, options?: { guardLocalSnapshot?: boolean }): Promise<{ memo: MemoDetail; queued: true }>;
   /**
    * Drop the local conflicted draft for a note and replace the local copy with
    * the authoritative cloud memo so the editor can rehydrate cleanly.
@@ -535,10 +536,15 @@ export const createWebRepository = (scope: string): EdgeEverRepository => {
     return { memo };
   },
 
-  async updateMemo(memo, input) {
+  async updateMemo(memo, input, options) {
     const payload: MemoUpdateSyncPayload = { ...input, memoId: memo.id };
     const updated = await runLocalDatabaseOperationWithRecovery(() =>
       localDb.transaction("rw", [localDb.memos, localDb.syncQueue], async () => {
+        if (options?.guardLocalSnapshot) {
+          const current = await getLocalMemo(scope, memo.id);
+          const queued = await localDb.syncQueue.get(`memo.update:${memo.id}`);
+          assertLocalMemoSnapshot(current, memo, queued?.status === "conflict");
+        }
         const nextMemo = await putLocalMemoUpdate(scope, memo, payload);
         await putMemoUpdateQueueItem(payload, scope);
         return nextMemo;

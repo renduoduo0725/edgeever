@@ -8,11 +8,15 @@ const diagramSource = readFileSync(new URL("./DiagramEditorPane.tsx", import.met
 describe("shared memo title input", () => {
   test("owns the title appearance and input constraints", () => {
     expect(componentSource).toContain("text-sm font-semibold");
+    expect(componentSource).toContain("min-w-0 truncate");
     expect(componentSource).toContain("sm:text-base");
     expect(componentSource).not.toContain("lg:text-[26px]");
     expect(componentSource).toContain("focus-visible:bg-muted");
     expect(componentSource).toContain("maxLength={160}");
     expect(componentSource).toContain("readOnly={readOnly}");
+    expect(componentSource).toContain("input.scrollWidth > input.clientWidth");
+    expect(componentSource).toContain("truncated && value");
+    expect(componentSource).toContain('<TooltipContent side="bottom"');
   });
 
   test("is reused by text and diagram notes", () => {

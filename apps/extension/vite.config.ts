@@ -1,19 +1,27 @@
 import { fileURLToPath, URL } from "node:url";
+import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { build as buildStandaloneScript } from "esbuild";
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import extensionPackage from "./package.json";
 import { buildExtensionManifest, type ExtensionTarget } from "./manifest";
 
 const target: ExtensionTarget = process.env.EDGE_EVER_EXTENSION_TARGET === "firefox"
   ? "firefox"
   : "chromium";
+const require = createRequire(import.meta.url);
 
 export default defineConfig({
   root: fileURLToPath(new URL(".", import.meta.url)),
+  resolve: { alias: { "@": fileURLToPath(new URL("../web/src", import.meta.url)) }, dedupe: ["react", "react-dom"] },
   plugins: [
+    react(),
+    tailwindcss(),
     {
       name: "edgeever-extension-manifest",
-      async generateBundle() {
+      async generateBundle(_options, bundle) {
         this.emitFile({
           type: "asset",
           fileName: "manifest.json",
@@ -39,6 +47,36 @@ export default defineConfig({
             source: capture.outputFiles[0].contents,
           });
         }
+        // Reuse the generated Tailwind stylesheet so the shadcn component and
+        // its theme tokens behave identically in pages and in the shadow root.
+        const themeStyles = Object.values(bundle)
+          .filter((item) => item.type === "asset" && item.fileName.endsWith(".css"))
+          .map((item) => item.type === "asset" ? typeof item.source === "string" ? item.source : new TextDecoder().decode(item.source) : "")
+          .join("\n");
+        if (!themeStyles) throw new Error("Missing compiled extension theme for shadow notifications");
+        const feedback = await buildStandaloneScript({
+          entryPoints: [fileURLToPath(new URL("./src/ui/clip-feedback.tsx", import.meta.url))],
+          bundle: true, format: "iife", platform: "browser", target: "es2022", minify: true, write: false,
+          jsx: "automatic",
+          define: {
+            "process.env.NODE_ENV": '"production"',
+            __CLIP_FEEDBACK_CSS__: JSON.stringify(`${await readFile(require.resolve("sonner/dist/styles.css"), "utf8")}\n${themeStyles}`),
+          },
+          plugins: [{
+            name: "shadow-only-sonner-styles",
+            setup(build) {
+              build.onLoad({ filter: /sonner[\\/]dist[\\/]index\.(mjs|js)$/ }, async ({ path }) => {
+                // Sonner's default module injects CSS into document.head. The
+                // same published stylesheet is instead mounted in our shadow.
+                const source = await readFile(path, "utf8");
+                const contents = source.replace(/__insertCSS\("(?:\\.|[^"\\])*"\);/g, "");
+                if (contents === source) throw new Error("Sonner CSS injection changed; review shadow isolation before upgrading");
+                return { contents, loader: "js" };
+              });
+            },
+          }],
+        });
+        this.emitFile({ type: "asset", fileName: "assets/clip-feedback.js", source: feedback.outputFiles[0].contents });
       },
     },
   ],
@@ -53,6 +91,9 @@ export default defineConfig({
         popup: fileURLToPath(new URL("./popup.html", import.meta.url)),
         options: fileURLToPath(new URL("./options.html", import.meta.url)),
         "image-save": fileURLToPath(new URL("./image-save.html", import.meta.url)),
+        "tweet-save": fileURLToPath(new URL("./tweet-save.html", import.meta.url)),
+        "xhs-save": fileURLToPath(new URL("./xhs-save.html", import.meta.url)),
+        "zhihu-save": fileURLToPath(new URL("./zhihu-save.html", import.meta.url)),
         background: fileURLToPath(new URL("./src/background.ts", import.meta.url)),
         "capture-image": fileURLToPath(new URL("./src/capture-image.ts", import.meta.url)),
         "capture-tweet": fileURLToPath(new URL("./src/capture-tweet.ts", import.meta.url)),
@@ -61,12 +102,9 @@ export default defineConfig({
         "capture-zhihu": fileURLToPath(new URL("./src/capture-zhihu.ts", import.meta.url)),
         "capture-reddit": fileURLToPath(new URL("./src/capture-reddit.ts", import.meta.url)),
         "tweet-target": fileURLToPath(new URL("./src/tweet-target.ts", import.meta.url)),
-        "tweet-save": fileURLToPath(new URL("./tweet-save.html", import.meta.url)),
         "xhs-target": fileURLToPath(new URL("./src/xhs-target.ts", import.meta.url)),
-        "xhs-save": fileURLToPath(new URL("./xhs-save.html", import.meta.url)),
         "zhihu-target": fileURLToPath(new URL("./src/zhihu-target.ts", import.meta.url)),
         "reddit-target": fileURLToPath(new URL("./src/reddit-target.ts", import.meta.url)),
-        "zhihu-save": fileURLToPath(new URL("./zhihu-save.html", import.meta.url)),
       },
       output: {
         entryFileNames: "assets/[name].js",

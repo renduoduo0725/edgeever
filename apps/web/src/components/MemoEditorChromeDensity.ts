@@ -5,14 +5,14 @@ export const MEMO_EDITOR_READING_GUTTER_CLASS_NAME =
   `${MEMO_EDITOR_READING_GUTTER_PROPERTIES_CLASS_NAME} px-[var(--editor-reading-gutter)]`;
 
 export const MEMO_EDITOR_TOP_ROW_CLASS_NAME =
-  "relative flex min-h-12 items-center justify-between gap-2 border-b border-slate-100 py-2 sm:min-h-9 sm:py-0.5";
+  "relative flex min-h-12 items-center justify-between gap-2 border-b border-slate-100 py-2 sm:min-h-9 sm:py-0.5 sm:[container-type:inline-size]";
 
 /**
- * Notebook and tags share the title row and shrink before the title field.
- * The title's own minimum width is what keeps typed text visible.
+ * Metadata measures its intrinsic width against the space left by the title.
+ * It collapses tags before the notebook, freeing the remaining space for title.
  */
 export const MEMO_EDITOR_METADATA_ROW_CLASS_NAME =
-  "min-w-0 max-w-full shrink overflow-hidden flex-nowrap";
+  "min-w-0 max-w-full shrink overflow-hidden flex-wrap sm:min-w-[7rem] sm:w-max sm:shrink-0 sm:flex-nowrap";
 
 export const MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME =
   "px-3 py-2 sm:px-4 sm:py-0.5";

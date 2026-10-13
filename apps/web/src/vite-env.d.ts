@@ -40,6 +40,11 @@ interface EdgeEverDesktopBridge {
   copyImage(bytes: Uint8Array): Promise<boolean>;
   setSessionToken(value: string): Promise<{ stored: boolean }>;
   clearSessionToken(): Promise<{ stored: false }>;
+  testPicGoConnection(endpoint: string): Promise<boolean>;
+  uploadPicGoImage(input: {
+    endpoint: string; bytes: Uint8Array; filename: string; mimeType: string;
+    copy: import("@/lib/picgo").PicGoFailureCopy;
+  }): Promise<{ url: string } | { fallback: true }>;
   publicNetworkFetch(requestId: string, input: import("@edgeever/shared").PluginPublicFetchRequest): Promise<import("@edgeever/shared").PluginPublicFetchResponse>;
   cancelPublicNetworkFetch(requestId: string): Promise<void>;
   openAiProviderStream(requestId: string, input: {
@@ -120,6 +125,7 @@ interface EdgeEverDesktopBridge {
     updateError?: string;
     authMethods?: Array<{ id: string; name: string }>;
   }>>;
+  chooseAcpAdapterPath?(): Promise<string | null>;
   probeAcpAdapter?(input: { id: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl"; path?: string }): Promise<{
     id: "codex" | "claudeCode" | "antigravity" | "openClaw" | "hermesAgent" | "grokBuild" | "deepseekHarness" | "piAgent" | "workbuddyCn" | "workbuddyIntl";
     label: string;
@@ -176,6 +182,29 @@ interface EdgeEverDesktopBridge {
   }) => void): () => void;
 }
 
+interface DesktopUpdateNetworkDiagnostic {
+  checkId: number;
+  startedAt: number | null;
+  elapsedMs: number;
+  observedSessions: string[];
+  proxyScope: string;
+  omittedRequests: number;
+  requests: Array<{
+    checkId: number;
+    requestId: string;
+    session: string;
+    stage: string;
+    url: string | null;
+    startedAt: number;
+    elapsedMs: number;
+    status: "pending" | "completed" | "failed" | "redirected";
+    httpStatus: number | null;
+    errorCode: string | null;
+    redirectUrl?: string | null;
+    proxy: { state: "pending" | "resolved" | "failed" | "timeout"; value: string | null; errorCode?: string };
+  }>;
+}
+
 interface DesktopUpdateDiagnostic {
   at: string;
   stage: string;
@@ -185,6 +214,7 @@ interface DesktopUpdateDiagnostic {
   code: string | null;
   message: string;
   source: string;
+  network?: DesktopUpdateNetworkDiagnostic;
 }
 
 interface DesktopUpdateDownloadProgress {

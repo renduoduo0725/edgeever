@@ -294,7 +294,7 @@ const imageNoteClient = (settings: ExtensionSettings): ImageNoteClient => ({
 const scriptTarget = (tabId: number, frameId: number | null) =>
   typeof frameId === "number" ? { tabId, frameIds: [frameId] } : { tabId };
 
-const injectImageHelper = async (tabId: number, frameId: number | null, payload: unknown) => {
+const injectImageHelper = async (tabId: number, frameId: number | null, payload: { action: string; [key: string]: unknown }) => {
   const target = scriptTarget(tabId, frameId);
   await chrome.scripting.executeScript({
     target,
@@ -305,7 +305,7 @@ const injectImageHelper = async (tabId: number, frameId: number | null, payload:
   });
   await chrome.scripting.executeScript({
     target,
-    files: ["assets/capture-image.js"],
+    files: [payload.action === "toast" ? "assets/clip-feedback.js" : "assets/capture-image.js"],
   });
 };
 
@@ -313,17 +313,17 @@ const showFeedback = async (
   tabId: number | null,
   frameId: number | null,
   message: string,
-  kind: "success" | "error",
+  kind: "normal" | "success" | "error",
 ) => {
   if (tabId) {
     try {
-      await injectImageHelper(tabId, frameId, { action: "toast", message, kind });
+      await injectImageHelper(tabId, frameId, { action: "toast", message, kind, closeLabel: t("closeNotification"), regionLabel: t("clipNotifications") });
       return;
     } catch {
       // Restricted pages cannot host the toast. The toolbar badge still reports the result.
     }
   }
-  await chrome.action.setBadgeBackgroundColor({ color: kind === "error" ? "#b91c1c" : "#0f766e" });
+  await chrome.action.setBadgeBackgroundColor({ color: kind === "error" ? "#b91c1c" : "#171717" });
   await chrome.action.setBadgeText({ text: kind === "error" ? "!" : "✓" });
   setTimeout(() => {
     void chrome.action.setBadgeText({ text: "" });
@@ -640,7 +640,7 @@ const saveImageFromMenu = async (
   try {
     await ensureClipperReady();
     if (!srcUrl) throw new Error(t("imageUnreadable"));
-    await showFeedback(tabId, frameId, t("savingImage"), "success");
+    await showFeedback(tabId, frameId, t("savingImage"), "normal");
     const inlineImage = imageFromDataUrl(srcUrl);
     if (inlineImage && !("error" in inlineImage)) {
       const settings = await ensureClipperReady();
@@ -688,7 +688,7 @@ const saveImageFromMenu = async (
       originPattern,
       host,
     });
-    await showFeedback(tabId, frameId, t("imagePermissionToast"), "success");
+    await showFeedback(tabId, frameId, t("imagePermissionToast"), "normal");
   } catch (error) {
     await reportImageFailure(tabId, frameId, error);
   }
@@ -783,15 +783,15 @@ const saveTweetFromMenu = async (
     const statusId = statusIdFromPageUrl(pageUrl);
     if (!statusId && !await hasTweetSitePermission(pageUrl)) {
       await openTweetPermissionWindow(tabId);
-      await showFeedback(tabId, frameId, t("tweetPermissionToast"), "success");
+      await showFeedback(tabId, frameId, t("tweetPermissionToast"), "normal");
       return;
     }
 
-    await showFeedback(tabId, frameId, t("savingTweet"), "success");
+    await showFeedback(tabId, frameId, t("savingTweet"), "normal");
     const tweet = await readTweetFromPage(tabId, frameId, statusId);
     if (!tweet.ok && tweet.reason === "needs-listener") {
       await injectTweetTarget(tabId);
-      await showFeedback(tabId, frameId, t("tweetRightClickAgain"), "success");
+      await showFeedback(tabId, frameId, t("tweetRightClickAgain"), "normal");
       return;
     }
     if (!tweet.ok) throw new Error(t("tweetNotFound"));
@@ -904,15 +904,15 @@ const saveXhsFromMenu = async (
     const noteId = noteIdFromPageUrl(pageUrl);
     if (!noteId && !await hasTweetSitePermission(pageUrl)) {
       await openXhsPermissionWindow(tabId);
-      await showFeedback(tabId, frameId, t("xhsPermissionToast"), "success");
+      await showFeedback(tabId, frameId, t("xhsPermissionToast"), "normal");
       return;
     }
 
-    await showFeedback(tabId, frameId, t("savingXhs"), "success");
+    await showFeedback(tabId, frameId, t("savingXhs"), "normal");
     const page = await readXhsStateFromPage(tabId, frameId) ?? await readXhsFromPage(tabId, frameId);
     if (!page.ok && page.reason === "needs-listener") {
       await injectXhsTarget(tabId);
-      await showFeedback(tabId, frameId, t("xhsRightClickAgain"), "success");
+      await showFeedback(tabId, frameId, t("xhsRightClickAgain"), "normal");
       return;
     }
     if (!page.ok && page.reason === "needs-open") throw new Error(t("xhsNeedsOpen"));
@@ -1074,7 +1074,7 @@ const saveZhihuFromMenu = async (
       const raw = error instanceof Error ? error.message : String(error);
       if (/cannot access|missing host permission|permission/i.test(raw)) {
         await openZhihuPermissionWindow(tabId);
-        await showFeedback(tabId, frameId, t("zhihuPermissionToast"), "success");
+        await showFeedback(tabId, frameId, t("zhihuPermissionToast"), "normal");
         return;
       }
       throw error;
@@ -1082,15 +1082,15 @@ const saveZhihuFromMenu = async (
     if (!located.ok && located.reason === "needs-listener") {
       try {
         await injectZhihuTarget(tabId);
-        await showFeedback(tabId, frameId, t("zhihuRightClickAgain"), "success");
+        await showFeedback(tabId, frameId, t("zhihuRightClickAgain"), "normal");
       } catch {
         await openZhihuPermissionWindow(tabId);
-        await showFeedback(tabId, frameId, t("zhihuPermissionToast"), "success");
+        await showFeedback(tabId, frameId, t("zhihuPermissionToast"), "normal");
       }
       return;
     }
     if (!located.ok) throw new Error(t("zhihuNotFound"));
-    await showFeedback(tabId, frameId, t("savingZhihu"), "success");
+    await showFeedback(tabId, frameId, t("savingZhihu"), "normal");
     await saveLocatedZhihu(settings, tabId, frameId, located);
     await showFeedback(tabId, frameId, t("zhihuSaved"), "success");
   } catch (error) {
@@ -1145,13 +1145,13 @@ const saveRedditFromMenu = async (
     const result = await readRedditFromPage(tabId, frameId, info.linkUrl || tab?.url || info.pageUrl || "");
     if (result.ok === false && result.reason === "needs-listener") {
       await chrome.scripting.executeScript({ target: { tabId }, files: ["assets/reddit-target.js"] });
-      await showFeedback(tabId, frameId, t("redditRightClickAgain"), "success");
+      await showFeedback(tabId, frameId, t("redditRightClickAgain"), "normal");
       return;
     }
     const id = typeof result.id === "string" ? result.id : "";
     const post = redditPostFromApi(result.api, id) ?? redditPostFromDom(result.dom, id);
     if (!post) throw new Error(t("redditNotFound"));
-    await showFeedback(tabId, frameId, t("savingReddit"), "success");
+    await showFeedback(tabId, frameId, t("savingReddit"), "normal");
     const images = [];
     for (const image of post.images) {
       const stored = await readTweetImage(tabId, frameId, image.url, image.alt || post.title);
@@ -1272,7 +1272,7 @@ const saveGithubRepoFromMenu = async (
       await showFeedback(tabId, frameId, t("githubRepoUnreadable"), "error");
       return;
     }
-    await showFeedback(tabId, frameId, t("savingGithubRepo"), "success");
+    await showFeedback(tabId, frameId, t("savingGithubRepo"), "normal");
     await createGithubRepoMemo(settings, facts);
     await showFeedback(tabId, frameId, t("githubRepoSaved"), "success");
   } catch (error) {
@@ -1374,7 +1374,7 @@ const savePlatformFromMenu = async (info: { pageUrl?: string; frameId?: number }
   const tabId = typeof tab?.id === "number" ? tab.id : null;
   try {
     if (tabId === null || (info.frameId ?? 0) !== 0) throw new Error(t("platformNotDetail"));
-    await showFeedback(tabId, 0, t("savingPlatformClip"), "success");
+    await showFeedback(tabId, 0, t("savingPlatformClip"), "normal");
     const pageUrl = info.pageUrl || tab?.url || "";
     let selectedUrl = pageUrl;
     if (socialPlatform(pageUrl)) {
@@ -1468,7 +1468,7 @@ const saveSelectionFromMenu = async (
   try {
     const settings = await ensureClipperReady();
     if (!tabId) throw new Error(t("selectionEmpty"));
-    await showFeedback(tabId, frameId, t("savingSelection"), "success");
+    await showFeedback(tabId, frameId, t("savingSelection"), "normal");
     let captured: CapturedPage | null = null;
     try {
       captured = await readCapturedPage(tabId, frameId, "selection");
@@ -1615,7 +1615,7 @@ const saveVideoFromMenu = async (
   try {
     const settings = await ensureClipperReady();
     if (!tabId) throw new Error(t("videoNotRead"));
-    await showFeedback(tabId, frameId, t("savingVideoNote"), "success");
+    await showFeedback(tabId, frameId, t("savingVideoNote"), "normal");
     const result = await performVideoSave(settings, tabId, frameId, pageUrl);
     await showFeedback(tabId, frameId, result.message, result.created ? "success" : "error");
   } catch (error) {
@@ -1941,7 +1941,7 @@ chrome.runtime.onMessage.addListener((message: { type?: string; page?: unknown; 
         return;
       }
       try {
-        await showFeedback(pending.tabId, pending.frameId, t("savingImage"), "success");
+        await showFeedback(pending.tabId, pending.frameId, t("savingImage"), "normal");
         await saveDownloadedImage(pending, "");
         sendResponse({ ok: true });
       } catch (error) {

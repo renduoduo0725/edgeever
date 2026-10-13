@@ -35,9 +35,6 @@
   "optionsTitle": {
     "message": "EdgeEver Web Clipper の設定"
   },
-  "optionsSubtitle": {
-    "message": "EdgeEver インスタンスへの接続と既定のノートブックを設定します。"
-  },
   "diagnosticsTitle": {
     "message": "情報と診断"
   },
@@ -650,5 +647,65 @@
   },
   "saveSubstackNoteToEdgeEver": {
     "message": "Substack Note を EdgeEver に保存"
+  },
+  "adaptedPlatformsTitle": {
+    "message": "専用対応プラットフォーム"
+  },
+  "platformXiaohongshu": {
+    "message": "小紅書"
+  },
+  "platformBilibili": {
+    "message": "Bilibili"
+  },
+  "platformPosts": {
+    "message": "投稿"
+  },
+  "platformNotes": {
+    "message": "ノート・画像"
+  },
+  "platformAnswersArticles": {
+    "message": "回答・記事"
+  },
+  "platformRepositories": {
+    "message": "リポジトリ情報"
+  },
+  "platformCaptionsImages": {
+    "message": "キャプション・画像"
+  },
+  "platformMainPosts": {
+    "message": "メイン投稿"
+  },
+  "platformTopics": {
+    "message": "トピック・追記"
+  },
+  "platformShowNotes": {
+    "message": "エピソードの Show Notes"
+  },
+  "platformArticles": {
+    "message": "記事"
+  },
+  "platformArticlesNotes": {
+    "message": "記事・Notes"
+  },
+  "platformVideoCaptions": {
+    "message": "動画の字幕"
+  },
+  "viewDiagnostics": {
+    "message": "診断情報を表示"
+  },
+  "socialPlatformsTitle": {
+    "message": "ソーシャル投稿"
+  },
+  "readingPlatformsTitle": {
+    "message": "記事・コミュニティ"
+  },
+  "mediaPlatformsTitle": {
+    "message": "動画・ポッドキャスト"
+  },
+  "closeNotification": {
+    "message": "通知を閉じる"
+  },
+  "clipNotifications": {
+    "message": "クリップの通知"
   }
 }

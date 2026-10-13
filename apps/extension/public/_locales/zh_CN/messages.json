@@ -35,9 +35,6 @@
   "optionsTitle": {
     "message": "EdgeEver Web Clipper 设置"
   },
-  "optionsSubtitle": {
-    "message": "配置自托管 EdgeEver 实例连接与默认剪藏笔记本。"
-  },
   "diagnosticsTitle": {
     "message": "关于与诊断信息"
   },
@@ -650,5 +647,65 @@
   },
   "saveSubstackNoteToEdgeEver": {
     "message": "保存 Substack 短帖到 EdgeEver"
+  },
+  "adaptedPlatformsTitle": {
+    "message": "深度适配平台"
+  },
+  "platformXiaohongshu": {
+    "message": "小红书"
+  },
+  "platformBilibili": {
+    "message": "哔哩哔哩"
+  },
+  "platformPosts": {
+    "message": "帖子"
+  },
+  "platformNotes": {
+    "message": "笔记与图集"
+  },
+  "platformAnswersArticles": {
+    "message": "回答与文章"
+  },
+  "platformRepositories": {
+    "message": "仓库信息"
+  },
+  "platformCaptionsImages": {
+    "message": "配文与图集"
+  },
+  "platformMainPosts": {
+    "message": "主帖"
+  },
+  "platformTopics": {
+    "message": "主题与补充"
+  },
+  "platformShowNotes": {
+    "message": "单集 Show Notes"
+  },
+  "platformArticles": {
+    "message": "文章"
+  },
+  "platformArticlesNotes": {
+    "message": "文章与 Notes"
+  },
+  "platformVideoCaptions": {
+    "message": "视频字幕"
+  },
+  "viewDiagnostics": {
+    "message": "查看诊断信息"
+  },
+  "socialPlatformsTitle": {
+    "message": "社交动态"
+  },
+  "readingPlatformsTitle": {
+    "message": "文章与社区"
+  },
+  "mediaPlatformsTitle": {
+    "message": "视频与播客"
+  },
+  "closeNotification": {
+    "message": "关闭提示"
+  },
+  "clipNotifications": {
+    "message": "剪藏提示"
   }
 }

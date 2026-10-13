@@ -85,6 +85,13 @@ test("the injected page capture is a standalone classic script", async () => {
     const platform = await readFile(join(outDir, "assets/capture-platform.js"), "utf8");
     expect(() => new Script(platform)).not.toThrow();
     expect(platform).toContain("pagePlatformRead");
+    const feedback = await readFile(join(outDir, "assets/clip-feedback.js"), "utf8");
+    expect(() => new Script(feedback)).not.toThrow();
+    expect(feedback).toContain("data-sonner-toaster");
+    // UI dependencies belong only to the feedback bundle, never image reading.
+    const image = await readFile(join(outDir, "assets/capture-image.js"), "utf8");
+    expect(() => new Script(image)).not.toThrow();
+    expect(image).not.toContain("data-sonner-toaster");
   } finally {
     await rm(outDir, { recursive: true, force: true });
   }

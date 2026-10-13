@@ -27,6 +27,10 @@ The extension does not use a central relay service. The page content is sent dir
 
 HN usage and verification limits are documented in [English](../../docs/browser-clipper-hacker-news.md) and [简体中文](../../docs/browser-clipper-hacker-news.zh-CN.md).
 
+## UI architecture
+
+Extension pages use React, shared shadcn/ui-style Button and Input components, and Tailwind CSS 4 with a neutral theme. The webpage feedback UI uses the official shadcn/ui Sonner component structure, adapted for an explicit extension theme, inside a Shadow DOM. Extension pages and notifications share theme tokens. The feedback entry only mounts the component and maps clipping states, and is bundled as a standalone classic script. Its stylesheet stays inside the shadow root; image readers and content extractors do not load React. Permission requests remain in click handlers.
+
 ## Localization
 
 The extension uses the cross-browser `chrome.i18n` compatibility namespace. English is the fallback locale. Simplified Chinese, Japanese, and Polish are available for browsers whose UI language matches.

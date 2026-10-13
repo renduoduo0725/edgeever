@@ -5,18 +5,31 @@ import {
   DESKTOP_FOCUS_MODE_STORAGE_KEY,
   DESKTOP_READING_PROTECTION_STORAGE_KEY,
   NOTEBOOK_SIDEBAR_COLLAPSED_STORAGE_KEY,
+  NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY,
+  DEFAULT_NOTEBOOK_SIDEBAR_WIDTH_PX,
+  MIN_NOTEBOOK_SIDEBAR_WIDTH_PX,
+  MAX_NOTEBOOK_SIDEBAR_WIDTH_PX,
   EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY,
   EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY,
   EDITOR_TOOLBAR_EXPANDED_STORAGE_KEY,
   EDITOR_PHONE_PREVIEW_STORAGE_KEY,
   EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY,
+  MEMO_LIST_WIDTH_STORAGE_KEY,
+  DEFAULT_MEMO_LIST_WIDTH_PX,
+  MIN_MEMO_LIST_WIDTH_PX,
+  MAX_MEMO_LIST_WIDTH_PX,
+  MIN_EDITOR_WIDTH_PX,
   NOTEBOOK_SORT_STORAGE_KEY,
   NOTEBOOK_TREE_COLLAPSED_IDS_STORAGE_KEY,
   SHORTCUT_SETTINGS_STORAGE_KEY,
   getSearchShortcutScope,
+  getMaxMemoListWidthForViewport,
+  getEditorPaneWidths,
   getCreateMemoNotebookId,
   getShortcutActionForEvent,
   canToggleNotebookSidebar,
+  clampMemoListWidth,
+  clampNotebookSidebarWidth,
   getNotebookSortComparator,
   readEditorContentAlignmentPreference,
   readNotebookSortPreference,
@@ -24,6 +37,8 @@ import {
   readDesktopFocusModePreference,
   readDesktopReadingProtectionPreference,
   readNotebookSidebarCollapsedPreference,
+  readNotebookSidebarWidthPreference,
+  readMemoListWidthPreference,
   readEditorOutlineCollapsedPreference,
   readEditorToolbarExpandedPreference,
   readEditorPhonePreviewPreference,
@@ -35,6 +50,8 @@ import {
   writeDesktopFocusModePreference,
   writeDesktopReadingProtectionPreference,
   writeNotebookSidebarCollapsedPreference,
+  writeNotebookSidebarWidthPreference,
+  writeMemoListWidthPreference,
   writeEditorOutlineCollapsedPreference,
   writeEditorToolbarExpandedPreference,
   writeEditorPhonePreviewPreference,
@@ -160,6 +177,92 @@ describe("notebook sidebar collapsed preference", () => {
 
     expect(readNotebookSidebarCollapsedPreference()).toBe(false);
     expect(() => writeNotebookSidebarCollapsedPreference(true)).not.toThrow();
+  });
+});
+
+describe("notebook sidebar width preference", () => {
+  test("defaults to the standard width and clamps stored values", () => {
+    const values = installLocalStorage();
+    expect(readNotebookSidebarWidthPreference()).toBe(DEFAULT_NOTEBOOK_SIDEBAR_WIDTH_PX);
+
+    values.set(NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY, String(MIN_NOTEBOOK_SIDEBAR_WIDTH_PX - 100));
+    expect(readNotebookSidebarWidthPreference()).toBe(MIN_NOTEBOOK_SIDEBAR_WIDTH_PX);
+
+    values.set(NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY, String(MAX_NOTEBOOK_SIDEBAR_WIDTH_PX + 100));
+    expect(readNotebookSidebarWidthPreference()).toBe(MAX_NOTEBOOK_SIDEBAR_WIDTH_PX);
+
+    values.set(NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY, "invalid");
+    expect(readNotebookSidebarWidthPreference()).toBe(DEFAULT_NOTEBOOK_SIDEBAR_WIDTH_PX);
+  });
+
+  test("rounds, clamps, and persists widths", () => {
+    const values = installLocalStorage();
+    expect(clampNotebookSidebarWidth(253.6)).toBe(254);
+
+    writeNotebookSidebarWidthPreference(253.6);
+    expect(values.get(NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY)).toBe("254");
+
+    writeNotebookSidebarWidthPreference(MAX_NOTEBOOK_SIDEBAR_WIDTH_PX + 100);
+    expect(values.get(NOTEBOOK_SIDEBAR_WIDTH_STORAGE_KEY)).toBe(String(MAX_NOTEBOOK_SIDEBAR_WIDTH_PX));
+  });
+
+  test("falls back safely when local storage is unavailable", () => {
+    globalThis.window = {
+      localStorage: {
+        getItem: () => {
+          throw new Error("blocked");
+        },
+        setItem: () => {
+          throw new Error("blocked");
+        },
+      },
+    };
+
+    expect(readNotebookSidebarWidthPreference()).toBe(DEFAULT_NOTEBOOK_SIDEBAR_WIDTH_PX);
+    expect(() => writeNotebookSidebarWidthPreference(280)).not.toThrow();
+  });
+});
+
+describe("memo list width preference", () => {
+  test("uses the responsive-layout default when no width was stored", () => {
+    const values = installLocalStorage();
+    expect(readMemoListWidthPreference()).toBe(DEFAULT_MEMO_LIST_WIDTH_PX);
+
+    values.set(MEMO_LIST_WIDTH_STORAGE_KEY, "invalid");
+    expect(readMemoListWidthPreference()).toBe(DEFAULT_MEMO_LIST_WIDTH_PX);
+  });
+
+  test("allows a wider note list while clamping and persisting safe values", () => {
+    const values = installLocalStorage();
+    expect(clampMemoListWidth(MIN_MEMO_LIST_WIDTH_PX - 100)).toBe(MIN_MEMO_LIST_WIDTH_PX);
+    expect(clampMemoListWidth(720)).toBe(720);
+    expect(clampMemoListWidth(MAX_MEMO_LIST_WIDTH_PX + 100)).toBe(MAX_MEMO_LIST_WIDTH_PX);
+
+    writeMemoListWidthPreference(720);
+    expect(values.get(MEMO_LIST_WIDTH_STORAGE_KEY)).toBe("720");
+  });
+
+  test("keeps enough room for the editor header while resizing the note list", () => {
+    expect(getMaxMemoListWidthForViewport(1692, 240)).toBe(800);
+    expect(getMaxMemoListWidthForViewport(1280, 240)).toBe(400);
+    expect(getMaxMemoListWidthForViewport(1024, 240)).toBe(144);
+    expect(1280 - 240 - getMaxMemoListWidthForViewport(1280, 240)).toBe(MIN_EDITOR_WIDTH_PX);
+  });
+
+  test("uses the same actual widths and resize limits across desktop sizes", () => {
+    for (const viewport of [1024, 1120, 1280, 1692, 1920]) {
+      for (const sidebar of [56, 180, 240, 420]) {
+        for (const preference of [300, 360, 800]) {
+          const widths = getEditorPaneWidths(viewport, sidebar, preference);
+          expect(viewport - widths.sidebar - widths.list).toBeGreaterThanOrEqual(MIN_EDITOR_WIDTH_PX);
+          expect(widths.list).toBeGreaterThanOrEqual(widths.minimum);
+          expect(widths.list).toBeLessThanOrEqual(widths.maximum);
+          expect(widths.list).toBeGreaterThanOrEqual(180);
+        }
+      }
+    }
+    expect(getEditorPaneWidths(1024, 420, 800)).toEqual({ sidebar: 204, minimum: 180, maximum: 180, list: 180 });
+    expect(getEditorPaneWidths(1920, 420, 800).list).toBe(800);
   });
 });
 

@@ -49,7 +49,7 @@ globalThis.window = {
           summary: { totalCount: 2, totalBytes: 2, imageCount: 2, attachmentCount: 0 },
         };
       }
-      if (method === "memo.update") {
+      if (method === "memo.update" || method === "memo.updateGuarded") {
         return { memo: { ...params, id: params.memoId, contentHash: "next-hash" } };
       }
       return { memos: [], totalCount: 0, nextCursor: null };
@@ -179,5 +179,27 @@ describe("desktop repository memo reads", () => {
     const result = await createDesktopRepository().getMemo("memo_wechat");
     expect(result.memo.contentJson.content[0].attrs.src).toBe("edgeever-resource://resource/res_wechat");
     expect(result.memo.contentMarkdown).toContain("edgeever-resource://resource/res_wechat");
+  });
+});
+
+describe("guarded desktop plugin saves", () => {
+  test("uses a dedicated RPC so older sidecars cannot silently ignore the snapshot guard", async () => {
+    const memo = { id: "guarded", revision: 2, contentHash: "base", title: "Title", tags: ["keep"], contentMarkdown: "Original", contentJson: { type: "doc", content: [] } };
+    await createDesktopRepository().updateMemo(memo, { title: "Title", contentMarkdown: "Edited", contentJson: memo.contentJson, tags: memo.tags }, { guardLocalSnapshot: true });
+    expect(lastRequest.method).toBe("memo.updateGuarded");
+    expect(lastRequest.params.expectedLocalSnapshot).toMatchObject({ revision: 2, contentHash: "base", contentMarkdown: "Original", title: "Title", tags: ["keep"] });
+  });
+
+  test("reports conflicts and refuses unsupported old hosts without an unguarded fallback", async () => {
+    const request = window.edgeeverDesktop.sidecarRequest;
+    const memo = { id: "guarded", revision: 2, contentHash: "base", title: "Title", tags: [], contentMarkdown: "Original", contentJson: { type: "doc", content: [] } };
+    try {
+      for (const [message, code] of [["NOTE_CONFLICT: Changed locally", "NOTE_CONFLICT"], ["Unknown sidecar method: memo.updateGuarded", "HOST_UPGRADE_REQUIRED"]]) {
+        const calls = [];
+        window.edgeeverDesktop.sidecarRequest = async method => { calls.push(method); throw new Error(message); };
+        await expect(createDesktopRepository().updateMemo(memo, { title: "Title", contentJson: memo.contentJson, tags: [] }, { guardLocalSnapshot: true })).rejects.toMatchObject({ code });
+        expect(calls).toEqual(["memo.updateGuarded"]);
+      }
+    } finally { window.edgeeverDesktop.sidecarRequest = request; }
   });
 });

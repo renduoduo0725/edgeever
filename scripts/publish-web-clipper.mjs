@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { createHmac, createSign, randomUUID } from "node:crypto";
+import { createHash, createHmac, createSign, randomUUID } from "node:crypto";
 import {
   appendFileSync,
   cpSync,
@@ -35,6 +35,13 @@ const ROOT_SOURCE_FILES = [
   "bun.lock",
   "bunfig.toml",
   "tsconfig.json",
+];
+export const SHARED_EXTENSION_SOURCE_FILES = [
+  "apps/web/src/components/ui/button.tsx",
+  "apps/web/src/components/ui/input.tsx",
+  "apps/web/src/components/ui/button-tooltip.tsx",
+  "apps/web/src/components/ui/tooltip.tsx",
+  "apps/web/src/lib/utils.ts",
 ];
 
 const usage = `Usage:
@@ -547,7 +554,7 @@ const waitForAmoUpload = async (client, uuid) => {
   throw new Error("Timed out waiting for Firefox Add-ons validation.");
 };
 
-const copySourceArchive = (repoRoot, destinationRoot) => {
+export const copySourceArchive = (repoRoot, destinationRoot) => {
   mkdirSync(destinationRoot, { recursive: true });
   for (const file of ROOT_SOURCE_FILES) {
     cpSync(join(repoRoot, file), join(destinationRoot, file));
@@ -569,6 +576,72 @@ const copySourceArchive = (repoRoot, destinationRoot) => {
     const target = join(destinationRoot, manifest);
     mkdirSync(dirname(target), { recursive: true });
     cpSync(join(repoRoot, manifest), target);
+  }
+  for (const file of SHARED_EXTENSION_SOURCE_FILES) {
+    const target = join(destinationRoot, file);
+    mkdirSync(dirname(target), { recursive: true });
+    cpSync(join(repoRoot, file), target);
+  }
+};
+
+export const createSourceArchive = (repoRoot, sourceZip) => {
+  const staging = mkdtempSync(join(tmpdir(), "edgeever-web-clipper-source-"));
+  try {
+    copySourceArchive(repoRoot, join(staging, "edgeever-source"));
+    rmSync(sourceZip, { force: true });
+    runCommand("zip", ["-q", "-r", "-X", sourceZip, "edgeever-source", "-x", "*.DS_Store"], { cwd: staging });
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
+  }
+};
+
+const buildFileHashes = (directory, prefix = "") => {
+  const files = new Map();
+  for (const entry of readdirSync(join(directory, prefix), { withFileTypes: true })) {
+    const path = join(prefix, entry.name);
+    if (entry.isDirectory()) {
+      for (const [file, hash] of buildFileHashes(directory, path)) files.set(file, hash);
+    } else {
+      files.set(path, createHash("sha256").update(readFileSync(join(directory, path))).digest("hex"));
+    }
+  }
+  return files;
+};
+
+export const assertIdenticalBuildDirectories = (referenceDirectory, rebuiltDirectory) => {
+  const expected = buildFileHashes(referenceDirectory);
+  const rebuilt = buildFileHashes(rebuiltDirectory);
+  const different = [...new Set([...expected.keys(), ...rebuilt.keys()])]
+    .filter((file) => expected.get(file) !== rebuilt.get(file)).sort();
+  if (different.length) throw new Error(`Source archive rebuild differs: ${different.join(", ")}`);
+  if (!expected.size) throw new Error("Cannot verify an empty extension build");
+  return expected.size;
+};
+
+export const sourceRebuildEnvironment = (environment = process.env) => ({
+  ...Object.fromEntries(Object.entries(environment).filter(([key]) =>
+    !/^(CHROME_WEB_STORE_|AMO_|EDGE_EVER_REVIEW_)/.test(key) && !["GITHUB_TOKEN", "GH_TOKEN"].includes(key))),
+  NODE_PATH: "",
+  NODE_OPTIONS: "",
+});
+
+export const verifySourceArchive = ({ sourceZip, referenceDirectory }) => {
+  const staging = mkdtempSync(join(tmpdir(), "edgeever-web-clipper-rebuild-"));
+  try {
+    runCommand("unzip", ["-q", sourceZip, "-d", staging]);
+    const sourceRoot = join(staging, "edgeever-source");
+    if (!existsSync(join(sourceRoot, "package.json"))) throw new Error("Source archive is missing its root package.json");
+    if (existsSync(join(sourceRoot, "node_modules")) || existsSync(join(sourceRoot, "apps/extension/dist-firefox"))) {
+      throw new Error("Source rebuild must start without dependencies or built assets");
+    }
+    const options = { cwd: sourceRoot, env: sourceRebuildEnvironment() };
+    runCommand("bun", ["install", "--frozen-lockfile"], options);
+    runCommand("bun", ["run", "build:extension:firefox"], options);
+    const count = assertIdenticalBuildDirectories(referenceDirectory, join(sourceRoot, "apps/extension/dist-firefox"));
+    console.log(`Firefox source archive independently rebuilt: ${count} files match SHA-256.`);
+    return count;
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
   }
 };
 
@@ -630,16 +703,9 @@ const buildPackages = (version) => {
     "apps/extension/web-ext-artifacts",
     `edgeever_web_clipper-${version}-source.zip`,
   );
-  const staging = mkdtempSync(join(tmpdir(), "edgeever-web-clipper-"));
-  try {
-    copySourceArchive(REPO_ROOT, join(staging, "edgeever-source"));
-    rmSync(sourceZip, { force: true });
-    runCommand("zip", ["-r", "-X", sourceZip, "edgeever-source", "-x", "*.DS_Store"], {
-      cwd: staging,
-    });
-  } finally {
-    rmSync(staging, { recursive: true, force: true });
-  }
+  createSourceArchive(REPO_ROOT, sourceZip);
+  // This runs before either store is contacted, including in --dry-run mode.
+  verifySourceArchive({ sourceZip, referenceDirectory: join(REPO_ROOT, "apps/extension/dist-firefox") });
   return { version, chromiumZip, firefoxZip, sourceZip };
 };
 

@@ -39,12 +39,12 @@ const zipOf = (entries) => {
     const crc = crc32(data);
     const local = Buffer.concat([
       u32(0x04034b50), u16(20), u16(0x0800), u16(method), u16(0), u16(0),
-      u32(crc), u32(compressed.length), u32(data.length), u16(name.length), u16(0),
+      u32(crc), u32(compressed.length), u32(entry.declaredSize ?? data.length), u16(name.length), u16(0),
       name, compressed,
     ]);
     const central = Buffer.concat([
       u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(method), u16(0), u16(0),
-      u32(crc), u32(compressed.length), u32(data.length), u16(name.length), u16(0), u16(0),
+      u32(crc), u32(compressed.length), u32(entry.declaredSize ?? data.length), u16(name.length), u16(0), u16(0),
       u16(0), u16(0), u32(0), u32(offset), name,
     ]);
     locals.push(local);
@@ -181,4 +181,11 @@ describe("WeChat chat archive", () => {
     expect(() => wechatChatNoteFromArchive(Buffer.from("not a zip"))).toThrow(WeChatArchiveError);
     expect(() => wechatChatNoteFromArchive(zipOf([{ name: "../聊天记录.txt", data: transcript }]))).toThrow(WeChatArchiveError);
   });
+});
+
+ test("bounds actual deflate output even when the declared size is forged", () => {
+  const archive = zipOf([{ name: "聊天记录.txt", data: Buffer.alloc(8 * 1024 * 1024, 65), method: 8, declaredSize: 1 }]);
+  expect(() => wechatChatNoteFromArchive(archive)).toThrow(WeChatArchiveError);
+  const valid = zipOf([{ name: "聊天记录.txt", data: transcript, method: 8 }]);
+  expect(wechatChatNoteFromArchive(valid).markdown).toContain("鱼");
 });

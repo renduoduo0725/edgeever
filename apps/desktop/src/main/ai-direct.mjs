@@ -1,26 +1,20 @@
+import { nodePublicFetch } from "@edgeever/public-network/node";
+import { validatePublicUrl } from "@edgeever/public-network/policy";
+
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
 const MAX_AUDIO_REQUEST_BYTES = 25_000_000;
 const MAX_CONCURRENT = 2;
 
-const blockedHost = (hostname) => {
-  const host = hostname.replace(/^\[|\]$/g, "").toLowerCase();
-  if (!host || host === "localhost" || host.endsWith(".local") || host.endsWith(".internal")) return true;
-  if (/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.|169\.254\.)/.test(host)) return true;
-  if (host === "::1" || host.startsWith("fe80:") || host.startsWith("fc") || host.startsWith("fd")) return true;
-  return false;
-};
-
 export const validateAiProviderUrl = (value) => {
-  const url = new URL(value);
+  const url = validatePublicUrl(value);
   if (url.protocol !== "https:" || url.username || url.password || url.hash) {
     throw new Error("AI provider requests must use HTTPS without credentials.");
   }
   if (url.port && url.port !== "443") throw new Error("AI provider requests must use port 443.");
-  if (blockedHost(url.hostname)) throw new Error("AI provider host is not allowed.");
   return url;
 };
 
-export const createAiDirectRuntime = ({ fetchImpl = fetch, maxConcurrent = MAX_CONCURRENT } = {}) => {
+export const createAiDirectRuntime = ({ fetchImpl = nodePublicFetch, maxConcurrent = MAX_CONCURRENT } = {}) => {
   const active = new Map();
   return {
     async open(requestId, input, { onData, onEnd, onError }) {
@@ -45,6 +39,9 @@ export const createAiDirectRuntime = ({ fetchImpl = fetch, maxConcurrent = MAX_C
       if (input.headers && typeof input.headers === "object") {
         for (const [key, value] of Object.entries(input.headers)) {
           if (typeof key !== "string" || typeof value !== "string" || /[\r\n\0]/.test(key) || /[\r\n\0]/.test(value)) {
+            throw new Error("Invalid AI provider header.");
+          }
+          if (["host", "connection", "transfer-encoding", "content-length", "upgrade", "proxy-authorization"].includes(key.toLowerCase())) {
             throw new Error("Invalid AI provider header.");
           }
           headers[key] = value;

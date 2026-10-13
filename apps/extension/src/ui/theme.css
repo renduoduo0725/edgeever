@@ -1,0 +1,26 @@
+@import "tailwindcss" source(none);
+@import "./theme-tokens.css";
+@import "./notification.css";
+@source "./";
+@source "../../../web/src/components/ui/button.tsx";
+@source "../../../web/src/components/ui/input.tsx";
+@source "../../../web/src/components/ui/button-tooltip.tsx";
+@source "../../../web/src/components/ui/tooltip.tsx";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  body { margin: 0; min-width: 320px; background: var(--color-background); color: var(--color-foreground); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  button:not(:disabled), summary { cursor: pointer; }
+  :is(button, input, select, a, summary):focus-visible { outline-color: var(--color-ring); }
+}

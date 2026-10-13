@@ -1,0 +1,17 @@
+<!doctype html><meta charset="utf-8"><title>EdgeEver security regression</title><h1>Renderer boundary tests</h1><pre id="result">Running</pre><div id="preview"></div>
+<script type="module">
+import { safeMarkdownPreview } from '/src/lib/safe-markdown-preview.ts';
+import { setMemoDragPreview } from '/src/lib/app-helpers.ts';
+window.securityMarker = 0;
+const attack = '<img src=x onerror="window.securityMarker++"><svg onload="window.securityMarker++"></svg><iframe src="javascript:window.securityMarker++"></iframe><meta http-equiv="refresh" content="0;url=/evil"><a href="javascript:window.securityMarker++">bad</a><a href="edgeever-resource://resource/pwn">resource</a>';
+const preview = document.querySelector('#preview');
+preview.innerHTML = safeMarkdownPreview('# Safe heading\n\n**bold** [link](https://example.org)\n\n'+attack);
+const unsafe = preview.querySelectorAll('svg,iframe,meta,[onerror],[onload],[href^="javascript:"],[href^="edgeever-resource:"]').length;
+let drag;
+setMemoDragPreview({setDragImage: element => { drag = element.cloneNode(true); }}, '</span><img src=x onerror="window.securityMarker++">');
+setTimeout(() => {
+ const results = {unsafeMarkup:unsafe, executedHandlers:window.securityMarker, heading:preview.querySelector('h1')?.textContent, bold:preview.querySelector('strong')?.textContent, dragText:drag.querySelector('span')?.textContent, dragInjectedImages:drag.querySelectorAll('img').length};
+ document.querySelector('#result').textContent = JSON.stringify(results,null,2);
+ document.body.dataset.passed = String(unsafe===0 && window.securityMarker===0 && results.heading==='Safe heading' && results.bold==='bold' && results.dragInjectedImages===0);
+},150);
+</script>

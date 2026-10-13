@@ -1,3 +1,5 @@
+import type { PluginNoteKind, PluginContentDocument, PluginDiagramGraph, PluginDiagramEditInput, PluginTableDocument, PluginTableEditInput, PluginPosterDocument, PluginPosterEditInput, PluginInfographicDocument, PluginInfographicEditInput } from "./structured-notes";
+export * from "./structured-notes";
 export declare const PLUGIN_API_VERSION: "2";
 export declare const THEME_API_VERSION: "1";
 export declare const PLUGIN_PERMISSIONS: readonly ["notes:read", "notes:write", "notes:delete", "metadata:read", "metadata:write", "resources:read", "resources:write", "templates:read", "templates:write", "network", "network:public", "ai:generate", "storage", "secrets", "schedules", "editor:read", "editor:write", "ui:commands", "ui:navigation", "ui:notices", "ui:panels", "ui:embeds"];
@@ -82,7 +84,7 @@ export interface PluginSettingsSchema {
     fields: PluginSettingField[];
 }
 export type PluginSettingValue = string | number | boolean;
-export declare const PLUGIN_API_ERROR_CODES: readonly ["NOTE_CONFLICT", "RESOURCE_CONFLICT", "INVALID_MARKDOWN_EDIT"];
+export declare const PLUGIN_API_ERROR_CODES: readonly ["NOTE_CONFLICT", "RESOURCE_CONFLICT", "INVALID_MARKDOWN_EDIT", "STRUCTURED_NOTE_REQUIRED", "INVALID_STRUCTURED_EDIT", "NOTE_TYPE_MISMATCH", "TABLE_DATA_CHANGES_REQUIRED", "HOST_UPGRADE_REQUIRED"];
 export type PluginApiErrorCode = (typeof PLUGIN_API_ERROR_CODES)[number];
 export interface PluginApiError extends Error {
     code: PluginApiErrorCode;
@@ -161,6 +163,7 @@ export interface MarketplaceRegistry {
     revocations?: MarketplaceRevocation[];
 }
 export interface PluginNoteSummary {
+    kind: PluginNoteKind;
     id: string;
     notebookId: string;
     title: string | null;
@@ -171,6 +174,8 @@ export interface PluginNoteSummary {
     updatedAt: string;
 }
 export interface PluginNote extends PluginNoteSummary {
+    /** Full persisted document; read-only through this API. Special payloads also live in contentMarkdown. */
+    contentJson: PluginContentDocument;
     revision: number;
     contentMarkdown: string;
     contentText: string;
@@ -510,6 +515,88 @@ export interface PluginContext {
             restore(noteId: string, revisionId: string): Promise<PluginNote>;
         };
     };
+    diagrams: {
+        get(noteId: string, options?: {
+            includeLayout?: boolean;
+        }): Promise<{
+            note: PluginNote;
+            diagram: PluginDiagramGraph;
+            editToken: string;
+        }>;
+        edit(noteId: string, input: PluginDiagramEditInput): Promise<{
+            note: PluginNote;
+            diagram: PluginDiagramGraph;
+            editToken: string;
+            dryRun: boolean;
+        }>;
+    };
+    tables: {
+        get(noteId: string): Promise<{
+            note: PluginNote;
+            table: PluginTableDocument;
+            editToken: string;
+        }>;
+        edit(noteId: string, input: PluginTableEditInput): Promise<{
+            note: PluginNote;
+            table: PluginTableDocument;
+            editToken: string;
+            dryRun: boolean;
+            changedCellCount: number;
+            removedAttachmentCount: number;
+        }>;
+    };
+    posters: {
+        capabilities(): Promise<{
+            templates: string[];
+            platforms: Array<{
+                id: string;
+                width: number;
+                height: number;
+            }>;
+            fonts: string[];
+            editableFields: string[];
+            limits: {
+                maxElements: number;
+                maxOperations: number;
+                canvasMin: number;
+                canvasMax: number;
+            };
+        }>;
+        get(noteId: string): Promise<{
+            note: PluginNote;
+            poster: PluginPosterDocument;
+            editToken: string;
+        }>;
+        edit(noteId: string, input: PluginPosterEditInput): Promise<{
+            note: PluginNote;
+            poster: PluginPosterDocument;
+            editToken: string;
+            dryRun: boolean;
+            changed: boolean;
+        }>;
+    };
+    infographics: {
+        capabilities(): Promise<{
+            templates: string[];
+            themes: string[];
+            maxOperations: number;
+        }>;
+        get(noteId: string): Promise<{
+            note: PluginNote;
+            infographic: PluginInfographicDocument;
+            data: Record<string, PluginJsonValue>;
+            template: string;
+            theme?: string;
+            editToken: string;
+        }>;
+        edit(noteId: string, input: PluginInfographicEditInput): Promise<{
+            note: PluginNote;
+            infographic: PluginInfographicDocument;
+            editToken: string;
+            dryRun: boolean;
+            changed: boolean;
+        }>;
+    };
     notebooks: {
         list(): Promise<PluginNotebook[]>;
         create(input: {
@@ -631,4 +718,3 @@ export declare const parseMarketplaceRegistry: (value: unknown) => MarketplaceRe
 export declare const mergeCommunityMarketplace: (bundled: MarketplaceRegistry, community: MarketplaceRegistry | null, revokedIds: ReadonlySet<string>) => MarketplaceRegistry;
 /** Revocation ids only grow. A later record may replace the reason, never remove the id. */
 export declare const rememberMarketplaceRevocations: (existing: readonly MarketplaceRevocation[], incoming: readonly MarketplaceRevocation[]) => MarketplaceRevocation[];
-export {};

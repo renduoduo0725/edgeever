@@ -77,19 +77,21 @@ describe("editor typography contract", () => {
     const boldRules = declarationsForSelector(prose, ".ProseMirror strong");
 
     expect(boldRules).toMatch(/color:\s*var\(--note-palette-accent\)/);
-    expect(prose).not.toMatch(/--note-palette-dark-accent/);
+    expect(prose).toMatch(/--note-palette-accent:\s*var\(--note-palette-dark-accent\)\s*!important/);
     expect(prose).not.toContain('data-note-palette="custom"');
   });
 
-  test("named palettes recolor links, inline code, bold, and checked task boxes", () => {
+  test("named palettes recolor links, bold, and checked task boxes while code stays neutral", () => {
     const prose = readStyle("./note-prose.css");
 
     expect(prose).toMatch(/color:\s*var\(--note-palette-link\)/);
-    expect(prose).toMatch(/color:\s*var\(--note-palette-code-text\)/);
+    expect(prose).not.toMatch(/--note-palette-code-text/);
     expect(prose).toMatch(/color:\s*var\(--note-palette-accent\)/);
     expect(prose).toMatch(/accent-color:\s*var\(--note-palette-accent\)/);
     expect(prose).toMatch(/ul\[data-type="taskList"\] li\[data-checked\] > label input/);
-    expect(prose).toMatch(/\.edgeever-code-block code/);
+    expect(prose).not.toMatch(/\.ProseMirror (?:code|pre code)/);
+    const globals = readStyle("./globals.css");
+    expect(declarationsForSelector(globals, ".ProseMirror code")).toContain("color: #3d4450;");
     expect(prose).not.toMatch(/--note-palette-text/);
     expect(prose).not.toMatch(/--note-palette-surface/);
     expect(prose).not.toMatch(/--note-palette-muted/);

@@ -145,6 +145,16 @@ pub(crate) fn handle(
         }
         "memo.create" => create_memo(database, &request.params).map(|memo| json!({ "memo": memo })),
         "memo.update" => update_memo(database, &request.params).map(|memo| json!({ "memo": memo })),
+        "memo.updateGuarded" => {
+            if !request
+                .params
+                .get("expectedLocalSnapshot")
+                .is_some_and(Value::is_object)
+            {
+                return Err("A local snapshot is required for guarded note edits".to_owned());
+            }
+            update_memo(database, &request.params).map(|memo| json!({ "memo": memo }))
+        }
         "memo.delete" => delete_memo(database, &request.params),
         "memo.restore" => {
             restore_memo(database, &request.params).map(|memo| json!({ "memo": memo }))

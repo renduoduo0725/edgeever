@@ -1,4 +1,9 @@
-/* Named hues tint links, inline code, bold, and checked task boxes. Body, quotes, rules, tables, and code chrome stay native. */
+/* Named hues tint links, bold, and checked task boxes. Body, quotes, rules, tables, and code stay native. */
+:root.dark .edgeever-editor[data-note-palette]:not([data-note-palette="native"]) {
+  /* Override the light accent supplied by inline account prose variables. */
+  --note-palette-accent: var(--note-palette-dark-accent) !important;
+}
+
 .edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror a:not(.edgeever-attachment-link) {
   color: var(--note-palette-link);
   text-decoration-color: color-mix(in srgb, var(--note-palette-link) 45%, transparent);
@@ -18,15 +23,6 @@
   accent-color: var(--note-palette-accent);
 }
 
-.edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror code {
-  color: var(--note-palette-code-text);
-}
-
-.edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror pre code,
-.edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror .edgeever-code-block code {
-  color: inherit;
-}
-
 :root.dark .edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror a:not(.edgeever-attachment-link) {
   color: var(--note-palette-accent);
   text-decoration-color: color-mix(in srgb, var(--note-palette-accent) 45%, transparent);
@@ -35,14 +31,5 @@
 :root.dark .edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror a:not(.edgeever-attachment-link):hover {
   color: var(--note-palette-accent);
   text-decoration-color: var(--note-palette-accent);
-}
-
-:root.dark .edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror code {
-  color: var(--note-palette-accent);
-}
-
-:root.dark .edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror pre code,
-:root.dark .edgeever-editor[data-note-palette]:not([data-note-palette="native"]) .ProseMirror .edgeever-code-block code {
-  color: inherit;
 }
 

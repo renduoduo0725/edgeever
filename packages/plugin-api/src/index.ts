@@ -1,3 +1,5 @@
+import type { PluginNoteKind, PluginContentDocument, PluginDiagramGraph, PluginDiagramEditInput, PluginTableDocument, PluginTableEditInput, PluginPosterDocument, PluginPosterEditInput, PluginInfographicDocument, PluginInfographicEditInput } from "./structured-notes";
+export * from "./structured-notes";
 export const PLUGIN_API_VERSION = "2" as const;
 export const THEME_API_VERSION = "1" as const;
 
@@ -94,7 +96,7 @@ export interface PluginSettingsSchema {
 
 export type PluginSettingValue = string | number | boolean;
 
-export const PLUGIN_API_ERROR_CODES = ["NOTE_CONFLICT", "RESOURCE_CONFLICT", "INVALID_MARKDOWN_EDIT"] as const;
+export const PLUGIN_API_ERROR_CODES = ["NOTE_CONFLICT", "RESOURCE_CONFLICT", "INVALID_MARKDOWN_EDIT", "STRUCTURED_NOTE_REQUIRED", "INVALID_STRUCTURED_EDIT", "NOTE_TYPE_MISMATCH", "TABLE_DATA_CHANGES_REQUIRED", "HOST_UPGRADE_REQUIRED"] as const;
 export type PluginApiErrorCode = (typeof PLUGIN_API_ERROR_CODES)[number];
 export interface PluginApiError extends Error {
   code: PluginApiErrorCode;
@@ -197,6 +199,7 @@ export interface MarketplaceRegistry {
 }
 
 export interface PluginNoteSummary {
+  kind: PluginNoteKind;
   id: string;
   notebookId: string;
   title: string | null;
@@ -208,6 +211,8 @@ export interface PluginNoteSummary {
 }
 
 export interface PluginNote extends PluginNoteSummary {
+  /** Full persisted document; read-only through this API. Special payloads also live in contentMarkdown. */
+  contentJson: PluginContentDocument;
   revision: number;
   contentMarkdown: string;
   contentText: string;
@@ -515,6 +520,24 @@ export interface PluginContext {
       list(noteId: string): Promise<PluginNoteRevision[]>;
       restore(noteId: string, revisionId: string): Promise<PluginNote>;
     };
+  };
+  diagrams: {
+    get(noteId: string, options?: { includeLayout?: boolean }): Promise<{ note: PluginNote; diagram: PluginDiagramGraph; editToken: string }>;
+    edit(noteId: string, input: PluginDiagramEditInput): Promise<{ note: PluginNote; diagram: PluginDiagramGraph; editToken: string; dryRun: boolean }>;
+  };
+  tables: {
+    get(noteId: string): Promise<{ note: PluginNote; table: PluginTableDocument; editToken: string }>;
+    edit(noteId: string, input: PluginTableEditInput): Promise<{ note: PluginNote; table: PluginTableDocument; editToken: string; dryRun: boolean; changedCellCount: number; removedAttachmentCount: number }>;
+  };
+  posters: {
+    capabilities(): Promise<{ templates: string[]; platforms: Array<{ id: string; width: number; height: number }>; fonts: string[]; editableFields: string[]; limits: { maxElements: number; maxOperations: number; canvasMin: number; canvasMax: number } }>;
+    get(noteId: string): Promise<{ note: PluginNote; poster: PluginPosterDocument; editToken: string }>;
+    edit(noteId: string, input: PluginPosterEditInput): Promise<{ note: PluginNote; poster: PluginPosterDocument; editToken: string; dryRun: boolean; changed: boolean }>;
+  };
+  infographics: {
+    capabilities(): Promise<{ templates: string[]; themes: string[]; maxOperations: number }>;
+    get(noteId: string): Promise<{ note: PluginNote; infographic: PluginInfographicDocument; data: Record<string, PluginJsonValue>; template: string; theme?: string; editToken: string }>;
+    edit(noteId: string, input: PluginInfographicEditInput): Promise<{ note: PluginNote; infographic: PluginInfographicDocument; editToken: string; dryRun: boolean; changed: boolean }>;
   };
   notebooks: {
     list(): Promise<PluginNotebook[]>;

@@ -1,0 +1,18 @@
+/* One palette for extension pages and the Shadow DOM notification component. */
+:root,
+:host {
+  --background: #f5f5f5;
+  --foreground: #212121;
+  --card: #fff;
+  --primary: #171717;
+  --primary-foreground: #fff;
+  --muted: #f5f5f5;
+  --muted-foreground: #666666;
+  --popover: #fff;
+  --popover-foreground: #334155;
+  --border: #e0e0e0;
+  --ring: #262626;
+  --radius: 0.5rem;
+  --notification-success-icon: #16a06e;
+  --notification-error-icon: #be123c;
+}

@@ -1,67 +1,56 @@
 import { expect, test } from "bun:test";
+import { captureCurrentPage } from "./src/popup";
 
-test("requests instance permission during the popup click user action", async () => {
-  const previousChrome = globalThis.chrome;
-  const previousDocument = globalThis.document;
-  const listeners = new Map();
-  const saveButton = {
-    disabled: false,
-    addEventListener: (event, listener) => listeners.set(`save:${event}`, listener),
-  };
-  const settingsButton = { addEventListener: () => {} };
-  const status = { textContent: "", dataset: {} };
-  const captureMode = { textContent:"" };
-  let finishLoadingSettings;
+const settings = { instanceUrl: "https://example.com", token: "token", notebookId: "" };
+async function withChrome(overrides, run) {
+  const previous = globalThis.chrome;
+  globalThis.chrome = { i18n: { getMessage: key => key }, ...overrides };
+  try { await run(); } finally { globalThis.chrome = previous; }
+}
+
+test("popup requests instance permission synchronously within the click before capturing", async () => {
   let insideClick = false;
-  let permissionRequests = 0;
+  let resolvePermission;
   let captures = 0;
-
-  globalThis.document = {
-    documentElement: { lang: "", dir: "" },
-    querySelectorAll: () => [],
-    querySelector: (selector) => ({ "#save": saveButton, "#settings": settingsButton, "#status": status, "#capture-mode":captureMode })[selector],
-  };
-  globalThis.chrome = {
-    i18n: { getMessage: (key) => key, getUILanguage: () => "en" },
-    storage: { local: { get: () => new Promise((resolve) => { finishLoadingSettings = resolve; }) } },
-    permissions: {
-      request: ({ origins }) => {
-        expect(insideClick).toBe(true);
-        expect(origins).toEqual(["https://example.com/*"]);
-        permissionRequests += 1;
-        return Promise.resolve(true);
-      },
-    },
-    runtime: {
-      sendMessage: async (message) => {
-        if (message.type === 'getCurrentPageCaptureMode') return {kind:'platform',platform:'Threads'};
-        expect(message).toEqual({ type: "captureCurrentPage" });
-        captures += 1;
-        return { ok: true };
-      },
-    },
-  };
-
-  try {
-    await import("./src/popup.ts");
-    expect(saveButton.disabled).toBe(true);
-
-    finishLoadingSettings({ instanceUrl: "https://example.com", token: "token", notebookId: "" });
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(saveButton.disabled).toBe(false);
-    expect(captureMode.textContent).toBe('pageCaptureAdapted');
-
+  await withChrome({
+    permissions: { request: ({ origins }) => {
+      expect(insideClick).toBe(true);
+      expect(origins).toEqual(["https://example.com/*"]);
+      return new Promise(resolve => { resolvePermission = resolve; });
+    } },
+    runtime: { sendMessage: async message => {
+      expect(message).toEqual({ type: "captureCurrentPage" }); captures++;
+      return { ok: true, message: "saved" };
+    } },
+  }, async () => {
     insideClick = true;
-    const click = listeners.get("save:click")();
+    const saving = captureCurrentPage(settings);
     insideClick = false;
-    await click;
-
-    expect(permissionRequests).toBe(1);
+    expect(captures).toBe(0);
+    resolvePermission(true);
+    expect(await saving).toBe("saved");
     expect(captures).toBe(1);
-    expect(status.textContent).toBe("savedToEdgeEver");
-    expect(saveButton.disabled).toBe(false);
-  } finally {
-    globalThis.chrome = previousChrome;
-    globalThis.document = previousDocument;
-  }
+  });
+});
+
+test("denied permission prevents popup capture", async () => {
+  let captures = 0;
+  await withChrome({ permissions: { request: async () => false }, runtime: { sendMessage: async () => { captures++; } } }, async () => {
+    await expect(captureCurrentPage(settings)).rejects.toThrow("instancePermissionRequired");
+    expect(captures).toBe(0);
+  });
+});
+
+test("missing configuration never requests permissions or capture", async () => {
+  await withChrome({}, async () => {
+    await expect(captureCurrentPage({ ...settings, token: "" })).rejects.toThrow("completePluginConfiguration");
+  });
+});
+
+test("popup retains background failures and localized success fallback", async () => {
+  await withChrome({ permissions: { request: async () => true }, runtime: { sendMessage: async () => ({ ok: false, message: "Unreadable page" }) } }, async () => {
+    await expect(captureCurrentPage(settings)).rejects.toThrow("Unreadable page");
+    chrome.runtime.sendMessage = async () => ({ ok: true });
+    expect(await captureCurrentPage(settings)).toBe("savedToEdgeEver");
+  });
 });

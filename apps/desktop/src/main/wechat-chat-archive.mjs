@@ -143,7 +143,11 @@ const readZipEntries = (bytes) => {
     const start = entry.localOffset + 30 + readUInt16(data, entry.localOffset + 26) + readUInt16(data, entry.localOffset + 28);
     const compressed = data.subarray(start, start + entry.compressedSize);
     if (compressed.length !== entry.compressedSize) throw new WeChatArchiveError("invalid");
-    const inflated = entry.method === 0 ? Buffer.from(compressed) : inflateRawSync(compressed);
+    if (entry.method === 0 && entry.compressedSize !== entry.expandedSize) throw new WeChatArchiveError("invalid");
+    let inflated;
+    try {
+      inflated = entry.method === 0 ? Buffer.from(compressed) : inflateRawSync(compressed, { maxOutputLength: Math.max(1, entry.expandedSize) });
+    } catch { throw new WeChatArchiveError("invalid"); }
     if (inflated.length !== entry.expandedSize || crc32(inflated) !== entry.crc) throw new WeChatArchiveError("invalid");
     return { name: entry.name, data: inflated };
   });

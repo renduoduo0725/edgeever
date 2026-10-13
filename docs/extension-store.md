@@ -2,8 +2,8 @@
 
 Chrome, Edge, and Firefox listings are submitted by the official repository
 workflow **Submit Web Clipper**. This is separate from `bun run release`.
-A product release does not upload the browser extension, and a store review
-does not change a GitHub Release.
+A stable GitHub Release triggers the store workflow asynchronously. Store
+submission does not block the GitHub Release, and review does not change it.
 
 Edge users install the Chrome Web Store item
 `gjadpfmanienmlofajibkfkkpfdkclgo`. One Chrome submission covers that item.
@@ -14,6 +14,13 @@ The workflow builds the packages, uploads them, and submits them for review.
 It does not approve the listing. Users stay on the last approved version until
 Chrome and Mozilla each finish review. An uploaded version number cannot be
 reused. Increase `apps/extension/package.json` before submitting changes.
+
+Before either store is contacted, the command extracts the Firefox review source
+ZIP into a clean directory, installs with the frozen lockfile, and rebuilds it.
+Every output file must match the submission build by SHA-256; a mismatch stops
+the command. The archive includes the shared Web UI components the extension
+imports. Build CI watches these dependencies and runs the same rebuild check.
+Both workflows use the Bun version from the checked-out root `package.json`.
 
 ## Run it
 

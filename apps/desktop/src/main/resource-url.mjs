@@ -1,6 +1,25 @@
 export const isSafeResourceId = (value) =>
   typeof value === "string" && value.length > 0 && value.length <= 160 && /^[A-Za-z0-9._~-]+$/.test(value) && value !== "." && value !== "..";
 
+const INLINE_RESOURCE_TYPES = new Set([
+  "image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/bmp",
+  "image/x-icon", "application/pdf", "audio/mpeg", "audio/mp4", "audio/ogg",
+  "audio/wav", "audio/webm", "video/mp4", "video/webm", "video/ogg",
+]);
+
+export const resourceResponseHeaders = (contentType, disposition = null) => {
+  const type = typeof contentType === "string" ? contentType.split(";")[0].trim().toLowerCase() : "";
+  const inline = INLINE_RESOURCE_TYPES.has(type);
+  const headers = new Headers({
+    "Cache-Control": "no-store",
+    "Content-Type": inline ? type : "application/octet-stream",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; sandbox",
+  });
+  if (disposition || !inline) headers.set("Content-Disposition", disposition || "attachment");
+  return headers;
+};
+
 export const resourceIdFromRequest = (requestUrl) => {
   try {
     const url = new URL(requestUrl);
@@ -70,11 +89,8 @@ export const parseByteRangeHeader = (header, totalSize) => {
 
 export const cachedResourceResponse = (bytes, contentType, rangeHeader) => {
   const range = parseByteRangeHeader(rangeHeader, bytes.byteLength);
-  const headers = new Headers({
-    "Accept-Ranges": "bytes",
-    "Cache-Control": "no-store",
-    "Content-Type": contentType || "application/octet-stream",
-  });
+  const headers = resourceResponseHeaders(contentType);
+  headers.set("Accept-Ranges", "bytes");
 
   if (range.kind === "invalid") {
     headers.set("Content-Range", `bytes */${bytes.byteLength}`);

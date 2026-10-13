@@ -38,11 +38,13 @@ const css = (element) => (element?.style.cssText ?? "").replace(/:\s+/g, ":");
 
 let preparePublishArticle;
 let prepareMarkdownPublishArticle;
+let readEditorCopyContext;
 
 beforeAll(async () => {
   const module = await import("./wechat-copy.ts");
   preparePublishArticle = module.preparePublishArticle;
   prepareMarkdownPublishArticle = module.prepareMarkdownPublishArticle;
+  readEditorCopyContext = module.readEditorCopyContext;
 });
 
 const MARKDOWN = `
@@ -69,6 +71,30 @@ curl -fsSL https://edgeever.org/install.sh | bash
 `;
 
 describe("preparePublishArticle", () => {
+  test("exports a light reading accent from a dark editor", () => {
+    const container = document.createElement("div");
+    container.dataset.notePalette = "violet";
+    const previous = globalThis.getComputedStyle;
+    globalThis.getComputedStyle = () => ({
+      getPropertyValue: (name) => ({
+        "--note-palette-accent": "#B39AE8",
+        "--note-palette-light-accent": "#7351CF",
+        "--note-palette-text": "#3F3F46",
+        "--note-palette-code-text": "#5B4EE0",
+      })[name] ?? "",
+    });
+    try {
+      const context = readEditorCopyContext(container);
+      expect(context.colors.accent).toBe("#7351CF");
+      const root = preparePublishArticle("<p><strong>重点</strong> <code>Cmd/Ctrl + E</code></p>", container);
+      expect(css(root.querySelector("strong"))).toContain("color:#7351CF");
+      expect(css(root.querySelector("code"))).toContain("color:#3d4450");
+      expect(css(root.querySelector("code"))).toContain("background:#f3f5f7");
+    } finally {
+      globalThis.getComputedStyle = previous;
+    }
+  });
+
   test("matches the light editor instead of the old rose-and-green paste", () => {
     const root = preparePublishArticle([
       "<blockquote><p>引用</p></blockquote>",

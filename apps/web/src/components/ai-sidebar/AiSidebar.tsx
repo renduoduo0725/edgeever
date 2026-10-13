@@ -61,6 +61,7 @@ import {
   subscribeDesktopAcp,
   startsNewLocalAgentThread,
   type DesktopAcpEvent,
+  desktopAcpNoteAccessErrorKey,
 } from "@/lib/desktop-acp";
 import {
   chatThreadsFromTurns,
@@ -995,8 +996,11 @@ function AiSidebarSession({
         ? { ...turn, status: event.type === "error" ? "failed" : "completed" }
         : turn));
       if (event.type === "error" && event.message) {
-        setError(event.message === "note_access_unavailable" ? t("aiAssistant.sidebar.noteAccessUnavailable")
+        const noteAccessErrorKey = desktopAcpNoteAccessErrorKey(event.message);
+        setError(noteAccessErrorKey ? t(noteAccessErrorKey)
           : event.message === "workbuddy_credentials_unavailable" ? t("aiAssistant.agentSource.workbuddyCredentialsUnavailable")
+          : event.message === "identity_status_unavailable" ? t("aiAssistant.agentSource.identityStatusUnavailable")
+          : event.message === "needs_login" && localAdapterId === "claudeCode" ? t("aiAssistant.agentSource.claudeCodeLoginHint")
           : event.message === "needs_login" ? t(localAdapterId === "workbuddyCn" || localAdapterId === "workbuddyIntl"
             ? "aiAssistant.sidebar.workbuddyLoginRequired" : "aiAssistant.sidebar.localLoginRequired")
             : event.message === "agent_refused" ? t("aiAssistant.sidebar.agentRefused") : event.message);

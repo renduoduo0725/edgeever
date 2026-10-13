@@ -1,6 +1,7 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
 import { createServer } from "node:http";
+import { setTimeout as delay } from "node:timers/promises";
 
 const MAX_REQUEST_BYTES = 32 * 1024 * 1024;
 const FORWARDED_HEADERS = ["mcp-protocol-version", "mcp-method", "mcp-name"];
@@ -23,28 +24,80 @@ const readBody = async (request) => {
   return Buffer.concat(chunks);
 };
 
-export async function startAcpMcpBridge({ baseUrl, sessionToken, accountId, isCurrent, fetchImpl = fetch } = {}) {
-  if (typeof baseUrl !== "string" || !/^https?:\/\//.test(baseUrl) || !sessionToken) {
-    throw new Error("note_access_unavailable");
-  }
+const TRANSIENT_SESSION_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+const NOTE_ACCESS_ERRORS = {
+  missing_session: "note_access_login_required",
+  session_unauthenticated: "note_access_login_required",
+  account_mismatch: "note_access_changed",
+  session_changed: "note_access_changed",
+  session_network: "note_access_network",
+  session_response: "note_access_network",
+  session_transient: "note_access_network",
+};
+
+// Only the read-only session check can be retried. Never replay MCP tool calls:
+// a failed response can follow a successful write to the user's notes.
+export async function verifyAcpNoteAccess({ baseUrl, sessionToken, accountId, isCurrent, fetchImpl = fetch, onDiagnostic = () => {} } = {}) {
+  const unavailable = (reason, details = {}) => {
+    // Never include URLs, tokens, response bodies, or raw error messages.
+    try { onDiagnostic({ reason, ...details }); } catch { /* Diagnostics cannot block requests. */ }
+    return new Error(NOTE_ACCESS_ERRORS[reason] ?? "note_access_unavailable");
+  };
+  const assertCurrent = () => {
+    if (isCurrent && !isCurrent()) throw unavailable("session_changed");
+  };
+  if (typeof baseUrl !== "string" || !/^https?:\/\//.test(baseUrl)) throw unavailable("invalid_instance");
+  if (typeof sessionToken !== "string" || !sessionToken.trim()) throw unavailable("missing_session");
   let instance;
   try { instance = new URL(baseUrl); }
-  catch { throw new Error("note_access_unavailable"); }
-  if (instance.username || instance.password || instance.search || instance.hash) throw new Error("note_access_unavailable");
+  catch { throw unavailable("invalid_instance"); }
+  if (instance.username || instance.password || instance.search || instance.hash) throw unavailable("invalid_instance");
   const origin = instance.href.replace(/\/+$/, "");
-  let session;
-  try {
-    session = await fetchImpl(`${origin}/api/v1/auth/session`, {
-      headers: { Authorization: `Bearer ${sessionToken}` },
-      redirect: "manual",
-      signal: AbortSignal.timeout(10_000),
-    });
-  } catch { throw new Error("note_access_unavailable"); }
-  const identity = await session.json().catch(() => null);
-  if (!session.ok || identity?.authenticated !== true || (accountId && identity?.user?.id !== accountId)) {
-    throw new Error("note_access_unavailable");
+  const budget = AbortSignal.timeout(10_000);
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    assertCurrent();
+    let session;
+    let identity;
+    let transientReason;
+    try {
+      session = await fetchImpl(`${origin}/api/v1/auth/session`, {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+        redirect: "manual",
+        signal: AbortSignal.any([budget, AbortSignal.timeout(5_000)]),
+      });
+      if (session.ok) {
+        try { identity = await session.json(); }
+        catch { transientReason = "session_response"; }
+      } else {
+        // Consume no potentially sensitive error body; release its connection.
+        await session.body?.cancel().catch(() => {});
+      }
+    } catch { transientReason = "session_network"; }
+    assertCurrent();
+    if (!transientReason && session?.ok) {
+      if (!identity || typeof identity.authenticated !== "boolean") transientReason = "session_response";
+      else {
+        if (!identity.authenticated) throw unavailable("session_unauthenticated");
+        if (accountId && identity.user?.id !== accountId) throw unavailable("account_mismatch");
+        return origin;
+      }
+    }
+    if (!transientReason && TRANSIENT_SESSION_STATUSES.has(session.status)) transientReason = "session_transient";
+    if (!transientReason) {
+      if (session.status === 401) throw unavailable("session_unauthenticated");
+      throw unavailable("session_http", { status: session.status });
+    }
+    if (attempt === 2 || budget.aborted) {
+      throw unavailable(transientReason, { attempts: attempt, ...(session ? { status: session.status } : {}) });
+    }
+    try { await delay(250, undefined, { signal: budget }); }
+    catch { throw unavailable(transientReason, { attempts: attempt }); }
   }
+}
 
+export async function startAcpMcpBridge(access = {}) {
+  const origin = await verifyAcpNoteAccess(access);
+  const { sessionToken, isCurrent, fetchImpl = fetch } = access;
   const secret = randomBytes(32).toString("hex");
   const server = createServer(async (request, response) => {
     response.setHeader("Cache-Control", "no-store");

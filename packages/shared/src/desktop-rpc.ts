@@ -50,6 +50,7 @@ export const DESKTOP_RPC_METHODS = [
   "memo.get",
   "memo.create",
   "memo.update",
+  "memo.updateGuarded",
   "memo.delete",
   "memo.restore",
   "memo.revisions",
@@ -116,6 +117,7 @@ export type DesktopRpcResponses = {
   "memo.get": { memo: MemoDetail };
   "memo.create": { memo: MemoDetail };
   "memo.update": { memo: MemoDetail };
+  "memo.updateGuarded": { memo: MemoDetail };
   "memo.delete": { ok: true };
   "memo.restore": { memo: MemoDetail };
   "memo.revisions": { revisions: import("./types").MemoRevision[] };
@@ -164,6 +166,7 @@ export type DesktopRpcParams = {
   "memo.get": { memoId: string; includeDeleted?: boolean };
   "memo.create": DesktopMemoCreateParams;
   "memo.update": DesktopMemoUpdateParams;
+  "memo.updateGuarded": DesktopMemoUpdateParams & { expectedLocalSnapshot: Pick<MemoDetail, "revision" | "contentHash" | "title" | "tags" | "contentMarkdown" | "contentJson"> };
   "memo.delete": { memoId: string; permanent?: boolean; cancelPendingCreate?: boolean };
   "memo.restore": { memoId: string };
   "memo.revisions": { memoId: string; limit?: number };
