@@ -18,6 +18,29 @@ export type ManagedMemoShare = MemoShare & {
   notebookName: string | null;
 };
 
+export type NotebookShare = {
+  notebookId: string;
+  notebookName: string;
+  token: string;
+  createdAt: string;
+  updatedAt: string;
+  passwordProtected: boolean;
+  /** Returned only when enabling or regenerating the password. */
+  password?: string;
+};
+
+export type PublicNotebookShare = {
+  notebookId: string;
+  name: string;
+  notebooks: Array<{ id: string; parentId: string | null; name: string }>;
+  memos: Array<{ id: string; notebookId: string; title: string | null }>;
+};
+
+export type ShareBodyAccess = {
+  resourceBasePath: string;
+  memoUrls: Readonly<Record<string, string>>;
+};
+
 export const PUBLISHED_NOTE_BODY_FONTS = [
   "wenkai",
   "wenkai-screen",
@@ -30,9 +53,12 @@ export const PUBLISHED_NOTE_BODY_FONTS = [
 
 export type PublishedNoteBodyFont = (typeof PUBLISHED_NOTE_BODY_FONTS)[number];
 
-export const parsePublishedNoteBodyFont = (value: unknown): PublishedNoteBodyFont | null =>
-  typeof value === "string" && (PUBLISHED_NOTE_BODY_FONTS as readonly string[]).includes(value)
-    ? value as PublishedNoteBodyFont
+export const parsePublishedNoteBodyFont = (
+  value: unknown,
+): PublishedNoteBodyFont | null =>
+  typeof value === "string" &&
+  (PUBLISHED_NOTE_BODY_FONTS as readonly string[]).includes(value)
+    ? (value as PublishedNoteBodyFont)
     : null;
 
 export type PublicMemoShare = {
@@ -48,20 +74,23 @@ export type PublicMemoShare = {
   prose: PublicNoteProse;
 };
 
-const RESOURCE_URL_PATTERN = /^\/api\/v1\/resources\/([^/?#]+)\/blob(?:[?#].*)?$/;
+const RESOURCE_URL_PATTERN =
+  /^\/api\/v1\/resources\/([^/?#]+)\/blob(?:[?#].*)?$/;
 
 const rewriteAttributeValue = (
   value: unknown,
   token: string,
   memoShareTokens: Readonly<Record<string, string>>,
+  access?: ShareBodyAccess,
 ) => {
   if (typeof value !== "string") return value;
   const match = value.match(RESOURCE_URL_PATTERN);
   if (match) {
-    return `/api/public/shares/${encodeURIComponent(token)}/resources/${encodeURIComponent(match[1])}/blob`;
+    return `${access?.resourceBasePath ?? `/api/public/shares/${encodeURIComponent(token)}/resources`}/${encodeURIComponent(match[1])}/blob`;
   }
 
   const memoId = parseMemoLinkHref(value);
+  if (memoId && access) return access.memoUrls[memoId] ?? "#";
   const shareToken = memoId ? memoShareTokens[memoId] : null;
   return shareToken ? `/share/${encodeURIComponent(shareToken)}` : value;
 };
@@ -71,25 +100,52 @@ export const rewriteMemoResourcesForShare = (
   doc: TiptapDoc,
   token: string,
   memoShareTokens: Readonly<Record<string, string>> = {},
+  access?: ShareBodyAccess,
 ): TiptapDoc => {
-  const visit = (node: TiptapNode | TiptapTextNode): TiptapNode | TiptapTextNode => {
-    const attrs = "attrs" in node && node.attrs
-      ? Object.fromEntries(Object.entries(node.attrs).map(([key, value]) => [key, rewriteAttributeValue(value, token, memoShareTokens)]))
-      : undefined;
-    const marks = "marks" in node && node.marks
-      ? node.marks.map((mark) => ({
-          ...mark,
-          attrs: mark.attrs
-            ? Object.fromEntries(Object.entries(mark.attrs).map(([key, value]) => [key, rewriteAttributeValue(value, token, memoShareTokens)]))
-            : undefined,
-        }))
-      : undefined;
+  const visit = (
+    node: TiptapNode | TiptapTextNode,
+  ): TiptapNode | TiptapTextNode => {
+    const attrs =
+      "attrs" in node && node.attrs
+        ? Object.fromEntries(
+            Object.entries(node.attrs).map(([key, value]) => [
+              key,
+              rewriteAttributeValue(value, token, memoShareTokens, access),
+            ]),
+          )
+        : undefined;
+    const marks =
+      "marks" in node && node.marks
+        ? node.marks
+            .filter((mark) => {
+              const memoId = parseMemoLinkHref(mark.attrs?.href);
+              return !access || !memoId || Boolean(access.memoUrls[memoId]);
+            })
+            .map((mark) => ({
+              ...mark,
+              attrs: mark.attrs
+                ? Object.fromEntries(
+                    Object.entries(mark.attrs).map(([key, value]) => [
+                      key,
+                      rewriteAttributeValue(
+                        value,
+                        token,
+                        memoShareTokens,
+                        access,
+                      ),
+                    ]),
+                  )
+                : undefined,
+            }))
+        : undefined;
 
     return {
       ...node,
       ...(attrs ? { attrs } : {}),
       ...(marks ? { marks } : {}),
-      ...("content" in node && node.content ? { content: node.content.map(visit) } : {}),
+      ...("content" in node && node.content
+        ? { content: node.content.map(visit) }
+        : {}),
     } as TiptapNode | TiptapTextNode;
   };
 

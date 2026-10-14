@@ -1,10 +1,8 @@
 import { accountNoteProseFromRow, collectMemoLinkIds, isPdfAttachment, MemoShareUpdateSchema, NoteBodyFontUpdateSchema, NoteProseUpdateSchema, parsePublishedNoteBodyFont, publicNoteProseFromAccount, PublicShareUnlockSchema, resolveMemoContentDoc, resolvePlayableMediaMimeType, sanitizeNoteProseCss, type AccountNoteProse, type ManagedMemoShare, type MemoShare, type NoteProseAccountRow, type PublicMemoShare, type TiptapDoc } from "@edgeever/shared";
 import { zValidator } from "@hono/zod-validator";
 import type { Hono } from "hono";
-import { getCookie, setCookie } from "hono/cookie";
 import type { AppContext, AppEnv } from "./api-context";
 import { audit } from "./audit";
-import { authenticateRequest } from "./auth-service";
 import { hashPassword, randomToken, verifyPassword } from "./auth-crypto";
 import { parseByteRange, rangeNotSatisfiable } from "./byte-range";
 import { createId, isoNow, parseJsonArray } from "./entity-utils";
@@ -13,19 +11,18 @@ import { resolveObjectStorage } from "./object-storage";
 import { getAuditActor, getWorkspaceId, requireUser } from "./request-auth";
 import { contentDispositionAttachment, contentDispositionInline } from "./resource-service";
 import {
-  createShareAccessCookieValue,
   isShareUnlockBlocked,
-  isValidShareAccessCookieValue,
   nextShareUnlockFailure,
-  SHARE_ACCESS_COOKIE,
-  SHARE_ACCESS_MAX_AGE_SECONDS,
 } from "./share-access";
+import { allowPasswordProtectedShare, setShareAccessCookie } from "./share-http-access";
+import { encryptSharePassword, readSharePassword } from "./share-password-encryption";
 import { generateSharePassword } from "./share-password";
 
 const SHARE_TOKEN_BYTES = 32;
 const SHARE_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 type MemoShareRow = {
+  password_encrypted?: string | null;
   memo_id: string;
   token: string;
   created_at: string;
@@ -94,34 +91,6 @@ const sharePasswordInvalid = (c: AppContext) =>
 const shareUnlockRateLimited = (c: AppContext) =>
   apiError(c, "share_unlock_rate_limited", "Too many share password attempts. Try again later.", 429);
 
-const shareAccessCookiePath = (token: string) => `/api/public/shares/${encodeURIComponent(token)}`;
-
-const setShareAccessCookie = async (c: AppContext, token: string, passwordHash: string) => {
-  const value = await createShareAccessCookieValue(passwordHash, token);
-  setCookie(c, SHARE_ACCESS_COOKIE, value, {
-    httpOnly: true,
-    secure: new URL(c.req.url).protocol === "https:",
-    sameSite: "Lax",
-    path: shareAccessCookiePath(token),
-    maxAge: SHARE_ACCESS_MAX_AGE_SECONDS,
-  });
-};
-
-const hasShareAccessCookie = async (c: AppContext, token: string, passwordHash: string) =>
-  isValidShareAccessCookieValue(getCookie(c, SHARE_ACCESS_COOKIE), passwordHash, token);
-
-const isShareOwner = async (c: AppContext, workspaceId: string) => {
-  const auth = await authenticateRequest(c, false);
-  return auth?.workspaceId === workspaceId;
-};
-
-const allowPasswordProtectedShare = async (
-  c: AppContext,
-  token: string,
-  workspaceId: string,
-  passwordHash: string,
-) => hasShareAccessCookie(c, token, passwordHash) || isShareOwner(c, workspaceId);
-
 const loadShareGate = async (c: AppContext, token: string) =>
   c.env.storage.db.prepare(
     `SELECT ms.workspace_id, ms.password_hash, ms.unlock_failed_count, ms.unlock_window_started_at, ms.unlock_blocked_until
@@ -131,7 +100,7 @@ const loadShareGate = async (c: AppContext, token: string) =>
      LIMIT 1`
   ).bind(token).first<ShareGateRow>();
 
-const selectMemoShareSql = `SELECT memo_id, token, created_at, updated_at, password_hash
+const selectMemoShareSql = `SELECT memo_id, token, created_at, updated_at, password_hash, password_encrypted
   FROM memo_shares WHERE memo_id = ? AND workspace_id = ?`;
 
 const NOTE_PROSE_COLUMNS = `note_prose_font_size, note_prose_line_height, note_prose_palette, note_prose_custom_css, note_prose_custom_colors`;
@@ -151,6 +120,50 @@ const loadAccountNoteProse = async (c: AppContext, actorId: string) => {
   return row ? presentAccountNoteProse(row) : null;
 };
 
+/** The caller must authorize the resource against its live share scope first. */
+export const serveSharedResource = async (c: AppContext, resource: SharedResourceRow) => {
+  const byteRange = parseByteRange(c.req.header("Range"), resource.byte_size);
+  if (byteRange.kind === "invalid") {
+    const response = rangeNotSatisfiable(resource.byte_size);
+    response.headers.set("Cache-Control", "private, no-store");
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    return response;
+  }
+
+  const source = await resolveObjectStorage(c.env, resource.storage_config_id);
+  const object = await source.store.get(
+    resource.object_key,
+    byteRange.kind === "range" ? { range: byteRange.range } : undefined,
+  );
+  if (!object) return notFound(c, "Shared resource not found");
+
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  const playableMimeType = resolvePlayableMediaMimeType(resource.mime_type, resource.filename);
+  headers.set(
+    "Content-Type",
+    isPdfAttachment(resource.mime_type, resource.filename)
+      ? "application/pdf"
+      : playableMimeType ?? resource.mime_type ?? headers.get("Content-Type") ?? "application/octet-stream",
+  );
+  headers.set("Accept-Ranges", "bytes");
+  if (byteRange.kind === "range") {
+    const length = object.range?.length ?? byteRange.range.length;
+    headers.set("Content-Length", String(length));
+    headers.set(
+      "Content-Range",
+      `bytes ${byteRange.range.offset}-${byteRange.range.offset + length - 1}/${resource.byte_size}`,
+    );
+  } else {
+    headers.set("Content-Length", String(resource.byte_size));
+  }
+  headers.set("Content-Disposition", contentDisposition(resource.kind, resource.mime_type, resource.filename));
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  return new Response(object.body, { headers, status: byteRange.kind === "range" ? 206 : 200 });
+};
+
 export const registerPublicShareRoutes = (app: Hono<AppEnv>) => {
   app.get("/api/public/shares/:token", async (c) => {
     const token = normalizeShareToken(c.req.param("token"));
@@ -168,7 +181,7 @@ export const registerPublicShareRoutes = (app: Hono<AppEnv>) => {
        LIMIT 1`
     ).bind(token).first<PublicMemoShareRow>();
     if (!row) return notFound(c, "Shared note not found");
-    if (row.password_hash && !(await allowPasswordProtectedShare(c, token, row.workspace_id, row.password_hash))) {
+    if (row.password_hash && !(await allowPasswordProtectedShare(c, token, row.password_hash))) {
       return sharePasswordRequired(c);
     }
 
@@ -253,50 +266,11 @@ export const registerPublicShareRoutes = (app: Hono<AppEnv>) => {
        LIMIT 1`
     ).bind(token, c.req.param("resourceId")).first<SharedResourceRow>();
     if (!resource) return notFound(c, "Shared resource not found");
-    if (resource.password_hash && !(await allowPasswordProtectedShare(c, token, resource.workspace_id, resource.password_hash))) {
+    if (resource.password_hash && !(await allowPasswordProtectedShare(c, token, resource.password_hash))) {
       return sharePasswordRequired(c);
     }
 
-    const byteRange = parseByteRange(c.req.header("Range"), resource.byte_size);
-    if (byteRange.kind === "invalid") {
-      const response = rangeNotSatisfiable(resource.byte_size);
-      response.headers.set("Cache-Control", "private, no-store");
-      response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-      return response;
-    }
-
-    const source = await resolveObjectStorage(c.env, resource.storage_config_id);
-    const object = await source.store.get(
-      resource.object_key,
-      byteRange.kind === "range" ? { range: byteRange.range } : undefined,
-    );
-    if (!object) return notFound(c, "Shared resource not found");
-
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    const playableMimeType = resolvePlayableMediaMimeType(resource.mime_type, resource.filename);
-    headers.set(
-      "Content-Type",
-      isPdfAttachment(resource.mime_type, resource.filename)
-        ? "application/pdf"
-        : playableMimeType ?? resource.mime_type ?? headers.get("Content-Type") ?? "application/octet-stream",
-    );
-    headers.set("Accept-Ranges", "bytes");
-    if (byteRange.kind === "range") {
-      const length = object.range?.length ?? byteRange.range.length;
-      headers.set("Content-Length", String(length));
-      headers.set(
-        "Content-Range",
-        `bytes ${byteRange.range.offset}-${byteRange.range.offset + length - 1}/${resource.byte_size}`,
-      );
-    } else {
-      headers.set("Content-Length", String(resource.byte_size));
-    }
-    headers.set("Content-Disposition", contentDisposition(resource.kind, resource.mime_type, resource.filename));
-    headers.set("Cache-Control", "private, no-store");
-    headers.set("X-Content-Type-Options", "nosniff");
-    headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
-    return new Response(object.body, { headers, status: byteRange.kind === "range" ? 206 : 200 });
+    return serveSharedResource(c, resource);
   });
 };
 
@@ -393,20 +367,22 @@ export const registerMemoShareRoutes = (app: Hono<AppEnv>) => {
     const denied = requireUser(c);
     if (denied) return denied;
 
+    c.header("Cache-Control", "private, no-store");
     const row = await c.env.storage.db.prepare(
-      `SELECT ms.memo_id, ms.token, ms.created_at, ms.updated_at, ms.password_hash
+      `SELECT ms.memo_id, ms.token, ms.created_at, ms.updated_at, ms.password_hash, ms.password_encrypted
        FROM memo_shares ms
        INNER JOIN memos m ON m.id = ms.memo_id AND m.workspace_id = ms.workspace_id
        WHERE ms.memo_id = ? AND ms.workspace_id = ? AND m.is_deleted = 0
        LIMIT 1`
     ).bind(c.req.param("id"), getWorkspaceId(c)).first<MemoShareRow>();
-    return c.json({ share: row ? mapMemoShare(row) : null });
+    return c.json({ share: row ? mapMemoShare(row, row.password_hash ? await readSharePassword(row.password_encrypted, row.token, c.env, row.password_hash) : undefined) : null });
   });
 
   app.post("/api/v1/memos/:id/share", async (c) => {
     const denied = requireUser(c);
     if (denied) return denied;
 
+    c.header("Cache-Control", "private, no-store");
     const memoId = c.req.param("id");
     const workspaceId = getWorkspaceId(c);
     const memo = await c.env.storage.db.prepare(
@@ -416,7 +392,7 @@ export const registerMemoShareRoutes = (app: Hono<AppEnv>) => {
 
     const existing = await c.env.storage.db.prepare(selectMemoShareSql)
       .bind(memoId, workspaceId).first<MemoShareRow>();
-    if (existing) return c.json({ share: mapMemoShare(existing) });
+    if (existing) return c.json({ share: mapMemoShare(existing, existing.password_hash ? await readSharePassword(existing.password_encrypted, existing.token, c.env, existing.password_hash) : undefined) });
 
     const now = isoNow();
     const token = randomToken(SHARE_TOKEN_BYTES);
@@ -434,13 +410,14 @@ export const registerMemoShareRoutes = (app: Hono<AppEnv>) => {
     if (isNewShare) {
       await audit(c.env.storage.db, actor.actorType, actor.actorId, "memo.share_create", "memo", memoId, {});
     }
-    return c.json({ share: mapMemoShare(created) }, isNewShare ? 201 : 200);
+    return c.json({ share: mapMemoShare(created, created.password_hash ? await readSharePassword(created.password_encrypted, created.token, c.env, created.password_hash) : undefined) }, isNewShare ? 201 : 200);
   });
 
   app.patch("/api/v1/memos/:id/share", zValidator("json", MemoShareUpdateSchema), async (c) => {
     const denied = requireUser(c);
     if (denied) return denied;
 
+    c.header("Cache-Control", "private, no-store");
     const memoId = c.req.param("id");
     const workspaceId = getWorkspaceId(c);
     const existing = await c.env.storage.db.prepare(
@@ -455,7 +432,7 @@ export const registerMemoShareRoutes = (app: Hono<AppEnv>) => {
     if (!c.req.valid("json").passwordProtected) {
       await c.env.storage.db.prepare(
         `UPDATE memo_shares
-         SET password_hash = NULL, unlock_failed_count = 0, unlock_window_started_at = NULL,
+         SET password_hash = NULL, password_encrypted = NULL, unlock_failed_count = 0, unlock_window_started_at = NULL,
              unlock_blocked_until = NULL, updated_at = ?
          WHERE memo_id = ? AND workspace_id = ?`
       ).bind(now, memoId, workspaceId).run();
@@ -467,12 +444,13 @@ export const registerMemoShareRoutes = (app: Hono<AppEnv>) => {
 
     const password = generateSharePassword();
     const passwordHash = await hashPassword(password);
+    const encrypted = await encryptSharePassword(password, existing.token, c.env);
     await c.env.storage.db.prepare(
       `UPDATE memo_shares
-       SET password_hash = ?, unlock_failed_count = 0, unlock_window_started_at = NULL,
+       SET password_hash = ?, password_encrypted = ?, unlock_failed_count = 0, unlock_window_started_at = NULL,
            unlock_blocked_until = NULL, updated_at = ?
        WHERE memo_id = ? AND workspace_id = ?`
-    ).bind(passwordHash, now, memoId, workspaceId).run();
+    ).bind(passwordHash, encrypted, now, memoId, workspaceId).run();
     await audit(
       c.env.storage.db,
       actor.actorType,
@@ -491,12 +469,14 @@ export const registerMemoShareRoutes = (app: Hono<AppEnv>) => {
     const denied = requireUser(c);
     if (denied) return denied;
 
+    c.header("Cache-Control", "private, no-store");
     const memoId = c.req.param("id");
     const workspaceId = getWorkspaceId(c);
     const existing = await c.env.storage.db.prepare(
       `SELECT memo_id FROM memo_shares WHERE memo_id = ? AND workspace_id = ?`
     ).bind(memoId, workspaceId).first<{ memo_id: string }>();
-    if (!existing) return notFound(c, "Active share not found");
+    // A retry after successful revocation already has the requested state.
+    if (!existing) return c.json({ ok: true });
 
     await c.env.storage.db.prepare(
       `DELETE FROM memo_shares WHERE memo_id = ? AND workspace_id = ?`

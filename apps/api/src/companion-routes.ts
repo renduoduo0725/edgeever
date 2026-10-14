@@ -1,6 +1,6 @@
 import { AiAttachmentSchema, CompanionDiscoveryCompleteSchema, CompanionDiscoverySettingsInputSchema, CompanionIdSchema, CompanionMemoryImportSchema, CompanionMemoryInputSchema, CompanionMemoryUpdateSchema,
   CompanionToolExecuteSchema, CompanionTurnCheckpointSchema, CompanionTurnCompleteSchema,
-  CompanionTurnInputSchema, CompanionTurnResumeSchema, sealCompanionProcess, type AiProvider, type CompanionEvent, type CompanionSource, type CompanionToolCall, type CompanionTurnInput } from "@edgeever/shared";
+  CompanionTurnInputSchema, CompanionTurnResumeSchema, companionFailureDiagnostics, sealCompanionProcess, type AiProvider, type CompanionEvent, type CompanionSource, type CompanionToolCall, type CompanionTurnInput } from "@edgeever/shared";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -143,7 +143,7 @@ const streamCompanionTurn = (
         }
         const finished = await getCompanionTurn(db, scope, row.id);
         if (status === "interrupted" && finished) send({ type: "done", turn: mapCompanionTurn(finished) });
-        else send({ type: "error", ...companionGenerationFailure(error) });
+        else send({ type: "error", ...companionGenerationFailure(error), diagnostics: companionFailureDiagnostics(error) });
       } finally {
         stop.abort();
         clearTimeout(timeout);

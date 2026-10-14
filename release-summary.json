@@ -1,23 +1,23 @@
 {
-  "version": "1.113.0",
+  "version": "1.118.0",
   "changes": {
     "en-US": [
-      "Let trusted plugins edit diagrams, tables, posters, and infographics with conflict checks that protect newer note changes.",
-      "Harden desktop template previews, resource handling, agent execution, and instance credentials against unsafe content and cross-instance credential exposure. (#546)",
-      "Improve update failure diagnostics so network connection problems are easier to investigate. (#513)",
-      "Refine note reading colors in light and dark modes, combine red and orange into vermilion orange, and keep inline code colors neutral."
+      "Publish notebooks and their descendants as a browsable website with live content, directory navigation, and optional password protection.",
+      "Manage note and notebook shares more clearly, retry revocation, and view newly generated share passwords across devices. Regenerate older share passwords once to enable cross-device viewing; their existing access remains valid.",
+      "Preserve failed desktop share imports across restarts, restore WorkBuddy sign-in after connection failures, and clarify the current note context for local AI agents.",
+      "Use softer button colors and clearer inbox deletion guidance."
     ],
     "zh-CN": [
-      "受信插件可编辑图表、表格、海报和信息图，并通过冲突检查保护笔记中的较新改动。",
-      "加固桌面模板预览、资源处理、智能体执行及实例凭据边界，降低不安全内容和跨实例凭据泄露风险。（#546）",
-      "完善更新失败诊断，便于排查网络连接问题。（#513）",
-      "优化浅色与深色模式下的正文配色，将红色和橙色合并为朱橙，并统一行内代码的中性配色。"
+      "支持将笔记本及全部子笔记本发布为公开网站，提供目录导航、内容同步和可选密码保护。",
+      "优化笔记与笔记本的分享管理、状态提示和撤销重试，并支持跨设备查看新生成的分享密码。旧分享密码仍可访问，需重新生成一次才能跨设备查看。",
+      "桌面端导入失败的分享内容可在重启后保留，修复 WorkBuddy 连接失败后的登录入口，并明确本地 AI 工具的当前笔记上下文。",
+      "优化按钮配色与收件箱删除提示。"
     ],
     "ja": [
-      "信頼されたプラグインから図、表、ポスター、インフォグラフィックを編集でき、競合チェックで新しい変更を保護します。",
-      "デスクトップのテンプレート表示、リソース処理、エージェント実行、インスタンス認証情報の境界を強化します。",
-      "更新失敗時の診断を改善し、ネットワーク接続の問題を調べやすくしました。",
-      "ライト・ダークモードの本文配色を改善し、赤とオレンジを朱色に統合して、インラインコードを中立色に統一しました。"
+      "ノートブックと配下の内容を、目次・更新反映・任意のパスワード保護付きの公開サイトとして共有できます。",
+      "共有管理・状態表示・取り消しの再試行を改善し、新しく生成した共有パスワードを端末間で確認できます。既存のパスワードは引き続き利用でき、再生成すると端末間で確認できます。",
+      "デスクトップで失敗した共有インポートを再起動後も保持し、接続失敗後の WorkBuddy ログインとローカル AI の現在のノートの認識を改善しました。",
+      "ボタンの配色と受信箱の削除案内を改善しました。"
     ]
   }
 }

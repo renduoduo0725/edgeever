@@ -1,8 +1,10 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Copy, ExternalLink, Link2, LoaderCircle, LockKeyhole, Settings2 } from "lucide-react";
+import { FileText, Link2, LoaderCircle, LockKeyhole } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ManagedMemoShare } from "@edgeever/shared";
+import { ShareManagementActions } from "./ShareManagementActions";
+import { NotebookShareManagement } from "./NotebookShareManagement";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPublicShareUrl, ShareMemoDialog } from "@/components/dialogs/ShareMemoDialog";
@@ -52,65 +54,66 @@ export const ShareManagementCard = ({ userId, onOpenMemo }: Props) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        {sharesQuery.isPending || (sharesQuery.isFetching && !sharesQuery.isFetchingNextPage) ? (
-          <div className="flex min-h-32 items-center justify-center text-slate-500" role="status">
-            <LoaderCircle className="h-5 w-5 animate-spin" />
-            <span className="sr-only">{t("sharing.managementLoading")}</span>
+        <section aria-labelledby="memo-shares-heading" className="border-t border-slate-100">
+          <div className="flex min-h-14 items-center gap-2 px-4 py-3">
+            <FileText className="h-4 w-4 text-slate-500" />
+            <h3 id="memo-shares-heading" className="text-xs font-medium text-slate-700">{t("sharing.memoManagementTitle")}</h3>
           </div>
-        ) : sharesQuery.isError ? (
-          <div className="space-y-3 border-t border-slate-100 p-4">
-            <p className="text-xs leading-5 text-rose-600" role="alert">{t("sharing.managementLoadFailed")}</p>
-            <Button size="sm" variant="outline" onClick={() => void sharesQuery.refetch()}>{t("sharing.retry")}</Button>
-          </div>
-        ) : shares.length === 0 ? (
-          <p className="border-t border-slate-100 p-4 text-xs leading-5 text-slate-500">{t("sharing.managementEmpty")}</p>
-        ) : (
-          <div className="divide-y divide-slate-100 border-t border-slate-100">
-            {shares.map((share) => (
-              <div key={share.memoId} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <button
-                    type="button"
-                    className="block max-w-full truncate text-left text-xs font-medium text-slate-900 hover:text-emerald-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-                    onClick={() => onOpenMemo(share.memoId, share.notebookId)}
-                  >
-                    {share.memoTitle?.trim() || t("common.untitledMemo")}
-                  </button>
-                  <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                    <span>{share.notebookName || t("sharing.unknownNotebook")}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{t("sharing.sharedOn", { date: formatDate(share.createdAt) })}</span>
-                    {share.passwordProtected ? (
-                      <span className="inline-flex items-center gap-1 text-slate-600">
-                        <LockKeyhole className="h-3 w-3" />{t("sharing.passwordProtected")}
-                      </span>
-                    ) : null}
-                  </p>
+          {sharesQuery.isPending || (sharesQuery.isFetching && !sharesQuery.isFetchingNextPage) ? (
+            <div className="flex min-h-32 items-center justify-center text-slate-500" role="status">
+              <LoaderCircle className="h-5 w-5 animate-spin" />
+              <span className="sr-only">{t("sharing.managementLoading")}</span>
+            </div>
+          ) : sharesQuery.isError ? (
+            <div className="space-y-3 px-4 pb-4">
+              <p className="text-xs leading-5 text-rose-600" role="alert">{t("sharing.managementLoadFailed")}</p>
+              <Button size="sm" variant="outline" onClick={() => void sharesQuery.refetch()}>{t("sharing.retry")}</Button>
+            </div>
+          ) : shares.length === 0 ? (
+            <p className="px-4 pb-4 text-xs leading-5 text-slate-500">{t("sharing.managementEmpty")}</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {shares.map((share) => (
+                <div key={share.memoId} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      className="block max-w-full truncate text-left text-xs font-medium text-slate-900 hover:text-emerald-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                      onClick={() => onOpenMemo(share.memoId, share.notebookId)}
+                    >
+                      {share.memoTitle?.trim() || t("common.untitledMemo")}
+                    </button>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                      <span>{share.notebookName || t("sharing.unknownNotebook")}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{t("sharing.sharedOn", { date: formatDate(share.createdAt) })}</span>
+                      {share.passwordProtected ? (
+                        <span className="inline-flex items-center gap-1 text-slate-600">
+                          <LockKeyhole className="h-3 w-3" />{t("sharing.passwordProtected")}
+                        </span>
+                      ) : null}
+                    </p>
+                  </div>
+                  <ShareManagementActions
+                    onCopy={() => void copyLink(share)}
+                    copyLabel={copyResult?.memoId === share.memoId ? t(copyResult.success ? "sharing.copied" : "sharing.copyFailed") : undefined}
+                    onOpen={() => window.open(getPublicShareUrl(share.token), "_blank", "noopener,noreferrer")}
+                    onManage={() => setManagedMemoId(share.memoId)}
+                  />
                 </div>
-                <div className="flex shrink-0 flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => void copyLink(share)}>
-                    <Copy className="h-3.5 w-3.5" />
-                    {copyResult?.memoId === share.memoId ? t(copyResult.success ? "sharing.copied" : "sharing.copyFailed") : t("sharing.copy")}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => window.open(getPublicShareUrl(share.token), "_blank", "noopener,noreferrer")}>
-                    <ExternalLink className="h-3.5 w-3.5" />{t("sharing.open")}
-                  </Button>
-                  <Button size="sm" variant="soft" onClick={() => setManagedMemoId(share.memoId)}>
-                    <Settings2 className="h-3.5 w-3.5" />{t("sharing.manage")}
+              ))}
+              {sharesQuery.hasNextPage ? (
+                <div className="flex justify-center p-4">
+                  <Button size="sm" variant="outline" disabled={sharesQuery.isFetchingNextPage} onClick={() => void sharesQuery.fetchNextPage()}>
+                    {sharesQuery.isFetchingNextPage ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : null}
+                    {t("sharing.loadMore")}
                   </Button>
                 </div>
-              </div>
-            ))}
-            {sharesQuery.hasNextPage ? (
-              <div className="flex justify-center p-4">
-                <Button size="sm" variant="outline" disabled={sharesQuery.isFetchingNextPage} onClick={() => void sharesQuery.fetchNextPage()}>
-                  {sharesQuery.isFetchingNextPage ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : null}
-                  {t("sharing.loadMore")}
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        )}
+              ) : null}
+            </div>
+          )}
+        </section>
+        <NotebookShareManagement userId={userId} />
       </CardContent>
       {managedMemoId ? (
         <ShareMemoDialog memoId={managedMemoId} open onOpenChange={(open) => { if (!open) setManagedMemoId(null); }} />

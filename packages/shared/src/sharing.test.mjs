@@ -54,3 +54,24 @@ describe("shared memo resources", () => {
     expect(rewritten.content[0].content[1].marks[0].attrs.href).toBe("#memo=memo_private");
   });
 });
+
+
+test("notebook shares use their own attachment scope, link within the directory, and disable private memo links", () => {
+  const source = { type: "doc", content: [
+    { type: "image", attrs: { src: "/api/v1/resources/image/blob" } },
+    { type: "paragraph", content: [
+      { type: "text", text: "Shared", marks: [{ type: "link", attrs: { href: "#memo=inside" } }] },
+      { type: "text", text: "Private", marks: [{ type: "link", attrs: { href: "#memo=outside" } }] },
+      { type: "text", text: "External", marks: [{ type: "link", attrs: { href: "https://example.com" } }] },
+    ] },
+  ] };
+  const rewritten = rewriteMemoResourcesForShare(source, "token", {}, {
+    resourceBasePath: "/api/public/notebook-shares/token/resources",
+    memoUrls: { inside: "/share/notebook/token/inside" },
+  });
+  expect(rewritten.content[0].attrs.src).toBe("/api/public/notebook-shares/token/resources/image/blob");
+  expect(rewritten.content[1].content[0].marks[0].attrs.href).toBe("/share/notebook/token/inside");
+  expect(rewritten.content[1].content[1].marks).toEqual([]);
+  expect(rewritten.content[1].content[2].marks[0].attrs.href).toBe("https://example.com");
+  expect(source.content[1].content[1].marks).toHaveLength(1);
+});

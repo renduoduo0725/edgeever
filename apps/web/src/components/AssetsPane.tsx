@@ -33,17 +33,9 @@ import { AttachmentFileIcon } from "@/components/attachments/AttachmentFileIcon"
 import { AppConfirmDialog } from "@/components/dialogs/ConfirmDialogs";
 import { ExecutionCenterButton } from "@/components/execution/ExecutionCenterButton";
 
-export const formatBytes = (bytes: number) => {
-  if (!Number.isFinite(bytes) || bytes <= 0) {
-    return "0 B";
-  }
+import { formatBytes } from "@/lib/format-bytes";
 
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  const value = bytes / 1024 ** exponent;
-
-  return `${exponent === 0 ? value.toFixed(0) : value.toFixed(value >= 10 ? 1 : 2)} ${units[exponent]}`;
-};
+export { formatBytes } from "@/lib/format-bytes";
 
 const DOCUMENT_MIME_TYPES = new Set([
   "application/pdf",

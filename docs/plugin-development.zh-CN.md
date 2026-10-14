@@ -21,13 +21,15 @@ EdgeEver 提供客户端插件与无代码主题扩展能力。用户可从官�
   - [2. 模板管理（Templates）](#2-模板管理templates)
   - [3. 资源附件（Resources）](#3-资源附件resources)
   - [4. 编辑器交互（Editor & Embeds）](#4-编辑器交互editor--embeds)
-  - [5. 界面交互（UI, Commands & Panels）](#5-界面交互ui-commands--panels)
-  - [6. 统一设置（Settings）](#6-统一设置settings)
-  - [7. 数据存储与安全凭据（Storage & Secrets）](#7-数据存储与安全凭据storage--secrets)
-  - [8. 网络请求（Network）](#8-网络请求network)
-  - [9. 定时任务（Schedules，仅桌面端）](#9-定时任务schedules仅桌面端)
-  - [10. 事件监听（Events）](#10-事件监听events)
-  - [11. 人工智能（AI）](#11-人工智能ai)
+  - [5. 全局命令（Commands）](#5-全局命令commands)
+  - [6. 宿主界面与通知（UI & Notices）](#6-宿主界面与通知ui--notices)
+  - [7. 自定义面板（Panels）](#7-自定义面板panels)
+  - [8. 统一设置（Settings）](#8-统一设置settings)
+  - [9. 数据存储与安全凭据（Storage & Secrets）](#9-数据存储与安全凭据storage--secrets)
+  - [10. 网络请求（Network）](#10-网络请求network)
+  - [11. 定时任务（Schedules，仅桌面端）](#11-定时任务schedules仅桌面端)
+  - [12. 事件监听（Events）](#12-事件监听events)
+  - [13. 人工智能（AI）](#13-人工智能ai)
 - [主题扩展（Theme Manifest）](#主题扩展theme-manifest)
 - [打包、分发与本地开发](#打包分发与本地开发)
   - [打包规范](#打包规范)
@@ -410,9 +412,7 @@ await context.editor.insertEmbed({
 
 ---
 
-### 5. 界面交互（UI, Commands & Panels）
-
-#### 命令注册
+### 5. 全局命令（Commands）
 
 ```ts
 context.commands.register({
@@ -426,14 +426,21 @@ context.commands.register({
 });
 ```
 
-#### 笔记跳转
+---
+
+### 6. 宿主界面与通知（UI & Notices）
 
 ```ts
+// 宿主全局轻提示
+context.ui.showNotice("操作执行成功");
+
 // 打开指定笔记并可选跳转至指定搜索关键词
 await context.ui.openNote(noteId, { search: "关键定位词" });
 ```
 
-#### 自定义 DOM 面板（Panels）
+---
+
+### 7. 自定义面板（Panels）
 
 插件可以注册全屏或对话框形态的原生 DOM 面板：
 
@@ -483,7 +490,7 @@ await context.ui.panels.open("task-dashboard", { state: { initialTab: "all" } })
 
 ---
 
-### 6. 统一设置（Settings）
+### 8. 统一设置（Settings）
 
 EdgeEver 由宿主统一渲染插件设置界面。在 `manifest.json` 中声明配置字段，无需手写设置页 UI：
 
@@ -530,7 +537,7 @@ context.events.on("settings.changed", async ({ key }) => {
 
 ---
 
-### 7. 数据存储与安全凭据（Storage & Secrets）
+### 9. 数据存储与安全凭据（Storage & Secrets）
 
 用于插件自身的数据持久化（按工作区与插件 ID 隔离存储在当前设备）：
 
@@ -548,7 +555,7 @@ await context.secrets.remove("api_key");
 
 ---
 
-### 8. 网络请求（Network）
+### 10. 网络请求（Network）
 
 ```ts
 // 1. 标准请求（支持任意 HTTP/HTTPS 请求，受宿主环境 CORS 策略约束）
@@ -569,7 +576,7 @@ const xml = await publicRes.text();
 
 ---
 
-### 9. 定时任务（Schedules，仅桌面端）
+### 11. 定时任务（Schedules，仅桌面端）
 
 桌面端插件可注册定时计划执行已注册的命令（在 EdgeEver 打开期间运行）：
 
@@ -597,7 +604,7 @@ await context.schedules.remove("hourly-sync");
 
 ---
 
-### 10. 事件监听（Events）
+### 12. 事件监听（Events）
 
 订阅工作区的数据变更事件：
 
@@ -614,7 +621,7 @@ context.events.on("workspace.synced", () => { /* 工作区同步完成 */ });
 
 ---
 
-### 11. 人工智能（AI）
+### 13. 人工智能（AI）
 
 调用用户当前工作区已配置的 AI 模型生成文本或转录媒体（凭据由宿主安全保管，插件无需知晓用户 API Key）：
 

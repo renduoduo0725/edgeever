@@ -89,7 +89,7 @@ describe("preparePublishArticle", () => {
       const root = preparePublishArticle("<p><strong>重点</strong> <code>Cmd/Ctrl + E</code></p>", container);
       expect(css(root.querySelector("strong"))).toContain("color:#7351CF");
       expect(css(root.querySelector("code"))).toContain("color:#3d4450");
-      expect(css(root.querySelector("code"))).toContain("background:#f3f5f7");
+      expect(css(root.querySelector("code"))).toContain("background:#e9edf1");
     } finally {
       globalThis.getComputedStyle = previous;
     }
@@ -120,7 +120,7 @@ describe("preparePublishArticle", () => {
     expect(css(root.querySelector("strong"))).toContain("font-weight:800");
     const inlineCode = body.querySelector("code");
     expect(css(inlineCode)).toContain("color:#3d4450");
-    expect(css(inlineCode)).toContain("background:#f3f5f7");
+    expect(css(inlineCode)).toContain("background:#e9edf1");
     expect(css(root.querySelector("h2"))).toContain("font-weight:600");
     expect(css(root.querySelector("h2"))).toContain("color:#27272a");
     const [rule, merge] = root.querySelectorAll("hr");

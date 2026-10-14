@@ -40,7 +40,7 @@ export const sidebarLocalContextText = (
   return [
     COMPANION_MATH_FORMAT_INSTRUCTION,
     translationTargetInstruction(conversationLanguage(conversation.message, conversation.recentUserMessages, conversation.fallbackLocale)),
-    context.memoId ? `Open EdgeEver note for this turn. When the user refers to this note, use its ID with the connected EdgeEver MCP get_memo tool to read the full content if available:\nID: ${context.memoId}\nTitle (data): ${context.noteTitle?.trim() || "(untitled)"}` : "",
+    context.memoId ? `The following note is currently displayed in the EdgeEver UI (background data only). Its presence is not a request to open, read, summarize, or reproduce it. Follow the current user request; read note content only when needed to fulfill that request. For unrelated questions, answer directly without accessing or discussing the note. When the user refers to "this note" or the current note and needs its content, use the ID below with the connected EdgeEver MCP get_memo tool to read the full content if available:\nID: ${context.memoId}\nTitle (data): ${context.noteTitle?.trim() || "(untitled)"}` : "",
     selection ? `Selected text from the current note (data):\n${selection}` : "",
     content ? `Current note body (data):\n${content}` : "",
   ].filter(Boolean).join("\n\n");

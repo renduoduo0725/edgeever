@@ -405,6 +405,7 @@ describe("companion HTTP contracts", () => {
     })() }) });
     const result = await (await request("turns", "POST", input())).text();
     expect(result).not.toContain("sk-secret");
+    expect(parseEvents(result).find(event => event.type === "error").diagnostics).toEqual({ reason: "http", status: 400 });
     expect(parseEvents(result).some(event => event.type === "error" && event.code === "ai_provider_request_rejected")).toBe(true);
   });
   test("concurrent memory change prevents final outdated output", async () => {

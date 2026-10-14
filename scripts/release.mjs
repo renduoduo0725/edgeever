@@ -313,7 +313,17 @@ export const resolveReleaseVersion = ({
   }
 
   if (draftCandidate.targetCommitish === headSha) {
-    if (packageVersion !== expectedNextVersion) {
+    const expectedParts = expectedNextVersion.split(".").map(Number);
+    const packageParts = packageVersion.split(".").map(Number);
+    const bumpIndex = { major: 0, minor: 1, patch: 2 }[bump];
+    // Replacement Drafts reserve prior failed versions. They remain resumable
+    // when repeated bumps at the explicitly requested level reach this version.
+    const compatibleVersion = packageParts.length === 3 && packageParts.every((part, index) =>
+      Number.isInteger(part) && (index === bumpIndex
+        ? part >= expectedParts[index]
+        : part === expectedParts[index])
+    );
+    if (!compatibleVersion) {
       throw new Error(
         `${draftCandidate.tagName} cannot resume because --bump ${bump} expects v${expectedNextVersion}.`,
       );

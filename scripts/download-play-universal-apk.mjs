@@ -10,7 +10,7 @@ const ANDROID_PUBLISHER_SCOPE = "https://www.googleapis.com/auth/androidpublishe
 const DEFAULT_PACKAGE_NAME = "org.edgeever.mobile";
 const DEFAULT_POLL_ATTEMPTS = 30;
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
-const DEFAULT_DOWNLOAD_TIMEOUT_MS = 10 * 60_000;
+const DEFAULT_DOWNLOAD_TIMEOUT_MS = 60 * 60_000;
 const LOOKUP_TIMEOUT_MS = 30_000;
 
 export const summarizePlayGeneratedApks = (response, expectedSignerSha256) => {

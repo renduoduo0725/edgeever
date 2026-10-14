@@ -84,7 +84,7 @@ const collector = () => {
   };
 };
 
-const fakeAgentSource = ({ reportPath, secretPath, allowImage, allowEmbedded, hold, requireAuth, advertiseAuth, promptRefusal, hangAuth, hangSession, workBuddyAccountApi, workBuddyLoginFailure, workBuddyUnreadable, workBuddyUnreadableAfterLogin, authMethodId = "browser", authStatusKind, advertiseAuthStatus = false, authStatusDelay = 20, stderrText, promptAuthStatusKind }) => `#!/usr/bin/env bun
+const fakeAgentSource = ({ reportPath, secretPath, allowImage, allowEmbedded, hold, requireAuth, advertiseAuth, promptRefusal, hangAuth, hangSession, failSessionBeforeLogin, workBuddyAccountApi, workBuddyLoginFailure, workBuddyUnreadable, workBuddyUnreadableAfterLogin, authMethodId = "browser", authStatusKind, advertiseAuthStatus = false, authStatusDelay = 20, stderrText, promptAuthStatusKind }) => `#!/usr/bin/env bun
 import * as acp from ${JSON.stringify(sdkHref)};
 import { writeFileSync, readFileSync } from "node:fs";
 
@@ -190,6 +190,7 @@ acp.agent({ name: "edgeever-fake-agent" })
     return {};
   })
   .onRequest("session/new", (ctx) => {
+    if (${failSessionBeforeLogin ? "true" : "false"} && !authenticated) throw new acp.RequestError(-32603, "connection_failed");
     if (requireAuth && !authenticated) throw new acp.RequestError(-32000, "auth_required");
     report.newSession = { cwd: ctx.params.cwd, mcpServers: ctx.params.mcpServers };
     save();
@@ -1022,6 +1023,24 @@ describe("ACP stdio session", () => {
     }
   }, 15_000);
 
+  for (const id of ["workbuddyCn", "workbuddyIntl"]) sessionTest(`${id} keeps login methods after connection failure and can reconnect`, async () => {
+    const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-retry-"));
+    const reportPath = path.join(directory, "report.json");
+    const methodId = id === "workbuddyCn" ? "internal" : "external";
+    try {
+      const scriptPath = await writeFakeAgent(directory, {
+        reportPath, advertiseAuth: true, failSessionBeforeLogin: true,
+        workBuddyAccountApi: true, authMethodId: methodId,
+      });
+      const runtime = createAcpHostRuntime({ adapterManager: { get: () => ({ command: { command: process.execPath, args: [scriptPath] } }) } });
+      const expected = { state: "failed", authMethods: [{ id: methodId, name: "Browser" }] };
+      expect(await runtime.probeAdapter({ id })).toMatchObject(expected);
+      expect(runtime.listAdapters().find((adapter) => adapter.id === id)).toMatchObject(expected);
+      expect(await runtime.authenticateAdapter({ id, methodId })).toMatchObject({ state: "available" });
+      expect(await runtime.probeAdapter({ id })).toMatchObject({ state: "available" });
+    } finally { await rm(directory, { recursive: true, force: true }); }
+  }, 10_000);
+
   sessionTest("WorkBuddy encrypted metadata cannot count as a usable connection or successful login", async () => {
     const directory = await mkdtemp(path.join(tmpdir(), "edgeever-acp-unreadable-auth-"));
     const reportPath = path.join(directory, "report.json");
@@ -1118,6 +1137,7 @@ describe("ACP stdio session", () => {
       expect((await readReport(reportPath)).newSession).not.toBeNull();
       expect(result.state).toBe("failed");
       expect(result.detail).toBe("connection_timeout");
+      expect(result.authMethods).toEqual([{ id: "browser", name: "Browser" }]);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

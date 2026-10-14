@@ -268,7 +268,7 @@ describe("WeChat share handoff", () => {
     await expect(stat(zipPath)).rejects.toThrow();
   });
 
-  test("keeps multiple old pending shares available across app restarts", async () => {
+  test("skips failed shares across restarts while recovering unfinished shares", async () => {
     const root = await mkdtemp(join(tmpdir(), "edgeever-wechat-share-"));
     roots.push(root);
     const downloads = join(root, "Downloads");
@@ -289,7 +289,10 @@ describe("WeChat share handoff", () => {
     });
     await controller.importPending();
     expect(prepared).toHaveLength(2);
-    await controller.finish(prepared[0].importId, false);
+    // Directory iteration order differs across filesystems; fail the named share.
+    const failedShare = prepared.find((payload) => payload.markdown.includes("first"));
+    expect(failedShare).toBeDefined();
+    await controller.finish(failedShare.importId, false);
     const resumed = [];
     const restarted = createWeChatShareController({
       downloadsPath: () => downloads,
@@ -297,10 +300,23 @@ describe("WeChat share handoff", () => {
       sendToRenderer: (payload) => resumed.push(payload),
     });
     await restarted.importPending();
-    expect(resumed).toHaveLength(2);
+    expect(resumed).toHaveLength(1);
+    expect(resumed[0].markdown).toContain("second");
+    await restarted.importPending();
+    expect(resumed).toHaveLength(1);
     for (const name of ["first", "second"]) {
       expect((await stat(join(incoming, name, "聊天记录.zip"))).isFile()).toBe(true);
     }
+    // An explicit handoff can retry a failed share after a restart.
+    const failedZip = join(incoming, "first", "聊天记录.zip");
+    await restarted.importFromProtocolUrl(`edgeever://wechat-import?path=${encodeURIComponent(failedZip)}`);
+    expect(resumed).toHaveLength(2);
+    await restarted.finish(resumed[1].importId, false);
+    expect(restarted.retry(resumed[1].importId)).toBe(true);
+    expect(resumed).toHaveLength(3);
+    await restarted.finish(resumed[2].importId, true);
+    await expect(stat(join(incoming, "first"))).rejects.toThrow();
+    await expect(stat(join(incoming, "second", "聊天记录.zip"))).resolves.toBeDefined();
   });
 
   test("finishing one zip keeps another zip in the same incoming batch", async () => {
@@ -422,6 +438,16 @@ describe("WeChat share handoff", () => {
     await controller.importFromProtocolUrl(`edgeever://share-import?path=${encodeURIComponent(filePath)}`);
     expect(sent).toEqual([{ ok: false, kind: "file", reason: "too-large" }]);
     expect((await stat(filePath)).isFile()).toBe(true);
+    const restarted = createWeChatShareController({
+      downloadsPath: () => downloads,
+      tempPath: () => join(root, "new-temp"),
+      sendToRenderer: (payload) => sent.push(payload),
+      maxBytes: 4,
+    });
+    await restarted.importPending();
+    await restarted.importPending();
+    expect(sent).toHaveLength(1);
+    expect((await readFile(filePath)).toString()).toBe("12345");
   });
 
   test("does not read a shared file outside the incoming folder", async () => {

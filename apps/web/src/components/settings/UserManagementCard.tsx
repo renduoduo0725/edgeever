@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, UserPlus, Users } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { InstanceUser } from "@edgeever/shared";
 import { Button } from "@/components/ui/button";
@@ -14,22 +14,13 @@ import {
 } from "./settings-ui";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { ApiRequestError, api } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { formatBytes } from "@/lib/format-bytes";
+import { UserManagementTable } from "./UserManagementTable";
 
 interface UserManagementCardProps {
   demoMode: boolean;
 }
-
-const formatMemberTime = (value: string, locale: string) =>
-  new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 
 export const UserManagementCard = ({ demoMode }: UserManagementCardProps) => {
   const { t, i18n } = useTranslation();
@@ -43,7 +34,12 @@ export const UserManagementCard = ({ demoMode }: UserManagementCardProps) => {
   const [resetPassword, setResetPassword] = useState("");
 
   const usersQuery = useQuery({ queryKey: ["users"], queryFn: api.listUsers });
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["users"] });
+  const storageQuery = useQuery({ queryKey: ["instance-storage-usage"], queryFn: api.getInstanceStorageUsage });
+  const refresh = () => Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["users"] }),
+    queryClient.invalidateQueries({ queryKey: ["instance-storage-usage"] }),
+  ]);
+  const storageByUser = new Map(storageQuery.data?.users?.map((usage) => [usage.userId, usage.summary]));
   const createMutation = useMutation({
     mutationFn: api.createUser,
     onSuccess: () => {
@@ -107,38 +103,27 @@ export const UserManagementCard = ({ demoMode }: UserManagementCardProps) => {
           </div>
         </CardHeader>
         <CardContent className="grid gap-2 p-4 pt-0">
+          <div className="rounded-lg border border-slate-200 bg-card/40 p-3">
+            <p className={SETTINGS_ITEM_TITLE_CLASSNAME}>{t("users.storageUsage")}</p>
+            {storageQuery.isLoading ? <p className="mt-1 text-xs text-slate-500">{t("users.loading")}</p> : null}
+            {storageQuery.data ? (
+              <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-700">
+                <span>{formatBytes(storageQuery.data.summary.totalBytes)}</span>
+                <span>{t("assets.fileCount", { count: storageQuery.data.summary.totalCount })}</span>
+              </p>
+            ) : null}
+            {storageQuery.isError ? <p className="mt-1 text-xs text-rose-600" role="alert">{t("users.storageUsageFailed")}</p> : null}
+          </div>
           {usersQuery.isLoading ? <p className="text-xs leading-5 text-slate-500">{t("users.loading")}</p> : null}
-          {usersQuery.data?.users.map((user) => (
-            <div key={user.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-card/40 p-3">
-              <div className="min-w-0">
-                <p className={cn("truncate", SETTINGS_ITEM_TITLE_CLASSNAME)}>{user.displayName || user.username}</p>
-                <p className="truncate text-xs text-slate-500">@{user.username} · {t(`users.roles.${user.role}`)}</p>
-                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-500">
-                  <span>{t("users.createdAt", { time: formatMemberTime(user.createdAt, locale) })}</span>
-                  <span>{user.lastLoginAt
-                    ? t("users.lastLoginAt", { time: formatMemberTime(user.lastLoginAt, locale) })
-                    : t("users.noLoginRecord")}</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                {demoMode && user.role === "owner" ? null : (
-                  <Button size="sm" variant="outline" onClick={() => setResetUser(user)}>
-                    <KeyRound className="h-3.5 w-3.5" /> {t("users.resetPassword")}
-                  </Button>
-                )}
-                {user.role !== "owner" ? (
-                  <label className="flex items-center gap-2 text-xs text-slate-600">
-                    {user.isDisabled ? t("users.disabled") : t("users.enabled")}
-                    <Switch
-                      checked={!user.isDisabled}
-                      disabled={updateMutation.isPending}
-                      onCheckedChange={(checked) => updateMutation.mutate({ userId: user.id, input: { isDisabled: !checked } })}
-                    />
-                  </label>
-                ) : null}
-              </div>
-            </div>
-          ))}
+          {usersQuery.data ? <UserManagementTable
+            users={usersQuery.data.users}
+            storageByUser={storageByUser}
+            demoMode={demoMode}
+            updating={updateMutation.isPending}
+            locale={locale}
+            onResetPassword={setResetUser}
+            onDisabledChange={(userId, isDisabled) => updateMutation.mutate({ userId, input: { isDisabled } })}
+          /> : null}
           {usersQuery.isError || createMutation.isError || updateMutation.isError ? (
             <p className="text-xs font-medium text-rose-600">{t("users.failed")}</p>
           ) : null}

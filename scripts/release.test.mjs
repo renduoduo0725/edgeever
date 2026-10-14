@@ -406,6 +406,24 @@ describe("release automation", () => {
     });
   });
 
+  test("resumes replacement Drafts after earlier version numbers were reserved", () => {
+    for (const [bump, packageVersion] of [["patch", "1.17.2"], ["minor", "1.19.0"], ["major", "3.0.0"]]) {
+      const draftCandidate = {
+        tagName: `v${packageVersion}`, isDraft: true, isPrerelease: false,
+        targetCommitish: "current-head",
+      };
+      expect(resolveReleaseVersion({
+        previousVersion: "1.17.0", packageVersion, bump,
+        headSha: "current-head", draftCandidate,
+      })).toMatchObject({ releaseVersion: packageVersion, resumedDraft: draftCandidate, releaseBaseTag: "v1.17.0" });
+    }
+    expect(() => resolveReleaseVersion({
+      previousVersion: "1.17.0", packageVersion: "1.19.0", bump: "patch",
+      headSha: "current-head",
+      draftCandidate: { tagName: "v1.19.0", isDraft: true, isPrerelease: false, targetCommitish: "current-head" },
+    })).toThrow("cannot resume");
+  });
+
   test("reserves a withdrawn Draft version and keeps the published audit baseline", () => {
     const draftCandidate = {
       tagName: "v1.17.1",

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, realpath, readdir, rmdir, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { WeChatArchiveError, wechatChatNoteFromArchive } from "./wechat-chat-archive.mjs";
@@ -76,6 +76,11 @@ export const wechatImportFilePath = (value) => {
 
 const incomingDirectory = (downloadsPath) => join(downloadsPath, WECHAT_INCOMING_DIRECTORY_NAME);
 
+// Keep the marker beside the incoming file, including when the temp directory
+// is cleared. Hidden markers are never treated as shared attachments.
+const failureMarkerPath = (sourcePath) => join(dirname(sourcePath),
+  `.edgeever-import-failed-${createHash("sha256").update(basename(sourcePath)).digest("hex")}`);
+
 const assertIncomingFile = async (filePath, downloadsPath) => {
   const root = incomingDirectory(downloadsPath);
   let realRoot;
@@ -144,13 +149,22 @@ export const createWeChatShareController = ({
   const completedPaths = new Set();
   const failedPaths = new Set();
 
+  const rememberFailure = async (sourcePath) => {
+    failedPaths.add(sourcePath);
+    try {
+      await writeFile(failureMarkerPath(sourcePath), "failed\n");
+    } catch {
+      void writeDiagnostic("share-import.failure-state-write-failed");
+    }
+  };
+
   const finish = async (importId, success) => {
     if (!SAFE_ID.test(importId || "")) return;
     const session = sessions.get(importId);
     if (!session) return;
     if (!success) {
       session.failed = true;
-      if (!session.preserveSource) failedPaths.add(session.zipPath);
+      if (!session.preserveSource) await rememberFailure(session.zipPath);
       const failedEvent = session.payload?.kind === "file" ? "share-import.save-failed" : "wechat-import.save-failed";
       void writeDiagnostic(failedEvent);
       return;
@@ -159,7 +173,10 @@ export const createWeChatShareController = ({
     preparedPaths.delete(session.zipPath);
     if (!session.preserveSource) completedPaths.add(session.zipPath);
     failedPaths.delete(session.zipPath);
-    if (!session.preserveSource) await removeImportedZip(session.zipPath, downloadsPath());
+    if (!session.preserveSource) {
+      await rm(failureMarkerPath(session.zipPath), { force: true }).catch(() => {});
+      await removeImportedZip(session.zipPath, downloadsPath());
+    }
     if (session.directory) await rm(session.directory, { recursive: true, force: true }).catch(() => {});
     const savedEvent = session.payload?.kind === "file" ? "share-import.saved" : "wechat-import.saved";
     void writeDiagnostic(savedEvent, { media: session.media.size });
@@ -268,7 +285,7 @@ export const createWeChatShareController = ({
       if (reason === "unreadable" && sourcePath && !preserveSource) {
         await removeImportedZip(sourcePath, downloadsPath());
       } else if (sourcePath && reason !== "rejected-path" && !preserveSource) {
-        failedPaths.add(sourcePath);
+        await rememberFailure(sourcePath);
       }
       if (reason === "rejected-path") {
         void writeDiagnostic("wechat-import.rejected", { reason });
@@ -309,7 +326,7 @@ export const createWeChatShareController = ({
       await openSharedFile(sourcePath, { preserveSource: false });
     } catch (error) {
       const reason = error instanceof WeChatArchiveError ? error.code : "failed";
-      if (reason !== "rejected-path" && sourcePath) failedPaths.add(sourcePath);
+      if (reason !== "rejected-path" && sourcePath) await rememberFailure(sourcePath);
       if (reason !== "rejected-path") {
         sendToRenderer({ ok: false, reason: "failed" });
       }
@@ -348,8 +365,10 @@ export const createWeChatShareController = ({
       const files = await readdir(directory, { withFileTypes: true }).catch(() => []);
       for (const file of files) {
         if (!file.isFile() || file.name.startsWith(".") || file.name.toLowerCase().endsWith(".partial")) continue;
+        const sourcePath = join(directory, file.name);
+        if (await stat(failureMarkerPath(sourcePath)).then(() => true, () => false)) continue;
         const url = new URL(file.name.toLowerCase().endsWith(".zip") ? "edgeever://wechat-import" : "edgeever://share-import");
-        url.searchParams.set("path", join(directory, file.name));
+        url.searchParams.set("path", sourcePath);
         await importFromProtocolUrl(url.href);
       }
     }

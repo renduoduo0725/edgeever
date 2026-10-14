@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, type DragEvent } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, type DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import * as m from "motion/react-m";
-import { ChevronDown, MoreHorizontal, Notebook as NotebookIcon, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, MoreHorizontal, Notebook as NotebookIcon, Plus, Pencil, Trash2, Share2, Globe } from "lucide-react";
 import type { NotebookNode, NotebookDropPosition } from "@/lib/app-helpers";
 import {
   hasMemoDragData,
@@ -21,7 +21,10 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { contentEnterMotion, treeEnterMotion } from "@/lib/motion";
+
+const ShareNotebookDialog = lazy(() => import("./dialogs/ShareNotebookDialog").then(module => ({ default: module.ShareNotebookDialog })));
 
 const NOTEBOOK_DRAG_EXPAND_DELAY_MS = 520;
 
@@ -41,6 +44,8 @@ export const NotebookTreeItem = ({
   expandSiblingsRequest,
   onExpandSiblings,
   showDescendantNotes,
+  sharedNotebookIds,
+  inheritedPublic = false,
 }: {
   node: NotebookNode;
   depth: number;
@@ -57,8 +62,20 @@ export const NotebookTreeItem = ({
   expandSiblingsRequest: { parentId: string | null; token: number } | null;
   onExpandSiblings: (parentId: string | null) => void;
   showDescendantNotes: boolean;
+  sharedNotebookIds?: ReadonlySet<string>;
+  inheritedPublic?: boolean;
 }) => {
   const { t } = useTranslation();
+  const [shareOpen, setShareOpen] = useState(false);
+  const directlyShared = Boolean(sharedNotebookIds?.has(node.id));
+  const publicNotebook = inheritedPublic || directlyShared;
+  const shareActionLabel = t(
+    directlyShared
+      ? "sharing.manage"
+      : inheritedPublic
+        ? "sharing.notebookInheritedAction"
+        : "sharing.notebookTitle",
+  );
   const open = !collapsedNotebookIds.has(node.id);
   const hasChildren = node.children.length > 0;
   const showsSplitCount = !showDescendantNotes && hasChildren;
@@ -204,104 +221,113 @@ export const NotebookTreeItem = ({
             style={{ paddingLeft: `${8 + depth * 14}px` }}
           >
             {hasChildren ? (
-              <button
-                className="flex h-6 w-5 items-center justify-center rounded hover:bg-slate-100/50 transition-colors"
-                type="button"
-                onClick={() => onOpenChange(node.id, !open)}
-                title={t("notebookTree.expandCollapse")}
-                aria-label={open ? t("notebookTree.collapse", { name: node.name }) : t("notebookTree.expand", { name: node.name })}
-                aria-expanded={open}
-              >
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform duration-150 ease-out",
-                    open ? "rotate-0" : "-rotate-90"
-                  )}
-                  aria-hidden="true"
-                />
-              </button>
+              <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                <button
+                  className="flex h-6 w-5 items-center justify-center rounded hover:bg-slate-100/50 transition-colors"
+                  type="button"
+                  onClick={() => onOpenChange(node.id, !open)}
+                  aria-label={open ? t("notebookTree.collapse", { name: node.name }) : t("notebookTree.expand", { name: node.name })}
+                  aria-expanded={open}
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform duration-150 ease-out",
+                      open ? "rotate-0" : "-rotate-90"
+                    )}
+                    aria-hidden="true"
+                  />
+                </button>
+              </TooltipTrigger><TooltipContent>{t("notebookTree.expandCollapse")}</TooltipContent></Tooltip></TooltipProvider>
             ) : (
               <span className="h-6 w-5 shrink-0" aria-hidden="true" />
             )}
-            <button
-              data-notebook-tree-button
-              className="flex min-w-0 flex-1 items-center gap-2 text-left"
-              type="button"
-              aria-label={showsSplitCount
-                ? t(selected ? "notebookTree.currentWithSplitCount" : "notebookTree.switchToWithSplitCount", { name: node.name, direct: node.directMemoCount, total: node.memoCount })
-                : t(selected ? "notebookTree.currentWithCount" : "notebookTree.switchToWithCount", { name: node.name, count: showDescendantNotes ? node.memoCount : node.directMemoCount })}
-              aria-current={selected ? "page" : undefined}
-              aria-expanded={hasChildren ? open : undefined}
-              onClick={() => onSelect(node.id)}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Home" || event.key === "End") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  focusNotebookTreeButton(
-                    event.currentTarget,
-                    event.key === "Home" ? "first" : event.key === "End" ? "last" : event.key === "ArrowDown" ? "next" : "previous"
-                  );
-                  return;
-                }
-
-                if (event.key === "*" || event.key === "Multiply") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onExpandSiblings(node.parentId);
-                  return;
-                }
-
-                if (event.key === "ArrowRight" && hasChildren && !open) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onOpenChange(node.id, true);
-                  return;
-                }
-
-                if (event.key === "ArrowLeft" && hasChildren && open) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onOpenChange(node.id, false);
-                  return;
-                }
-              }}
-            >
-              <NotebookIcon className={cn("h-4 w-4 shrink-0 transition-colors duration-200", selected ? "text-slate-950" : "text-slate-500")} />
-              <span
-                className={cn(
-                  "truncate transition-colors duration-200",
-                  selected ? "font-semibold text-black dark:text-slate-950" : "font-medium text-slate-800 group-hover:text-slate-950"
-                )}
-              >
-                {node.name}
-              </span>
-              <span
-                className={cn(
-                  "shrink-0 tabular-nums text-xs font-normal transition-colors duration-200",
-                  selected ? "text-slate-900 font-medium" : "text-slate-400 group-hover:text-slate-500"
-                )}
-                aria-hidden="true"
-              >
-                {formatNotebookMemoCount({ directCount: node.directMemoCount, totalCount: node.memoCount, hasChildren }, showDescendantNotes)}
-              </span>
-            </button>
-            <div ref={actionsRef} className="relative shrink-0">
-                <button
-                  className={cn(
-                    "edgeever-reveal-on-touch hidden h-6 w-6 items-center justify-center rounded-md group-focus-within:flex group-hover:flex transition-colors duration-150",
-                    selected ? "hover:bg-slate-200" : "hover:bg-slate-100"
-                  )}
-                  type="button"
-                  title={t("notebookTree.actions")}
-                  aria-label={t("notebookTree.actionsAria", { name: node.name })}
-                  aria-expanded={actionsOpen}
-                  onClick={(event) => {
+              <button
+                data-notebook-tree-button
+                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                type="button"
+                aria-label={showsSplitCount
+                  ? t(selected ? "notebookTree.currentWithSplitCount" : "notebookTree.switchToWithSplitCount", { name: node.name, direct: node.directMemoCount, total: node.memoCount })
+                  : t(selected ? "notebookTree.currentWithCount" : "notebookTree.switchToWithCount", { name: node.name, count: showDescendantNotes ? node.memoCount : node.directMemoCount })}
+                aria-current={selected ? "page" : undefined}
+                aria-expanded={hasChildren ? open : undefined}
+                onClick={() => onSelect(node.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowDown" || event.key === "ArrowUp" || event.key === "Home" || event.key === "End") {
+                    event.preventDefault();
                     event.stopPropagation();
-                    setActionsOpen((openValue) => !openValue);
-                  }}
+                    focusNotebookTreeButton(
+                      event.currentTarget,
+                      event.key === "Home" ? "first" : event.key === "End" ? "last" : event.key === "ArrowDown" ? "next" : "previous"
+                    );
+                    return;
+                  }
+
+                  if (event.key === "*" || event.key === "Multiply") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onExpandSiblings(node.parentId);
+                    return;
+                  }
+
+                  if (event.key === "ArrowRight" && hasChildren && !open) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onOpenChange(node.id, true);
+                    return;
+                  }
+
+                  if (event.key === "ArrowLeft" && hasChildren && open) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onOpenChange(node.id, false);
+                    return;
+                  }
+                }}
+              >
+                <NotebookIcon className={cn("h-4 w-4 shrink-0 transition-colors duration-200", selected ? "text-slate-950" : "text-slate-500")} />
+                <span
+                  className={cn(
+                    "truncate transition-colors duration-200",
+                    selected ? "font-semibold text-black dark:text-slate-950" : "font-medium text-slate-800 group-hover:text-slate-950"
+                  )}
                 >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </button>
+                  {node.name}
+                </span>
+                {publicNotebook ? (
+                  <Globe
+                    className={cn("h-3.5 w-3.5 shrink-0", selected ? "text-slate-700" : "text-slate-500")}
+                    role="img"
+                    aria-label={t("sharing.notebookPublic")}
+                  />
+                ) : null}
+                <span
+                  className={cn(
+                    "shrink-0 tabular-nums text-xs font-normal transition-colors duration-200",
+                    selected ? "text-slate-900 font-medium" : "text-slate-400 group-hover:text-slate-500"
+                  )}
+                  aria-hidden="true"
+                >
+                  {formatNotebookMemoCount({ directCount: node.directMemoCount, totalCount: node.memoCount, hasChildren }, showDescendantNotes)}
+                </span>
+              </button>
+            <div ref={actionsRef} className="relative shrink-0">
+                <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                  <button
+                    className={cn(
+                      "edgeever-reveal-on-touch hidden h-6 w-6 items-center justify-center rounded-md group-focus-within:flex group-hover:flex transition-colors duration-150",
+                      selected ? "hover:bg-slate-200" : "hover:bg-slate-100"
+                    )}
+                    type="button"
+                    aria-label={t("notebookTree.actionsAria", { name: node.name })}
+                    aria-expanded={actionsOpen}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setActionsOpen((openValue) => !openValue);
+                    }}
+                  >
+                    <MoreHorizontal className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger><TooltipContent>{t("notebookTree.actions")}</TooltipContent></Tooltip></TooltipProvider>
               {actionsOpen && (
                 <m.div className="absolute right-0 top-8 z-50 w-44 overflow-hidden rounded-md border border-slate-200 bg-card p-1 text-slate-950 shadow-lg" {...contentEnterMotion}>
                   <button
@@ -327,6 +353,13 @@ export const NotebookTreeItem = ({
                   >
                     <Pencil className="h-4 w-4" />
                     {t("notebookTree.rename")}
+                  </button>
+                  <button
+                    className="flex h-9 w-full items-center gap-2 rounded-sm px-2 text-left text-xs outline-none hover:bg-slate-100"
+                    type="button"
+                    onClick={event => { event.stopPropagation(); setActionsOpen(false); setShareOpen(true); }}
+                  >
+                    <Share2 className="h-4 w-4" />{shareActionLabel}
                   </button>
                 {isInbox ? (
                   <>
@@ -390,6 +423,9 @@ export const NotebookTreeItem = ({
             <Pencil className="h-4 w-4" />
             {t("notebookTree.rename")}
           </ContextMenuItem>
+          <ContextMenuItem className="flex h-9 items-center gap-2 px-3 text-xs cursor-pointer" onClick={() => setShareOpen(true)}>
+            <Share2 className="h-4 w-4" />{shareActionLabel}
+          </ContextMenuItem>
           {isInbox ? (
             <>
               <ContextMenuSeparator className="my-1 h-px bg-slate-100" />
@@ -421,6 +457,12 @@ export const NotebookTreeItem = ({
         </ContextMenuContent>
       </ContextMenu>
 
+      {shareOpen ? (
+        <Suspense fallback={null}>
+          <ShareNotebookDialog notebookId={node.id} notebookName={node.name} inherited={inheritedPublic} open onOpenChange={setShareOpen} />
+        </Suspense>
+      ) : null}
+
       {hasChildren && open ? (
         <m.div className="mt-1 space-y-1" {...treeEnterMotion}>
           {node.children.map((child) => (
@@ -440,6 +482,8 @@ export const NotebookTreeItem = ({
               onOpenChange={onOpenChange}
               expandSiblingsRequest={expandSiblingsRequest}
               onExpandSiblings={onExpandSiblings}
+              sharedNotebookIds={sharedNotebookIds}
+              inheritedPublic={publicNotebook}
               showDescendantNotes={showDescendantNotes}
             />
           ))}

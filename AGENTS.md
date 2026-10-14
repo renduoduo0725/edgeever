@@ -65,5 +65,5 @@ Related Issue: #<issue-number>
 
 ## 品牌视觉规范 / Brand Identity
 
-- **品牌色**：主绿色 `#16A06E`，Logo 图形色 `#07130B`。
+- **品牌色**：复用现有的 UI 黑灰配色，Logo 图形色 `#07130B`。
 - 修改 Logo 后执行 `bun run prepare:brand:icons` 同步各平台资源。

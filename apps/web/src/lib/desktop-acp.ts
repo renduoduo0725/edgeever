@@ -19,6 +19,15 @@ export type DesktopAcpAdapter = {
   authMethods?: Array<{ id: string; name: string }>;
 };
 
+// Offer only login methods advertised by the agent. Unreadable saved tokens
+// require a different remedy and must not invite a futile sign-in loop.
+export const desktopAcpLoginRetryAvailable = (adapter: DesktopAcpAdapter | undefined) => Boolean(
+  adapter?.state === "failed" &&
+  (adapter.id === "workbuddyCn" || adapter.id === "workbuddyIntl") &&
+  adapter.detail !== "workbuddy_credentials_unavailable" &&
+  adapter.authMethods?.some((method) => adapter.id === "workbuddyCn" ? method.id !== "external" : method.id !== "internal")
+);
+
 export const displayedDesktopAcpAdapter = ({
   id,
   path,

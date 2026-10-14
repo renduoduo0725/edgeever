@@ -18,7 +18,7 @@ describe("note sharing menu", () => {
     expect(editorSource).toContain("canShareMemo: Boolean(memo && !readOnly)");
     expect(editorSource).toContain("{!readOnly && (\n                  <DropdownMenuItem");
     expect(editorSource).toContain('{!readOnly && (!mobileEditingActive || isMemoShared) && (');
-    expect(editorSource).toContain('isMemoShared\n                      ? "bg-[#d4d4d4] text-[#2a2a2a] hover:bg-[#e4e4e4] hover:text-[#2a2a2a]"');
+    expect(editorSource).toContain("isMemoShared ? <Globe");
     expect(editorSource).toContain("aria-pressed={isMemoShared}");
     expect(editorSource).toContain('aria-label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : isMemoShared ? "sharing.manage" : "sharing.action")}');
   });
@@ -44,6 +44,7 @@ describe("note sharing menu", () => {
     expect(shareDialogSource).toContain("api.updateMemoShare(memoId, { passwordProtected })");
     expect(publicShareSource).toContain("api.unlockPublicMemoShare");
     expect(publicShareSource).toContain("parsePublishedNoteBodyFont(share.bodyFont)");
-    expect(publicShareSource).toContain("applyEditorBodyFontPreference({ choice: publishedBodyFont, customFamily: \"\" })");
+    expect(publicShareSource).toContain("applyEditorBodyFontPreference");
+    expect(publicShareSource).toContain("choice: publishedBodyFont");
   });
 });

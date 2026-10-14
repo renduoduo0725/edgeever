@@ -27,6 +27,7 @@ import {
   Printer,
   Image as ImageIcon,
   Share2,
+  Globe,
   Copy,
   Lock,
   LockOpen,
@@ -4055,12 +4056,7 @@ const RichEditorPane = ({
             {!readOnly && (!mobileEditingActive || isMemoShared) && (
               <IconTooltip label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : isMemoShared ? "sharing.manage" : "sharing.action")}>
                 <Button
-                  className={cn(
-                    "h-8 w-8",
-                    isMemoShared
-                      ? "bg-[#d4d4d4] text-[#2a2a2a] hover:bg-[#e4e4e4] hover:text-[#2a2a2a]"
-                      : "text-slate-500",
-                  )}
+                  className="h-8 w-8 text-slate-500"
                   size="icon"
                   variant="ghost"
                   type="button"
@@ -4069,7 +4065,7 @@ const RichEditorPane = ({
                   disabled={isLocalMemoId(memo.id)}
                   onClick={() => setShareOpen(true)}
                 >
-                  <Share2 className="h-4 w-4" aria-hidden="true" />
+                  {isMemoShared ? <Globe className="h-4 w-4" aria-hidden="true" /> : <Share2 className="h-4 w-4" aria-hidden="true" />}
                 </Button>
               </IconTooltip>
             )}
@@ -4191,12 +4187,12 @@ const RichEditorPane = ({
                   <DropdownMenuItem
                     className={cn(
                       "flex h-9 w-full items-center gap-2 px-3 text-left text-xs hover:bg-slate-50 cursor-pointer outline-none",
-                      isMemoShared ? "bg-workspace-selection text-slate-950" : "text-slate-700",
+                      isMemoShared ? "text-slate-950" : "text-slate-700",
                     )}
                     disabled={isLocalMemoId(memo.id)}
                     onClick={() => setShareOpen(true)}
                   >
-                    <Share2 className={cn("h-4 w-4", isMemoShared ? "text-slate-950" : "text-slate-500")} />
+                    {isMemoShared ? <Globe className="h-4 w-4 text-slate-950" /> : <Share2 className="h-4 w-4 text-slate-500" />}
                     {t(isLocalMemoId(memo.id) ? "sharing.afterSync" : isMemoShared ? "sharing.manage" : "sharing.action")}
                   </DropdownMenuItem>
                 )}

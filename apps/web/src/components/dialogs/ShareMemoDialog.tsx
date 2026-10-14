@@ -1,47 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, ExternalLink, Link2, LoaderCircle, RefreshCw, Share2, Trash2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Globe, LoaderCircle, Share2, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { SharePasswordControls } from "./SharePasswordControls";
+import { SHARE_DIALOG_PRIMARY_BUTTON_CLASS_NAME, SHARE_DIALOG_WIDTH_CLASS_NAME } from "./share-dialog-layout";
 import { api, getConfiguredDesktopApiBaseUrl } from "@/lib/api";
 import { copyTextToClipboard } from "@/lib/clipboard";
 
 export const getPublicShareUrl = (token: string) => {
   const baseUrl = getConfiguredDesktopApiBaseUrl() || window.location.origin;
   return `${baseUrl.replace(/\/$/, "")}/share/${encodeURIComponent(token)}`;
-};
-
-const sharePasswordStorageKey = (memoId: string) => `edgeever.sharePassword.${memoId}`;
-
-const readStoredSharePassword = (memoId: string, token: string) => {
-  try {
-    const raw = window.sessionStorage.getItem(sharePasswordStorageKey(memoId));
-    if (!raw) return "";
-    const parsed = JSON.parse(raw) as { token?: string; password?: string };
-    return parsed.token === token && typeof parsed.password === "string" ? parsed.password : "";
-  } catch {
-    return "";
-  }
-};
-
-const writeStoredSharePassword = (memoId: string, token: string, password: string) => {
-  try {
-    window.sessionStorage.setItem(sharePasswordStorageKey(memoId), JSON.stringify({ token, password }));
-  } catch {
-    // sessionStorage may be unavailable; the generated password is still shown in this dialog session.
-  }
-};
-
-const clearStoredSharePassword = (memoId: string) => {
-  try {
-    window.sessionStorage.removeItem(sharePasswordStorageKey(memoId));
-  } catch {
-    // Ignore restricted storage contexts.
-  }
 };
 
 export const memoShareQueryKey = (memoId: string) => ["memo-share", memoId] as const;
@@ -60,14 +32,17 @@ export const ShareMemoDialog = ({
   const queryClient = useQueryClient();
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">("idle");
   const [copyTarget, setCopyTarget] = useState<"link" | "password" | "both">("link");
-  const [revealedPassword, setRevealedPassword] = useState("");
   const copyResetTimerRef = useRef<number | null>(null);
+  const dialogContentRef = useRef<HTMLDivElement>(null);
+  const autoCreateAttemptRef = useRef<string | null>(null);
   const queryKey = memoShareQueryKey(memoId);
   const shareQuery = useQuery({
     queryKey,
     queryFn: () => api.getMemoShare(memoId),
     enabled: open,
     retry: false,
+    gcTime: 0,
+    refetchOnMount: "always",
   });
   const createMutation = useMutation({
     mutationFn: () => api.createMemoShare(memoId),
@@ -79,24 +54,16 @@ export const ShareMemoDialog = ({
   const passwordMutation = useMutation({
     mutationFn: (passwordProtected: boolean) => api.updateMemoShare(memoId, { passwordProtected }),
     onSuccess: (data) => {
-      queryClient.setQueryData(queryKey, { share: { ...data.share, password: undefined } });
+      queryClient.setQueryData(queryKey, data);
       void queryClient.invalidateQueries({ queryKey: ["memo-shares"] });
-      if (data.share.password) {
-        writeStoredSharePassword(memoId, data.share.token, data.share.password);
-        setRevealedPassword(data.share.password);
-      } else {
-        clearStoredSharePassword(memoId);
-        setRevealedPassword("");
-      }
     },
   });
   const revokeMutation = useMutation({
     mutationFn: () => api.revokeMemoShare(memoId),
     onSuccess: () => {
-      clearStoredSharePassword(memoId);
-      setRevealedPassword("");
       queryClient.setQueryData(queryKey, { share: null });
       void queryClient.invalidateQueries({ queryKey: ["memo-shares"] });
+      onOpenChange(false);
     },
   });
   useEffect(() => {
@@ -105,24 +72,31 @@ export const ShareMemoDialog = ({
     revokeMutation.reset();
     setCopyState("idle");
     setCopyTarget("link");
-    setRevealedPassword("");
-  }, [memoId]);
+  }, [memoId, open]);
   useEffect(() => () => {
     if (copyResetTimerRef.current !== null) window.clearTimeout(copyResetTimerRef.current);
   }, []);
 
   const share = shareQuery.data?.share ?? null;
-  useEffect(() => {
-    if (!share?.passwordProtected) {
-      setRevealedPassword("");
-      return;
-    }
-    setRevealedPassword(readStoredSharePassword(memoId, share.token));
-  }, [memoId, share?.passwordProtected, share?.token]);
+  const revealedPassword = share?.passwordProtected ? share.password ?? "" : "";
 
   const shareUrl = share ? getPublicShareUrl(share.token) : "";
   const isWorking = shareQuery.isLoading || createMutation.isPending || passwordMutation.isPending || revokeMutation.isPending;
   const error = shareQuery.error || createMutation.error || passwordMutation.error || revokeMutation.error;
+
+  useEffect(() => {
+    if (!open) {
+      autoCreateAttemptRef.current = null;
+      return;
+    }
+    // Wait for a successful read: a failed lookup must not enable public access.
+    // Attempt once per opening, including under StrictMode and after refetches.
+    if (shareQuery.isSuccess && !shareQuery.isFetching && !share &&
+        !revokeMutation.isSuccess && autoCreateAttemptRef.current !== memoId) {
+      autoCreateAttemptRef.current = memoId;
+      createMutation.mutate();
+    }
+  }, [open, memoId, shareQuery.isSuccess, shareQuery.isFetching, share, revokeMutation.isSuccess, createMutation.mutate]);
 
   const markCopied = (target: "link" | "password" | "both", copied: boolean) => {
     setCopyTarget(target);
@@ -147,120 +121,99 @@ export const ShareMemoDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b border-slate-200 px-5 py-5 pr-12 text-left">
-          <DialogTitle className="flex items-center gap-2 text-sm leading-6">
-            <Share2 className="h-5 w-5 text-slate-700" />
-            {t("sharing.title")}
+      <DialogContent
+        ref={dialogContentRef}
+        aria-describedby={undefined}
+        className={`${SHARE_DIALOG_WIDTH_CLASS_NAME} space-y-4`}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          dialogContentRef.current?.focus({ preventScroll: true });
+        }}
+      >
+        <DialogHeader className="space-y-1.5 text-left">
+          <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+            {share ? <Globe className="h-5 w-5 text-slate-700" /> : <Share2 className="h-5 w-5 text-slate-700" />}
+            {t(share ? "sharing.manage" : "sharing.title")}
           </DialogTitle>
-          <DialogDescription className="pt-1 leading-5">
-            {t(share?.passwordProtected ? "sharing.descriptionProtected" : "sharing.description")}
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 px-5 py-5">
-          {shareQuery.isLoading ? (
-            <div className="flex min-h-20 items-center justify-center text-slate-500" role="status">
-              <LoaderCircle className="h-5 w-5 animate-spin" />
-            </div>
-          ) : share ? (
-            <>
-              <div className="flex gap-2">
-                <Input value={shareUrl} readOnly aria-label={t("sharing.linkLabel")} className="min-w-0 font-mono text-xs" />
-                <Button
-                  variant={copyState === "copied" && copyTarget === "link" ? "solid" : copyState === "error" && copyTarget === "link" ? "danger" : "outline"}
-                  className="min-w-28"
-                  aria-live="polite"
-                  onClick={() => void copyValue("link", shareUrl)}
-                >
-                  {copyState === "copied" && copyTarget === "link" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {t(copiedLabel("link", "sharing.copy"))}
-                </Button>
-              </div>
-
-              <div className="space-y-3 rounded-lg border border-slate-200 px-3 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-xs font-normal leading-5 text-slate-900">{t("sharing.passwordToggle")}</div>
-                  <Switch
-                    checked={share.passwordProtected}
-                    disabled={isWorking}
-                    onCheckedChange={(enabled) => passwordMutation.mutate(enabled)}
-                    aria-label={t("sharing.passwordToggle")}
-                  />
-                </div>
-                {share.passwordProtected ? (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Input
-                        value={revealedPassword}
-                        readOnly
-                        placeholder={t("sharing.passwordSet")}
-                        aria-label={t("sharing.passwordLabel")}
-                        className="min-w-0 font-mono text-xs tracking-wide"
-                      />
-                      <Button
-                        variant={copyState === "copied" && copyTarget === "password" ? "solid" : copyState === "error" && copyTarget === "password" ? "danger" : "outline"}
-                        className="min-w-28"
-                        disabled={!revealedPassword}
-                        aria-live="polite"
-                        onClick={() => void copyValue("password", revealedPassword)}
-                      >
-                        {copyState === "copied" && copyTarget === "password" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                        {t(copiedLabel("password", "sharing.passwordCopy"))}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={isWorking}
-                        title={t("sharing.regeneratePassword")}
-                        aria-label={t("sharing.regeneratePassword")}
-                        onClick={() => passwordMutation.mutate(true)}
-                      >
-                        {passwordMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                    {revealedPassword ? (
-                      <Button
-                        variant="ghost"
-                        className="h-8 px-0 text-xs text-slate-600 hover:bg-transparent hover:text-slate-900"
-                        onClick={() => void copyValue("both", `${shareUrl}\n${t("sharing.passwordPrefix")}${revealedPassword}`)}
-                      >
-                        {copyState === "copied" && copyTarget === "both" ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                        {t(copiedLabel("both", "sharing.copyLinkAndPassword"))}
-                      </Button>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-
-              <p className="text-xs leading-5 text-slate-500">{t("sharing.liveContentHint")}</p>
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
-                <Button variant="danger" disabled={isWorking} onClick={() => revokeMutation.mutate()}>
-                  <Trash2 className="h-4 w-4" />
-                  {t("sharing.revoke")}
-                </Button>
-                <Button variant="solid" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}>
-                  <ExternalLink className="h-4 w-4" />
-                  {t("sharing.open")}
-                </Button>
-              </div>
-            </>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-xs leading-6 text-slate-600">{t("sharing.inactiveHint")}</p>
-              <Button className="w-full" variant="solid" disabled={isWorking} onClick={() => createMutation.mutate()}>
-                {createMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-                {t("sharing.create")}
+        {shareQuery.isLoading || (!share && !error) ? (
+          <div className="flex min-h-20 items-center justify-center text-slate-500" role="status">
+            <LoaderCircle className="h-5 w-5 animate-spin" aria-label={t("sharing.publicLoading")} />
+          </div>
+        ) : share ? (
+          <div className="space-y-3.5">
+            {/* SharePasswordControls renders t("sharing.passwordToggle") */}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input value={shareUrl} readOnly aria-label={t("sharing.linkLabel")} className="min-w-0 font-mono text-xs" />
+              <Button
+                variant={copyState === "copied" && copyTarget === "link" ? "solid" : copyState === "error" && copyTarget === "link" ? "danger" : "outline"}
+                className={`min-w-28 shrink-0 self-end sm:self-auto ${copyState === "copied" && copyTarget === "link" ? SHARE_DIALOG_PRIMARY_BUTTON_CLASS_NAME : ""}`}
+                aria-live="polite"
+                onClick={() =>
+                  void copyValue(
+                    "link",
+                    share.passwordProtected && revealedPassword
+                      ? `${shareUrl}\n${t("sharing.passwordPrefix")}${revealedPassword}`
+                      : shareUrl,
+                  )
+                }
+              >
+                {copyState === "copied" && copyTarget === "link" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {t(
+                  copyState === "copied" && copyTarget === "link"
+                    ? "sharing.copied"
+                    : copyState === "error" && copyTarget === "link"
+                      ? "sharing.copyFailed"
+                      : share.passwordProtected && revealedPassword
+                        ? "sharing.copyLinkAndPassword"
+                        : "sharing.copy",
+                )}
               </Button>
             </div>
-          )}
-          {error ? <p className="text-xs leading-5 text-rose-600" role="alert">{t("sharing.error")}</p> : null}
-        </div>
+
+            <SharePasswordControls
+              passwordProtected={share.passwordProtected}
+              password={revealedPassword}
+              busy={isWorking}
+              shareUrl={shareUrl}
+              hideCopyBoth={true}
+              onChange={(enabled) => passwordMutation.mutate(enabled)}
+            />
+
+            <div className="flex items-center justify-between pt-2">
+              <Button variant="danger" disabled={isWorking} onClick={() => revokeMutation.mutate()}>
+                <Trash2 className="h-4 w-4" />
+                {t("sharing.revoke")}
+              </Button>
+              <Button variant="outline" onClick={() => window.open(shareUrl, "_blank", "noopener,noreferrer")}>
+                <ExternalLink className="h-4 w-4" />
+                {t("sharing.open")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            className={`w-full ${SHARE_DIALOG_PRIMARY_BUTTON_CLASS_NAME}`}
+            variant="solid"
+            disabled={isWorking}
+            onClick={() => {
+              if (shareQuery.isError) void shareQuery.refetch();
+              else createMutation.mutate();
+            }}
+          >
+            {createMutation.isPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+            {t("sharing.retry")}
+          </Button>
+        )}
+        {error ? <p className="text-xs leading-5 text-rose-600" role="alert">{t("sharing.error")}</p> : null}
+
         {location.pathname !== "/settings" ? (
-          <div className="border-t border-slate-200 px-5 py-3 text-center">
+          <div className="pt-1 text-center">
             <Link
               to="/settings?tab=sharing"
-              className="inline-flex items-center rounded-sm py-2 text-sm font-medium text-emerald-600 underline underline-offset-4 hover:text-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:text-emerald-400 dark:hover:text-emerald-300"
+              onClick={() => onOpenChange(false)}
+              className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
             >
               {t("sharing.viewAll")}
             </Link>

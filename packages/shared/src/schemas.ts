@@ -421,9 +421,12 @@ export const AiPromptTemplateUpdateSchema = z.object({
   message: "At least one field is required.",
 });
 
-export const MemoShareUpdateSchema = z.object({
+export const SharePasswordUpdateSchema = z.object({
   passwordProtected: z.boolean(),
 });
+
+export const MemoShareUpdateSchema = SharePasswordUpdateSchema;
+export const NotebookShareUpdateSchema = SharePasswordUpdateSchema;
 
 export const NoteBodyFontUpdateSchema = z.object({
   bodyFont: z.enum(["wenkai", "wenkai-screen", "zhuque", "source-han-serif", "neo-zhi-song", "source-han-sans", "source-serif"]).nullable(),

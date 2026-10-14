@@ -510,7 +510,10 @@ body,
 /* Public share pages are standalone and must scroll the document. */
 html:has(.edgeever-public-share),
 html:has(.edgeever-public-share) body,
-html:has(.edgeever-public-share) #root {
+html:has(.edgeever-public-share) #root,
+html:has([data-site-theme]),
+html:has([data-site-theme]) body,
+html:has([data-site-theme]) #root {
   height: auto;
   min-height: 100%;
   overflow: auto;
@@ -1321,6 +1324,16 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   }
 }
 
+[data-site-theme="default"] .edgeever-public-share .ProseMirror {
+  padding-inline: 20px;
+}
+
+@media (min-width: 640px) {
+  [data-site-theme="default"] .edgeever-public-share .ProseMirror {
+    padding-inline: 40px;
+  }
+}
+
 .ProseMirror .edgeever-search-match {
   border-radius: 0.2rem;
   background-color: var(--search-match);
@@ -1722,12 +1735,13 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 
 .ProseMirror code {
-  border: 1px solid #e1e5ea;
+  border: 0;
   border-radius: 4px;
-  background: #f3f5f7;
-  padding: 0.12rem 0.38rem;
+  background: #e9edf1;
+  box-shadow: inset 0 0 0 1px rgb(61 68 80 / 0.08);
+  padding: 0.08em 0.28em;
   font-size: var(--editor-code-font-size, 0.875em);
-  font-weight: 550;
+  font-weight: 450;
   color: #3d4450;
   font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
@@ -1746,8 +1760,10 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 .ProseMirror pre code {
   border: 0;
   background: transparent;
+  box-shadow: none;
   padding: 0;
   color: inherit;
+  font-weight: 550;
 }
 
 .ProseMirror .edgeever-code-block,
@@ -2499,16 +2515,18 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 }
 .markdown-content code {
   font-family: "JetBrains Mono", "Fira Code", monospace;
-  background-color: #f2f9f5;
-  color: #0d5f3a;
-  border: 1px solid #d4ebdc;
-  padding: 0.125rem 0.38rem;
+  background-color: #e9edf1;
+  box-shadow: inset 0 0 0 1px rgb(61 68 80 / 0.08);
+  color: #3d4450;
+  border: 0;
+  padding: 0.08em 0.28em;
   border-radius: 4px;
   font-size: 0.8rem;
-  font-weight: 550;
+  font-weight: 450;
 }
 .markdown-content pre code {
   background-color: transparent;
+  box-shadow: none;
   border: 0;
   color: inherit;
   padding: 0;
@@ -2741,9 +2759,15 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 
 :root.dark .ProseMirror code,
 :root.dark .markdown-content code {
-  border-color: rgb(255 255 255 / 0.12);
-  background: rgb(255 255 255 / 0.06);
+  background: rgb(255 255 255 / 0.09);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
   color: hsl(var(--foreground));
+}
+
+:root.dark .ProseMirror pre code,
+:root.dark .markdown-content pre code {
+  background: transparent;
+  box-shadow: none;
 }
 
 :root.dark .ProseMirror pre,
@@ -2908,10 +2932,4 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   ::view-transition-new(root) {
     animation-duration: 0.01ms !important;
   }
-}
-
-:root.dark .markdown-content code {
-  background-color: rgb(var(--brand-green-rgb) / 0.1);
-  border-color: rgb(var(--brand-green-rgb) / 0.28);
-  color: var(--brand-green-text);
 }

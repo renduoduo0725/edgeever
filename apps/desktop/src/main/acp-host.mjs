@@ -952,7 +952,7 @@ export function createAcpHostRuntime(options = {}) {
       try {
         connected = await withHandshakeTimeout((signal) => connect(resolved.command, `probe-${id}`, () => {}, signal, undefined, [], false, null, id === "workbuddyCn" || id === "workbuddyIntl"));
       } catch (error) {
-        const failure = { ...adapterShell(id), ...failureFields(classifyAcpFailure(error)), ...(isAuthRequiredError(error) ? { authMethods: error.authMethods ?? [] } : {}), ...(resolved.version ? { version: resolved.version, managed: true } : {}) };
+        const failure = { ...adapterShell(id), ...failureFields(classifyAcpFailure(error)), ...(error.authMethods?.length ? { authMethods: error.authMethods } : {}), ...(resolved.version ? { version: resolved.version, managed: true } : {}) };
         latestStatus.set(id, failure);
         return failure;
       }
@@ -996,7 +996,7 @@ export function createAcpHostRuntime(options = {}) {
         const adapter = {
           ...adapterShell(id),
           ...(timedOut ? { state: "needs_login", detail: "authentication_timeout" } : error?.message === "authentication_failed" ? { state: "needs_login", detail: "authentication_failed" } : failureFields(classifyAcpFailure(error))),
-          ...((timedOut || isAuthRequiredError(error)) ? { authMethods: error.authMethods ?? latestStatus.get(id)?.authMethods ?? [] } : {}),
+          ...(error.authMethods?.length || timedOut || isAuthRequiredError(error) ? { authMethods: error.authMethods ?? latestStatus.get(id)?.authMethods ?? [] } : {}),
           ...(resolved.version ? { version: resolved.version, managed: true } : {}),
         };
         latestStatus.set(id, adapter);

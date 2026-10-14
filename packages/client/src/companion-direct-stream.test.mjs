@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, spyOn } from "bun:test";
 import { createEdgeEverClient } from "./index.ts";
 import { parsePreparedCompanion } from "./companion-direct-stream.ts";
 
@@ -141,4 +141,26 @@ describe("direct companion client", () => {
     expect(urls.some((call) => call.url.endsWith("/prepare"))).toBe(false);
     expect(events).toEqual([{ type: "text-delta", text: "proxied" }]);
   });
+});
+
+test("direct provider rejection includes safe diagnostics and completes the failed turn once", async () => {
+  const { streamDirectCompanion } = await import("./companion-direct-stream.ts");
+  const events = [];
+  const completed = [];
+  const log = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    await streamDirectCompanion(preparedTurn, {
+      fetch: async () => new Response(JSON.stringify({ error: { message: "private-key-secret private-note", type: "invalid_request_error" } }), { status: 404, headers: { "content-type": "application/json" } }),
+      onEvent: event => events.push(event),
+      executeTool: async () => { throw new Error("must not execute tools"); },
+      checkpoint: async () => { throw new Error("must not checkpoint"); },
+      complete: async body => { completed.push(body); return { turn: { ...preparedTurn.turn, ...body } }; },
+    });
+    expect(completed).toHaveLength(1);
+    expect(completed[0].status).toBe("failed");
+    expect(events.at(-1)).toEqual({ type: "error", code: "companion_generation_failed", diagnostics: { reason: "http", status: 404 } });
+    expect(JSON.stringify(events)).not.toContain("private-key-secret");
+    expect(JSON.stringify(events)).not.toContain("private-note");
+    expect(log).not.toHaveBeenCalled();
+  } finally { log.mockRestore(); }
 });

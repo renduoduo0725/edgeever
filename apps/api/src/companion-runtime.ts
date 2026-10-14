@@ -1,4 +1,4 @@
-import { isStepCount, jsonSchema, tool, ToolLoopAgent, type LanguageModel, type ModelMessage } from "ai";
+import { isStepCount, jsonSchema, tool, streamText, type LanguageModel, type ModelMessage } from "ai";
 import type {
   AiProvider, CompanionAnswer, CompanionMemory, CompanionModelContentPart, CompanionPreparedMessage,
   CompanionSource, CompanionTurnInput,
@@ -84,17 +84,19 @@ export const streamCompanion = async (args: {
     ]),
   );
   const receipts = args.input.allowNotes ? await companionExecutionReceipts(args.db, args.scope, args.input, args.revision, run.tools) : [];
-  const agent = new ToolLoopAgent({
+  const generation = {
     model: args.model,
     instructions: companionAgentInstructions(args.input, args.memories, receipts, args.history, args.revision),
     tools,
     stopWhen: [isStepCount(COMPANION_MAX_STEPS), () => run.pause.ask],
     maxOutputTokens: COMPANION_MAX_OUTPUT_TOKENS,
     maxRetries: 0,
-  });
+    onError: () => {},
+  };
   const messages = await companionModelMessages({
     db: args.db, scope: args.scope, input: args.input, history: args.history, revision: args.revision,
     resume: args.resume, provider: args.provider ?? "openai-compatible", turnId: args.input.id,
   });
-  return agent.stream({ messages: toModelMessages(messages), abortSignal: args.signal });
+  // The route consumes fullStream errors and emits safe diagnostics.
+  return streamText({ ...generation, messages: toModelMessages(messages), abortSignal: args.signal });
 };

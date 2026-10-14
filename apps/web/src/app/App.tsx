@@ -26,6 +26,7 @@ const EvernoteImportGuidePane = lazy(() =>
 );
 const LoginScreen = lazy(() => import("@/components/LoginScreen").then((module) => ({ default: module.LoginScreen })));
 const WorkspaceApp = lazy(() => import("@/components/WorkspaceApp").then((module) => ({ default: module.WorkspaceApp })));
+const PublicNotebookSharePage = lazy(() => import("@/components/PublicNotebookSharePage").then(module => ({ default: module.PublicNotebookSharePage })));
 const PublicSharePage = lazy(() => import("@/components/PublicSharePage").then((module) => ({ default: module.PublicSharePage })));
 const PublicTableFormPage = lazy(() => import("@/components/PublicTableFormPage").then((module) => ({ default: module.PublicTableFormPage })));
 
@@ -228,6 +229,7 @@ export const App = () => {
     <TooltipProvider delayDuration={0} skipDelayDuration={0}>
       <PwaInstallProvider>
         <Routes>
+          <Route path="/share/notebook/:token/:memoId?" element={<Suspense fallback={<AuthLoadingScreen />}><PublicNotebookSharePage /></Suspense>} />
           <Route path="/share/:token" element={<Suspense fallback={<AuthLoadingScreen />}><PublicSharePage /></Suspense>} />
           <Route path="/form/:token" element={<Suspense fallback={<AuthLoadingScreen />}><PublicTableFormPage /></Suspense>} />
           <Route path={EVERNOTE_MIGRATION_PATH} element={<EvernoteMigrationRoute />} />

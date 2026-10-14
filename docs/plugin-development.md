@@ -21,13 +21,15 @@ EdgeEver provides client plugin and no-code theme extension capabilities. Users 
   - [2. Templates](#2-templates)
   - [3. Resources & Attachments](#3-resources--attachments)
   - [4. Editor & Embeds](#4-editor--embeds)
-  - [5. UI, Commands & Panels](#5-ui-commands--panels)
-  - [6. Settings](#6-settings)
-  - [7. Storage & Secrets](#7-storage--secrets)
-  - [8. Network Requests](#8-network-requests)
-  - [9. Schedules (Desktop Only)](#9-schedules-desktop-only)
-  - [10. Events](#10-events)
-  - [11. AI Capabilities](#11-ai-capabilities)
+  - [5. Commands](#5-commands)
+  - [6. UI & Notices](#6-ui--notices)
+  - [7. Panels](#7-panels)
+  - [8. Settings](#8-settings)
+  - [9. Storage & Secrets](#9-storage--secrets)
+  - [10. Network Requests](#10-network-requests)
+  - [11. Schedules (Desktop Only)](#11-schedules-desktop-only)
+  - [12. Events](#12-events)
+  - [13. AI Capabilities](#13-ai-capabilities)
 - [Themes (No-Code Extensions)](#themes-no-code-extensions)
 - [Packaging, Distribution & Local Testing](#packaging-distribution--local-testing)
   - [Packaging Rules](#packaging-rules)
@@ -410,9 +412,7 @@ await context.editor.insertEmbed({
 
 ---
 
-### 5. UI, Commands & Panels
-
-#### Commands
+### 5. Commands
 
 ```ts
 context.commands.register({
@@ -426,14 +426,21 @@ context.commands.register({
 });
 ```
 
-#### Note Navigation
+---
+
+### 6. UI & Notices
 
 ```ts
+// Global host notice
+context.ui.showNotice("Action executed");
+
 // Open note and optionally jump to exact search term
 await context.ui.openNote(noteId, { search: "search term" });
 ```
 
-#### Custom DOM Panels
+---
+
+### 7. Panels
 
 Register native DOM panels presented as dialogs or full-screen views:
 
@@ -483,7 +490,7 @@ await context.ui.panels.open("task-dashboard", { state: { initialTab: "all" } })
 
 ---
 
-### 6. Settings
+### 8. Settings
 
 Declare settings fields in `manifest.json`; EdgeEver renders the settings UI automatically:
 
@@ -530,7 +537,7 @@ context.events.on("settings.changed", async ({ key }) => {
 
 ---
 
-### 7. Storage & Secrets
+### 9. Storage & Secrets
 
 Isolated per workspace and plugin ID on the current device:
 
@@ -548,7 +555,7 @@ await context.secrets.remove("api_key");
 
 ---
 
-### 8. Network Requests
+### 10. Network Requests
 
 ```ts
 // 1. Standard request (arbitrary HTTP/HTTPS; subject to host CORS policies)
@@ -569,7 +576,7 @@ const xml = await publicRes.text();
 
 ---
 
-### 9. Schedules (Desktop Only)
+### 11. Schedules (Desktop Only)
 
 Desktop plugins can persist scheduled execution of registered commands while EdgeEver is running:
 
@@ -597,7 +604,7 @@ await context.schedules.remove("hourly-sync");
 
 ---
 
-### 10. Events
+### 12. Events
 
 Subscribe to workspace data changes:
 
@@ -614,7 +621,7 @@ context.events.on("workspace.synced", () => { /* Workspace sync completed */ });
 
 ---
 
-### 11. AI Capabilities
+### 13. AI Capabilities
 
 Invoke workspace-configured AI models for text generation and media transcription (credentials are managed securely by the host; plugins never touch user API keys):
 

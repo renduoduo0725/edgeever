@@ -352,7 +352,7 @@ export type CompanionEvent =
   | { type: "process"; text: string }
   | { type: "tools"; tools: CompanionToolCall[]; todos: CompanionTodo[]; questions: CompanionQuestion[] }
   | { type: "done"; turn: CompanionTurn }
-  | { type: "error"; code: string };
+  | { type: "error"; code: string; diagnostics?: CompanionFailureDiagnostics };
 
 export const sealCompanionProcess = (process: string, response: string) => ({
   process: [process.trim(), response.trim()].filter(Boolean).join("\n\n"),
@@ -371,3 +371,28 @@ export const CompanionMemoryImportSchema = z.object({
   memories: z.array(z.object({ content: z.string().trim().min(1).max(500), kind: z.enum(["explicit", "inferred"]).optional() })).max(50),
   controls: z.object({ useMemory: z.boolean(), learningEnabled: z.boolean() }).optional(),
 }).strict();
+
+/** Only fixed categories and HTTP status cross the UI boundary. Never forward SDK
+ * messages, request bodies, response bodies, URLs, headers, or credentials. */
+export type CompanionFailureDiagnostics = {
+  reason: "http" | "network" | "invalidResponse" | "emptyResponse" | "responseLimit";
+  status?: number;
+};
+
+export const companionFailureDiagnostics = (error: unknown, depth = 0): CompanionFailureDiagnostics | undefined => {
+  if (!error || typeof error !== "object" || depth >= 3) return undefined;
+  const record = error as { statusCode?: unknown; status?: unknown; name?: unknown; message?: unknown; cause?: unknown };
+  const status = record.statusCode ?? record.status;
+  if (typeof status === "number" && Number.isInteger(status) && status >= 400 && status <= 599) {
+    return { reason: "http", status };
+  }
+  if (record.name === "AI_InvalidResponseDataError" || record.name === "AI_JSONParseError"
+    || record.name === "AI_TypeValidationError") return { reason: "invalidResponse" };
+  if (record.name === "AI_NoOutputGeneratedError" || record.message === "No text returned.") return { reason: "emptyResponse" };
+  if (record.message === "Response limit exceeded.") return { reason: "responseLimit" };
+  if (typeof record.message === "string" && (
+    (record.name === "TypeError" && /fetch|network|cors/i.test(record.message))
+    || /^(?:fetch failed|failed to fetch|net::ERR_[A-Z_]+)(?:$|\b)/i.test(record.message)
+  )) return { reason: "network" };
+  return companionFailureDiagnostics(record.cause, depth + 1);
+};

@@ -7,6 +7,7 @@ import { Clock3, FileText, LoaderCircle, LockKeyhole, ShieldCheck } from "lucide
 import { lazy, Suspense, useEffect, useMemo, useState, type CSSProperties, type FormEvent, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
+import { cn } from "@/lib/utils";
 import { ApiRequestError, api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import {
   parsePublishedNoteBodyFont,
   resolveNoteProse,
   type PublicMemoShare,
+  type ShareBodyAccess,
 } from "@edgeever/shared";
 import { applyEditorBodyFontPreference } from "@/lib/editor-body-font";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
@@ -139,12 +141,14 @@ const SharedDocument = ({
   locale,
   share,
   token,
+  access,
 }: {
   locale: "zh-CN" | "en-US" | "ja" | "pl";
   share: PublicMemoShare;
   token: string;
+  access?: ShareBodyAccess;
 }) => {
-  const body = useMemo(() => resolvePublicShareBody(share, token), [share, token]);
+  const body = useMemo(() => resolvePublicShareBody(share, token, access), [share, token, access]);
   if (body.type === "diagram") {
     return (
       <Suspense
@@ -161,20 +165,22 @@ const SharedDocument = ({
   return <SharedRichText content={body.content} />;
 };
 
-const isSharePasswordError = (error: unknown, code: string) =>
+export const isSharePasswordError = (error: unknown, code: string) =>
   error instanceof ApiRequestError && error.code === code;
 
-const PublicSharePasswordForm = ({
+export const PublicSharePasswordForm = ({
   token,
   onUnlocked,
+  unlock,
 }: {
   token: string;
+  unlock?: (password: string) => Promise<unknown>;
   onUnlocked: () => Promise<unknown>;
 }) => {
   const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const unlockMutation = useMutation({
-    mutationFn: () => api.unlockPublicMemoShare(token, password),
+    mutationFn: () => unlock ? unlock(password) : api.unlockPublicMemoShare(token, password),
     onSuccess: () => onUnlocked(),
   });
   const submit = (event: FormEvent) => {
@@ -193,7 +199,6 @@ const PublicSharePasswordForm = ({
       <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-card p-8 shadow-sm">
         <LockKeyhole className="mx-auto h-9 w-9 text-slate-700" />
         <h1 className="mt-4 text-center text-xl font-semibold text-slate-900">{t("sharing.passwordRequiredTitle")}</h1>
-        <p className="mt-2 text-center text-sm leading-6 text-slate-500">{t("sharing.passwordRequiredHint")}</p>
         <form className="mt-6 space-y-3" onSubmit={submit}>
           <Input
             type="password"
@@ -225,20 +230,6 @@ export const PublicSharePage = () => {
   });
   const share = shareQuery.data?.share;
   const passwordRequired = isSharePasswordError(shareQuery.error, "share_password_required");
-  const publishedBodyFont = share ? parsePublishedNoteBodyFont(share.bodyFont) : undefined;
-
-  useEffect(() => {
-    if (publishedBodyFont === undefined) return undefined;
-    if (!publishedBodyFont) {
-      delete document.documentElement.dataset.editorBodyFont;
-      document.documentElement.style.removeProperty("--editor-body-font-family");
-    } else {
-      applyEditorBodyFontPreference({ choice: publishedBodyFont, customFamily: "" });
-    }
-    return () => {
-      applyEditorBodyFontPreference();
-    };
-  }, [publishedBodyFont]);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -287,47 +278,142 @@ export const PublicSharePage = () => {
     );
   }
 
+  return <main className="min-h-[100dvh] bg-slate-50"><PublicShareArticle share={share} token={token} /></main>;
+};
+
+export const PublicShareArticle = ({
+  share,
+  token,
+  access,
+  layout = "standalone",
+}: {
+  share: PublicMemoShare;
+  token: string;
+  access?: ShareBodyAccess;
+  layout?: "standalone" | "site";
+}) => {
+  const { t, i18n } = useTranslation();
+  const publishedBodyFont = parsePublishedNoteBodyFont(share.bodyFont);
+
+  useEffect(() => {
+    if (publishedBodyFont === undefined) return undefined;
+    if (!publishedBodyFont) {
+      delete document.documentElement.dataset.editorBodyFont;
+      document.documentElement.style.removeProperty(
+        "--editor-body-font-family",
+      );
+    } else {
+      applyEditorBodyFontPreference({
+        choice: publishedBodyFont,
+        customFamily: "",
+      });
+    }
+    return () => {
+      applyEditorBodyFontPreference();
+    };
+  }, [publishedBodyFont]);
+
   const prose = resolveNoteProse(share.prose);
   return (
-    <main className="edgeever-public-share min-h-[100dvh] bg-slate-50 px-4 py-6 sm:px-8 sm:py-10">
-      <article className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-card shadow-sm">
-        <header className="border-b border-slate-200 px-5 py-6 sm:px-10 sm:py-8">
-          <div className="mb-5 flex items-center justify-between gap-4 text-xs text-slate-500">
-            <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-              <ShieldCheck className="h-4 w-4" /> EdgeEver · {t("sharing.readOnly")}
-            </span>
+    <div
+      className={cn(
+        "edgeever-public-share",
+        layout === "site" ? "py-6 sm:py-8" : "px-4 py-6 sm:px-8 sm:py-10",
+      )}
+    >
+      <article
+        className={cn(
+          "mx-auto max-w-4xl overflow-hidden",
+          layout === "standalone" &&
+            "rounded-2xl border border-slate-200 bg-card shadow-sm",
+        )}
+      >
+        <header
+          className={cn(
+            "px-5 sm:px-10",
+            layout === "site"
+              ? "flex flex-col pb-5"
+              : "border-b border-slate-200 py-6 sm:py-8",
+          )}
+        >
+          <div
+            className={cn(
+              "flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-slate-500",
+              layout === "site" ? "order-2 mt-4" : "mb-5",
+            )}
+          >
+            {layout === "standalone" && (
+              <span className="flex shrink-0 items-center gap-1.5 font-semibold text-slate-700">
+                <ShieldCheck className="h-4 w-4" /> EdgeEver ·{" "}
+                {t("sharing.readOnly")}
+              </span>
+            )}
             <span className="flex items-center gap-1.5">
               <Clock3 className="h-4 w-4" />
               {t("sharing.publicUpdated", {
-                time: new Intl.DateTimeFormat(i18n.resolvedLanguage || i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(share.updatedAt)),
+                time: new Intl.DateTimeFormat(
+                  i18n.resolvedLanguage || i18n.language,
+                  { dateStyle: "medium", timeStyle: "short" },
+                ).format(new Date(share.updatedAt)),
               })}
             </span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+          <h1
+            className={cn(
+              "break-words text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl",
+              layout === "site" && "order-1",
+            )}
+          >
             {share.title?.trim() || t("common.untitledMemo")}
           </h1>
           {share.tags.length > 0 ? (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {share.tags.map((tag) => <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">#{tag}</span>)}
+            <div
+              className={cn(
+                "mt-4 flex flex-wrap gap-2",
+                layout === "site" && "order-3",
+              )}
+            >
+              {share.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"
+                >
+                  #{tag}
+                </span>
+              ))}
             </div>
           ) : null}
         </header>
         <div
-          className="edgeever-editor px-1 py-4 sm:px-4 sm:py-7"
+          className={cn(
+            "edgeever-editor",
+            layout === "site" ? "py-4 sm:py-5" : "px-1 py-4 sm:px-4 sm:py-7",
+          )}
           data-editor-theme="default"
           data-note-palette={prose.palette}
           style={noteProseCssVariables(prose) as CSSProperties}
         >
           {prose.customCss ? (
-            <style dangerouslySetInnerHTML={{ __html: sanitizeAndScopeCss(prose.customCss) }} />
+            <style
+              dangerouslySetInnerHTML={{
+                __html: sanitizeAndScopeCss(prose.customCss),
+              }}
+            />
           ) : null}
           <SharedDocument
-            locale={(i18n.resolvedLanguage || i18n.language || "zh-CN").startsWith("en") ? "en-US" : "zh-CN"}
+            locale={
+              (i18n.resolvedLanguage || i18n.language || "zh-CN").startsWith(
+                "en",
+              )
+                ? "en-US"
+                : "zh-CN"
+            }
             share={share}
             token={token}
+            access={access}
           />
         </div>
       </article>
-    </main>
+    </div>
   );
 };

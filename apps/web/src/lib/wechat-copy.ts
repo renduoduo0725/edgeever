@@ -24,8 +24,7 @@ const PUBLISH_MONO = "'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regula
 const BODY_COLOR = "#27272a";
 const QUOTE_COLOR = "#3d4450";
 const CODE_COLOR = "#3d4450";
-const CODE_BACKGROUND = "#f3f5f7";
-const CODE_BORDER = "#e1e5ea";
+const CODE_BACKGROUND = "#e9edf1";
 const LINK_COLOR = "#404040";
 const CHECKED_TASK_COLOR = "#737373";
 
@@ -81,7 +80,7 @@ const applyLegacyWeChatStyles = (
     b: bold,
     em: "font-style: italic;",
     del: "text-decoration: line-through;",
-    code: `padding: 2px 6px; border: 1px solid ${CODE_BORDER}; border-radius: 4px; background: ${CODE_BACKGROUND}; color: ${inlineCodeColor}; font-family: ${PUBLISH_MONO}; font-size: ${codeSize}; font-weight: 550;`,
+    code: `padding: 1px 4px; border: 0; border-radius: 4px; background: ${CODE_BACKGROUND}; box-shadow: inset 0 0 0 1px rgba(61,68,80,0.08); color: ${inlineCodeColor}; font-family: ${PUBLISH_MONO}; font-size: ${codeSize}; font-weight: 450;`,
     pre: `margin: 0 0 16px; padding: 14px 16px; overflow: hidden; border: 1px solid #e4e4e4; border-radius: 8px; background: #fafafa; color: #0f172a; font-family: ${PUBLISH_MONO}; font-size: ${codeSize}; line-height: 1.6; text-align: left; white-space: pre-wrap;`,
     hr: "margin: 24px 0; border: 0; border-top: 1px solid #1a1d21;",
     table: `width: 100%; margin: 20px 0; border-collapse: collapse; font-size: ${fontSize}; line-height: 1.45;`,
