@@ -1474,10 +1474,10 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
       body: JSON.stringify(payload),
     }),
 
-    useTemplate: (templateId: string, notebookId: string) =>
+    useTemplate: (templateId: string, notebookId: string, locale?: string) =>
       request<MemoResponse>(`/api/v1/templates/${templateId}/use`, {
         method: "POST",
-        body: JSON.stringify({ notebookId }),
+        body: JSON.stringify(locale ? { notebookId, locale } : { notebookId }),
       }),
 
     deleteTemplate: (templateId: string) =>

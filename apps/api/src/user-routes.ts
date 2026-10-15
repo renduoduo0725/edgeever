@@ -12,7 +12,7 @@ import { mapResourceStorageSummary, type ResourceStatsRow } from "./resource-ser
 import type { DatabaseAdapter } from "./storage-contract";
 import {
   createDefaultNotebookRows,
-  createWorkspaceDefaultSeedStatements,
+  markWorkspaceSeedLocalizationPendingStatement,
 } from "./workspace-provisioning";
 
 export type InstanceUserRow = {
@@ -119,7 +119,10 @@ export const registerUserRoutes = (
     const workspaceId = createId("ws");
     const now = isoNow();
     const passwordHash = await hashPassword(input.password);
-    const notebooks = createDefaultNotebookRows(workspaceId);
+    // The owner's language is not the member's. Notebooks start in the owner's
+    // locale and, together with the default templates, are localized at the
+    // member's first sign-in.
+    const notebooks = createDefaultNotebookRows(workspaceId, context.req.header("accept-language"));
     const statements = [
       context.env.storage.db.prepare(
         `INSERT INTO users (id, username, password_hash, display_name, created_at, updated_at)
@@ -135,12 +138,7 @@ export const registerUserRoutes = (
         `INSERT INTO notebooks (id, workspace_id, parent_id, name, slug, icon, color, sort_order, created_at, updated_at)
          VALUES (?, ?, NULL, ?, ?, 'notebook', ?, ?, ?, ?)`,
       ).bind(notebook.id, workspaceId, notebook.name, notebook.slug, notebook.color, notebook.sortOrder, now, now)),
-      ...createWorkspaceDefaultSeedStatements(
-        context.env.storage.db,
-        workspaceId,
-        now,
-        context.req.header("accept-language"),
-      ),
+      markWorkspaceSeedLocalizationPendingStatement(context.env.storage.db, workspaceId, now),
       auditStatement(context.env.storage.db, "user", context.get("auth").actorId, "user.create", "user", userId, {
         username: input.username,
       }),

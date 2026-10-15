@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { WORKSPACE_PAGE_TITLE_CLASSNAME } from "@/lib/workspace-ui";
 import { copyTextToClipboard } from "@/lib/clipboard";
+import { createTemplateCards, createTemplateDraft, templateDraftToPayload } from "@/lib/template-center";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import type { MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
 import { ExecutionCenterButton } from "@/components/execution/ExecutionCenterButton";
@@ -76,7 +77,7 @@ export const TemplatesPane = ({
   onUpdateSavedTemplate: (templateId: string, payload: { name: string; description: string | null; title: string | null; contentMarkdown: string; tags: string[] }) => Promise<void>;
   onOpenExecutionCenter: () => void;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [editingTemplate, setEditingTemplate] = useState<SavedMemoTemplate | null>(null);
   const [creatingTemplate, setCreatingTemplate] = useState(false);
   const [draft, setDraft] = useState({ name: "", description: "", title: "", contentMarkdown: "", tags: "" });
@@ -107,13 +108,7 @@ export const TemplatesPane = ({
     setCreatingTemplate(false);
     setEditingTemplate(template);
     setEditorTab("raw");
-    setDraft({
-      name: template.name,
-      description: template.description ?? "",
-      title: template.title ?? "",
-      contentMarkdown: template.contentMarkdown,
-      tags: template.tags.join(", "),
-    });
+    setDraft(createTemplateDraft(template));
   };
 
   const startCreating = () => {
@@ -130,13 +125,7 @@ export const TemplatesPane = ({
 
   const saveEditing = async () => {
     if (!draft.name.trim()) return;
-    const payload = {
-      name: draft.name.trim(),
-      description: draft.description.trim() || null,
-      title: draft.title.trim() || null,
-      contentMarkdown: draft.contentMarkdown,
-      tags: draft.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
-    };
+    const payload = templateDraftToPayload(draft);
     if (creatingTemplate) {
       await onCreateSavedTemplate(payload);
       cancelEditing();
@@ -146,6 +135,11 @@ export const TemplatesPane = ({
     await onUpdateSavedTemplate(editingTemplate.id, payload);
     cancelEditing();
   };
+
+  const templateCards = useMemo(
+    () => createTemplateCards(savedTemplates, i18n.resolvedLanguage),
+    [i18n.resolvedLanguage, savedTemplates],
+  );
 
   const draftHtmlPreview = useMemo(
     () => (draft.contentMarkdown ? safeMarkdownPreview(draft.contentMarkdown) : ""),
@@ -326,7 +320,7 @@ export const TemplatesPane = ({
             {/* Templates Grid */}
             {savedTemplates.length > 0 ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {savedTemplates.map((template) => (
+                {templateCards.map(({ template: storedTemplate, display: template }) => (
                   <div
                     key={template.id}
                     className="group relative flex cursor-pointer flex-col justify-between rounded-xl border border-slate-200 bg-card p-4 transition-all duration-200 hover:border-slate-300 hover:shadow-md"
@@ -385,7 +379,7 @@ export const TemplatesPane = ({
                           label={t("templates.edit")}
                           onClick={(e) => {
                             e.stopPropagation();
-                            startEditing(template);
+                            startEditing(storedTemplate);
                           }}
                         >
                           <Pencil className="h-3.5 w-3.5" />

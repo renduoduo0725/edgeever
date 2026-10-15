@@ -350,7 +350,7 @@ export const api = {
     return session;
   },
 
-  login: async (payload: { username: string; password: string }) => {
+  login: async (payload: { username: string; password: string; locale?: string }) => {
     const session = await client.login({ ...payload, deviceId: getOrCreateClientDeviceId() });
     desktopSessionRejected = false;
     return session;

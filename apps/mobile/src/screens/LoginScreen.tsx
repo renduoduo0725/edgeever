@@ -40,7 +40,7 @@ export const LoginScreen = () => {
     setError(null);
 
     try {
-      await signIn({ baseUrl, username, password });
+      await signIn({ baseUrl, username, password, locale: resolvedLocale });
     } catch (signInError) {
       setError(formatMobileLoginError(signInError, resolvedLocale));
     } finally {

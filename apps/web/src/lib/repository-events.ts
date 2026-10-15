@@ -59,8 +59,8 @@ export const withRepositoryMutationEvents = (repository: EdgeEverRepository, sco
     notifyRepositoryMutation(scope, { type: "note.updated", note: result.memo });
     return result;
   },
-  async useTemplate(templateId, notebookId) {
-    const result = await repository.useTemplate(templateId, notebookId);
+  async useTemplate(templateId, notebookId, locale) {
+    const result = await repository.useTemplate(templateId, notebookId, locale);
     notifyRepositoryMutation(scope, { type: "note.created", note: result.memo });
     return result;
   },

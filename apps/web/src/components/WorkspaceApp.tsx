@@ -1337,14 +1337,14 @@ export const WorkspaceApp = ({
   });
 
   const useTemplateMutation = useMutation({
-    mutationFn: async (input: { templateId: string; notebookId: string }) => {
+    mutationFn: async (input: { templateId: string; notebookId: string; locale?: string }) => {
       const requiresRemoteMemo = requiresRemoteMemoForStandaloneMobileEditor({
         mobileViewport: !isDesktopViewport(),
         desktopRuntime: Boolean(window.edgeeverDesktop?.isAvailable),
       });
       const data = requiresRemoteMemo
-        ? await api.useTemplate(input.templateId, input.notebookId)
-        : await repository.useTemplate(input.templateId, input.notebookId);
+        ? await api.useTemplate(input.templateId, input.notebookId, input.locale)
+        : await repository.useTemplate(input.templateId, input.notebookId, input.locale);
       if (requiresRemoteMemo) notifyRepositoryMutation(localDataScope, { type: "note.created", note: data.memo });
       await putLocalMemo(localDataScope, data.memo);
       return data;
@@ -1994,7 +1994,11 @@ export const WorkspaceApp = ({
 
   const handleUseSavedTemplate = (template: SavedMemoTemplate) => {
     if (!createMemoNotebookId || memoView === "trash") return;
-    useTemplateMutation.mutate({ templateId: template.id, notebookId: createMemoNotebookId });
+    useTemplateMutation.mutate({
+      templateId: template.id,
+      notebookId: createMemoNotebookId,
+      locale: i18n.resolvedLanguage,
+    });
   };
 
   const handleMobileDefaultEditConsumed = useCallback(() => {
@@ -2796,7 +2800,7 @@ export const WorkspaceApp = ({
       }
 
       const targetElement = event.target instanceof Element ? event.target : null;
-      const isEditorTextTarget = Boolean(targetElement?.closest(".ProseMirror"));
+      const isEditorTextTarget = Boolean(targetElement?.closest(".ProseMirror, .edgeever-markdown-source-editor"));
 
       const transientLayerOpen = Boolean(
         appNoticeDialog ||

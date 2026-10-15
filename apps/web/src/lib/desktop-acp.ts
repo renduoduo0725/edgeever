@@ -19,6 +19,12 @@ export type DesktopAcpAdapter = {
   authMethods?: Array<{ id: string; name: string }>;
 };
 
+export const desktopAcpUpdateErrorHintKey = (reason: string) => {
+  if (/timeout|timed.?out/i.test(reason)) return "aiAssistant.agentSource.updateTimeoutHint";
+  if (/fetch failed|ERR_(?:NETWORK|PROXY|CONNECTION)|ECONN|ENOTFOUND|EAI_AGAIN/i.test(reason)) return "aiAssistant.agentSource.updateNetworkHint";
+  return null;
+};
+
 // Offer only login methods advertised by the agent. Unreadable saved tokens
 // require a different remedy and must not invite a futile sign-in loop.
 export const desktopAcpLoginRetryAvailable = (adapter: DesktopAcpAdapter | undefined) => Boolean(
@@ -47,7 +53,7 @@ export const displayedDesktopAcpAdapter = ({
   if (current?.customPath) return checked;
   if (current?.state === "installing" || (current?.managed && (!checked?.managed || current.version !== checked.version))) return current;
   if (checked?.state === "available" && (current?.state === "needs_login" || current?.state === "failed" || current?.state === "not_installed")) return current;
-  return checked ?? current;
+  return checked && current ? { ...checked, updateError: current.updateError } : checked ?? current;
 };
 
 export const desktopAcpSelectorVisible = (adapter: DesktopAcpAdapter, customPath: string) => (

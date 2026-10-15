@@ -18,12 +18,19 @@ async function launch() {
     process.argv = [process.argv[0], cli, ...process.argv.slice(3)];
     return require(cli);
   }
-  if (typeof codec.normalizeAtRestBuildKeyCapabilities !== "function") {
+  // WorkBuddy 5.7.6 exposes these helpers through Rolldown's short exports.
+  // Initialize its lazy codec before using those exports.
+  const normalize = codec.normalizeAtRestBuildKeyCapabilities ?? codec._t;
+  const encode = codec.encodeAtRestEncryptionBootstrap ?? codec.Z;
+  const dispose = codec.disposeAtRestEncryptionBootstrap ?? codec.X;
+  if (typeof normalize !== "function" && typeof encode !== "function" && typeof dispose !== "function") {
     process.argv = [process.argv[0], cli, ...process.argv.slice(3)];
     return require(cli);
   }
+  if ([normalize, encode, dispose].some((helper) => typeof helper !== "function")) throw new Error("credential_codec_unavailable");
+  if (!codec.normalizeAtRestBuildKeyCapabilities) codec.$();
   const native = process._linkedBinding("electron_browser_workbuddy_storage");
-  const capabilities = codec.normalizeAtRestBuildKeyCapabilities(native.loggerGet());
+  const capabilities = normalize(native.loggerGet());
   if (capabilities.symmetric.status !== "available") throw new Error("credential_bootstrap_unavailable");
   const bootstrap = { policy: "fields", symmetricKey: capabilities.symmetric.value, asymmetricUnavailable: "unsupported" };
   const directory = mkdtempSync(path.join(tmpdir(), "ee-wb-"));
@@ -59,7 +66,7 @@ async function launch() {
     let response = "";
     socket.setTimeout(5000, () => { socket.destroy(); process.exit(1); });
     socket.once("connect", () => {
-      socket.end(JSON.stringify({ version: 1, pid: process.pid, token, sessionId, bootstrap: codec.encodeAtRestEncryptionBootstrap(bootstrap) }) + "\n");
+      socket.end(JSON.stringify({ version: 1, pid: process.pid, token, sessionId, bootstrap: encode(bootstrap) }) + "\n");
     });
     socket.on("data", (data) => {
       response += data;
@@ -68,7 +75,7 @@ async function launch() {
       try {
         if (JSON.parse(response.split("\n")[0]).ok === true) {
           transferred = true;
-          codec.disposeAtRestEncryptionBootstrap(bootstrap);
+          dispose(bootstrap);
         }
       } catch { /* Receiver owns validation; never log payloads. */ }
     });
@@ -78,7 +85,7 @@ async function launch() {
     });
   };
   process.once("exit", () => {
-    if (!transferred) codec.disposeAtRestEncryptionBootstrap(bootstrap);
+    if (!transferred) dispose(bootstrap);
     rmSync(directory, { recursive: true, force: true });
   });
   send();

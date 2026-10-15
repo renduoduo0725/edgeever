@@ -8,6 +8,7 @@ import {
   type MemoTemplate,
   type TiptapDoc,
 } from "@edgeever/shared";
+import { localizeDefaultMemoTemplate } from "@edgeever/shared/memo-template-seeds";
 import { zValidator } from "@hono/zod-validator";
 import type { Hono } from "hono";
 import { audit } from "./audit";
@@ -195,10 +196,11 @@ export const registerTemplateRoutes = (
     const id = c.req.param("id");
     const input = c.req.valid("json");
     const workspaceId = getWorkspaceId(c);
-    const template = await getMemoTemplate(c.env.storage.db, workspaceId, id);
-    if (!template) {
+    const stored = await getMemoTemplate(c.env.storage.db, workspaceId, id);
+    if (!stored) {
       return notFound(c, "Template not found");
     }
+    const template = input.locale ? localizeDefaultMemoTemplate(stored, input.locale) : stored;
 
     const memo = await createMemoRecord(c.env.storage.db, workspaceId, {
       notebookId: input.notebookId,

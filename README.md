@@ -68,18 +68,19 @@ The public demo resets every day at 3:00 AM (China Standard Time) and restores s
 From multi-channel inspiration capture to deep visual expression and team collaboration, EdgeEver delivers frictionless, end-to-end workflows:
 
 ### Universal Clipping & Media Storage
-- **Cross-Platform One-Click Clipping**: Browser extension clips [Xiaohongshu galleries](docs/best-practices.md#2-one-click-xiaohongshu-red-note-clipping), [X (Twitter) posts & quotes](docs/best-practices.md#3-one-click-x-twitter-post--quote-clipping), [Zhihu Q&As](docs/best-practices.md#4-one-click-zhihu-answer--column-article-clipping), [Reddit discussions](docs/best-practices.md#5-one-click-reddit-discussion-post-clipping), and [GitHub repositories](docs/best-practices.md#8-one-click-github-repository-metadata-clipping) (deep adaptation for more platforms coming soon); one-click mobile system share clipping for [photos](docs/best-practices.md#9-one-click-mobile-image-sharing-to-notes) and [WeChat articles](docs/best-practices.md#10-one-click-wechat-article-clipping-on-mobile).
+- **Cross-Platform One-Click Clipping**: Browser extension deeply adapts to 15+ major social, community, and media platforms, including [Xiaohongshu galleries](docs/best-practices.md#2-one-click-xiaohongshu-red-note-clipping), [X (Twitter) posts & quotes](docs/best-practices.md#3-one-click-x-twitter-post--quote-clipping), [Zhihu Q&As](docs/best-practices.md#4-one-click-zhihu-answer--column-article-clipping), [Reddit](docs/best-practices.md#5-one-click-reddit-discussion-post-clipping), [GitHub](docs/best-practices.md#8-one-click-github-repository-metadata-clipping), YouTube, and Bilibili; one-click mobile system share clipping for [photos](docs/best-practices.md#9-one-click-mobile-image-sharing-to-notes) and [WeChat articles](docs/best-practices.md#10-one-click-wechat-article-clipping-on-mobile).
 - **WeChat Chat History Archiving**: One-click complete transcript import on macOS via WeChat "Forward to Other Apps → EdgeEver", preserving participants, timestamps, quoted replies, and stickers, with images embedded and audio/video files saved as note attachments. See [One-Click WeChat Chat History Archiving](docs/best-practices.md#1-one-click-wechat-chat-history-archiving).
 - **Universal File Attachments & Client-Side Image Compression**: Easily upload and attach PDFs, Office documents, archives, and multimedia files, safely handling up to 1 GiB attachments via chunked streaming; silent client-side image compression in the browser reduces screenshots and large images by 50%-90% for faster loading and minimal storage use.
 
 ### Intelligent Visual Notes & Database Collaboration
 - **Visual Diagram Notes & Professional Infographics**: Ditch external diagramming tools—prompt the companion AI assistant to generate interactive, editable [mind maps, flowcharts & architecture diagrams](docs/best-practices.md#11-ai-conversational-generation-of-mind-maps-flowcharts--architecture-diagrams) (see [Visual Diagram Notes Design Guide](docs/visual-diagram-notes.md), with native Mermaid code block rendering); use the built-in template gallery to generate stylized, versatile [infographics across all formats (timelines, comparisons, quadrant matrices, etc.)](docs/best-practices.md#12-ai-powered-generation-of-professional-infographics) in-place.
 - **AI Multi-Dimensional Tables & Public Forms**: Generate structured [multi-dimensional tables for any business workflow](docs/best-practices.md#13-instant-multi-dimensional-database-table-generation-via-ai-prompt) (such as project tracking, content banks, and HR rosters) via natural language AI prompts, inferring tags, dates, and rich field types with sample rows; publish [public online collection forms](docs/best-practices.md#14-one-click-public-online-form-collection-from-database-tables) with one click without login requirements, syncing submitted responses in real time.
-- **Dual-View Editing & Workspace Organization**: Smoothly toggle between rich-text and raw Markdown views on desktop; classic 3-pane layout, one-click Focus Mode, infinite-depth notebooks, batch note merging/moving, and drag-and-drop sorting; automatic revision history and password-protected public note sharing.
+- **Native Poster Notes & AI Visual Layout**: Native canvas-based structured poster notes with rich visual card templates and curated layouts; double-click to edit copy or replace images and placeholders with one-click responsive zoom; companion AI assistants and ACP / MCP protocols can directly compose, interpret, and refine poster content.
+- **Dual-View Editing, Space Organization & Public Knowledge Base**: Smoothly toggle between rich-text and raw Markdown views on desktop; classic 3-pane layout with resizable panel width, one-click Focus Mode, infinite-depth notebooks, batch note merging/moving, and drag-and-drop sorting; automatic revision history; beyond password-protected single note sharing, publish **entire notebooks as standalone, navigable knowledge base websites** with hierarchical directory trees and password protection.
 
 ### Creator Publishing & Effortless Distribution
 - **WeChat Official Account & Rich Copy**: Designed for creators, transform notes into beautifully formatted rich text with inline CSS, featuring [one-click note copy to WeChat Official Account](docs/best-practices.md#6-one-click-note-copy-to-wechat-official-account--blogs) editor, newsletters, or blogs without extra tools.
-- **Elegant Long-Image Posters & Multi-Format Export**: Turn any note into an [elegant image poster card](docs/best-practices.md#7-ai-rss-daily-digest--elegant-image-poster-sharing) with one click, featuring 8 refined themes, custom typography, and layout options for sharing on social platforms; export individual notes to Markdown, HTML, or PDF effortlessly.
+- **Elegant Long-Image Posters & Multi-Format Export**: Turn any note into an [elegant image poster card](docs/best-practices.md#7-ai-rss-daily-digest--elegant-image-poster-sharing) with one click, featuring refined visual themes, monogram avatars, adaptive typography, and layout options for sharing on social platforms; export individual notes to Markdown, HTML, or PDF effortlessly.
 - **AI RSS Daily Digests**: Built-in official AI RSS subscription plugin that automatically aggregates feeds and blogs, filters out noise with AI, and compiles concise, well-structured daily digest notes.
 
 ### Native AI Agents & Open Ecosystem
@@ -155,11 +156,11 @@ After installation, updates run automatically each day by default. To update man
 
 ---
 
-## Multi-Account Login
+## Multi-Account Login & Storage Usage
 
 Once deployed, a single instance supports multi-account login.
 
-The instance administrator can create, disable, or reset member accounts in **Profile** -> **User accounts**. Each member gets a fully isolated personal workspace, including notebooks, notes, attachments, Trash, import/export, and MCP tokens.
+The instance administrator can create, disable, or reset member accounts in **Profile** -> **User accounts**. Each member gets a fully isolated personal workspace, including notebooks, notes, attachments, Trash, import/export, and MCP tokens. An intuitive storage usage dashboard provides real-time visibility into attachment storage consumed across the whole instance as well as per account.
 
 ## Browser Web Clipper
 
@@ -171,7 +172,7 @@ The instance administrator can create, disable, or reset member accounts in **Pr
 
 - **Smart Article Extraction**: Automatically extracts article content and converts it into clean Markdown, preserving the source URL and clipping timestamp.
 - **Selection & Context Menu Clipping**: Save selected text or right-clicked images directly as notes without capturing the entire page.
-- **Deep Social & Community Clipping**: Native support for X (Twitter), Xiaohongshu, Zhihu, Reddit, and GitHub with one-click sending.
+- **Deep Social & Community Clipping**: Native structured clipping for 15+ major platforms including X (Twitter), Xiaohongshu, Zhihu, Reddit, GitHub, YouTube, and Bilibili.
 - **Private Self-Hosted Direct Connection**: Sends clipped content directly to your personal EdgeEver instance without third-party relays.
 
 ## Community and Feedback
@@ -245,7 +246,7 @@ Open **Profile** -> **Import and export** to export or import an EdgeEver ZIP. I
 
 ## MCP
 
-Create an API token in **Profile** -> **API / MCP** and copy the Remote MCP configuration in one click to let AI Agents such as Claude Code, Cursor, Antigravity, and OpenClaw securely manage your knowledge base within account permissions. EdgeEver supports full CRUD for text notes, visual diagram notes (mind maps, flowcharts, and architecture diagrams), and structured table notes. Agents can also manage notebook hierarchies, tags, attachments, revision history, note templates, and AI instructions.
+Create an API token in **Profile** -> **API / MCP** and copy the Remote MCP configuration in one click to let AI Agents such as Claude Code, Cursor, Antigravity, and OpenClaw securely manage your knowledge base within account permissions. EdgeEver supports full CRUD for text notes, visual diagram notes (mind maps, flowcharts, and architecture diagrams), structured table notes, and native poster notes. Agents can also manage notebook hierarchies, tags, attachments, revision history, note templates, and AI instructions.
 
 > 💡 **Inspiration:**
 > Make AI your true knowledge orchestrator and creative co-pilot—instantly turn concepts into interactive mind maps, flowcharts, architecture diagrams, and structured tables, while supplying private context to your AI Agents. Paired with EdgeEver’s powerful rich-text editing and elegant typography, AI-assisted content becomes beautifully structured, polished, and publication-ready knowledge assets.
@@ -256,9 +257,10 @@ Image compression happens in the Web client before upload and is controlled by t
 
 EdgeEver avoids Worker-side image processing to reduce compute and image-processing quota usage. REST API and MCP upload paths store the file content provided by the client without additional server-side compression.
 
-## Advanced Object Storage
+## Advanced Object Storage & Third-Party Image Hosting
 
-The instance owner can configure S3-compatible object storage under **Settings → Advanced → OSS object storage**. Changing storage does not migrate or affect existing attachments.
+- **OSS Object Storage**: The instance owner can configure S3-compatible object storage under **Settings → Advanced → OSS object storage**. Changing storage does not migrate or affect existing attachments.
+- **Desktop PicGo Integration**: The desktop app optionally integrates with a local PicGo client service, uploading inserted images directly to GitHub, SM.MS, Upyun, Qiniu, or custom image hosts to minimize self-hosted storage and bandwidth consumption.
 
 ## Migration
 

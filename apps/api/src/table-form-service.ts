@@ -166,7 +166,12 @@ export const appendTableFormSubmission = async (
       "table-form",
       false,
     );
-    if ("memo" in saved) return saved.memo;
+    if ("memo" in saved) {
+      const usedResourceIds = Object.values(nextCells).flatMap((value) => (
+        Array.isArray(value) ? value.map((file) => file.resourceId) : []
+      ));
+      return { memo: saved.memo, usedResourceIds };
+    }
     if (saved.error !== "revision_conflict" && saved.error !== "content_conflict") {
       throw new AppError(saved.error, saved.message, saved.status ?? 409);
     }

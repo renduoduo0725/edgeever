@@ -158,6 +158,34 @@ describe("memo route contracts", () => {
     expect(await response.json()).toMatchObject({ memo: { id: "memo_created" } });
   });
 
+  test("stores the line breaks of a multipart image note as LF", async () => {
+    let contentMarkdown;
+    const dependencies = createDependencies({
+      createMemo: async (_db, _workspaceId, input) => {
+        contentMarkdown = input.contentMarkdown;
+        return { id: "memo_created" };
+      },
+    });
+    // Browsers encode line breaks in multipart text fields as CRLF.
+    const boundary = "edgeever-boundary";
+    const part = (name, value) => `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;
+    const body = [
+      part("notebookId", "nb_1"),
+      part("contentMarkdown", "![clip](/api/v1/resources/EDGEVERRESOURCEID/blob)\r\n\r\nSource: https://example.com\r\nLine"),
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="clip.png"\r\nContent-Type: image/png\r\n\r\n\x89PNG\r\n`,
+      `--${boundary}--\r\n`,
+    ].join("");
+    const response = await createApp(dependencies).request("/api/v1/memos/with-image", {
+      method: "POST",
+      headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
+      body,
+    }, environment);
+
+    expect(response.status).toBe(201);
+    const { resourceId } = await response.json();
+    expect(contentMarkdown).toBe(`![clip](/api/v1/resources/${resourceId}/blob)\n\nSource: https://example.com\nLine`);
+  });
+
   test("enforces read scope before loading a memo", async () => {
     let called = false;
     const dependencies = createDependencies({

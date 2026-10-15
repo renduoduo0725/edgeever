@@ -1,23 +1,23 @@
 {
-  "version": "1.118.0",
+  "version": "1.119.0",
   "changes": {
     "en-US": [
-      "Publish notebooks and their descendants as a browsable website with live content, directory navigation, and optional password protection.",
-      "Manage note and notebook shares more clearly, retry revocation, and view newly generated share passwords across devices. Regenerate older share passwords once to enable cross-device viewing; their existing access remains valid.",
-      "Preserve failed desktop share imports across restarts, restore WorkBuddy sign-in after connection failures, and clarify the current note context for local AI agents.",
-      "Use softer button colors and clearer inbox deletion guidance."
+      "New workspaces initialize default notebooks and the welcome note in your interface language, and unedited built-in templates follow the current interface language.",
+      "Search and replace now follows the active editor mode, with literal Markdown source matching, highlighted results, and undoable replacements.",
+      "Desktop AI tools support manual update retries, repair ACP update failures and WorkBuddy startup compatibility, and defer local AI detection until the selector opens.",
+      "Public table forms accept file uploads reliably; image notes preserve proper line breaks; JSON backup restore validates each page before writing to prevent partial restoration of invalid pages."
     ],
     "zh-CN": [
-      "支持将笔记本及全部子笔记本发布为公开网站，提供目录导航、内容同步和可选密码保护。",
-      "优化笔记与笔记本的分享管理、状态提示和撤销重试，并支持跨设备查看新生成的分享密码。旧分享密码仍可访问，需重新生成一次才能跨设备查看。",
-      "桌面端导入失败的分享内容可在重启后保留，修复 WorkBuddy 连接失败后的登录入口，并明确本地 AI 工具的当前笔记上下文。",
-      "优化按钮配色与收件箱删除提示。"
+      "新工作区按界面语言初始化默认笔记本与欢迎笔记，未修改的内置模板随当前界面语言显示。",
+      "查找替换正确跟随当前编辑模式，支持 Markdown 源码字面匹配、结果高亮与可撤销替换。",
+      "桌面 AI 工具支持手动重试更新，修复 ACP 更新失败与 WorkBuddy 启动兼容问题，并将本地 AI 检测延后至打开选择器时。",
+      "修复公开表格表单文件上传及图片笔记换行问题；JSON 备份恢复先校验整页，避免无效页面被部分写入。"
     ],
     "ja": [
-      "ノートブックと配下の内容を、目次・更新反映・任意のパスワード保護付きの公開サイトとして共有できます。",
-      "共有管理・状態表示・取り消しの再試行を改善し、新しく生成した共有パスワードを端末間で確認できます。既存のパスワードは引き続き利用でき、再生成すると端末間で確認できます。",
-      "デスクトップで失敗した共有インポートを再起動後も保持し、接続失敗後の WorkBuddy ログインとローカル AI の現在のノートの認識を改善しました。",
-      "ボタンの配色と受信箱の削除案内を改善しました。"
+      "新しいワークスペースの既定ノートブックとウェルカムノートを表示言語で初期化し、未編集の組み込みテンプレートも現在の表示言語に合わせます。",
+      "検索と置換が現在の編集モードに従い、Markdownソースの文字列一致、結果の強調表示、置換の取り消しに対応します。",
+      "デスクトップAIツールの更新を手動で再試行でき、ACP更新の失敗とWorkBuddyの起動互換性を修正し、ローカルAI検出を選択画面を開くまで延期します。",
+      "公開テーブルフォームのファイルアップロードと画像ノートの改行を修正し、JSONバックアップ復元では書き込み前にページ全体を検証して無効なページの部分復元を防ぎます。"
     ]
   }
 }

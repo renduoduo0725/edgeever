@@ -109,6 +109,11 @@ export const restoreJsonMemos = async (
 ) => {
   await assertIdsAvailableInWorkspace(db, "memos", workspaceId, backups.map((backup) => backup.memo.id));
   await assertNotebookIdsInWorkspace(db, workspaceId, backups.map((backup) => backup.memo.notebookId));
+  // Validate the whole page before writing, so an invalid note never leaves
+  // the notes before it restored.
+  if (backups.some((backup) => backup.revisions.some((revision) => revision.memoId !== backup.memo.id))) {
+    throw new AppError("invalid_backup", "A backup revision belongs to a different memo.", 400);
+  }
 
   for (const backup of backups) {
     const memo = backup.memo;
@@ -118,10 +123,6 @@ export const restoreJsonMemos = async (
     const contentHash = await sha256(contentMarkdown + JSON.stringify(contentJson));
     const title = normalizeMemoTitle(memo.title);
     const tags = normalizeTags(memo.tags);
-
-    if (backup.revisions.some((revision) => revision.memoId !== memo.id)) {
-      throw new AppError("invalid_backup", "A backup revision belongs to a different memo.", 400);
-    }
 
     await db.batch([
       db.prepare(

@@ -66,18 +66,19 @@ Publiczne demo resetuje się codziennie o 3:00 czasu chińskiego (UTC+8) i przyw
 EdgeEver łączy zbieranie materiałów z różnych źródeł, tworzenie treści wizualnych i współpracę w jednym środowisku:
 
 ### Zapisywanie treści i przechowywanie plików
-- **Zapisywanie treści jednym kliknięciem na różnych platformach**: Rozszerzenie przeglądarki zapisuje [galerie Xiaohongshu](docs/best-practices.md#2-one-click-xiaohongshu-red-note-clipping), [wpisy i cytaty z X (Twittera)](docs/best-practices.md#3-one-click-x-twitter-post--quote-clipping), [pytania i odpowiedzi z Zhihu](docs/best-practices.md#4-one-click-zhihu-answer--column-article-clipping), [dyskusje na Reddicie](docs/best-practices.md#5-one-click-reddit-discussion-post-clipping) oraz [repozytoria GitHub](docs/best-practices.md#8-one-click-github-repository-metadata-clipping). Udostępnianie systemowe na telefonie pozwala szybko zapisać [zdjęcia](docs/best-practices.md#9-one-click-mobile-image-sharing-to-notes) i [artykuły z WeChat](docs/best-practices.md#10-one-click-wechat-article-clipping-on-mobile). Obsługa kolejnych serwisów jest planowana.
+- **Zapisywanie treści jednym kliknięciem na różnych platformach**: Rozszerzenie przeglądarki jest głęboko dostosowane do ponad 15 wiodących serwisów społecznościowych, forów i platform wideo, w tym [galerii Xiaohongshu](docs/best-practices.md#2-one-click-xiaohongshu-red-note-clipping), [wpisów i cytatów z X (Twittera)](docs/best-practices.md#3-one-click-x-twitter-post--quote-clipping), [odpowiedzi z Zhihu](docs/best-practices.md#4-one-click-zhihu-answer--column-article-clipping), [Reddita](docs/best-practices.md#5-one-click-reddit-discussion-post-clipping), [GitHuba](docs/best-practices.md#8-one-click-github-repository-metadata-clipping), YouTube i Bilibili. Udostępnianie systemowe na telefonie pozwala szybko zapisać [zdjęcia](docs/best-practices.md#9-one-click-mobile-image-sharing-to-notes) i [artykuły z WeChat](docs/best-practices.md#10-one-click-wechat-article-clipping-on-mobile).
 - **Archiwizacja rozmów WeChat**: Na macOS można zaimportować całą rozmowę przez „Forward to Other Apps → EdgeEver”, zachowując uczestników, znaczniki czasu, cytowane odpowiedzi i naklejki. Obrazy trafiają do notatki, a nagrania audio i wideo są zapisywane jako załączniki. Zobacz [przewodnik po archiwizacji rozmów](docs/best-practices.md#1-one-click-wechat-chat-history-archiving).
 - **Załączniki i kompresja obrazów po stronie klienta**: Dodawaj pliki PDF, dokumenty Office, archiwa i multimedia. Przesyłanie strumieniowe w częściach obsługuje załączniki do 1 GiB. Cicha kompresja obrazów w przeglądarce zmniejsza rozmiar zrzutów ekranu i dużych zdjęć o 50–90%, przyspieszając ładowanie i oszczędzając miejsce.
 
 ### Notatki wizualne i współpraca z bazami danych
 - **Diagramy i infografiki**: Poproś asystenta AI zwykłym językiem o interaktywne, edytowalne [mapy myśli, schematy blokowe lub diagramy architektury](docs/best-practices.md#11-ai-conversational-generation-of-mind-maps-flowcharts--architecture-diagrams). Zobacz [opis notatek z diagramami](docs/visual-diagram-notes.md); obsługiwane jest też renderowanie bloków Mermaid. Wbudowane szablony pozwalają tworzyć [infografiki, w tym osie czasu, porównania i wykresy kwadrantowe](docs/best-practices.md#12-ai-powered-generation-of-professional-infographics).
 - **Wielowymiarowe tabele AI i publiczne formularze**: Na podstawie polecenia w języku naturalnym twórz [tabele do zarządzania projektami, treściami, zasobami i innymi procesami](docs/best-practices.md#13-instant-multi-dimensional-database-table-generation-via-ai-prompt), z odpowiednimi typami pól i przykładowymi rekordami. Jednym kliknięciem udostępnij [publiczny formularz](docs/best-practices.md#14-one-click-public-online-form-collection-from-database-tables), który zbiera odpowiedzi bez logowania bezpośrednio do tabeli.
-- **Dwa widoki edycji i porządkowanie przestrzeni**: Na komputerze przełączaj się między edytorem tekstu sformatowanego a źródłem Markdown. Korzystaj z trzech paneli, trybu skupienia, dowolnie zagnieżdżonych notatników, zbiorczego łączenia i przenoszenia notatek oraz sortowania przez przeciąganie. Dostępne są historia wersji i udostępnianie notatek zabezpieczone hasłem.
+- **Natywne notatki plakatowe i wizualny układ AI**: Natywne notatki plakatowe oparte na płótnie z bogatymi szablonami kart graficznych i dopracowanymi układami; kliknij dwukrotnie, aby edytować tekst lub zamienić obrazy i elementy zastępcze, z responsywnym powiększeniem jednym kliknięciem; asystenci AI oraz protokoły ACP i MCP mogą bezpośrednio tworzyć, interpretować i wspólnie dopracowywać zawartość plakatów.
+- **Dwa widoki edycji, organizacja przestrzeni i publiczna baza wiedzy**: Na komputerze przełączaj się między edytorem tekstu sformatowanego a źródłem Markdown. Korzystaj z trzech paneli z regulowaną szerokością, trybu skupienia, dowolnie zagnieżdżonych notatników, zbiorczego łączenia i przenoszenia notatek oraz sortowania przez przeciąganie. Dostępna jest historia wersji; oprócz udostępniania pojedynczych notatek z hasłem, publikuj **całe notatniki jako samodzielne witryny bazy wiedzy z drzewem nawigacji** i ochroną hasłem.
 
 ### Publikowanie i udostępnianie
 - **WeChat Official Account i kopiowanie ze stylami**: Twórz tekst sformatowany ze stylami CSS i [kopiuj notatki jednym kliknięciem do edytora WeChat Official Account](docs/best-practices.md#6-one-click-note-copy-to-wechat-official-account--blogs), newsletterów lub blogów.
-- **Grafiki z notatek i eksport**: Zamień notatkę w [estetyczną grafikę do udostępniania](docs/best-practices.md#7-ai-rss-daily-digest--elegant-image-poster-sharing), wybierając spośród ośmiu motywów, krojów pisma i układów. Pojedyncze notatki można eksportować do Markdown, HTML lub PDF.
+- **Grafiki z notatek i eksport**: Zamień notatkę w [estetyczną grafikę do udostępniania](docs/best-practices.md#7-ai-rss-daily-digest--elegant-image-poster-sharing) jednym kliknięciem, wybierając spośród dopracowanych motywów wizualnych, awatarów monogramowych, adaptacyjnej typografii i układów. Pojedyncze notatki można eksportować do Markdown, HTML lub PDF.
 - **Codzienne podsumowania RSS tworzone przez AI**: Oficjalna wtyczka subskrypcji RSS zbiera wpisy z kanałów i blogów, filtruje szum przy użyciu AI i przygotowuje zwięzłe notatki z podsumowaniem dnia.
 
 ### Natywni agenci AI i otwarty ekosystem
@@ -153,9 +154,9 @@ Po instalacji aktualizacje domyślnie uruchamiają się codziennie. Aby zaktuali
 
 ---
 
-## Logowanie wielu użytkowników
+## Logowanie wielu użytkowników i zużycie miejsca
 
-Jedna instancja obsługuje wiele kont. Administrator może tworzyć i wyłączać konta oraz resetować ich hasła w **Profil → Członkowie**. Każdy użytkownik otrzymuje odizolowaną przestrzeń z notatnikami, notatkami, załącznikami, Koszem, importem i eksportem oraz tokenami MCP.
+Jedna instancja obsługuje wiele kont. Administrator może tworzyć i wyłączać konta oraz resetować ich hasła w **Profil → Członkowie**. Każdy użytkownik otrzymuje odizolowaną przestrzeń z notatnikami, notatkami, załącznikami, Koszem, importem i eksportem oraz tokenami MCP. Przejrzysty panel zużycia miejsca pozwala na bieżąco monitorować przestrzeń zajmowaną przez załączniki w całej instancji i na poszczególnych kontach.
 
 ## Rozszerzenie Web Clipper
 
@@ -167,7 +168,7 @@ Jedna instancja obsługuje wiele kont. Administrator może tworzyć i wyłącza�
 
 - **Wydobywanie treści artykułów**: Rozszerzenie pobiera tekst i przekształca go w przejrzysty Markdown, zachowując adres źródłowy oraz czas zapisania.
 - **Zapisywanie zaznaczenia i obrazów z menu kontekstowego**: Dodawaj zaznaczony tekst lub obraz wskazany prawym przyciskiem myszy bez przechwytywania całej strony.
-- **Obsługa serwisów społecznościowych**: Jednym kliknięciem zapisuj treści z X (Twittera), Xiaohongshu, Zhihu, Reddita i GitHuba.
+- **Głęboka integracja z platformami społecznościowymi i forami**: Dedykowane, ustrukturyzowane zapisywanie treści z ponad 15 wiodących platform, w tym X (Twittera), Xiaohongshu, Zhihu, Reddita, GitHuba, YouTube i Bilibili.
 - **Bezpośrednie prywatne połączenie**: Rozszerzenie wysyła materiały do Twojej instancji EdgeEver bez pośrednictwa zewnętrznych usług.
 
 ## Społeczność i opinie
@@ -241,7 +242,7 @@ W **Profil → Import i eksport** można wyeksportować lub zaimportować archiw
 
 ## MCP
 
-Utwórz token API w **Profil → API / MCP** i skopiuj konfigurację Remote MCP jednym kliknięciem. Agenci AI, tacy jak Claude Code, Cursor, Antigravity i OpenClaw, będą mogli bezpiecznie zarządzać Twoją bazą wiedzy w zakresie uprawnień konta. EdgeEver obsługuje pełne tworzenie, odczyt, edycję i usuwanie notatek tekstowych, diagramów (map myśli, schematów blokowych i diagramów architektury) oraz tabel strukturalnych. Agenci mogą też zarządzać strukturą notatników, tagami, załącznikami, historią wersji, szablonami i instrukcjami AI.
+Utwórz token API w **Profil → API / MCP** i skopiuj konfigurację Remote MCP jednym kliknięciem. Agenci AI, tacy jak Claude Code, Cursor, Antigravity i OpenClaw, będą mogli bezpiecznie zarządzać Twoją bazą wiedzy w zakresie uprawnień konta. EdgeEver obsługuje pełne tworzenie, odczyt, edycję i usuwanie notatek tekstowych, diagramów (map myśli, schematów blokowych i diagramów architektury), tabel strukturalnych oraz natywnych notatek plakatowych. Agenci mogą też zarządzać strukturą notatników, tagami, załącznikami, historią wersji, szablonami i instrukcjami AI.
 
 > 💡 **Inspiracja:**
 > Użyj AI jako pomocnika w porządkowaniu wiedzy: zamieniaj pomysły w interaktywne mapy myśli, diagramy i tabele, dostarczając agentom własny kontekst. Edytor tekstu sformatowanego i typografia EdgeEver pomagają dopracować wynik do postaci gotowej do publikacji.
@@ -252,9 +253,10 @@ Obrazy są kompresowane przed przesłaniem w aplikacji Web; steruje tym ustawien
 
 EdgeEver nie przetwarza obrazów po stronie Workera, co ogranicza zużycie zasobów obliczeniowych i limitów przetwarzania. Przesyłanie przez REST API i MCP przechowuje plik otrzymany od klienta bez dodatkowej kompresji na serwerze.
 
-## Zaawansowane przechowywanie plików
+## Zaawansowane przechowywanie plików i zewnętrzny hosting obrazów
 
-Właściciel instancji może skonfigurować magazyn zgodny z S3 w **Profil → Zaawansowane → Magazyn obiektów OSS**. Zmiana magazynu nie przenosi istniejących załączników ani ich nie modyfikuje.
+- **Magazyn obiektów OSS**: Właściciel instancji może skonfigurować magazyn zgodny z S3 w **Profil → Zaawansowane → Magazyn obiektów OSS**. Zmiana magazynu nie przenosi istniejących załączników ani ich nie modyfikuje.
+- **Integracja z PicGo na komputerze**: Aplikacja desktopowa opcjonalnie współpracuje z lokalną usługą PicGo, przesyłając wstawiane obrazy bezpośrednio do GitHuba, SM.MS, Upyun, Qiniu lub własnego hostingu, co ogranicza zużycie miejsca i transferu we własnym środowisku.
 
 ## Migracja
 

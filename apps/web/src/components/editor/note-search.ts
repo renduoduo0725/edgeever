@@ -37,7 +37,7 @@ export const getSearchMatchesFromDocument = (
   doc: Editor["state"]["doc"],
   query: string,
 ): NoteSearchMatch[] => {
-  const needle = query.trim().toLocaleLowerCase();
+  const needle = query.toLocaleLowerCase();
   if (needle.length === 0) return [];
 
   const characters: Array<{ char: string; pos: number }> = [];
@@ -99,6 +99,6 @@ export const formatNoteSearchMatchLabel = (
   query: string,
   activeIndex: number,
   matchCount: number,
-) => query.trim()
+) => query.length > 0
   ? `${matchCount > 0 ? activeIndex + 1 : 0}/${matchCount}`
   : "0/0";

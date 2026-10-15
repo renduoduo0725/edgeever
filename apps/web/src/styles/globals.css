@@ -1334,13 +1334,15 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
   }
 }
 
-.ProseMirror .edgeever-search-match {
+.ProseMirror .edgeever-search-match,
+.edgeever-markdown-source-editor .edgeever-search-match {
   border-radius: 0.2rem;
   background-color: var(--search-match);
   box-shadow: 0 0 0 1px rgb(var(--brand-green-rgb) / 0.22);
 }
 
-.ProseMirror .edgeever-search-match-active {
+.ProseMirror .edgeever-search-match-active,
+.edgeever-markdown-source-editor .edgeever-search-match-active {
   background-color: var(--search-match-active);
   box-shadow: 0 0 0 2px rgb(var(--brand-green-rgb) / 0.4);
 }

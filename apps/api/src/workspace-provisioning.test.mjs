@@ -48,8 +48,9 @@ describe("workspace provisioning", () => {
       role: "member",
     });
     expect(batchCount).toBe(0);
-    expect(calls).toHaveLength(1);
+    expect(calls).toHaveLength(2);
     expect(calls[0].sql).toContain("FROM workspace_members WHERE user_id");
+    expect(calls[1].sql).toContain("FROM workspace_seed_localizations");
   });
 
   test("builds editable localized template and AI prompt statements for new workspaces", () => {

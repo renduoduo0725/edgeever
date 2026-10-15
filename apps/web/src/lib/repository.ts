@@ -1,4 +1,5 @@
 import { assertLocalMemoSnapshot } from "./local-memo-guard";
+import { localizeDefaultMemoTemplate } from "@edgeever/shared/memo-template-seeds";
 import { markdownToDoc, type MemoDetail, type MemoRevision, type MemoSummary, type MemoTemplate, type Notebook, type Resource, type ResourceListItem, type ResourceStorageSummary, type TagSummary, type TiptapDoc } from "@edgeever/shared";
 import { api } from "@/lib/api";
 import {
@@ -62,7 +63,8 @@ export type EdgeEverRepository = {
   createTemplate(input: { name: string; description?: string | null; memoId?: string; title?: string | null; contentMarkdown?: string; tags?: string[] }): Promise<{ template: MemoTemplate }>;
   updateTemplate(templateId: string, input: { name?: string; description?: string | null; title?: string | null; contentMarkdown?: string; tags?: string[] }): Promise<{ template: MemoTemplate }>;
   deleteTemplate(templateId: string): Promise<{ ok: true }>;
-  useTemplate(templateId: string, notebookId: string): Promise<{ memo: MemoDetail }>;
+  /** With `locale`, an unedited default template is used in that UI language. */
+  useTemplate(templateId: string, notebookId: string, locale?: string): Promise<{ memo: MemoDetail }>;
   uploadMemoResource(memoId: string, file: File): Promise<{ resource: Resource }>;
   readResource(resourceId: string): Promise<Blob>;
   updateResource(resourceId: string, file: File, expectedContentHash: string): Promise<{ resource: Resource }>;
@@ -286,11 +288,12 @@ export const createWebRepository = (scope: string): EdgeEverRepository => {
     window.dispatchEvent(new CustomEvent("edgeever:sync-queue-changed"));
     return { ok: true as const };
   },
-  useTemplate: async (templateId, notebookId) => {
-    const template = (await listLocalTemplates(scope)).templates.find((candidate) => candidate.id === templateId);
+  useTemplate: async (templateId, notebookId, locale) => {
+    const stored = (await listLocalTemplates(scope)).templates.find((candidate) => candidate.id === templateId);
+    const template = stored && locale ? localizeDefaultMemoTemplate(stored, locale) : stored;
     if (!template) {
       if (isOffline()) throw new Error("Template is not available offline");
-      const result = await api.useTemplate(templateId, notebookId);
+      const result = await api.useTemplate(templateId, notebookId, locale);
       await putLocalMemo(scope, result.memo);
       return result;
     }

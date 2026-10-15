@@ -8,6 +8,7 @@ import type {
   DesktopRpcResponses,
 } from "@edgeever/shared";
 import { docToMarkdown, docToText, type MemoDetail } from "@edgeever/shared";
+import { localizeDefaultMemoTemplate } from "@edgeever/shared/memo-template-seeds";
 import type { EdgeEverRepository } from "@/lib/repository";
 import { api, getConfiguredDesktopApiBaseUrl } from "@/lib/api";
 import { createStagedResourceListItem, mapMarkdownResourceUrls, mapTiptapResourceUrls, toApiResourceUrl, toDesktopResourceUrl } from "@/lib/desktop-resources";
@@ -180,10 +181,11 @@ export const createDesktopRepository = (): EdgeEverRepository => ({
     window.dispatchEvent(new CustomEvent("edgeever:sync-queue-changed"));
     return result;
   }),
-  useTemplate: async (templateId, notebookId) => {
+  useTemplate: async (templateId, notebookId, locale) => {
     const templates = await createDesktopRepository().listTemplates();
-    const template = templates.templates.find((candidate) => candidate.id === templateId);
-    if (!template) throw new Error(`Template not found: ${templateId}`);
+    const stored = templates.templates.find((candidate) => candidate.id === templateId);
+    if (!stored) throw new Error(`Template not found: ${templateId}`);
+    const template = locale ? localizeDefaultMemoTemplate(stored, locale) : stored;
     return createDesktopRepository().createMemo({ notebookId, title: template.title ?? "", contentMarkdown: template.contentMarkdown, tags: template.tags });
   },
   uploadMemoResource: async (memoId, file) => {

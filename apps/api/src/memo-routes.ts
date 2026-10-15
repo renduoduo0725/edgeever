@@ -172,7 +172,11 @@ export const registerMemoRoutes = (
     const file = form.get("file");
     const notebookId = typeof form.get("notebookId") === "string" ? String(form.get("notebookId")).trim() : "";
     const title = typeof form.get("title") === "string" ? String(form.get("title")) : "";
-    const contentMarkdown = typeof form.get("contentMarkdown") === "string" ? String(form.get("contentMarkdown")) : "";
+    // multipart/form-data encodes line breaks in text fields as CRLF (browsers
+    // always, and newer Bun versions too), while notes store LF line breaks.
+    const contentMarkdown = typeof form.get("contentMarkdown") === "string"
+      ? String(form.get("contentMarkdown")).replace(/\r\n?/g, "\n")
+      : "";
     let tags: string[] = [];
     const tagsValue = form.get("tags");
     if (typeof tagsValue === "string" && tagsValue.trim()) {

@@ -12,6 +12,7 @@ import {
   AI_SIDEBAR_SOURCE_KEY,
   AI_SIDEBAR_SELECTION_EVENT,
   displayedDesktopAcpAdapter,
+  desktopAcpUpdateErrorHintKey,
   desktopAcpLoginRetryAvailable,
   listDesktopAcpAdapters,
   installDesktopAcpAdapter,
@@ -144,6 +145,7 @@ const DesktopAcpAgentCardBody = ({ bridge }: { bridge: boolean }) => {
   }, []);
 
   const shown = displayedDesktopAcpAdapter({ id: adapterId, path: adapterPath, listed, probed });
+  const updateHintKey = shown?.updateError ? desktopAcpUpdateErrorHintKey(shown.updateError) : null;
   const isWorkBuddy = adapterId === "workbuddyCn" || adapterId === "workbuddyIntl";
   const status = t(statusKey(shown, probing));
   const tone = getStatusTone({
@@ -185,22 +187,22 @@ const DesktopAcpAgentCardBody = ({ bridge }: { bridge: boolean }) => {
     setInstallError(false);
   };
 
-  const install = async () => {
+  const install = async (retryUpdate = false) => {
     if (adapterId !== "codex" && adapterId !== "claudeCode" && adapterId !== "antigravity" && adapterId !== "piAgent") return;
     setInstalling(true);
     setInstallError(false);
     try {
       const result = await installDesktopAcpAdapter(adapterId);
-      if (result.updated) {
-        if (adapterId === "antigravity") setAdapterPath("");
-        setListed(await listDesktopAcpAdapters());
-        if (result.adapter) setProbed({ ...result.adapter, version: result.version, managed: true });
+      if (result.updated || result.version) {
+        if (adapterId === "antigravity" && result.updated) setAdapterPath("");
+        setProbed(result.adapter ? { ...result.adapter, version: result.version, managed: true } : null);
       } else {
         setInstallError(true);
       }
     } catch {
-      setInstallError(true);
+      if (!retryUpdate) setInstallError(true);
     } finally {
+      setListed(await listDesktopAcpAdapters().catch(() => listed));
       setInstalling(false);
     }
   };
@@ -450,7 +452,14 @@ const DesktopAcpAgentCardBody = ({ bridge }: { bridge: boolean }) => {
                     <p>{t("aiAssistant.agentSource.hermesAgentSetupHint")}</p>
                   ) : null}
                   {shown?.updateError ? (
-                    <p className="text-xs text-amber-700" role="status">{t("aiAssistant.agentSource.updateFailed")}</p>
+                    <div className="space-y-2 text-xs text-amber-700" role="status">
+                      <p>{t("aiAssistant.agentSource.updateFailed")}</p>
+                      {updateHintKey ? <p>{t(updateHintKey)}</p> : null}
+                      <p className="break-words">{t("aiAssistant.agentSource.updateFailureReason", { reason: shown.updateError })}</p>
+                      <Button type="button" variant="outline" size="sm" className="h-8 bg-card text-xs font-normal" disabled={installing || probing || shown.state === "installing" || Boolean(authenticating)} onClick={() => void install(true)}>
+                        {installing || shown.state === "installing" ? t("aiAssistant.agentSource.updating") : t("aiAssistant.agentSource.retryUpdate")}
+                      </Button>
+                    </div>
                   ) : null}
                 </div>
               ) : null}

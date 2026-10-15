@@ -274,11 +274,16 @@ export const registerAuthRoutes = (
     }
 
     await clearLoginAttempts(context.env.storage.db, loginAttemptKeys);
+    if (dependencies.isDemoEnvironment(context.env)) {
+      // The demo keeps its own bilingual seed; a visitor's sign-in must not
+      // localize the shared notebooks into that visitor's language.
+      await context.env.storage.db.prepare(`DELETE FROM workspace_seed_localizations`).run();
+    }
     const workspace = await dependencies.ensureUserWorkspace(
       context.env.storage.db,
       user.id,
       user.username,
-      context.req.header("accept-language"),
+      input.locale ?? context.req.header("accept-language"),
     );
     const session = await dependencies.createSession(context, user, input.deviceId);
     dependencies.setSessionCookie(context, session.token, session.maxAge);

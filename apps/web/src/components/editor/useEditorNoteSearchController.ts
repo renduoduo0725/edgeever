@@ -19,7 +19,13 @@ import {
   type NoteSearchMatch,
 } from "./note-search";
 
+import type { MarkdownSourceEditorRef } from "./MarkdownSourceEditor";
+import { getMarkdownSearchMatches } from "./markdown-source-search";
+
 type EditorNoteSearchControllerOptions = {
+  markdownMode: boolean;
+  markdownSource: string;
+  markdownSourceEditorRef: RefObject<MarkdownSourceEditorRef | null>;
   contentSearchQuery: string;
   dirtyVersion: number;
   editor: Editor | null;
@@ -43,6 +49,9 @@ const getEditorSearchMatches = (editor: Editor | null, query: string): NoteSearc
 };
 
 export const useEditorNoteSearchController = ({
+  markdownMode,
+  markdownSource,
+  markdownSourceEditorRef,
   contentSearchQuery,
   dirtyVersion,
   editor,
@@ -73,18 +82,22 @@ export const useEditorNoteSearchController = ({
   }
 
   const noteSearchMatches = useMemo(
-    () => getEditorSearchMatches(editor, noteSearchQuery),
-    [dirtyVersion, editor, memoId, noteSearchQuery],
+    () => markdownMode ? getMarkdownSearchMatches(markdownSource, noteSearchQuery) : getEditorSearchMatches(editor, noteSearchQuery),
+    [dirtyVersion, editor, markdownMode, markdownSource, memoId, noteSearchQuery],
   );
   const contentSearchMatches = useMemo(
-    () => getEditorSearchMatches(editor, contentSearchQuery),
-    [contentSearchQuery, dirtyVersion, editor, memoId],
+    () => markdownMode ? getMarkdownSearchMatches(markdownSource, contentSearchQuery) : getEditorSearchMatches(editor, contentSearchQuery),
+    [contentSearchQuery, dirtyVersion, editor, markdownMode, markdownSource, memoId],
   );
 
   const selectMatch = useCallback(
     (index: number, matches: NoteSearchMatch[]) => {
       const match = matches[index];
 
+      if (markdownMode) {
+        if (match) markdownSourceEditorRef.current?.setSelection(match.from, match.to);
+        return;
+      }
       if (!isEditorReady(editor) || !match) {
         return;
       }
@@ -117,11 +130,11 @@ export const useEditorNoteSearchController = ({
         }
       });
     },
-    [editor, editorScrollContainerRef],
+    [editor, editorScrollContainerRef, markdownMode, markdownSourceEditorRef],
   );
 
   useEffect(() => {
-    if (!isEditorReady(editor)) {
+    if (markdownMode || !isEditorReady(editor)) {
       return;
     }
 
@@ -137,7 +150,7 @@ export const useEditorNoteSearchController = ({
         editor.unregisterPlugin(NOTE_SEARCH_HIGHLIGHT_PLUGIN_KEY);
       }
     };
-  }, [contentSearchQuery, editor, noteSearchIndex, noteSearchOpen, noteSearchQuery]);
+  }, [contentSearchQuery, editor, markdownMode, noteSearchIndex, noteSearchOpen, noteSearchQuery]);
 
   const focusSearchInput = useCallback(() => {
     window.requestAnimationFrame(() => {
@@ -178,10 +191,12 @@ export const useEditorNoteSearchController = ({
 
   const closeSearch = useCallback(() => {
     setNoteSearchOpen(false);
-    if (isEditorReady(editor)) {
+    if (markdownMode) {
+      markdownSourceEditorRef.current?.focus();
+    } else if (isEditorReady(editor)) {
       editor.commands.focus();
     }
-  }, [editor, setNoteSearchOpen]);
+  }, [editor, markdownMode, markdownSourceEditorRef, setNoteSearchOpen]);
 
   useEffect(() => {
     if (!noteSearchOpen) {
@@ -234,7 +249,7 @@ export const useEditorNoteSearchController = ({
     const source = noteSearchOpen ? "note" : "content";
     const query = noteSearchOpen ? noteSearchQuery : contentSearchQuery;
     const matches = noteSearchOpen ? noteSearchMatches : contentSearchMatches;
-    const identity = getSearchNavigationIdentity(memoId, source, query);
+    const identity = JSON.stringify([markdownMode, getSearchNavigationIdentity(memoId, source, query)]);
     const previousSelection = automaticSelectionRef.current;
 
     if (previousSelection?.editor === editor && previousSelection.identity === identity) {
@@ -250,6 +265,7 @@ export const useEditorNoteSearchController = ({
   }, [
     contentSearchMatches,
     contentSearchQuery,
+    markdownMode,
     editor,
     memoId,
     noteSearchMatches,
@@ -266,13 +282,18 @@ export const useEditorNoteSearchController = ({
   }, [noteSearchMatches.length, setNoteSearchIndex]);
 
   const replaceAllMatches = useCallback(() => {
-    if (!isEditorReady(editor) || readOnly || noteSearchMatches.length === 0) {
+    if (readOnly || noteSearchMatches.length === 0) return;
+    if (markdownMode) {
+      markdownSourceEditorRef.current?.replaceSearchMatches(noteSearchQuery, noteSearchReplacement);
+      setNoteSearchIndex(0);
+      return;
+    }
+    if (!isEditorReady(editor)) {
       return;
     }
 
     editor
       .chain()
-      .focus()
       .command(({ tr, dispatch }) => {
         for (const match of [...noteSearchMatches].reverse()) {
           tr.insertText(noteSearchReplacement, match.from, match.to);
@@ -284,10 +305,11 @@ export const useEditorNoteSearchController = ({
       .run();
 
     setNoteSearchIndex(0);
-    window.requestAnimationFrame(() => noteSearchInputRef.current?.focus());
   }, [
     editor,
-    noteSearchInputRef,
+    markdownMode,
+    markdownSourceEditorRef,
+    noteSearchQuery,
     noteSearchMatches,
     noteSearchReplacement,
     readOnly,
@@ -295,6 +317,8 @@ export const useEditorNoteSearchController = ({
   ]);
 
   return {
+    highlightQuery: noteSearchOpen ? noteSearchQuery : contentSearchQuery,
+    highlightIndex: noteSearchOpen ? noteSearchIndex : 0,
     closeReplace,
     closeSearch,
     inputRef: noteSearchInputRef,

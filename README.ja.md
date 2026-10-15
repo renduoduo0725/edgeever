@@ -68,18 +68,19 @@ EdgeEver は、オープンソースのノートと知識ベースの作業領�
 マルチチャネルでの情報収集からビジュアル表現、チーム連携まで、EdgeEver は摩擦のないエンドツーエンドのワークフローを提供します：
 
 ### 全方位のクリッピングとメディア蓄積
-- **クロスプラットフォームのワンクリック保存**：ブラウザ拡張による[小紅書ギャラリー](docs/best-practices.md#2-one-click-xiaohongshu-red-note-clipping)、[X (Twitter) 投稿と引用](docs/best-practices.md#3-one-click-x-twitter-post--quote-clipping)、[知乎の回答](docs/best-practices.md#4-one-click-zhihu-answer--column-article-clipping)、[Reddit ディスカッション](docs/best-practices.md#5-one-click-reddit-discussion-post-clipping)、[GitHub リポジトリ](docs/best-practices.md#8-one-click-github-repository-metadata-clipping) のワンクリック保存（より多くのプラットフォームへの深層対応も順次追加予定）；スマホのシステム共有による[画像](docs/best-practices.md#9-one-click-mobile-image-sharing-to-notes)や[微信記事](docs/best-practices.md#10-one-click-wechat-article-clipping-on-mobile)のワンクリック保存。
+- **クロスプラットフォームのワンクリック保存**：ブラウザ拡張は [小紅書ギャラリー](docs/best-practices.md#2-one-click-xiaohongshu-red-note-clipping)、[X (Twitter) 投稿と引用](docs/best-practices.md#3-one-click-x-twitter-post--quote-clipping)、[知乎の回答](docs/best-practices.md#4-one-click-zhihu-answer--column-article-clipping)、[Reddit](docs/best-practices.md#5-one-click-reddit-discussion-post-clipping)、[GitHub](docs/best-practices.md#8-one-click-github-repository-metadata-clipping)、YouTube、Bilibili など 15 以上の主要 SNS・コミュニティ・メディアに深層対応；スマホのシステム共有による[画像](docs/best-practices.md#9-one-click-mobile-image-sharing-to-notes)や[微信記事](docs/best-practices.md#10-one-click-wechat-article-clipping-on-mobile)のワンクリック保存にも対応。
 - **微信チャット履歴の完全取り込み**：macOS 版の微信で「他のアプリへ転送 → EdgeEver」を選ぶだけで、発言者、タイムライン、引用返信、スタンプを保持したまま構造化ノートとして一括取り込み。画像は自動埋め込みされ、動画やファイルは添付ファイルに変換されます。詳細は[微信チャット履歴の一括取り込み](docs/best-practices.md#1-one-click-wechat-chat-history-archiving)。
 - **汎用ファイル添付とクライアント側画像圧縮**：PDF、Office 文書、圧縮ファイル、動画・音声など各種添付ファイルを最大 1 GiB までチャンク分割・ストリーミング処理で安全にアップロード；ブラウザ側で静かに画像を自動圧縮し、スクリーンショットや大判画像を 50%〜90% 軽量化。
 
 ### インテリジェントなビジュアル表現と多次元データ協調
 - **ビジュアル図解ノートとプロフェッショナルインフォグラフィック**：外部描画ツール不要で、AI アシスタントへの自然言語指示だけで編集可能な[マインドマップ・フローチャート・アーキテクチャ図](docs/best-practices.md#11-ai-conversational-generation-of-mind-maps-flowcharts--architecture-diagrams) を生成（詳細は[ビジュアル図解ノート設計ガイド](docs/visual-diagram-notes.md)、Mermaid コードブロックのネイティブ描画に対応）；豊富なテンプレートから洗練された[多種多様なプロフェッショナルインフォグラフィック（タイムライン、比較図、象限マトリクスなど）](docs/best-practices.md#12-ai-powered-generation-of-professional-infographics) をその場で作成。
 - **AI 多次元テーブルと公開集計フォーム**：AI プロンプトから[あらゆる業務シーンに応じた多次元テーブル](docs/best-practices.md#13-instant-multi-dimensional-database-table-generation-via-ai-prompt)（プロジェクト管理、コンテンツ企画、人事・資産台仗など）を自動構築し、タグや日付などのフィールドとサンプルデータを自動生成；ログイン不要の[一般公開オンライン集計フォーム](docs/best-practices.md#14-one-click-public-online-form-collection-from-database-tables) をワンクリックで発行し、回答データをリアルタイムで収集・蓄積。
-- **デュアルビュー編集とノート空間整理**：リッチテキストと Markdown ソースビューを自在に切り替え可能；クラシックな 3 ペイン構成、集中モード、無制限階層のノートブック、ノートの一括結合・移動、ドラッグ＆ドロップ並べ替え；自動リビジョン履歴とパスワード保護付きのノート公開共有。
+- **ネイティブポスターノートと AI ビジュアルレイアウト**：キャンバスベースの構造化ポスターノートをネイティブサポートし、洗練されたカードテンプレートとレイアウトを内蔵；ダブルクリックでテキスト編集や画像・プレースホルダーの差し替えが可能で、ワンクリック適応ズームに対応；伴走型 AI アシスタントおよび ACP / MCP プロトコルを通じて、ポスターの生成・理解・共同推敲を直接実行可能。
+- **デュアルビュー編集・空間整理・知識ベースの公開**：リッチテキストと Markdown ソースビューを自在に切り替え可能；クラシックな 3 ペイン構成と幅調整可能なパネル、集中モード、無制限階層のノートブック、ノートの一括結合・移動、ドラッグ＆ドロップ並べ替え；自動リビジョン履歴；パスワード保護付きの単一ノート共有に加え、**ノートブック全体をツリー構造ナビゲーション付きの独立した公開知識ベース Web サイトとしてワンクリック発行**可能（パスワード保護対応）。
 
 ### クリエイター向けワンクリック配信
 - **微信公式アカウント向け一括整形**：インライン CSS を保持した美化フォーマットに一発変換し、[微信公式アカウントへの直接コピー＆ペースト](docs/best-practices.md#6-one-click-note-copy-to-wechat-official-account--blogs) に対応。外部整形ツールは不要です。
-- **高解像度ポスター画像共有とマルチ形式書き出し**：任意のノートをワンクリックで[美しいポスター画像カードとして共有](docs/best-practices.md#7-ai-rss-daily-digest--elegant-image-poster-sharing) 可能。8 種類のテーマ、フォントやカードレイアウトをカスタマイズして SNS に発信でき、単一ノートの Markdown、HTML、PDF への書き出しにも対応。
+- **高解像度ポスター画像共有とマルチ形式書き出し**：任意のノートをワンクリックで[美しいポスター画像カードとして共有](docs/best-practices.md#7-ai-rss-daily-digest--elegant-image-poster-sharing) 可能。多彩な高品位テーマ、モノグラムアバター、自適応タイポグラフィ、カスタムフォントやレイアウトを選択して SNS に発信でき、単一ノートの Markdown、HTML、PDF への書き出しにも対応。
 - **AI RSS 購読日報**：組み込みの公式 AI RSS 購読プラグインが、フィードやブログを自動巡回。AI がノイズを除去し、要点を整理した構造化日報ノートを定期生成します。
 
 ### ネイティブ AI Agent とオープンなエコシステム
@@ -154,11 +155,11 @@ curl -fsSL https://edgeever.org/install.sh | bash
 
 ---
 
-## 複数アカウント
+## 複数アカウントとストレージ使用量
 
 導入後、1 インスタンスで複数アカウントのログインができます。
 
-インスタンス管理者は **プロフィール** -> **ユーザーアカウント** でメンバーの作成、無効化、パスワードリセットができます。メンバーごとにノートブック、ノート、添付、ゴミ箱、インポート / エクスポート、MCP トークンが分離されます。
+インスタンス管理者は **プロフィール** -> **ユーザーアカウント** でメンバーの作成、無効化、パスワードリセットができます。メンバーごとにノートブック、ノート、添付、ゴミ箱、インポート / エクスポート、MCP トークンが分離されます。また、直感的なストレージ使用量ダッシュボードにより、インスタンス全体および各アカウントの添付ファイル容量をリアルタイムで把握できます。
 
 ## ブラウザ Web Clipper
 
@@ -170,7 +171,7 @@ curl -fsSL https://edgeever.org/install.sh | bash
 
 - **スマートな本文抽出**：Web ページの本文を自動抽出し、クリーンな Markdown に変換。元記事の URL とクリップ日時を保持します。
 - **選択テキストと画像のクリップ**：テキストを選択するか画像を右クリックして、ページ全体を保存することなく直接ノートとして保存できます。
-- **SNS・コミュニティの高精度クリップ**：X（旧 Twitter）、小紅書（RED）、知乎（Zhihu）、Reddit、GitHub にネイティブ対応。ワンクリックで送信。
+- **SNS とコミュニティへの深層対応**：X (Twitter)、小紅書、知乎、Reddit、GitHub、YouTube、Bilibili など 15 以上の主要プラットフォームの構造化保存にワンクリックで対応。
 - **セルフホストへのプライベート直接通信**：クリップした内容は個人の EdgeEver インスタンスに直接送信され、第三者の中継サーバーを経由しません。
 
 ## コミュニティとフィードバック
@@ -244,7 +245,7 @@ content_text      検索、要約、索引
 
 ## MCP
 
-**プロフィール** -> **API / MCP** で API トークンを作成し、ワンクリックで Remote MCP 設定をコピーすることで、Claude Code、Cursor、Antigravity、OpenClaw などの AI Agent がアカウント権限の範囲内で知識ベースを安全に管理できます。テキストノート、図のノート（マインドマップ、フローチャート、アーキテクチャ図）、多次元テーブルノートの完全な CRUD に対応し、Agent はノートブック階層、タグ、添付ファイル、履歴バージョン、ノートテンプレート、AI 指示の管理も行えます。
+**プロフィール** -> **API / MCP** で API トークンを作成し、ワンクリックで Remote MCP 設定をコピーすることで、Claude Code、Cursor、Antigravity、OpenClaw などの AI Agent がアカウント権限の範囲内で知識ベースを安全に管理できます。テキストノート、図のノート（マインドマップ、フローチャート、アーキテクチャ図）、多次元テーブルノート、ネイティブポスターノートの完全な CRUD に対応し、Agent はノートブック階層、タグ、添付ファイル、履歴バージョン、ノートテンプレート、AI 指示の管理も行えます。
 
 > 💡 **着想：**
 > AI を知識の整理役と創作の相棒にしてください。構想をインタラクティブなマインドマップ、フローチャート、アーキテクチャ図、多次元テーブルへ瞬時に落とし込み、Agent に私有の文脈を渡せます。EdgeEver のリッチテキストと美しい体裁と組み合わせることで、AI が手伝った内容は、整った、いつでも配布できる高品質な知識資産になります。
@@ -255,9 +256,10 @@ content_text      検索、要約、索引
 
 Worker 側の画像処理は避け、計算と画像処理枠を抑えます。REST API と MCP のアップロードは、クライアントが渡した内容を追加圧縮せず保存します。
 
-## 高度なオブジェクトストレージ
+## 高度なオブジェクトストレージとサードパーティ画像ホスティング
 
-インスタンスのオーナーは **設定 → 詳細 → OSS オブジェクトストレージ** で S3 互換ストレージを設定できます。切り替えは既存添付を移さず、影響しません。
+- **OSS オブジェクトストレージ**：インスタンスのオーナーは **設定 → 詳細 → OSS オブジェクトストレージ** で S3 互換ストレージを設定できます。切り替えは既存添付を移さず、影響しません。
+- **デスクトップ版 PicGo 連携**：デスクトップ版ではローカルの PicGo クライアントと連携可能で、ノート内の画像を GitHub、SM.MS、又拍雲、七牛雲や自前ホストへ直接アップロードでき、セルフホスト環境のストレージと帯域消費を節約できます。
 
 ## 移行
 

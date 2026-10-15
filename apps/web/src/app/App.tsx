@@ -60,7 +60,7 @@ const EvernoteMigrationRoute = () => {
 
 const AuthenticatedWorkspace = () => {
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const desktopBridge = window.edgeeverDesktop;
   const [desktopScopeReady, setDesktopScopeReady] = useState(() => !desktopBridge?.isAvailable);
   const [desktopScopeError, setDesktopScopeError] = useState<Error | null>(null);
@@ -115,7 +115,11 @@ const AuthenticatedWorkspace = () => {
       if (desktopBridge?.isAvailable && payload.instanceUrl !== undefined) {
         await saveDesktopApiBaseUrl(payload.instanceUrl);
       }
-      const session = await api.login({ username: payload.username, password: payload.password });
+      const session = await api.login({
+        username: payload.username,
+        password: payload.password,
+        locale: i18n.resolvedLanguage,
+      });
       await cacheDesktopSession(session);
       return session;
     },

@@ -48,6 +48,8 @@ const FORM_COOKIE = "ee_form";
 const FORM_SUBMIT_LIMIT = 30;
 const FORM_SUBMIT_WINDOW_MS = 10 * 60 * 1000;
 const PENDING_ATTACHMENT_MS = 60 * 60 * 1000;
+// Uploads that were not submitted yet; stale ones are retired after an hour.
+const PENDING_ATTACHMENT_LIMIT = 50;
 
 const selectFormSql = `SELECT id, memo_id, workspace_id, token, enabled, password_hash, title, description,
   submit_label, fields_json, created_by, submit_count, submit_window_started_at
@@ -149,6 +151,14 @@ const pendingAttachments = async (c: AppContext, form: TableFormRow, resourceIds
   }
   return attachments;
 };
+
+const countPendingAttachments = async (c: AppContext, form: TableFormRow) => (await c.env.storage.db.prepare(
+  `SELECT COUNT(*) AS count
+   FROM resources
+   WHERE memo_id = ? AND is_deleted = 0
+     AND json_extract(metadata_json, '$.tableFormId') = ?
+     AND json_extract(metadata_json, '$.pending') = 1`,
+).bind(form.memo_id, form.id).first<{ count: number }>())?.count ?? 0;
 
 const collectResourceIds = (cells: Record<string, unknown>) => {
   const ids: string[] = [];
@@ -277,8 +287,18 @@ export const registerPublicTableFormRoutes = (app: Hono<AppEnv>) => {
     if (file.size <= 0 || file.size > TABLE_FORM_ATTACHMENT_BYTES) {
       return apiError(c, "upload_too_large", "Each form attachment must be between 1 byte and 20 MiB.", 413);
     }
+    const memo = await getMemoDetail(c.env.storage.db, form.workspace_id, form.memo_id);
+    if (!memo || !publicFields(form, memo.contentMarkdown).some((field) => field.type === "attachment")) {
+      return apiError(c, "table_form_invalid", "This form does not accept files.", 400);
+    }
+    if (await countPendingAttachments(c, form) >= PENDING_ATTACHMENT_LIMIT) {
+      return apiError(c, "table_form_rate_limited", "Too many uploads. Try again later.", 429);
+    }
     const actor = { actorType: "user" as const, actorId: form.created_by };
     const input = {
+      // Public form visitors are not signed in, so the note's workspace
+      // comes from the form.
+      workspaceId: form.workspace_id,
       memoId: form.memo_id,
       filename: file.name,
       mimeType: file.type || "application/octet-stream",
@@ -293,6 +313,22 @@ export const registerPublicTableFormRoutes = (app: Hono<AppEnv>) => {
       await c.env.storage.db.prepare(
         `UPDATE resources SET metadata_json = ? WHERE id = ?`,
       ).bind(JSON.stringify({ tableFormId: form.id, pending: 1 }), resource.id).run();
+    }
+    // The check above runs before the file is stored, so concurrent uploads
+    // can pass it together. Count again now that this upload is stored and
+    // withdraw it if the form went over the limit.
+    if (await countPendingAttachments(c, form) > PENDING_ATTACHMENT_LIMIT) {
+      const stored = await c.env.storage.db.prepare(
+        `SELECT object_key, storage_config_id FROM resources WHERE id = ?`,
+      ).bind(resource.id).first<{ object_key: string; storage_config_id: string }>();
+      const now = isoNow();
+      await c.env.storage.db.prepare(
+        `UPDATE resources SET is_deleted = 1, deleted_at = ?, updated_at = ? WHERE id = ? AND is_deleted = 0`,
+      ).bind(now, now, resource.id).run();
+      if (stored) {
+        await deleteReleasedResourceObjects(c.env, [{ objectKey: stored.object_key, storageConfigId: stored.storage_config_id }]);
+      }
+      return apiError(c, "table_form_rate_limited", "Too many uploads. Try again later.", 429);
     }
     c.header("Cache-Control", "private, no-store");
     return c.json({
@@ -315,8 +351,10 @@ export const registerPublicTableFormRoutes = (app: Hono<AppEnv>) => {
       await retirePendingAttachments(c, form);
       const cells = c.req.valid("json").cells;
       const attachments = await pendingAttachments(c, form, collectResourceIds(cells));
-      await appendTableFormSubmission(c.env.storage.db, form, cells, attachments);
-      await markAttachmentsUsed(c, form, [...attachments.keys()].filter((id) => collectResourceIds(cells).includes(id)));
+      const { usedResourceIds } = await appendTableFormSubmission(c.env.storage.db, form, cells, attachments);
+      // Only files the new row references are kept; uploads sent in other
+      // cells stay pending and are retired with the other stale uploads.
+      await markAttachmentsUsed(c, form, usedResourceIds);
       c.header("Cache-Control", "private, no-store");
       return c.json({ ok: true }, 201);
     } catch (error) {

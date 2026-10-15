@@ -36,6 +36,13 @@ describe("note search", () => {
     ]);
   });
 
+  test("matches literal backslashes and preserves query whitespace", () => {
+    const doc = documentWithParagraphs("a\\b  c");
+    expect(getSearchMatchesFromDocument(doc, "\\")).toEqual([{ from: 2, to: 3 }]);
+    expect(getSearchMatchesFromDocument(doc, "  ")).toEqual([{ from: 4, to: 6 }]);
+    expect(getSearchMatchesFromDocument(doc, " c")).toEqual([{ from: 5, to: 7 }]);
+  });
+
   test("does not match across block boundaries", () => {
     const doc = documentWithParagraphs("beta", "alpha");
     expect(getSearchMatchesFromDocument(doc, "betaalpha")).toEqual([]);
@@ -55,7 +62,8 @@ describe("note search", () => {
     expect(getNextSearchMatchIndex(4, 1, 0)).toBe(0);
     expect(formatNoteSearchMatchLabel("alpha", 1, 3)).toBe("2/3");
     expect(formatNoteSearchMatchLabel("alpha", 0, 0)).toBe("0/0");
-    expect(formatNoteSearchMatchLabel("  ", 0, 3)).toBe("0/0");
+    expect(formatNoteSearchMatchLabel("  ", 0, 3)).toBe("1/3");
+    expect(formatNoteSearchMatchLabel("", 0, 0)).toBe("0/0");
   });
 
   test("resets in-note search when switching notes, including leftover plugin jumps", () => {

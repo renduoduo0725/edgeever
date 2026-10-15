@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { desktopAcpLoginRetryAvailable, desktopAcpNoteAccessErrorKey, aiSidebarAdapterFromStorage, aiSidebarSourceFromStorage, displayedDesktopAcpAdapter } from "./desktop-acp.ts";
+import { desktopAcpUpdateErrorHintKey, desktopAcpLoginRetryAvailable, desktopAcpNoteAccessErrorKey, aiSidebarAdapterFromStorage, aiSidebarSourceFromStorage, displayedDesktopAcpAdapter } from "./desktop-acp.ts";
 
 test("a checked custom Antigravity executable takes priority over the managed connector status", () => {
   const managed = { id: "antigravity", label: "Antigravity", state: "failed", version: "1.2.1", managed: true };
@@ -155,4 +155,19 @@ test("WorkBuddy connection failures keep an edition-specific sign-in recovery pa
   }
   expect(desktopAcpLoginRetryAvailable(undefined)).toBe(false);
   expect(desktopAcpLoginRetryAvailable({ id: "codex", state: "failed", authMethods: [{ id: "browser" }] })).toBe(false);
+});
+
+test("settings preserves the latest update failure alongside an earlier successful connection probe", () => {
+  const probed = { id: "antigravity", state: "available", version: "1.3.0", managed: true };
+  const current = { ...probed, updateError: "download: timeout" };
+  const input = { id: "antigravity", path: "", listed: [current], probed };
+  expect(displayedDesktopAcpAdapter(input).updateError).toBe("download: timeout");
+  expect(displayedDesktopAcpAdapter({ ...input, listed: [{ ...probed }] }).updateError).toBeUndefined();
+});
+
+test("update errors offer a network remedy while keeping unrelated failures distinct", () => {
+  expect(desktopAcpUpdateErrorHintKey("download: The operation was aborted due to timeout")).toBe("aiAssistant.agentSource.updateTimeoutHint");
+  expect(desktopAcpUpdateErrorHintKey("download: fetch failed (ETIMEDOUT)")).toBe("aiAssistant.agentSource.updateTimeoutHint");
+  expect(desktopAcpUpdateErrorHintKey("registry: fetch failed (ENOTFOUND)")).toBe("aiAssistant.agentSource.updateNetworkHint");
+  expect(desktopAcpUpdateErrorHintKey("extract: invalid_adapter_archive")).toBeNull();
 });

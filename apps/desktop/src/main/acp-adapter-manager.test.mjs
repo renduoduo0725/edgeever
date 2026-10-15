@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { zipSync } from "fflate";
-import { MAX_ARCHIVE_BYTES, MAX_EXTRACTED_BYTES, createAcpAdapterManager, managedAdapterCommand, selectAdapterRelease, selectPiAdapterRelease } from "./acp-adapter-manager.mjs";
+import { ADAPTER_DOWNLOAD_TIMEOUT_MS, MAX_ARCHIVE_BYTES, MAX_EXTRACTED_BYTES, createAcpAdapterManager, managedAdapterCommand, selectAdapterRelease, selectPiAdapterRelease } from "./acp-adapter-manager.mjs";
 
 const codexEntry = (version) => ({
   id: "codex-acp",
@@ -13,6 +13,44 @@ const codexEntry = (version) => ({
 });
 
 describe("managed ACP adapters", () => {
+  test("reports the failed stage and HTTP status, retains the old binary, and retries using the supplied network transport", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "edgeever-acp-network-"));
+    const oldDir = path.join(root, "antigravity", "1.3.0");
+    await mkdir(oldDir, { recursive: true });
+    await writeFile(path.join(oldDir, "agy_acp_server.par"), "old");
+    await writeFile(path.join(root, "installed.json"), JSON.stringify({ antigravity: { version: "1.3.0" } }));
+    let failure = "registry";
+    const requests = [];
+    const archive = "https://dl.google.com/agy-extensions/releases/macos/test.zip";
+    const manager = createAcpAdapterManager({
+      root, platform: "darwin", arch: "arm64",
+      fetchImpl: async (url, init) => {
+        requests.push(url);
+        expect(init.redirect).toBe("error");
+        expect(init.signal.aborted).toBe(false);
+        if (url === archive) return failure === "download" ? new Response("", { status: 503 }) : new Response(zipSync({ "agy_acp_server.par": new TextEncoder().encode("new") }));
+        if (failure === "registry") return new Response("", { status: 502 });
+        return new Response(JSON.stringify({ agents: [{ id: "antigravity-acp", version: "1.4.0", distribution: { binary: { "darwin-aarch64": { archive, cmd: "./agy_acp_server.par" } } } }] }));
+      },
+    });
+    try {
+      for (const stage of ["registry", "download"]) {
+        failure = stage;
+        let error;
+        try { await manager.install("antigravity", async () => ({ state: "available" })); } catch (caught) { error = caught; }
+        expect(error.updateStage).toBe(stage);
+        expect(error.message).toContain(stage === "registry" ? "HTTP 502" : "HTTP 503");
+        expect(manager.get("antigravity").version).toBe("1.3.0");
+        expect(await readdir(path.join(root, "antigravity"))).toEqual(["1.3.0"]);
+      }
+      failure = null;
+      expect((await manager.install("antigravity", async () => ({ state: "available" }))).version).toBe("1.4.0");
+      expect(requests.filter((url) => url === archive)).toHaveLength(2);
+      expect(ADAPTER_DOWNLOAD_TIMEOUT_MS).toBe(600_000);
+      expect(await readFile(path.join(oldDir, "agy_acp_server.par"), "utf8")).toBe("old");
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
   test("accepts only the expected pi ACP npm package and retains the old adapter on a failed update", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "edgeever-managed-pi-"));
     let version = "0.0.34";

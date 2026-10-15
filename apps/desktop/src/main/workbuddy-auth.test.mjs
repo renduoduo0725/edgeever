@@ -1,5 +1,90 @@
 import { expect, test } from "bun:test";
 import { authenticateWorkBuddy, prepareWorkBuddyAuth } from "./workbuddy-auth.mjs";
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+
+for (const bundled of [false, true]) test(`credential launcher transfers ${bundled ? "Rolldown" : "named"} codec bootstrap before CLI readiness`, async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "edgeever-wb-codec-"));
+  try {
+    const main = path.join(directory, "app.asar", "main");
+    const bin = path.join(directory, "app.asar.unpacked", "cli", "bin");
+    await mkdir(main, { recursive: true });
+    await mkdir(bin, { recursive: true });
+    await writeFile(path.join(directory, "preload.cjs"), `process._linkedBinding = () => ({ loggerGet: () => 'fixture' });`);
+    await writeFile(path.join(main, "process-cpu-sampler.js"), `
+      let initialized = ${!bundled};
+      const normalize = (value) => {
+        if (!initialized || value !== 'fixture') throw Error('codec not initialized');
+        return { symmetric: { status: 'available', value: { key: Buffer.alloc(32, 7) } } };
+      };
+      const encode = (value) => {
+        if (value.policy !== 'fields' || value.symmetricKey.key[0] !== 7) throw Error('invalid bootstrap');
+        return { fixture: true };
+      };
+      const dispose = (value) => value.symmetricKey.key.fill(0);
+      module.exports = ${bundled
+        ? "{ $: () => { initialized = true; }, _t: normalize, Z: encode, X: dispose }"
+        : "{ normalizeAtRestBuildKeyCapabilities: normalize, encodeAtRestEncryptionBootstrap: encode, disposeAtRestEncryptionBootstrap: dispose }"};
+    `);
+    const cli = path.join(bin, "codebuddy");
+    await writeFile(cli, `
+      const { createServer, createConnection } = require('node:net');
+      const assert = require('node:assert/strict');
+      assert.equal(require('node:fs').realpathSync(process.argv[1]), __filename);
+      assert.equal(process.argv[2], '--acp');
+      assert.equal(process.env.WORKBUDDY_AT_REST_ENCRYPTION, 'fields');
+      const server = createServer(socket => {
+        let data = '';
+        socket.on('data', chunk => { data += chunk; });
+        socket.on('end', () => {
+          const message = JSON.parse(data);
+          assert.equal(message.pid, process.pid);
+          assert.equal(message.token, process.env.CODEBUDDY_SIDECAR_READY_TOKEN);
+          assert.equal(message.sessionId, process.env.CODEBUDDY_SIDECAR_READY_SESSION_ID);
+          assert.deepEqual(message.bootstrap, { fixture: true });
+          socket.end(JSON.stringify({ ok: true }) + '\\n');
+          const ready = createConnection(process.env.CODEBUDDY_SIDECAR_READY_SOCKET);
+          ready.on('connect', () => ready.write(JSON.stringify({ id: 1, method: 'session.ready', params: { pid: process.pid, token: message.token, sessionId: message.sessionId } }) + '\\n'));
+          ready.on('data', chunk => {
+            assert.equal(JSON.parse(chunk).result.ok, true);
+            console.log('credential-bootstrap-ready');
+            ready.end();
+            server.close();
+          });
+        });
+      });
+      server.listen(process.env.CODEBUDDY_SIDECAR_CREDENTIAL_BOOTSTRAP_SOCKET);
+    `);
+    const result = spawnSync("node", ["--require", path.join(directory, "preload.cjs"), fileURLToPath(new URL("./workbuddy-launch.cjs", import.meta.url)), cli, "--acp"], { encoding: "utf8", timeout: 5_000 });
+    expect({ status: result.status, stderr: result.stderr }).toEqual({ status: 0, stderr: "" });
+    expect(result.stdout.trim()).toBe("credential-bootstrap-ready");
+    expect(result.stderr).toBe("");
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+for (const mode of ["legacy", "partial", "native-failure"]) test(`credential launcher handles ${mode} without leaking native errors`, async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), "edgeever-wb-codec-"));
+  try {
+    const main = path.join(directory, "app.asar", "main");
+    const bin = path.join(directory, "app.asar.unpacked", "cli", "bin");
+    await mkdir(main, { recursive: true });
+    await mkdir(bin, { recursive: true });
+    await writeFile(path.join(main, "process-cpu-sampler.js"), mode === "legacy" ? "module.exports = {};" : mode === "partial"
+      ? "module.exports = { _t: () => {} };"
+      : "module.exports = { $: () => {}, _t: () => {}, Z: () => {}, X: () => {} };");
+    const preload = path.join(directory, "preload.cjs");
+    await writeFile(preload, "process._linkedBinding = () => { throw Error('sensitive-native-material'); };");
+    const cli = path.join(bin, "codebuddy");
+    await writeFile(cli, "console.log('legacy-cli-started');");
+    const result = spawnSync("node", ["--require", preload, fileURLToPath(new URL("./workbuddy-launch.cjs", import.meta.url)), cli, "--acp"], { encoding: "utf8", timeout: 5_000 });
+    expect(result.status).toBe(mode === "legacy" ? 0 : 1);
+    expect(result.stdout.trim()).toBe(mode === "legacy" ? "legacy-cli-started" : "");
+    expect(result.stderr).toBe(mode === "legacy" ? "" : "[EdgeEver] WorkBuddy credential bootstrap unavailable\n");
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 const fixture = (responses, credentials = [null, "new-token"]) => {
   const calls = [];

@@ -1985,6 +1985,8 @@ const RichEditorPane = ({
 
   const {
     closeReplace: closeNoteReplace,
+    highlightQuery: noteSearchHighlightQuery,
+    highlightIndex: noteSearchHighlightIndex,
     closeSearch: closeNoteSearch,
     inputRef: noteSearchInputRef,
     matchLabel: noteSearchMatchLabel,
@@ -2002,6 +2004,9 @@ const RichEditorPane = ({
     setQuery: setNoteSearchQuery,
     setReplacement: setNoteSearchReplacement,
   } = useEditorNoteSearchController({
+    markdownMode: useMarkdownSourceEditor,
+    markdownSource,
+    markdownSourceEditorRef,
     contentSearchQuery,
     dirtyVersion,
     editor,
@@ -4425,6 +4430,8 @@ const RichEditorPane = ({
                   <MarkdownSourceEditor
                     ref={markdownSourceEditorRef}
                     memoId={memo?.id ?? ""}
+                    searchQuery={noteSearchHighlightQuery}
+                    searchIndex={noteSearchHighlightIndex}
                     value={markdownSource}
                     onChange={handleMarkdownSourceChange}
                     onPasteFiles={uploadMarkdownPasteFiles}

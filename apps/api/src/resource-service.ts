@@ -246,6 +246,11 @@ type ResourceCreateInput = {
   bytes: Uint8Array;
   actor: AuditActor;
   metadata?: Record<string, unknown>;
+  /**
+   * The note's workspace. Required on routes without a signed-in user, such
+   * as public table forms; otherwise the caller's workspace is used.
+   */
+  workspaceId?: string;
 };
 
 const storeResource = async (
@@ -261,7 +266,7 @@ const storeResource = async (
 ) => {
   const resourceId = input.resourceId?.trim() || createId("res");
   const now = isoNow();
-  const workspaceId = getWorkspaceId(context);
+  const workspaceId = input.workspaceId ?? getWorkspaceId(context);
   const filename = normalizeFilename(input.filename) || `${resourceId}${input.objectKeyExtension ?? ""}`;
   const metadata = input.kind === "attachment"
     ? { ...input.metadata, originalFilename: filename }

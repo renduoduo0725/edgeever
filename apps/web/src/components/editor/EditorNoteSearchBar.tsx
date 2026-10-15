@@ -76,7 +76,7 @@ export const EditorNoteSearchBar = ({
       <span
         className={cn(
           "w-12 shrink-0 text-center text-xs tabular-nums",
-          query.trim() && matchCount === 0 ? "text-rose-500" : "text-slate-500",
+          query.length > 0 && matchCount === 0 ? "text-rose-500" : "text-slate-500",
         )}
         aria-live="polite"
       >

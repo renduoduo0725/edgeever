@@ -29,7 +29,7 @@ type SessionContextValue = {
   isLoading: boolean;
   session: MobileSession | null;
   client: ReturnType<typeof createEdgeEverClient> | null;
-  signIn: (input: { baseUrl: string; username: string; password: string }) => Promise<void>;
+  signIn: (input: { baseUrl: string; username: string; password: string; locale?: string }) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -80,7 +80,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [queryClient, session]);
 
-  const signIn = useCallback(async (input: { baseUrl: string; username: string; password: string }) => {
+  const signIn = useCallback(async (input: { baseUrl: string; username: string; password: string; locale?: string }) => {
     const baseUrl = normalizeInstanceUrl(resolveInstanceUrlInput(input.baseUrl));
     const deviceId = await getOrCreateDeviceId();
     const loginClient = createEdgeEverClient({ baseUrl, fetch: expoFetch as typeof fetch });
@@ -88,6 +88,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       username: input.username,
       password: input.password,
       deviceId,
+      locale: input.locale,
     });
 
     if (!authSession.authenticated || !authSession.sessionToken) {

@@ -46,7 +46,10 @@ export function AiAgentSelector({ source, adapterId, disabled, onPendingChange }
     queries: listedAgents.map((agent, index) => ({
       queryKey: ["ai-sidebar-adapter-probe", agent.id, agent.version ?? "", probeInputs[index]?.path ?? ""],
       queryFn: () => probeDesktopAcpAdapter(probeInputs[index]!),
-      enabled: desktop && probeInputs[index] !== null,
+      // Listing connectors must not launch third-party processes at startup.
+      // Their handshake (and any subprocesses they create) belongs to opening
+      // the selector; sending a prompt also establishes its own connection.
+      enabled: desktop && open && probeInputs[index] !== null,
       staleTime: 30_000,
       retry: false,
       refetchOnWindowFocus: false,
