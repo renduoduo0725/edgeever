@@ -38,17 +38,17 @@ const returnToPreviousPage = () => {
 };
 
 class MobileEditorErrorBoundary extends React.Component<React.PropsWithChildren, MobileEditorErrorBoundaryState> {
-  state: MobileEditorErrorBoundaryState = { failed: false };
+  override state: MobileEditorErrorBoundaryState = { failed: false };
 
   static getDerivedStateFromError(): MobileEditorErrorBoundaryState {
     return { failed: true };
   }
 
-  componentDidCatch(error: Error) {
+  override componentDidCatch(error: Error) {
     console.error("Mobile editor crashed", error);
   }
 
-  render() {
+  override render() {
     if (!this.state.failed) return this.props.children;
     const english = (getBrowserLocale() ?? defaultLocale) === "en-US";
     return (

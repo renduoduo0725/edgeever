@@ -2,7 +2,7 @@
 
 [简体中文](browser-clipper-platform-expansion-plan.zh-CN.md)
 
-Related: [Issue #493](https://github.com/tianma-if/edgeever/issues/493). Updated: 2026-10-10. The user confirmed that Phase 1 contains **Facebook, Instagram, LinkedIn, Threads and Bluesky**. See [usage and verification](browser-clipper-platforms.md).
+Related: [Issue #493](https://github.com/tianma-if/edgeever/issues/493). Updated: 2026-10-15. The user confirmed that Phase 1 contains **Facebook, Instagram, LinkedIn, Threads and Bluesky**. See [usage and verification](browser-clipper-platforms.md).
 
 ## Delivery phases
 
@@ -11,7 +11,8 @@ Related: [Issue #493](https://github.com/tianma-if/edgeever/issues/493). Updated
 | 1 | Facebook, Instagram, LinkedIn, Threads, Bluesky | One selected post, its complete readable text, available author and publication time, images, and explicit quotations. |
 | 2 | BOSS Zhipin, Xueqiu, Xiaoyuzhou | Job details; investment posts and explicit stock identifiers; full episode Show Notes and timestamps. |
 | 3 | WeChat Official Accounts, Jike, V2EX, Substack, Medium | Articles, posts and topic supplements, preserving structure and original metadata. |
-| To schedule | Sspai, Juejin, Douban, further Hacker News work | Article/code structure, reviews and submission metadata. |
+| Requested supplement | Sspai, Juejin, Douban | Article/code structure, long/short reviews and diaries. |
+| Existing implementation | Hacker News | Reuse the merged reader's main-post text/link, author, score and submission time. |
 
 Deliver independent PRs per phase. Earlier local Hacker News, V2EX and Xiaoyuzhou work remains available but does not redefine Phase 1.
 
@@ -19,9 +20,11 @@ Deliver independent PRs per phase. Earlier local Hacker News, V2EX and Xiaoyuzho
 
 The toolbar clips a supported post detail page; a valid text selection retains priority. The platform command in a page context menu selects the post under the pointer, including supported feed cards. A small content script remembers only the clicked card’s permalink; it performs no network requests or automatic capture. Feed pages without a resolvable card prompt the user to open the post and retry.
 
+Fix the target and initial selection before queueing. Later right-clicks or selections during feedback or waiting do not change that job. Matching selections retain rich content; changed or lost selections save only the original selected text without falling back to the whole page. Navigation still cancels saving, while code blank lines and literal Markdown characters retain their meaning.
+
 Readers validate the selected post ID against its own header permalink or activity URN. Links in the body, comments and quoted posts do not establish the parent post’s identity. Navigation and message correlation are checked again before note creation. An unreadable recognized post fails explicitly rather than falling back to the entire page.
 
-Only content already readable in the current page is captured. Facebook and LinkedIn expand a local post control when necessary, with a bounded wait. Instagram and Threads use loaded post data only when the same caption is readable in the matching DOM card. Missing carousel items and hidden collection remainders fail as incomplete. No login, private API, background crawling, video download or transcription is added.
+Only readable content is captured. Xueqiu feed context menus may request the selected card’s public detail HTML on the current origin, retaining the existing page session and validating the post identity; private APIs and content behind login/challenge walls are excluded. Facebook and LinkedIn expand a local post control when necessary, with a bounded wait. Instagram and Threads use loaded post data only when the same caption is readable in the matching DOM card. Missing carousel items and hidden collection remainders fail as incomplete. No login, private API, background crawling, video download or transcription is added.
 
 Metadata includes canonical source URL, available author, separate publication and capture times, `web-clip` and the platform’s stable tag. Known timestamps use the browser system timezone at capture and `yyyy-MM-dd HH:mm:ss`; missing, date-only and relative values are not fabricated. Saved text is stable after later device timezone changes. Comments, controls and unrelated feed cards are excluded; scripts, dangerous protocols and active HTML are removed or escaped.
 
@@ -49,3 +52,11 @@ bunx playwright test tests/e2e/web-clipper-platforms.spec.ts --project=chromium
 ```
 
 Record code/test status separately from commit, PR, store publication and live acceptance. Signed-out samples and Chromium integration do not establish authenticated feed behavior or Edge/Firefox runtime acceptance. Page structure changes can cause a refusal or incomplete extraction; fail closed and retain explicit partial-image feedback. Rollback removes the affected route, menu and reader without changing saved notes or data. Preserve unrelated workspace changes.
+
+Phase 1 merged in PR #521. Phase 2 now adds BOSS jobs and Xueqiu details, and verifies the existing Xiaoyuzhou timeline/explicit-host flow; see the Phase 2 scope and limits in the linked verification document.
+
+2026-10-14: the user authorized completing the remaining listed platforms in the existing P2 contribution worktree. WeChat, Jike, Sspai, Juejin and Douban readers and menus are now implemented locally. V2EX, Substack and Medium retain their existing implementation. No additional branch or PR was created; commit, push and publication remain separate. See the latest usage/verification section for login badges, Douban comment-list targeting and acceptance limits.
+
+2026-10-15: Completed Medium/Substack metadata/tags, Jike H5 topic-card targeting and P1 visibility/media/optional-metadata boundaries against the user guidelines. Actual Substack paid previews show restriction guidance and reject whole-article saving. Real-image acceptance also repairs Web document reset clearing reused images. Cache prerequisites and unverified client boundaries are recorded in the current platform guide.
+
+2026-10-15 addition: synchronized the existing contribution branch with upstream `7b03c8db` and retained the current React extension popup. Added selected-card public-detail capture for Xueqiu feeds and LinkedIn personal professional headlines plus distinct `share` identities. Temporary detail frames disable scripts, retain browser-computed CSS visibility and are removed after success, failure or timeout.

@@ -99,6 +99,11 @@ export const withRepositoryMutationEvents = (repository: EdgeEverRepository, sco
     notifyRepositoryMutation(scope, { type: "template.deleted", templateId });
     return result;
   },
+  async duplicateMemo(memoId, input) {
+    const result = await repository.duplicateMemo(memoId, input);
+    notifyRepositoryMutation(scope, { type: "note.created", note: result.memo });
+    return result;
+  },
   async mergeMemos(input) {
     const result = await repository.mergeMemos(input);
     notifyRepositoryMutation(scope, { type: "note.created", note: result.memo });

@@ -707,5 +707,68 @@
   },
   "clipNotifications": {
     "message": "Powiadomienia o zapisywaniu"
+  },
+  "saveBossToEdgeEver": {
+    "message": "Zapisz ofertę BOSS Zhipin w EdgeEver"
+  },
+  "saveXueqiuToEdgeEver": {
+    "message": "Zapisz wpis Xueqiu w EdgeEver"
+  },
+  "platformBoss": {
+    "message": "BOSS Zhipin"
+  },
+  "platformXueqiu": {
+    "message": "Xueqiu"
+  },
+  "pageCaptureLoginRequired": {
+    "message": "Wymaga logowania"
+  },
+  "pageCaptureLoginHint": {
+    "message": "Oferta pokazuje podgląd przed zalogowaniem. Zaloguj się w witrynie i odśwież stronę przed zapisaniem pełnej treści. Zaznaczony tekst nadal można zapisać."
+  },
+  "platformWechat": {
+    "message": "WeChat"
+  },
+  "saveWechatToEdgeEver": {
+    "message": "Zapisz WeChat w EdgeEver"
+  },
+  "platformJike": {
+    "message": "Jike"
+  },
+  "saveJikeToEdgeEver": {
+    "message": "Zapisz Jike w EdgeEver"
+  },
+  "platformSspai": {
+    "message": "SSPAI"
+  },
+  "saveSspaiToEdgeEver": {
+    "message": "Zapisz SSPAI w EdgeEver"
+  },
+  "platformJuejin": {
+    "message": "Juejin"
+  },
+  "saveJuejinToEdgeEver": {
+    "message": "Zapisz Juejin w EdgeEver"
+  },
+  "platformDouban": {
+    "message": "Douban"
+  },
+  "saveDoubanToEdgeEver": {
+    "message": "Zapisz Douban w EdgeEver"
+  },
+  "platformOfficialAccountLabel": {
+    "message": "Konto oficjalne"
+  },
+  "platformListSourceLabel": {
+    "message": "Lista źródłowa"
+  },
+  "doubanSelectComment": {
+    "message": "Kliknij krótką opinię prawym przyciskiem i wybierz „Zapisz Douban w EdgeEver” lub zapisz zaznaczony tekst."
+  },
+  "pageCaptureRestricted": {
+    "message": "Ograniczona treść"
+  },
+  "pageCaptureRestrictedHint": {
+    "message": "Dostępny jest tylko ograniczony podgląd. Uzyskaj pełny dostęp na stronie i odśwież ją lub zaznacz widoczny fragment do zapisania."
   }
 }

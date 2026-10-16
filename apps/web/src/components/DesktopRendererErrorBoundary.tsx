@@ -17,7 +17,7 @@ type State = {
 const isChineseInterface = () => navigator.language.toLowerCase().startsWith("zh");
 
 export class DesktopRendererErrorBoundary extends React.Component<{ children: ReactNode }, State> {
-  state: State = { error: null, reporting: false };
+  override state: State = { error: null, reporting: false };
 
   static getDerivedStateFromError(error: unknown): Pick<State, "error"> {
     const normalized = error instanceof Error ? error : new Error(String(error));
@@ -31,7 +31,7 @@ export class DesktopRendererErrorBoundary extends React.Component<{ children: Re
     };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     markRendererRecoveryRequired();
     const details: RendererErrorDetails = {
       kind: "react-error",
@@ -56,7 +56,7 @@ export class DesktopRendererErrorBoundary extends React.Component<{ children: Re
     }
   };
 
-  render() {
+  override render() {
     if (!this.state.error) return this.props.children;
     const zh = isChineseInterface();
     const desktop = Boolean(window.edgeeverDesktop?.isAvailable);

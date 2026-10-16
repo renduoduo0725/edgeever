@@ -7,9 +7,11 @@ test.use({ channel: "chromium" });
 
 const extensionRoot = fileURLToPath(new URL("../../apps/extension/", import.meta.url));
 const fixture = readFileSync(new URL("../../apps/extension/fixtures/platforms/xiaoyuzhou.html", import.meta.url), "utf8");
+const bossFixture = readFileSync(new URL("../../apps/extension/fixtures/platforms/boss.html", import.meta.url), "utf8");
+const bossPreview = readFileSync(new URL("../../apps/extension/fixtures/platforms/boss-login-required.html", import.meta.url), "utf8");
 const readers = (await build({
   stdin: {
-    contents: 'import { readXiaoyuzhou } from "./src/xiaoyuzhou-clip"; globalThis.clipReaders = { readXiaoyuzhou };',
+    contents: 'import { readXiaoyuzhou } from "./src/xiaoyuzhou-clip"; import { bossLoginRequired, readBoss } from "./src/boss-clip"; globalThis.clipReaders = { readXiaoyuzhou, bossLoginRequired, readBoss };',
     resolveDir: extensionRoot, sourcefile: "html-safety.ts",
   },
   bundle: true, platform: "browser", format: "iife", write: false,
@@ -18,6 +20,41 @@ const readers = (await build({
 test.beforeEach(async ({ page }) => {
   await page.goto("about:blank");
   await page.addScriptTag({ content: readers });
+});
+
+test("BOSS visible descendants survive inherited visibility and the visible login warning still blocks full capture", async ({ page }) => {
+  // Use an attached DOM: computed CSS inheritance is the regression boundary.
+  await page.route('https://img.bosszhipin.com/**', route=>route.abort());
+  await page.setContent(bossFixture);
+  const result = await page.evaluate(() => {
+    const wrapper = document.createElement('div'), child = document.createElement('span');
+    wrapper.style.visibility = 'hidden'; wrapper.appendChild(document.createTextNode('HIDDEN PARENT TEXT'));
+    child.style.visibility = 'visible'; child.textContent = 'RESTORED VISIBLE JOB TEXT'; wrapper.appendChild(child);
+    document.querySelector('.job-sec-text')!.appendChild(wrapper);
+    const clip = (window as any).clipReaders.readBoss(document, 'https://www.zhipin.com/job_detail/0d7e760b0a0e7c3a0nF939S0E1NU.html');
+    return { visible: getComputedStyle(child).visibility, clip };
+  });
+  expect(result.visible).toBe('visible');
+  expect(result.clip.ok).toBe(true);
+  expect(result.clip.clip.markdown).toContain('RESTORED VISIBLE JOB TEXT');
+  expect(result.clip.clip.markdown).not.toContain('HIDDEN PARENT TEXT');
+  await page.setContent(bossPreview);
+  const restricted = await page.evaluate(() => {
+    (document.querySelector('.zp-more-info-layer-wrapper') as HTMLElement).style.visibility = 'hidden';
+    (document.querySelector('.zp-more-info-layer-text') as HTMLElement).style.visibility = 'visible';
+    return { warning: (window as any).clipReaders.bossLoginRequired(), read: (window as any).clipReaders.readBoss(document, 'https://www.zhipin.com/job_detail/0d7e760b0a0e7c3a0nF939S0E1NU.html') };
+  });
+  expect(restricted.warning).toBe(true);
+  expect(restricted.read.ok).toBe(false);
+  const nested = await page.evaluate(() => {
+    const label = document.querySelector('.zp-more-info-layer-text') as HTMLElement;
+    label.style.visibility = 'hidden'; label.innerHTML = '<span style="visibility:visible">登录查看完整内容</span>';
+    const visibleWarning = (window as any).clipReaders.bossLoginRequired();
+    const read = (window as any).clipReaders.readBoss(document, 'https://www.zhipin.com/job_detail/0d7e760b0a0e7c3a0nF939S0E1NU.html');
+    label.style.visibility = 'visible'; label.innerHTML = '<span hidden>登录查看完整内容</span>';
+    return { visibleWarning, read, hiddenWarning: (window as any).clipReaders.bossLoginRequired() };
+  });
+  expect(nested.visibleWarning).toBe(true); expect(nested.read.ok).toBe(false); expect(nested.hiddenWarning).toBe(false);
 });
 
 test("Show Notes validation does not execute markup or request embedded resources", async ({ page }) => {

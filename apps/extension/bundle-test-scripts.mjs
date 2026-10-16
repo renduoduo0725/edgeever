@@ -17,7 +17,7 @@ export const bundleTestScripts = (names) => {
       import { writeFileSync } from "node:fs";
       import { build } from "esbuild";
       const scripts = await Promise.all(${JSON.stringify(entryPoints)}.map(async (entry) =>
-        (await build({ entryPoints: [entry], bundle: true, platform: "browser", format: "iife", write: false })).outputFiles[0].text
+        (await build({ entryPoints: [entry], bundle: true, platform: "browser", conditions: entry.endsWith("/background.ts") ? ["worker"] : [], format: "iife", loader: { ".css": "empty" }, write: false })).outputFiles[0].text
       ));
       writeFileSync(${JSON.stringify(bundlePath)}, JSON.stringify(scripts));
     `], { cwd: import.meta.dir, encoding: "utf8" });

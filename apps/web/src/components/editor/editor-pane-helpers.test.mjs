@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import {
+  resetEditorDocument,
   shouldInsertDroppedResourceFiles,
   shouldRetryCreatedMemoFocus,
 } from "./editor-pane-helpers.ts";
@@ -48,18 +49,6 @@ describe("created memo focus retry", () => {
   });
 });
 
-describe("editor document reset", () => {
-  test("rebuilds EditorState from JSON so undo history does not follow a memo switch", () => {
-    const source = readFileSync(new URL("./editor-pane-helpers.ts", import.meta.url), "utf8");
-
-    expect(source).toContain("export const resetEditorDocument");
-    expect(source).toContain("releaseEditorMedia(editor)");
-    expect(source).toContain("editor.view.updateState(EditorState.create({");
-    expect(source).toContain("doc: editor.schema.nodeFromJSON(content)");
-    expect(source).toContain("plugins: editor.state.plugins");
-  });
-});
-
 describe("dropped resource files", () => {
   const fileTransfer = {
     items: [{ kind: "file", getAsFile: () => new File(["png"], "preview.png", { type: "image/png" }) }],
@@ -100,3 +89,25 @@ describe("editor outline demo preference wiring", () => {
   });
 });
 
+
+test('document reset keeps reused image sources, releases removed media and clears undo history',async()=>{
+ const {parseHTML}=await import('linkedom'),{Schema}=await import('@tiptap/pm/model'),{EditorView}=await import('@tiptap/pm/view'),{EditorState}=await import('@tiptap/pm/state'),{history,undoDepth}=await import('@tiptap/pm/history');
+ const {window}=parseHTML('<html><body><div id="editor"></div></body></html>');
+ const values={window,document:window.document,Node:window.Node,HTMLElement:window.HTMLElement,Element:window.Element,MutationObserver:window.MutationObserver,getComputedStyle:()=>({whiteSpace:'pre-wrap'}),navigator:{userAgent:'test'}};
+ const originals=new Map(Object.keys(values).map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
+ for(const [key,value] of Object.entries(values))Object.defineProperty(globalThis,key,{value,writable:true,configurable:true});
+ let view;
+ try {
+  const schema=new Schema({nodes:{doc:{content:'block*'},paragraph:{content:'text*',group:'block',toDOM:()=>['p',0]},text:{group:'inline'},image:{group:'block',attrs:{src:{}},toDOM:node=>['img',{src:node.attrs.src}]}}});
+  const content={type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'One'}]},{type:'image',attrs:{src:'/api/v1/resources/test/blob'}}]};
+  view=new EditorView(window.document.getElementById('editor'),{state:EditorState.create({schema,doc:schema.nodeFromJSON(content),plugins:[history()]})});
+  const editor={view,schema,get state(){return view.state;}};
+  view.dispatch(view.state.tr.insertText(' edit',4));expect(undoDepth(view.state)).toBe(1);
+  const image=view.dom.querySelector('img');resetEditorDocument(editor,content);
+  expect(view.dom.querySelector('img')).toBe(image);expect(image.getAttribute('src')).toBe('/api/v1/resources/test/blob');expect(undoDepth(view.state)).toBe(0);
+  resetEditorDocument(editor,{type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Another memo'}]}]});
+  expect(view.dom.querySelector('img')).toBeNull();expect(image.getAttribute('src')).toBe('');
+ } finally {
+  view?.destroy();for(const [key,descriptor] of originals){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}
+ }
+});

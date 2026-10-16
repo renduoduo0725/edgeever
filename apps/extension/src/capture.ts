@@ -1,7 +1,8 @@
-import { articlePlatform } from "./article-platform";
-import { platformHtmlMarkdown } from "./platform-clip";
+import { selectionTextMarkdown } from "./selection-clip";
+import { articlePlatform, substackPaywall } from "./article-platform";
+import { platformHtmlMarkdown, type PublishedTime } from "./platform-clip";
 import { Readability } from "@mozilla/readability";
-import TurndownService from "turndown";
+import { createDocument } from "@mixmark-io/domino";
 import { mediumContent } from "./medium-content";
 import { substackContent } from "./substack-content";
 
@@ -11,11 +12,12 @@ import { substackContent } from "./substack-content";
 const t = (key: string) => chrome.i18n.getMessage(key) || key;
 
 const root = globalThis as typeof globalThis & {
-  __edgeeverPageClipPayload?: { mode?: string };
+  __edgeeverPageClipPayload?: { mode?: string; requestId?: string; selectionText?: string };
 };
 const clipPayload = root.__edgeeverPageClipPayload;
 delete root.__edgeeverPageClipPayload;
-const selectionOnly = clipPayload?.mode === "selection";
+const frozenSelection = clipPayload?.selectionText;
+const selectionOnly = clipPayload?.mode === "selection" || !!frozenSelection;
 
 type CapturedPage = {
   title: string;
@@ -23,11 +25,15 @@ type CapturedPage = {
   markdown: string;
   plainText?: string;
   kind?: "page" | "selection";
+  platform?: "medium" | "substack";
+  author?: string;
+  publishedAt?: PublishedTime;
 };
 
 const getSelectionHtml = () => {
   const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0 || !selection.toString().trim()) {
+  if (!selection || selection.rangeCount === 0 || !selection.toString().trim()
+    || (frozenSelection !== undefined && selection.toString().replace(/\u00a0/g, " ").trim() !== frozenSelection)) {
     return "";
   }
 
@@ -39,26 +45,20 @@ const getSelectionHtml = () => {
   return container.innerHTML.trim();
 };
 
-const normalizeMarkdown = (value: string) => value.replace(/\n{3,}/g, "\n\n").trim();
-
 const markdownFromHtml = (html: string) => {
   if (!html) return "";
-  const turndown = new TurndownService({
-    bulletListMarker: "-",
-    codeBlockStyle: "fenced",
-    headingStyle: "atx",
-    linkStyle: "inlined",
-  });
-  return normalizeMarkdown(turndown.turndown(html));
+  // Parse in Domino's inert document, sharing article/table conversion without
+  // activating page scripts or media through a browser HTML assignment.
+  return platformHtmlMarkdown(createDocument(html).body, location.href);
 };
 
 const captureSelection = (): CapturedPage => {
-  const plain = window.getSelection()?.toString().replace(/\u00a0/g, " ").trim() ?? "";
+  const plain = frozenSelection ?? window.getSelection()?.toString().replace(/\u00a0/g, " ").trim() ?? "";
   const html = getSelectionHtml();
   return {
     title: document.title.trim() || location.hostname,
     url: location.href,
-    markdown: markdownFromHtml(html) || plain,
+    markdown: markdownFromHtml(html) || selectionTextMarkdown(plain),
     plainText: plain,
     kind: "selection",
   };
@@ -87,17 +87,18 @@ const textFallback = () => {
 };
 
 let readingAdaptedArticle = false;
-type CaptureReply = CapturedPage | { error: "unreadable" };
+type CaptureReply = CapturedPage | { error: "unreadable" | "restricted" };
 
 const capturePage = (): CaptureReply => {
   const selectionHtml = getSelectionHtml();
   const platform = !selectionHtml ? articlePlatform(document,location.href) : null;
   if (platform) {
     readingAdaptedArticle = true;
+    if(platform === "Substack" && substackPaywall(document)) return {error:"restricted"};
     const adapted = platform === "Medium" ? mediumContent(document,location.href) : substackContent(document,location.href);
-    const markdown = adapted ? normalizeMarkdown(platformHtmlMarkdown(adapted.body,location.href)) : "";
+    const markdown = adapted ? platformHtmlMarkdown(adapted.body,location.href) : "";
     if (!adapted || !markdown) return {error:"unreadable"};
-    return {title:adapted.title,url:location.href,markdown,kind:"page"};
+    return {title:adapted.title,url:location.href,markdown,kind:"page",platform:platform === "Medium" ? "medium" : "substack",author:adapted.author,publishedAt:adapted.publishedAt};
   }
   let article: ReturnType<Readability["parse"]> = null;
   let sourceHtml = selectionHtml;
@@ -121,7 +122,7 @@ const capturePage = (): CaptureReply => {
 };
 
 const sendCapturedPage = (page: CaptureReply) => {
-  void chrome.runtime.sendMessage({ type: "capturedPage", page });
+  void chrome.runtime.sendMessage({ type: "capturedPage", requestId: clipPayload?.requestId, page });
 };
 
 try {

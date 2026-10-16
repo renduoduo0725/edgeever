@@ -707,5 +707,68 @@
   },
   "clipNotifications": {
     "message": "クリップの通知"
+  },
+  "saveBossToEdgeEver": {
+    "message": "BOSS直聘の求人をEdgeEverに保存"
+  },
+  "saveXueqiuToEdgeEver": {
+    "message": "雪球の投稿をEdgeEverに保存"
+  },
+  "platformBoss": {
+    "message": "BOSS直聘"
+  },
+  "platformXueqiu": {
+    "message": "雪球"
+  },
+  "pageCaptureLoginRequired": {
+    "message": "ログインが必要"
+  },
+  "pageCaptureLoginHint": {
+    "message": "この求人はログイン前のプレビューです。サイトにログインして再読み込みしてから全文を保存してください。選択したテキストは保存できます。"
+  },
+  "platformWechat": {
+    "message": "WeChat"
+  },
+  "saveWechatToEdgeEver": {
+    "message": "WeChatを EdgeEver に保存"
+  },
+  "platformJike": {
+    "message": "Jike"
+  },
+  "saveJikeToEdgeEver": {
+    "message": "Jikeを EdgeEver に保存"
+  },
+  "platformSspai": {
+    "message": "SSPAI"
+  },
+  "saveSspaiToEdgeEver": {
+    "message": "SSPAIを EdgeEver に保存"
+  },
+  "platformJuejin": {
+    "message": "Juejin"
+  },
+  "saveJuejinToEdgeEver": {
+    "message": "Juejinを EdgeEver に保存"
+  },
+  "platformDouban": {
+    "message": "Douban"
+  },
+  "saveDoubanToEdgeEver": {
+    "message": "Doubanを EdgeEver に保存"
+  },
+  "platformOfficialAccountLabel": {
+    "message": "公式アカウント"
+  },
+  "platformListSourceLabel": {
+    "message": "元の一覧"
+  },
+  "doubanSelectComment": {
+    "message": "短評を右クリックして「Douban を EdgeEver に保存」を選ぶか、選択したテキストを保存してください。"
+  },
+  "pageCaptureRestricted": {
+    "message": "内容に制限あり"
+  },
+  "pageCaptureRestrictedHint": {
+    "message": "現在のページは制限付きプレビューです。サイトで全文の閲覧権限を取得して再読み込みするか、表示されている文章を選択して保存してください。"
   }
 }

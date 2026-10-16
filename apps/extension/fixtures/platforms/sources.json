@@ -94,7 +94,7 @@
       "url": "https://medium.com/@scott.batson_76410/what-should-programmers-do-while-the-ai-writes-code-a2ce2e6de88e",
       "capturedOn": "2026-10-11",
       "state": "Redirects to scottbatson.dev, a Medium custom domain with og:site_name=Medium. The browser can read the complete rendered story, with a visible free-story entitlement notice.",
-      "expected": "Article title, subtitle, every loaded body block, two images and captions. Exclude highlights UI, member notices, author controls, reaction counts and image-viewer prompts. No hidden paid content or account/session data retained."
+      "expected": "Article title, subtitle, every loaded body block, two images and captions. Exclude highlights UI, member notices, author controls, reaction counts and image-viewer prompts. No hidden paid content or account/session data retained. 2026-10-15: Own public JSON-LD adds Scott Batson and datePublished 2026-08-31T18:48:46Z; article saves web-clip/medium. Visible Aug 31, 2026 remains date precision when schema is absent."
     },
     {
       "file": "substack-note.html",
@@ -108,9 +108,193 @@
       "url": "https://www.oneusefulthing.org/p/the-dot-and-the-swarm",
       "capturedOn": "2026-10-11",
       "state": "Public article on a Substack custom domain. Sanitized structural excerpt retains beginning/final paragraphs, three sections, three images and caption, plus subscription/share UI for exclusion tests.",
-      "expected": "Clean article title, subtitle, retained paragraphs, sections, three images and caption. No subscription widgets, Share controls, header anchor buttons or comments; selection still takes priority. Not a full-article fixture or paid-content acceptance."
+      "expected": "Clean article title, subtitle, retained paragraphs, sections, three images and caption. No subscription widgets, Share controls, header anchor buttons or comments; selection still takes priority. Not a full-article fixture or paid-content acceptance. 2026-10-15: Own public JSON-LD adds Ethan Mollick and original datePublished 2026-10-01T18:54:12+08:00; article saves web-clip/substack."
+    },
+    {
+      "file": "boss.html",
+      "url": "https://www.zhipin.com/job_detail/0d7e760b0a0e7c3a0nF939S0E1NU.html",
+      "capturedOn": "2026-10-12",
+      "state": "User-provided job URL, read in Ego Chromium after reload exposed the complete salary, responsibilities, requirements and company text. Relevant rendered DOM only; computed CSS-hidden nodes marked hidden before removing styles and tracking attributes.",
+      "expected": "AI平台开发工程师; 25-50K·13薪; 深圳, 5-10年, 本科; visible benefits including 五险一金; complete requirements through OCR/multimodal experience; company introduction and 深圳福田区博今国际A座. Exclude hidden garbled spans, recruiter avatar, maps, login/communication UI, recommendations and competitiveness. Page update date is not publication time."
+    },
+    {
+      "file": "boss-login-required.html",
+      "url": "https://www.zhipin.com/job_detail/0d7e760b0a0e7c3a0nF939S0E1NU.html",
+      "capturedOn": "2026-10-12",
+      "state": "Same real URL before readable reload: salary is rendered as SVG placeholders and requirements stop at the login-required layer. Irrelevant sections and SVG paths removed.",
+      "expected": "Refuse the truncated preview; create no fallback note. Never derive salary from listing pages or retrieve protected remainder."
+    },
+    {
+      "file": "xueqiu.html",
+      "url": "https://xueqiu.com/5636485254/253443400",
+      "capturedOn": "2026-10-12",
+      "state": "Public signed-out article in Ego Chromium. Relevant article container and one comment retained; scripts, forms and event attributes removed.",
+      "expected": "Full article through final customer/service sentence, --大圣--, post time 2023-06-16T23:54:12.000Z, three images, explicit SH600438/SH601012/SH688472 stock tags. Exclude hidden attribution, reaction/discussion UI and separate comments. Body syndicated timestamp must not replace post publication time."
+    },
+    {
+      "file": "xueqiu-feed.html",
+      "url": "https://xueqiu.com/",
+      "capturedOn": "2026-10-12",
+      "state": "Two real truncated home-feed cards in Ego Chromium. Header/author/permalink/body only; no account or session state.",
+      "expected": "Pointer binds own header, never a body reference or sibling. Description previews require opening detail; cannot be saved as complete posts. Real /S/09992 stock link preserves its leading zero when present in a readable body."
+    },
+    {
+      "file": "xiaoyuzhou-hosts.html",
+      "url": "https://www.xiaoyuzhoufm.com/episode/612375e57f89405077cbeb3b",
+      "capturedOn": "2026-10-12",
+      "state": "Public episode read in Ego Chromium. Relevant header, complete Show Notes DOM and minimal query/episode payload only; no audio or user state.",
+      "expected": "Episode title, 下课以后, all six time-axis nodes from 1:10 through 16:42, explicit 阿丁、毛毛 host text, cover and final listening guidance. Do not infer hosts from podcast authors."
+    },
+    {
+      "file": "wechat.html",
+      "url": "https://mp.weixin.qq.com/s/TC-ONpL3PGklsD0yhtcuBQ",
+      "capturedOn": "2026-10-14",
+      "state": "Public Official Account article rendered in Ego Chromium; full #js_content, account/author/time and declared cover retained. 2026-10-15 heading acceptance: retain computed font-size/font-weight/text-align for 75 visible text runs from the same real page; other publisher styles remain removed.",
+      "expected": "Keep 华为云DeepSeek-R1&V3满血版体验 title, 大数据架构之道, 陈云亮, source date precision, cover plus 20 meaningful body images (21 total) and final model-conversation guidance. Resolve data-src. Exclude the publisher follow banner and arrow, four explicitly labeled decorative dividers, native CPS ads, trailing standalone native article recommendation, reward/share/comment controls. Preserve tutorial actions, quoted follow wording, meaningful GIFs and inline article references. The fixture retains the original uncleaned DOM as a regression input. Restore three H2 sections (什么是Deepseek V3, 什么是DeepSeek R1, 华为云ModelAart Studio（MaaS）) and four H3 step labels; keep the original article title unchanged."
+    },
+    {
+      "file": "sspai.html",
+      "url": "https://sspai.com/post/92653",
+      "capturedOn": "2026-10-14",
+      "state": "Public rendered article in Ego Chromium; relevant article root with computed hidden author popovers retained as hidden.",
+      "expected": "Keep full sleep-apnea/Apple Watch article, 北鸮, original date 2024-10-10, all nine original images and final references. Append its own update as a blockquote: displayed update time, bold title 中国大陆推出睡眠呼吸暂停迹象提示功能 and full 2026-10-14 explanation in source order, without replacing the publication date. Exclude duplicate update navigation, author popovers, sidebar and interactions."
+    },
+    {
+      "file": "juejin.html",
+      "url": "https://juejin.cn/post/6972051526416072717",
+      "capturedOn": "2026-10-14",
+      "state": "Public rendered article in Ego Chromium; article-scoped schema author/time and code blocks retained. Desktop author header is CSS-hidden.",
+      "expected": "Keep JavaScript异步发展历史, 小和山的菜鸟们 from declared public author metadata, original UTC time, complete code with language and indentation, and two valid body image URLs. Keep the comparison table as a structured table: three headers 发展史/优点/缺点 and four body rows callback/promise/generator/async-await, preserving every cell and the 事件循环 link. An empty-source image placeholder is not an attachment. Remove copy-code controls."
+    },
+    {
+      "file": "jike.html",
+      "url": "https://m.okjike.com/originalPosts/66ac89b0314f5cced41012d3",
+      "capturedOn": "2026-10-14",
+      "state": "Public signed-out mobile share detail in Ego Chromium. Only own public post ID/content/createdAt/picture URLs retained from Next data.",
+      "expected": "Keep 汐笺, complete AI-analysis caption, original timestamp and one public original picture. Exclude avatar, circle, reactions and comments. JSON verifies DOM completeness; it does not supply hidden body text."
+    },
+    {
+      "file": "jike-grid.html",
+      "url": "https://m.okjike.com/originalPosts/6715e824d9dc81724c2ec74d",
+      "capturedOn": "2026-10-14",
+      "state": "Public signed-out mobile share detail in Ego Chromium; nine images and own public post metadata.",
+      "expected": "Keep 彗星咻咻咻, 又凑了九张赤坎游客照 caption, exact source time and all nine public original image URLs in order. Same-count incorrect or reordered images cannot satisfy the declared post."
+    },
+    {
+      "file": "jike-long.html",
+      "url": "https://m.okjike.com/originalPosts/64c9dd9a2edae6abdc610605",
+      "capturedOn": "2026-10-14",
+      "state": "Public signed-out mobile share detail in Ego Chromium; complete long text already loaded, no actual expand control present.",
+      "expected": "Keep 泛函, all career text through 《世界尽头的咖啡馆》和《斯坦福大学人生设计课》, 31 body links and one link-preview cover. Strip own Jike share tracking. Synthetic local-expand variants are not a live click acceptance record."
+    },
+    {
+      "file": "douban-book.html",
+      "url": "https://book.douban.com/review/16093028/",
+      "capturedOn": "2026-10-14",
+      "state": "Public full book review in Ego Chromium; exact review root, author and six body images. Visible date is labeled edited.",
+      "expected": "Keep 行走在文字间，是我与这个世界达成的和解, 完颜打骨折, all seven displayed review paragraphs and six images in source order. Blank lines within the two HTML paragraphs are meaningful under Douban's pre-wrap styling. Image archival needs the declared Douban CDN access and own-extension referrer rule. Exclude spoiler/interactions/attribution UI; edited date is not original publication time."
+    },
+    {
+      "file": "douban-movie.html",
+      "url": "https://movie.douban.com/review/17798662/",
+      "capturedOn": "2026-10-14",
+      "state": "Public full movie review in Ego Chromium; exact review root and two images. Visible date is labeled edited.",
+      "expected": "Keep 假如没有越狱成功，安迪也仍是自由的, 希音, complete review and two images. Omit edited date from original publication metadata; exclude comments."
+    },
+    {
+      "file": "douban-music.html",
+      "url": "https://music.douban.com/review/17855287/",
+      "capturedOn": "2026-10-14",
+      "state": "Public full prose music review in Ego Chromium; exact review root and three images.",
+      "expected": "Keep 回来击穿他的肚脐眼, Ink乐评：崔健《飞狗》 prose, author when readable, all three images and full conclusion. Exclude interactions and comments."
+    },
+    {
+      "file": "douban-note.html",
+      "url": "https://www.douban.com/note/814698224/",
+      "capturedOn": "2026-10-14",
+      "state": "Public diary in Ego Chromium after the site security redirect returned automatically; no CAPTCHA or login was performed.",
+      "expected": "Keep 雨中小镇, 孩子气概, source time 2021-10-14T22:06:17 without guessing its timezone, complete diary and six images. Exclude avatar, footer and comments."
+    },
+    {
+      "file": "douban-comments.html",
+      "url": "https://book.douban.com/subject/36864764/comments/",
+      "capturedOn": "2026-10-14",
+      "state": "Public subject short-comment list in Ego Chromium. The first own data-cid is 4237804504; its site /comment/ permalink returned 404 when navigated directly.",
+      "expected": "Right-click the exact first card to keep 散步 · 就绪雀 and its short comment, never neighbor 4259416906. Optional date/permalink absence does not reject readable card content. Retain the working list URL and actual c-4237804504 fragment as source. Toolbar requires a selected passage on lists."
+    },
+    {
+      "file": "jike-feed.html",
+      "url": "https://m.okjike.com/topics/63579abb6724cc583b9bba9a",
+      "capturedOn": "2026-10-15",
+      "state": "Public signed-out H5 topic feed in Ego Chromium. First two rendered cards and only their public id/content/createdAt/pictures/user username and screenName retained. No account/session payload or array-index binding.",
+      "expected": "Bind own avatar profile plus complete caption and declared media uniquely. First card 陈皮皮屁 includes the 42章经 audio preview; second JimHuiHui retains the full AI/content-industry text through 护城河 and one original picture. Pointer and save must exclude the other card. No audio download."
+    },
+    {
+      "file": "substack-paywall.html",
+      "url": "https://www.lennysnewsletter.com/p/how-to-build-ai-product-sense",
+      "capturedOn": "2026-10-15",
+      "state": "Public signed-out paid preview read in Ego Chromium. Sanitized newsletter article root retains the actual visible .paywall, header and .available-content preview.",
+      "expected": "Show content-restricted badge and guidance; refuse whole-article capture without a fallback note even if body/title is missing. Explicit visible text selections remain allowed. Does not retrieve or archive the paid remainder."
+    },
+    {
+      "file": "linkedin-person.html",
+      "url": "https://www.linkedin.com/posts/maddyahmad_softwareengineering-artificialintelligence-share-7456582751698190336-6NVK/",
+      "capturedOn": "2026-10-15",
+      "state": "Signed-in Ego Chromium SDUI personal post. Sanitized own author header and main commentary; profile photos and interactive controls removed.",
+      "expected": "Keep Mohammad Ahmed separately from Technical Lead - Backend at Dizzaract; retain displayed 5 个月前 and complete body. Bind share:7456582751698190336, excluding connection degree, comments and nested cards."
+    },
+    {
+      "file": "xueqiu-feed-detail.html",
+      "url": "https://www.xueqiu.com/6114376649/411862401",
+      "capturedOn": "2026-10-15",
+      "state": "Public detail HTML fetched in Ego Chromium from the www.xueqiu.com feed origin, with the existing page session. Own article header, title and body retained; scripts and controls removed.",
+      "expected": "Read the complete 2238-character article behind the first truncated feed card; keep author, available source time and explicit stock links, without other feed cards."
+    },
+    {
+      "file": "xueqiu-feed-detail-second.html",
+      "url": "https://www.xueqiu.com/2754211668/411841572",
+      "capturedOn": "2026-10-15",
+      "state": "Same-origin public detail HTML for the second actual Ego feed card, sanitized as above.",
+      "expected": "Keep full text through 把自己的真金白银押在别人的嘴上，早晚是要付出代价的。, one body image and explicitly linked 09992/NTES. Remove the source-app footer; never save the feed preview as complete."
     }
   ],
-  "redaction": "Only relevant DOM containers and one comment excerpt remain. Controls, unrelated sections, scripts, event attributes and auth-bearing links were removed. Xiaoyuzhou JSON retains only query.id and episode eid/title/shownotes, used to verify identity and completeness. Tests derive synthetic boundary states from these real DOM fixtures; those variants are not live-site acceptance evidence. Phase 1 fixtures retain the actual target DOM and only post-relevant JSON records. Authentication, session, tracking and unrelated records are excluded. Reader and pointer tests use these structures; boundary mutations are synthetic.",
-  "updatedOn": "2026-10-11"
+  "redaction": "Only relevant DOM containers and one comment excerpt remain. Controls, unrelated sections, scripts, event attributes and auth-bearing links were removed. Xiaoyuzhou JSON retains only query.id and episode eid/title/shownotes, used to verify identity and completeness. Tests derive synthetic boundary states from these real DOM fixtures; those variants are not live-site acceptance evidence. Phase 1 fixtures retain the actual target DOM and only post-relevant JSON records. Authentication, session, tracking and unrelated records are excluded. Reader and pointer tests use these structures; boundary mutations are synthetic. 2026-10-14 article/Jike/Douban samples retain only relevant rendered roots and public article metadata; computed hidden nodes are marked before styles are removed. Attribute allowlists exclude handlers, tracking fields and account/session state. Jike Next data retains only the selected public post identity/content/time and picUrl/middlePicUrl/thumbnailUrl. Douban list retains multiple real comments to verify exact pointer targeting and no neighbor capture.",
+  "updatedOn": "2026-10-15",
+  "liveChecks": [
+    {
+      "url": "https://book.douban.com/review/16093028/",
+      "checkedOn": "2026-10-15",
+      "expected": "Real DOM reader retains seven displayed paragraphs. Reloaded extension's own DNR rule enables all six CDN WebP downloads. The shared page-images flow persists 6/6 resources through the same local API worker's internal address; readback via the configured origin retains seven paragraphs, zero external images and six decodable attachments matching the source SHA-256 values. Normal Wrangler proxy upload/save attempts returned 503, recorded separately. Two owned temporary notes are deleted; the existing user's note remains untouched. This is component-chain verification, not native toolbar/menu clicking."
+    },
+    {
+      "url": "https://juejin.cn/post/6972051526416072717",
+      "checkedOn": "2026-10-15",
+      "expected": "Compiled reader and the actual shared note Markdown parser in Ego Chromium retain one table with three columns, one header row and four body rows. Every cell, row label and the 事件循环 link matches the source; two images, original publication time and source DOM remain unchanged. Reader/parser verification, not a new persisted-note UI acceptance."
+    },
+    {
+      "url": "https://sspai.com/post/92653",
+      "checkedOn": "2026-10-15",
+      "expected": "Compiled reader in Ego Chromium retains displayed 以下内容于 昨天 10:00更新, bold title 中国大陆推出睡眠呼吸暂停迹象提示功能 exactly once and complete update body within one parsed blockquote with no heading elements. Original publication remains 2024-10-10; nine images and source DOM remain unchanged. Reader and Markdown parsing verification, not a new persisted-note UI acceptance."
+    },
+    {
+      "url": "https://movie.douban.com/subject/1292052/comments?status=P",
+      "checkedOn": "2026-10-14",
+      "expected": "Movie comment card 32514679: 肖申克的救赎 · 如小果. Current compiled pointer listener marked exactly the own card via a DOM contextmenu event, and the compiled reader kept its own short body and working list source."
+    },
+    {
+      "url": "https://music.douban.com/subject/35398647/comments/",
+      "checkedOn": "2026-10-14",
+      "expected": "Music comment card 2791306478: 飞狗 · 1806. Current compiled pointer listener marked exactly the own card via a DOM contextmenu event, and the compiled reader kept its own short body and working list source. Not native browser context-menu clicking or instance persistence."
+    },
+    {
+      "url": "https://m.okjike.com/topics/63579abb6724cc583b9bba9a",
+      "checkedOn": "2026-10-15",
+      "expected": "Current compiled pointer marks precisely post 6ace942f756bbb66581c3f96 / JimHuiHui in ten real cards; compiled reader retains the complete own caption and one original image. DOM context-menu event, not native browser chrome clicking."
+    },
+    {
+      "url": "https://www.lennysnewsletter.com/p/how-to-build-ai-product-sense",
+      "checkedOn": "2026-10-15",
+      "expected": "Actual visible paid-subscriber gate returns restricted from the compiled page reader. No hidden paid remainder is read."
+    }
+  ]
 }

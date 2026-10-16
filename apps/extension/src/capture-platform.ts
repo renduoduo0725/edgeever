@@ -1,13 +1,20 @@
+import { selectionTextMarkdown } from "./selection-clip";
 import { facebookExpandButton, linkedinExpandButton, readSocial, socialPostCard } from "./social-clip";
 import { readHackerNews } from "./hacker-news-clip";
 import { readV2ex } from "./v2ex-clip";
 import { readXiaoyuzhou } from "./xiaoyuzhou-clip";
-import { markdownText, platformHtmlMarkdown, platformTarget, type PlatformLabels, type PlatformRead } from "./platform-clip";
+import { readBoss } from "./boss-clip";
+import { readXueqiu } from "./xueqiu-clip";
+import { readXueqiuFeedPost } from "./xueqiu-feed";
+import { readArticle } from "./article-clip";
+import { readJike, jikeExpandButton, jikePostCard } from "./jike-clip";
+import { readDouban } from "./douban-clip";
+import { platformHtmlMarkdown, platformTarget, type PlatformLabels, type PlatformRead } from "./platform-clip";
 
 // Built as a standalone IIFE and injected only after a user action.
 (() => {
   const root = globalThis as typeof globalThis & {
-    __edgeeverPlatformClipPayload?: { requestId?: string; url?: string; selectionFirst?: boolean; sourceUrl?: string; xiaoyuzhouState?: unknown };
+    __edgeeverPlatformClipPayload?: { requestId?: string; url?: string; selectionFirst?: boolean; selectionText?: string; sourceUrl?: string; xiaoyuzhouState?: unknown };
   };
   const payload = root.__edgeeverPlatformClipPayload;
   delete root.__edgeeverPlatformClipPayload;
@@ -29,6 +36,11 @@ import { markdownText, platformHtmlMarkdown, platformTarget, type PlatformLabels
       case "hacker-news": return readHackerNews(document, location.href, labels);
       case "v2ex": return readV2ex(document, location.href, labels);
       case "xiaoyuzhou": return readXiaoyuzhou(document, location.href, labels, payload.xiaoyuzhouState);
+      case "boss": return readBoss(document, location.href);
+      case "xueqiu": return readXueqiu(document, expected, location.href);
+      case "wechat": case "sspai": case "juejin": return readArticle(document, location.href, t("platformOfficialAccountLabel"));
+      case "jike": return readJike(document, location.href, expected);
+      case "douban": return readDouban(document, expected, location.href, t("platformListSourceLabel"));
       default: return readSocial(document, expected);
     }
   };
@@ -39,17 +51,22 @@ import { markdownText, platformHtmlMarkdown, platformTarget, type PlatformLabels
   const capture = async () => {
     if (!samePage()) return { ok: false, reason: "changed" };
     const selection = payload.selectionFirst ? window.getSelection() : null;
-    if (selection?.rangeCount && selection.toString().trim()) {
+    const liveText = selection?.toString().replace(/\u00a0/g, " ").trim() || "";
+    const selectedText = payload.selectionFirst ? payload.selectionText ?? liveText : "";
+    if (selectedText) {
       const selected = document.createElement("div");
-      for (let index = 0; index < selection.rangeCount; index += 1) selected.appendChild(selection.getRangeAt(index).cloneContents());
+      if (selection?.rangeCount && liveText === selectedText) {
+        for (let index = 0; index < selection.rangeCount; index += 1) selected.appendChild(selection.getRangeAt(index).cloneContents());
+      }
       const markdown = platformHtmlMarkdown(selected, expected.url)
-        || selection.toString().trim().split(/\r?\n/).map(markdownText).join("\n");
+        || selectionTextMarkdown(selectedText);
       return { ok: true, selection: { title: document.title.trim() || expected.platform, url: expected.url, markdown, kind: "selection" } };
     }
+    if(expected.platform === "xueqiu" && !platformTarget(location.href)) return readXueqiuFeedPost(document,expected,sourceUrl);
     const initial = read();
-    if (!initial.ok && initial.reason === "incomplete" && ["facebook", "linkedin"].includes(expected.platform)) {
-      const card = socialPostCard(document,expected);
-      const expand = expected.platform === "facebook" ? facebookExpandButton(card) : linkedinExpandButton(card);
+    if (!initial.ok && initial.reason === "incomplete" && ["facebook", "linkedin", "jike"].includes(expected.platform)) {
+      const card = expected.platform === "jike" ? jikePostCard(document,expected,location.href) : socialPostCard(document,expected);
+      const expand = expected.platform === "jike" ? jikeExpandButton(document,card) : expected.platform === "facebook" ? facebookExpandButton(card) : linkedinExpandButton(card);
       if (!expand) return initial;
       return new Promise<PlatformRead>((resolve) => {
         let settled=false;

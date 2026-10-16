@@ -24,8 +24,8 @@ export const siteLocaleLabels: Record<SiteLocale, string> = {
 };
 
 export const siteTaglines = {
-  "zh-CN": "开源、原生支持 AI、自由部署（Cloudflare 免费额度 / Docker）的自托管「印象笔记」替代方案",
-  "en-US": "Open-source, AI-native, self-hosted Evernote alternative with Cloudflare & Docker deployment.",
+  "zh-CN": "AI 原生知识库与印象笔记 / Obsidian 替代方案，支持多端瞬时同步与原生 MCP。Cloudflare 免费托管或 Docker 自托管",
+  "en-US": "AI-native knowledge base & Evernote/Obsidian alternative with instant sync & native MCP. Free on Cloudflare or self-hosted via Docker.",
   ja: jaSiteTagline,
   pl: plSiteTagline,
 } as const satisfies Record<SiteLocale, string>;

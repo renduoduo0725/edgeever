@@ -275,6 +275,33 @@ export const createDesktopRepository = (): EdgeEverRepository => ({
     return { memo: await repairDisplayedMemo(result.memo) };
   },
 
+  duplicateMemo: async (memoId, input = {}) => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) throw new Error("memo_duplicate_offline");
+    // The server copies the note, so its local edits are synchronized first.
+    const { syncDesktopData } = await import("@/lib/desktop-sync");
+    await syncDesktopData();
+    // The sidecar lists at most 200 outbox items, so a change of this note
+    // further down the queue cannot be seen. Duplicate only when the whole
+    // outstanding queue was listed and none of it belongs to this note.
+    const [status, outbox] = await Promise.all([
+      request("sync.status", {}),
+      request("sync.outbox.list", { limit: 200, includeConflicts: true }),
+    ]);
+    const outstanding = status.pending + status.error + status.conflict;
+    if (
+      status.syncing > 0
+      || outbox.items.length < outstanding
+      || outbox.items.some((item) => item.entityId === memoId)
+    ) {
+      throw new Error("memo_duplicate_pending_changes");
+    }
+    const result = await api.duplicateMemo(memoId, input);
+    await request("sync.apply", {
+      changes: [{ entityType: "memo", operation: "upsert", entityId: result.memo.id, memo: result.memo, notebook: null }],
+    });
+    return { memo: await repairDisplayedMemo((await request("memo.get", { memoId: result.memo.id, includeDeleted: false })).memo) };
+  },
+
   listMemos: (params) => {
     const rpcParams: DesktopMemoListParams = {
       ...params,

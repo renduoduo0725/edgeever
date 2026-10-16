@@ -203,3 +203,94 @@ describe("guarded desktop plugin saves", () => {
     } finally { window.edgeeverDesktop.sidecarRequest = request; }
   });
 });
+
+describe("desktop note duplication", () => {
+  const withDuplicateHarness = async (outboxItems, run) => {
+    // Paused, the real synchronization returns at once. Replacing the module
+    // instead would leak into other test files run in the same process.
+    const { pauseDesktopSyncForImport } = await import("./desktop-sync.ts");
+    const resumeSync = await pauseDesktopSyncForImport();
+    const { api } = await import("./api.ts");
+    const request = window.edgeeverDesktop.sidecarRequest;
+    const duplicate = api.duplicateMemo;
+    const onLine = Object.getOwnPropertyDescriptor(globalThis.navigator, "onLine");
+    Object.defineProperty(globalThis.navigator, "onLine", { configurable: true, value: true });
+    const calls = [];
+    const apiCalls = [];
+    api.duplicateMemo = async (memoId, input) => {
+      apiCalls.push({ memoId, input });
+      return { memo: { id: "memo_copy", title: input.title, contentMarkdown: "Copy", contentJson: { type: "doc", content: [] } } };
+    };
+    window.edgeeverDesktop.sidecarRequest = async (method, params) => {
+      calls.push({ method, params });
+      // Like the sidecar (crates/desktop-sidecar/src/sync.rs): the list holds
+      // pending, error and conflict items in queue order, at most 200 of them.
+      if (method === "sync.outbox.list") {
+        const listed = outboxItems.filter((item) => ["pending", "error", "conflict"].includes(item.status ?? "pending"));
+        return { items: listed.slice(0, Math.min(Math.max(params.limit ?? 50, 1), 200)) };
+      }
+      if (method === "sync.status") {
+        const count = (status) => outboxItems.filter((item) => (item.status ?? "pending") === status).length;
+        return { pending: count("pending"), syncing: count("syncing"), conflict: count("conflict"), error: count("error"), cursor: 0, syncIdentity: null, lastSyncedAt: null };
+      }
+      if (method === "memo.get") return { memo: { id: params.memoId, title: "Plan (copy)", contentMarkdown: "Copy", contentJson: { type: "doc", content: [] } } };
+      return {};
+    };
+    try {
+      await run({ calls, apiCalls });
+    } finally {
+      resumeSync();
+      window.edgeeverDesktop.sidecarRequest = request;
+      api.duplicateMemo = duplicate;
+      if (onLine) Object.defineProperty(globalThis.navigator, "onLine", onLine);
+      else delete globalThis.navigator.onLine;
+    }
+  };
+
+  test("checks the outbox, copies on the server and stores the copy in the sidecar", async () => {
+    await withDuplicateHarness([], async ({ calls, apiCalls }) => {
+      const result = await createDesktopRepository().duplicateMemo("memo_plan", { title: "Plan (copy)" });
+
+      expect(apiCalls).toEqual([{ memoId: "memo_plan", input: { title: "Plan (copy)" } }]);
+      expect(calls.map((call) => call.method)).toEqual(["sync.status", "sync.outbox.list", "sync.apply", "memo.get"]);
+      expect(calls[2].params.changes[0]).toMatchObject({ entityType: "memo", operation: "upsert", entityId: "memo_copy" });
+      expect(result.memo).toMatchObject({ id: "memo_copy", title: "Plan (copy)" });
+    });
+  });
+
+  const conflicts = (count) => Array.from({ length: count }, (_, index) => ({
+    id: index + 1, kind: "memo.update", entityId: `memo_other_${index}`, status: "conflict",
+  }));
+
+  test("refuses when the note's conflict lies beyond the 200 items the sidecar lists", async () => {
+    const outbox = [...conflicts(200), { id: 201, kind: "memo.update", entityId: "memo_plan", status: "conflict" }];
+    await withDuplicateHarness(outbox, async ({ apiCalls }) => {
+      await expect(createDesktopRepository().duplicateMemo("memo_plan", { title: "Plan (copy)" }))
+        .rejects.toThrow("memo_duplicate_pending_changes");
+      expect(apiCalls).toEqual([]);
+    });
+  });
+
+  test("copies when every outstanding item was listed and none belongs to the note", async () => {
+    await withDuplicateHarness(conflicts(150), async ({ apiCalls }) => {
+      await createDesktopRepository().duplicateMemo("memo_plan", { title: "Plan (copy)" });
+      expect(apiCalls).toHaveLength(1);
+    });
+  });
+
+  test("refuses while another synchronization is still sending changes", async () => {
+    await withDuplicateHarness([{ id: 1, kind: "memo.update", entityId: "memo_other", status: "syncing" }], async ({ apiCalls }) => {
+      await expect(createDesktopRepository().duplicateMemo("memo_plan", { title: "Plan (copy)" }))
+        .rejects.toThrow("memo_duplicate_pending_changes");
+      expect(apiCalls).toEqual([]);
+    });
+  });
+
+  test("refuses while the note still has unsynchronized changes", async () => {
+    await withDuplicateHarness([{ id: 1, kind: "memo.update", entityId: "memo_plan" }], async ({ apiCalls }) => {
+      await expect(createDesktopRepository().duplicateMemo("memo_plan", { title: "Plan (copy)" }))
+        .rejects.toThrow("memo_duplicate_pending_changes");
+      expect(apiCalls).toEqual([]);
+    });
+  });
+});

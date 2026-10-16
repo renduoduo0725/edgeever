@@ -26,7 +26,7 @@ import { QuickMemoSwitcher } from "./QuickMemoSwitcher";
 import { AppConfirmDialog, MemoDeleteConfirmDialog, NotebookNameDialog } from "./dialogs/ConfirmDialogs";
 import { PluginPanelDialog } from "./plugins/PluginPanelDialog";
 import { shouldDiscardPluginNoteSearchRequest } from "./editor/note-search";
-import { api, getOrCreateClientDeviceId } from "@/lib/api";
+import { api, ApiRequestError, getOrCreateClientDeviceId } from "@/lib/api";
 import { useShowDescendantNotesPreference } from "@/lib/descendant-notes-preference";
 import { MarkdownExportMemoryLimitError, type MarkdownExportProgress } from "@/lib/markdown-export";
 import { exportSelectedMemosAsMarkdownZip } from "@/lib/selected-markdown-export";
@@ -671,6 +671,7 @@ export const WorkspaceApp = ({
   const notebooksQuery = useQuery({
     queryKey: ["notebooks"],
     queryFn: () => repository.listNotebooks(),
+    networkMode: "offlineFirst",
   });
 
   const templatesQuery = useQuery({
@@ -1069,6 +1070,8 @@ export const WorkspaceApp = ({
     [notebooks, selectedNotebookId, selectedTag, showDescendantNotes]
   );
   const memosQuery = useInfiniteQuery({
+    // Repository reads can resolve from IndexedDB without a network request.
+    networkMode: "offlineFirst",
     queryKey: ["memos", memoView, selectedNotebookId, search, memoFilterMode, memoSortMode, selectedNotebookScopeIds, selectedTag],
     queryFn: ({ pageParam }) => repository.listMemos({
         notebookId: memoView === "notebook" && !selectedTag ? selectedNotebookId : null,
@@ -1165,12 +1168,14 @@ export const WorkspaceApp = ({
   }, [rendererRecoveryMode, selectedMemoId]);
 
   const memoQuery = useQuery({
+    networkMode: "offlineFirst",
     queryKey: detailMemoId ? memoDetailQueryKey(detailMemoId, memoView) : ["memo", detailMemoId, memoView],
     queryFn: () => repository.getMemo(detailMemoId as string, memoView === "trash"),
     enabled: Boolean(detailMemoId),
   });
   const prefetchMemoDetail = useCallback((memoId: string) => {
     void queryClient.prefetchQuery({
+      networkMode: "offlineFirst",
       queryKey: memoDetailQueryKey(memoId, memoView),
       queryFn: () => repository.getMemo(memoId, memoView === "trash"),
     });
@@ -1401,6 +1406,35 @@ export const WorkspaceApp = ({
       setRightView("editor");
       setSelectedMemoId(data.memo.id);
       setActivePane("editor");
+    },
+  });
+
+  const duplicateMemoMutation = useMutation({
+    mutationFn: (input: { memoId: string; title: string }) => repository.duplicateMemo(input.memoId, { title: input.title }),
+    onSuccess: async (data) => {
+      cacheMemoDetail(queryClient, data.memo, "notebook");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["memos"] }),
+        queryClient.invalidateQueries({ queryKey: ["notebooks"] }),
+      ]);
+      setRightView("editor");
+      setSelectedMemoId(data.memo.id);
+      setActivePane("editor");
+    },
+    onError: (error) => {
+      const code = error instanceof ApiRequestError ? error.code : error instanceof Error ? error.message : null;
+      setAppNoticeDialog({
+        title: t("editor.duplicateFailedTitle"),
+        description: code === "memo_duplicate_offline"
+          ? t("editor.duplicateOffline")
+          : code === "memo_duplicate_pending_changes"
+            ? t("editor.duplicatePendingChanges")
+            : code === "duplicate_too_large"
+              ? t("editor.duplicateTooLarge")
+              : code === "duplicate_resource_missing" || code === "duplicate_unsupported"
+                ? t("editor.duplicateFilesUnavailable")
+                : t("editor.duplicateFailed"),
+      });
     },
   });
 
@@ -2102,6 +2136,14 @@ export const WorkspaceApp = ({
         onSuccess: clearMemoSelection,
       }
     );
+  };
+
+  const handleDuplicateMemo = (memo: { id: string; title: string | null }) => {
+    if (duplicateMemoMutation.isPending || memoView === "trash") return;
+    duplicateMemoMutation.mutate({
+      memoId: memo.id,
+      title: t("editor.duplicateTitle", { title: memo.title?.trim() || t("common.untitledMemo") }).slice(0, 160),
+    });
   };
 
   const handleMerge = () => {
@@ -3335,6 +3377,7 @@ export const WorkspaceApp = ({
                 });
               }}
               onMerge={handleMerge}
+              onDuplicateMemo={handleDuplicateMemo}
               onDeleteMemo={handleDeleteMemoFromList}
               onEmptyTrash={handleEmptyTrash}
               onRestoreMemo={handleRestoreMemoFromList}
@@ -3721,6 +3764,7 @@ export const WorkspaceApp = ({
                     }}
                     onMobileDefaultEditConsumed={handleMobileDefaultEditConsumed}
                     onSaveAsTemplate={handleSaveAsTemplate}
+                    onDuplicateMemo={handleDuplicateMemo}
                     />
                       )}
                     </EditorPaneErrorBoundary>

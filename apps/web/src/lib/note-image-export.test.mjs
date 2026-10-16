@@ -68,7 +68,7 @@ describe("note image export helpers", () => {
     expect(midnightCss).toContain("JetBrains Mono");
   });
 
-  test("generates editorial theme with brand logo", () => {
+  test("generates press theme when editorial is requested", () => {
     const markup = buildNoteImageCardMarkup({
       title: "Editorial Note",
       notebook: "Work",
@@ -82,7 +82,7 @@ describe("note image export helpers", () => {
       showBranding: true,
     });
 
-    expect(markup).toContain('data-theme="editorial"');
+    expect(markup).toContain('data-theme="press"');
     expect(markup).toContain("edgeever-brand-logo");
     expect(markup).not.toContain("edgeever-meta-notebook");
 
@@ -92,11 +92,11 @@ describe("note image export helpers", () => {
       fontSize: "lg",
       cardWidth: "standard",
     });
-    expect(editorialCss).toContain('data-theme="editorial"');
+    expect(editorialCss).toContain('data-theme="press"');
     expect(editorialCss).toContain("edgeever-brand-logo");
   });
 
-  test("generates film theme with brand logo", () => {
+  test("generates paper theme when film is requested", () => {
     const markup = buildNoteImageCardMarkup({
       title: "Poem Note",
       bodyHtml: "<p>Kodak film aesthetic</p>",
@@ -106,7 +106,7 @@ describe("note image export helpers", () => {
       showBranding: true,
     });
 
-    expect(markup).toContain('data-theme="film"');
+    expect(markup).toContain('data-theme="paper"');
     expect(markup).toContain("edgeever-brand-logo");
   });
 });

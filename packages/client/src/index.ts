@@ -1891,6 +1891,12 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
         body: JSON.stringify({}),
       }),
 
+    duplicateMemo: (memoId: string, payload: { notebookId?: string; title?: string } = {}) =>
+      request<MemoResponse>(`/api/v1/memos/${encodeURIComponent(memoId)}/duplicate`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+
     mergeMemos: (payload: { memoIds: string[]; notebookId?: string; title?: string }) =>
       request<MemoResponse>("/api/v1/memos/merge", {
         method: "POST",

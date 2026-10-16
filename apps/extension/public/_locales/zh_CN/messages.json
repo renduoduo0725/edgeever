@@ -707,5 +707,68 @@
   },
   "clipNotifications": {
     "message": "剪藏提示"
+  },
+  "saveBossToEdgeEver": {
+    "message": "保存 BOSS 直聘岗位到 EdgeEver"
+  },
+  "saveXueqiuToEdgeEver": {
+    "message": "保存雪球帖子到 EdgeEver"
+  },
+  "platformBoss": {
+    "message": "BOSS 直聘"
+  },
+  "platformXueqiu": {
+    "message": "雪球"
+  },
+  "pageCaptureLoginRequired": {
+    "message": "需登录"
+  },
+  "pageCaptureLoginHint": {
+    "message": "当前岗位仅显示登录预览。请在网站登录并刷新后再剪藏全文；仍可保存选中文字。"
+  },
+  "platformWechat": {
+    "message": "微信公众号"
+  },
+  "saveWechatToEdgeEver": {
+    "message": "保存微信公众号到 EdgeEver"
+  },
+  "platformJike": {
+    "message": "即刻"
+  },
+  "saveJikeToEdgeEver": {
+    "message": "保存即刻到 EdgeEver"
+  },
+  "platformSspai": {
+    "message": "少数派"
+  },
+  "saveSspaiToEdgeEver": {
+    "message": "保存少数派到 EdgeEver"
+  },
+  "platformJuejin": {
+    "message": "掘金"
+  },
+  "saveJuejinToEdgeEver": {
+    "message": "保存掘金到 EdgeEver"
+  },
+  "platformDouban": {
+    "message": "豆瓣"
+  },
+  "saveDoubanToEdgeEver": {
+    "message": "保存豆瓣到 EdgeEver"
+  },
+  "platformOfficialAccountLabel": {
+    "message": "公众号"
+  },
+  "platformListSourceLabel": {
+    "message": "原列表"
+  },
+  "doubanSelectComment": {
+    "message": "请在目标短评上右键选择“保存豆瓣到 EdgeEver”，或选中文字后剪藏。"
+  },
+  "pageCaptureRestricted": {
+    "message": "内容受限"
+  },
+  "pageCaptureRestrictedHint": {
+    "message": "当前页面只有受限预览。请先在网站取得完整阅读权限并刷新，或选中可见段落后保存。"
   }
 }

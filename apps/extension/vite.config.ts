@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from "node:url";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { build as buildStandaloneScript } from "esbuild";
-import { defineConfig } from "vite";
+import { defaultClientConditions, defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import extensionPackage from "./package.json";
@@ -15,7 +15,7 @@ const require = createRequire(import.meta.url);
 
 export default defineConfig({
   root: fileURLToPath(new URL(".", import.meta.url)),
-  resolve: { alias: { "@": fileURLToPath(new URL("../web/src", import.meta.url)) }, dedupe: ["react", "react-dom"] },
+  resolve: { conditions: ["worker", ...defaultClientConditions], alias: { "@": fileURLToPath(new URL("../web/src", import.meta.url)) }, dedupe: ["react", "react-dom"] },
   plugins: [
     react(),
     tailwindcss(),

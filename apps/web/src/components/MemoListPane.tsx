@@ -52,6 +52,7 @@ import {
   Printer,
   Pencil,
   Copy,
+  CopyPlus,
 } from "lucide-react";
 import { WeChatIcon } from "./WeChatIcon";
 import { Button } from "@/components/ui/button";
@@ -405,6 +406,7 @@ export const MemoListPane = ({
   onDeleteSelectedMemos,
   onEmptyTrash,
   onMerge,
+  onDuplicateMemo,
   onEnterSelectionMode,
   onClearSelection,
   onToggleMemo,
@@ -476,6 +478,7 @@ export const MemoListPane = ({
   onDeleteMemo: (memoId: string) => void;
   onRestoreMemo: (memoId: string) => void;
   onTogglePinMemo: (memo: MemoSummary) => void;
+  onDuplicateMemo: (memo: MemoSummary) => void;
   onMoveMemo: (memoId: string, notebookId: string) => void;
   onRequestDocumentAction: (memoId: string, action: MemoDocumentAction, printWindow?: Window | null) => void;
   onCopyMemoToWeChat: (memoId: string) => Promise<MemoWeChatCopyResult>;
@@ -1678,6 +1681,20 @@ export const MemoListPane = ({
                       ))}
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
+                  {canCreateMemo && view !== "trash" && (
+                    <DropdownMenuItem
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
+                      disabled={isLocalMemoId(memoContextMenu.memo.id)}
+                      onClick={() => {
+                        const { memo } = memoContextMenu;
+                        setMemoContextMenu(null);
+                        onDuplicateMemo(memo);
+                      }}
+                    >
+                      <CopyPlus className="h-4 w-4 text-slate-500" />
+                      {t("editor.duplicate")}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator className="my-1 h-px bg-slate-100" />
                   <DropdownMenuItem
                     className="flex h-9 w-full items-center gap-2 px-3 text-left text-xs text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"

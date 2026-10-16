@@ -32,6 +32,7 @@ const createDependencies = (overrides = {}) => ({
   getMemoDetail: async () => null,
   listMemos: async () => ({ memos: [], totalCount: 0, nextCursor: null }),
   listMemoRevisions: async () => [],
+  duplicateMemo: async () => ({ id: "memo_copy" }),
   mergeMemos: async () => ({ id: "memo_merged" }),
   moveMemos: async () => 0,
   restoreMemo: async () => ({ id: "memo_1" }),
@@ -350,6 +351,60 @@ describe("memo route contracts", () => {
 
     expect(response.status).toBe(201);
     expect(receivedInput).toEqual({ memoIds: ["memo_1", "memo_2"], title: "Merged" });
+  });
+
+  test("validates and delegates note duplication", async () => {
+    let received;
+    const dependencies = createDependencies({
+      duplicateMemo: async (_context, memoId, input, actor, actorLabel) => {
+        received = { memoId, input, actor, actorLabel };
+        return { id: "memo_copy", title: input.title };
+      },
+    });
+    const request = (body) => createApp(dependencies).request(
+      "/api/v1/memos/memo_1/duplicate",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      environment,
+    );
+
+    const response = await request({ title: "  Plan (copy)  ", notebookId: "nb_2" });
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ memo: { id: "memo_copy", title: "Plan (copy)" } });
+    expect(received).toEqual({
+      memoId: "memo_1",
+      input: { title: "Plan (copy)", notebookId: "nb_2" },
+      actor: { actorType: "agent", actorId: "tok_memos" },
+      actorLabel: "agent:tok_memos",
+    });
+    expect((await request({ title: "x".repeat(161) })).status).toBe(400);
+  });
+
+  test("reports duplication errors and requires the write scope", async () => {
+    const failing = createDependencies({
+      duplicateMemo: async () => {
+        throw new AppError("duplicate_too_large", "Too large", 413);
+      },
+    });
+    const response = await createApp(failing).request(
+      "/api/v1/memos/memo_1/duplicate",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
+      environment,
+    );
+    expect(response.status).toBe(413);
+    expect((await response.json()).error.code).toBe("duplicate_too_large");
+
+    let called = false;
+    const readOnly = createApp(
+      createDependencies({ duplicateMemo: async () => { called = true; return { id: "memo_copy" }; } }),
+      { ...agentAuth, scopes: ["read:memos"] },
+    );
+    const denied = await readOnly.request(
+      "/api/v1/memos/memo_1/duplicate",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
+      environment,
+    );
+    expect(denied.status).toBe(403);
+    expect(called).toBe(false);
   });
 
   test("delegates batch moves through the memo service boundary", async () => {

@@ -9,6 +9,8 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
     "noEmit": true,
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0",

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
+import { markdownToDoc } from "../../packages/shared/src/content.ts";
 import {
   embedPageImages,
   MAX_PAGE_IMAGE_TOTAL_BYTES,
@@ -42,6 +43,56 @@ const createClient = ({ failUploadFor = [], failSave = false, session = created,
 const onlyFrom = (urls) => async (image) => (urls.includes(image.url) ? pngFile : null);
 
 describe("page clip images", () => {
+  test("source positions distinguish real images from identical escaped text and repeated quoted code",()=>{
+    const url='https://cdn.example.com/a.png';
+    const escaped=`\\![A](${url})\n\n![A](${url})`;
+    expect(replacePageImageUrls(escaped,[{href:url,resourceId:'real'}])).toBe(`\\![A](${url})\n\n![A](/api/v1/resources/real/blob)`);
+    const code=`\`\`\`md\n![A](${url})\n\`\`\``;
+    const markdown=`${code.split('\n').map(line=>'> '+line).join('\n')}\n\n![A](${url})\n\n${code}`;
+    expect(pageImageRefs(markdown,'https://example.com')).toEqual([{href:url,url}]);
+    expect(replacePageImageUrls(markdown,[{href:url,resourceId:'real'}])).toBe(markdown.replace(`\n\n![A](${url})\n\n`,'\n\n![A](/api/v1/resources/real/blob)\n\n'));
+  });
+
+  test("source positions preserve quoted multiline labels, table images and shared reference definitions",()=>{
+    const markdown='> ![quoted\n> label](https://cdn.example.com/a.png)\n\n| Image |\n| --- |\n| ![table][img] |\n\n![other][img]\n\n[img]: https://cdn.example.com/b.png "Title"';
+    expect(pageImageRefs(markdown,'https://example.com')).toEqual([
+      {href:'https://cdn.example.com/a.png',url:'https://cdn.example.com/a.png'},
+      {href:'https://cdn.example.com/b.png',url:'https://cdn.example.com/b.png'},
+    ]);
+    expect(replacePageImageUrls(markdown,[{href:'https://cdn.example.com/a.png',resourceId:'a'},{href:'https://cdn.example.com/b.png',resourceId:'b'}])).toBe(
+      '> ![quoted\n> label](/api/v1/resources/a/blob)\n\n| Image |\n| --- |\n| ![table](/api/v1/resources/b/blob "Title") |\n\n![other](/api/v1/resources/b/blob "Title")\n\n[img]: https://cdn.example.com/b.png "Title"',
+    );
+  });
+
+  test("parser label boundaries preserve brackets inside alt code spans and inline HTML",()=>{
+    for(const alt of ['a `[` b','a `]` b','a <span title="]">b</span>']) {
+      const markdown=`![${alt}](https://example.com/a.png)`;
+      expect(pageImageRefs(markdown,'https://example.com')).toEqual([{href:'https://example.com/a.png',url:'https://example.com/a.png'}]);
+      expect(replacePageImageUrls(markdown,[{href:'https://example.com/a.png',resourceId:'image'}])).toBe(`![${alt}](/api/v1/resources/image/blob)`);
+    }
+  });
+  test("image archival preserves decoded titles without losing image nodes or table columns",async()=>{
+    const url='https://cdn.example.com/title.png';
+    const sources=[
+      `![caption](${url} "A&#10;&#10;B")`,
+      `![caption](${url} "A &amp;copy; B")`,
+      `![caption](${url} "A&#13;B")`,
+      `![caption][ref]\n\n[ref]: ${url} "A &amp;quot; &#10;&#10; B"`,
+      `| Image | Next |\n| --- | --- |\n| ![caption](${url} "A&#124;B") | untouched |`,
+    ];
+    const images=doc=>{const out=[];const visit=node=>{if(node.type==='image')out.push(node);(node.content||[]).forEach(visit);};visit(doc);return out;};
+    for(const markdown of sources) {
+      const before=markdownToDoc(markdown),original=images(before);expect(original).toHaveLength(1);
+      const {client,calls}=createClient();
+      expect(await embedPageImages(client,{memoId:'memo',markdown,created,images:pageImageRefs(markdown,'https://example.com'),download:async()=>pngFile})).toEqual({embedded:1,total:1});
+      const saved=markdownToDoc(calls.saves[0].body.contentMarkdown),archived=images(saved);
+      expect(archived).toHaveLength(1);
+      expect(archived[0].attrs).toEqual({...original[0].attrs,src:'/api/v1/resources/res_1/blob'});
+      const table=saved.content.find(node=>node.type==='table');
+      if(table){expect(table.content[1].content).toHaveLength(2);expect(JSON.stringify(table.content[1].content[1])).toContain('untouched');}
+    }
+  });
+
   test("counts every external image while transferring only the first 30", async () => {
     const markdown = Array.from({ length: 32 }, (_, index) => `![${index}](https://example.com/${index}.png)`).join("\n\n");
     const images = pageImageRefs(markdown, "https://example.com", Infinity);
@@ -295,8 +346,7 @@ describe("page clip images", () => {
 
   test("page and selection clips copy their images after the note is created", () => {
     const background = readFileSync(new URL("./src/background.ts", import.meta.url), "utf8");
-    expect(background).toContain("await createMemo(settings, page, tab.id);");
-    expect(background).toContain("await embedClipImages(settings, created.memo, contentMarkdown, page.url, tabId, null);");
+    expect(background).toContain("return embedClipImages(settings, created.memo, contentMarkdown, page.url, tabId, null);");
     expect(background).toContain("await embedClipImages(settings, created.memo, contentMarkdown, sourceUrl, tabId, frameId);");
     expect(background).toContain("func: readPageImageInPage");
   });

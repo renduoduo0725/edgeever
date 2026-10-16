@@ -1,7 +1,7 @@
 import type { AnyExtension } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
 import { TaskList } from "@tiptap/extension-list";
-import { TableKit } from "@tiptap/extension-table";
+import { EdgeEverTableKit as TableKit } from "./markdown-table";
 import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
 import { createEdgeEverDetailsExtensions } from "./details";

@@ -1,9 +1,11 @@
 import {
   serializeDiagramDocument,
   serializeInfographicDocument,
+  serializePosterDocument,
   serializeTableDocument,
   type DiagramDocument,
   type InfographicDocument,
+  type PosterDocument,
   type TableDocument,
 } from "@edgeever/shared";
 import {
@@ -112,7 +114,7 @@ export const DEMO_ARCHITECTURE_DIAGRAM_EN: DiagramDocument = {
 export const DEMO_FLOWCHART_DIAGRAM_ZH: DiagramDocument = {
   schemaVersion: 1,
   kind: "flowchart",
-  theme: "mint",
+  theme: "plain",
   nodes: [
     { id: "capture", label: "捕捉灵感", x: 72, y: 176, width: 136, height: 48, shape: "terminator" },
     { id: "enrich", label: "补充正文、标签与附件", x: 264, y: 168, width: 184, height: 64, shape: "process" },
@@ -136,7 +138,7 @@ export const DEMO_FLOWCHART_DIAGRAM_ZH: DiagramDocument = {
 export const DEMO_FLOWCHART_DIAGRAM_EN: DiagramDocument = {
   schemaVersion: 1,
   kind: "flowchart",
-  theme: "mint",
+  theme: "plain",
   nodes: [
     { id: "capture", label: "Capture an idea", x: 72, y: 176, width: 136, height: 48, shape: "terminator" },
     { id: "enrich", label: "Add content, tags & files", x: 264, y: 168, width: 184, height: 64, shape: "process" },
@@ -160,7 +162,7 @@ export const DEMO_FLOWCHART_DIAGRAM_EN: DiagramDocument = {
 export const DEMO_MIND_MAP_DIAGRAM_ZH: DiagramDocument = {
   schemaVersion: 1,
   kind: "mind-map",
-  theme: "brand",
+  theme: "plain",
   structure: "map",
   nodes: [
     { id: "root", label: "我的第二大脑", x: 72, y: 216, width: 152, height: 52, shape: "topic" },
@@ -198,7 +200,7 @@ export const DEMO_MIND_MAP_DIAGRAM_ZH: DiagramDocument = {
 export const DEMO_MIND_MAP_DIAGRAM_EN: DiagramDocument = {
   schemaVersion: 1,
   kind: "mind-map",
-  theme: "brand",
+  theme: "plain",
   structure: "map",
   nodes: [
     { id: "root", label: "My Second Brain", x: 72, y: 216, width: 152, height: 52, shape: "topic" },
@@ -239,14 +241,14 @@ data
   sequences
     - label v1.0 架构奠基
       desc 经典三栏美学、Serverless D1 存储与双向同步游标
-    - label v1.30 原生客户端
-      desc macOS 桌面端、Android (Expo) 与 iOS (SwiftUI) 全端覆盖
-    - label v1.50 AI 原生赋能
-      desc 原生 MCP 协议端点 (/mcp) 与端侧直连行内 AI 助手
-    - label v1.70 生产力矩阵
-      desc 浏览器剪藏扩展、可视化流程图、架构图与思维导图
-    - label v1.88 现代知识工作台
-      desc AI 智能信息图、多维结构化表格与全场景自建部署`;
+    - label v1.50 智能体与全端
+      desc 原生 MCP 协议端点 (/mcp)、双端原生移动客户端与剪藏矩阵
+    - label v1.88 结构化知识台
+      desc AI 智能信息图、多维结构化表格与可视化图表体系
+    - label v1.100 双协议与生态
+      desc 桌面端 ACP 深度驱动本地 Agent、知识库独立发布与全平台客户端
+    - label v1.120 视觉表现与排版
+      desc 原生海报笔记与画布排版、微信聊天完整归档与全场景自建部署`;
 
 export const DEMO_INFOGRAPHIC_SYNTAX_EN = `infographic sequence-timeline-rounded-rect-node
 data
@@ -254,14 +256,14 @@ data
   sequences
     - label v1.0 Foundation
       desc Classic three-pane layout, Serverless D1 storage & sync cursors
-    - label v1.30 Native Apps
-      desc macOS Desktop, Android (Expo) & iOS (SwiftUI) native clients
-    - label v1.50 AI Native
-      desc Native MCP endpoint (/mcp) & inline private AI writing assistant
-    - label v1.70 Productivity
-      desc Web Clipper extension, visual flowcharts, architectures & mind maps
-    - label v1.88 Modern Workbench
-      desc AI-driven infographics, structured tables & flexible self-hosting`;
+    - label v1.50 Agents & Mobile
+      desc Native MCP endpoint (/mcp), native mobile apps & clipping matrix
+    - label v1.88 Structured Workspace
+      desc AI-driven infographics, structured tables & visual diagram suite
+    - label v1.100 Dual Protocols & Web
+      desc Desktop ACP for local agents, public notebook site publishing & full platform apps
+    - label v1.120 Visual Canvas & Layout
+      desc Native poster notes & canvas layout, WeChat chat archiving & flexible self-hosting`;
 
 export const DEMO_INFOGRAPHIC_DOCUMENT_ZH: InfographicDocument = {
   schemaVersion: 1,
@@ -271,6 +273,484 @@ export const DEMO_INFOGRAPHIC_DOCUMENT_ZH: InfographicDocument = {
 export const DEMO_INFOGRAPHIC_DOCUMENT_EN: InfographicDocument = {
   schemaVersion: 1,
   syntax: DEMO_INFOGRAPHIC_SYNTAX_EN,
+};
+
+export const DEMO_POSTER_DOCUMENT_ZH: PosterDocument = {
+  schemaVersion: 1,
+  width: 1080,
+  height: 1440,
+  background: "#f4efe4",
+  templateId: "editorial",
+  copy: {
+    badge: "EDGEEVER · 知识艺术",
+    title: "极客的下一代\n数字第二大脑",
+    subtitle: "重拾经典三栏工作流，融入 AI 智能体与无损开放数据资产。",
+  },
+  elements: [
+    {
+      id: "accent-bar",
+      name: "accent-bar",
+      type: "rect",
+      x: 96,
+      y: 110,
+      width: 120,
+      height: 12,
+      fill: "#16a06e",
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+    },
+    {
+      id: "badge-text",
+      name: "badge-text",
+      type: "text",
+      role: "badge",
+      text: "EDGEEVER · 知识艺术",
+      x: 96,
+      y: 150,
+      width: 888,
+      height: 40,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#0f766e",
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "bold",
+      textAlign: "left",
+    },
+    {
+      id: "heading",
+      name: "heading",
+      type: "text",
+      role: "title",
+      text: "极客的下一代\n数字第二大脑",
+      x: 96,
+      y: 220,
+      width: 888,
+      height: 220,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#07130b",
+      fontSize: 84,
+      fontFamily: "serif",
+      fontWeight: "bold",
+      textAlign: "left",
+      lineHeight: 1.25,
+    },
+    {
+      id: "subtitle",
+      name: "subtitle",
+      type: "text",
+      role: "subtitle",
+      text: "重拾经典三栏工作流，融入 AI 智能体与无损开放数据资产。",
+      x: 96,
+      y: 470,
+      width: 888,
+      height: 80,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#3f3f46",
+      fontSize: 32,
+      fontFamily: "sans-serif",
+      fontWeight: "normal",
+      textAlign: "left",
+    },
+    {
+      id: "card-1-bg",
+      name: "card-1-bg",
+      type: "rect",
+      x: 96,
+      y: 590,
+      width: 888,
+      height: 220,
+      fill: "#ffffff",
+      radius: 20,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+    },
+    {
+      id: "card-1-title",
+      name: "card-1-title",
+      type: "text",
+      text: "01 · 原生 MCP / ACP 双协议支持",
+      x: 136,
+      y: 630,
+      width: 808,
+      height: 48,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#07130b",
+      fontSize: 32,
+      fontFamily: "sans-serif",
+      fontWeight: "bold",
+      textAlign: "left",
+    },
+    {
+      id: "card-1-body",
+      name: "card-1-body",
+      type: "text",
+      text: "原生对接 Claude、Cursor、Codex 等外部 Agent，桌面端无缝协同本地智能体。",
+      x: 136,
+      y: 695,
+      width: 808,
+      height: 70,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#71717a",
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "normal",
+      textAlign: "left",
+      lineHeight: 1.4,
+    },
+    {
+      id: "card-2-bg",
+      name: "card-2-bg",
+      type: "rect",
+      x: 96,
+      y: 840,
+      width: 888,
+      height: 220,
+      fill: "#ffffff",
+      radius: 20,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+    },
+    {
+      id: "card-2-title",
+      name: "card-2-title",
+      type: "text",
+      text: "02 · 零成本 Serverless 与自由部署",
+      x: 136,
+      y: 880,
+      width: 808,
+      height: 48,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#07130b",
+      fontSize: 32,
+      fontFamily: "sans-serif",
+      fontWeight: "bold",
+      textAlign: "left",
+    },
+    {
+      id: "card-2-body",
+      name: "card-2-body",
+      type: "text",
+      text: "跑在 Cloudflare 免费额度内或一键 Docker 自建，标准 SQLite 存储，导出无阻碍。",
+      x: 136,
+      y: 945,
+      width: 808,
+      height: 70,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#71717a",
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "normal",
+      textAlign: "left",
+      lineHeight: 1.4,
+    },
+    {
+      id: "card-3-bg",
+      name: "card-3-bg",
+      type: "rect",
+      x: 96,
+      y: 1090,
+      width: 888,
+      height: 220,
+      fill: "#ffffff",
+      radius: 20,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+    },
+    {
+      id: "card-3-title",
+      name: "card-3-title",
+      type: "text",
+      text: "03 · 全平台客户端与独立知识库",
+      x: 136,
+      y: 1130,
+      width: 808,
+      height: 48,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#07130b",
+      fontSize: 32,
+      fontFamily: "sans-serif",
+      fontWeight: "bold",
+      textAlign: "left",
+    },
+    {
+      id: "card-3-body",
+      name: "card-3-body",
+      type: "text",
+      text: "macOS、Windows、Linux、iOS 与 Android 覆盖，支持一键将笔记本发布为知识库网站。",
+      x: 136,
+      y: 1195,
+      width: 808,
+      height: 70,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#71717a",
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "normal",
+      textAlign: "left",
+      lineHeight: 1.4,
+    },
+  ],
+};
+
+export const DEMO_POSTER_DOCUMENT_EN: PosterDocument = {
+  schemaVersion: 1,
+  width: 1080,
+  height: 1440,
+  background: "#f4efe4",
+  templateId: "editorial",
+  copy: {
+    badge: "EDGEEVER · KNOWLEDGE ART",
+    title: "Next-Gen Second Brain\nfor Geeks & Creators",
+    subtitle: "Revive the beloved three-pane workflow with native AI agents and total data ownership.",
+  },
+  elements: [
+    {
+      id: "accent-bar",
+      name: "accent-bar",
+      type: "rect",
+      x: 96,
+      y: 110,
+      width: 120,
+      height: 12,
+      fill: "#16a06e",
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+    },
+    {
+      id: "badge-text",
+      name: "badge-text",
+      type: "text",
+      role: "badge",
+      text: "EDGEEVER · KNOWLEDGE ART",
+      x: 96,
+      y: 150,
+      width: 888,
+      height: 40,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#0f766e",
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "bold",
+      textAlign: "left",
+    },
+    {
+      id: "heading",
+      name: "heading",
+      type: "text",
+      role: "title",
+      text: "Next-Gen Second Brain\nfor Geeks & Creators",
+      x: 96,
+      y: 220,
+      width: 888,
+      height: 220,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#07130b",
+      fontSize: 80,
+      fontFamily: "serif",
+      fontWeight: "bold",
+      textAlign: "left",
+      lineHeight: 1.25,
+    },
+    {
+      id: "subtitle",
+      name: "subtitle",
+      type: "text",
+      role: "subtitle",
+      text: "Revive the beloved three-pane workflow with native AI agents and total data ownership.",
+      x: 96,
+      y: 470,
+      width: 888,
+      height: 80,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#3f3f46",
+      fontSize: 30,
+      fontFamily: "sans-serif",
+      fontWeight: "normal",
+      textAlign: "left",
+    },
+    {
+      id: "card-1-bg",
+      name: "card-1-bg",
+      type: "rect",
+      x: 96,
+      y: 590,
+      width: 888,
+      height: 220,
+      fill: "#ffffff",
+      radius: 20,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+    },
+    {
+      id: "card-1-title",
+      name: "card-1-title",
+      type: "text",
+      text: "01 · Native MCP & ACP Dual Protocols",
+      x: 136,
+      y: 630,
+      width: 808,
+      height: 48,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#07130b",
+      fontSize: 32,
+      fontFamily: "sans-serif",
+      fontWeight: "bold",
+      textAlign: "left",
+    },
+    {
+      id: "card-1-body",
+      name: "card-1-body",
+      type: "text",
+      text: "Connect Claude, Cursor, and Codex via MCP, and drive local agents seamlessly via ACP on desktop.",
+      x: 136,
+      y: 695,
+      width: 808,
+      height: 70,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#71717a",
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "normal",
+      textAlign: "left",
+      lineHeight: 1.4,
+    },
+    {
+      id: "card-2-bg",
+      name: "card-2-bg",
+      type: "rect",
+      x: 96,
+      y: 840,
+      width: 888,
+      height: 220,
+      fill: "#ffffff",
+      radius: 20,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+    },
+    {
+      id: "card-2-title",
+      name: "card-2-title",
+      type: "text",
+      text: "02 · 100% Free Serverless & Self-Hosting",
+      x: 136,
+      y: 880,
+      width: 808,
+      height: 48,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#07130b",
+      fontSize: 32,
+      fontFamily: "sans-serif",
+      fontWeight: "bold",
+      textAlign: "left",
+    },
+    {
+      id: "card-2-body",
+      name: "card-2-body",
+      type: "text",
+      text: "Run within Cloudflare free quotas or one-command Docker on your VPS/NAS with standard SQLite storage.",
+      x: 136,
+      y: 945,
+      width: 808,
+      height: 70,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#71717a",
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "normal",
+      textAlign: "left",
+      lineHeight: 1.4,
+    },
+    {
+      id: "card-3-bg",
+      name: "card-3-bg",
+      type: "rect",
+      x: 96,
+      y: 1090,
+      width: 888,
+      height: 220,
+      fill: "#ffffff",
+      radius: 20,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+    },
+    {
+      id: "card-3-title",
+      name: "card-3-title",
+      type: "text",
+      text: "03 · Full-Platform Apps & Knowledge Sites",
+      x: 136,
+      y: 1130,
+      width: 808,
+      height: 48,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#07130b",
+      fontSize: 32,
+      fontFamily: "sans-serif",
+      fontWeight: "bold",
+      textAlign: "left",
+    },
+    {
+      id: "card-3-body",
+      name: "card-3-body",
+      type: "text",
+      text: "Native coverage on macOS, Windows, Linux, iOS & Android; publish entire notebooks as standalone sites.",
+      x: 136,
+      y: 1195,
+      width: 808,
+      height: 70,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      fill: "#71717a",
+      fontSize: 24,
+      fontFamily: "sans-serif",
+      fontWeight: "normal",
+      textAlign: "left",
+      lineHeight: 1.4,
+    },
+  ],
 };
 
 export const DEMO_TABLE_DOCUMENT_ZH: TableDocument = {
@@ -285,6 +765,50 @@ export const DEMO_TABLE_DOCUMENT_ZH: TableDocument = {
   ],
   records: [
     {
+      id: "rec_poster",
+      cells: {
+        fld_feature: "原生海报笔记与画布排版",
+        fld_category: "图表与可视化",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-10-05",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_acp",
+      cells: {
+        fld_feature: "桌面端 ACP 本地智能体协同",
+        fld_category: "AI 智能体",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-10-08",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_notebook_site",
+      cells: {
+        fld_feature: "笔记本公开发布独立知识库",
+        fld_category: "数据与架构",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-10-10",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_platforms",
+      cells: {
+        fld_feature: "全平台客户端 (macOS / Win / Linux / iOS / Android)",
+        fld_category: "多端客户端",
+        fld_status: "已正式发布",
+        fld_verified: true,
+        fld_date: "2026-09-28",
+        fld_docs: [{ resourceId: "res_demo_attachment_bundle_zip", filename: "edgeever-attachment-demo.zip", mimeType: "application/zip", byteSize: 153 }],
+      },
+    },
+    {
       id: "rec_infographic",
       cells: {
         fld_feature: "AntV AI 信息图笔记",
@@ -298,7 +822,7 @@ export const DEMO_TABLE_DOCUMENT_ZH: TableDocument = {
     {
       id: "rec_table",
       cells: {
-        fld_feature: "多维结构化表格与表单",
+        fld_feature: "多维结构化表格与公开表单",
         fld_category: "图表与可视化",
         fld_status: "已正式发布",
         fld_verified: true,
@@ -309,7 +833,7 @@ export const DEMO_TABLE_DOCUMENT_ZH: TableDocument = {
     {
       id: "rec_mcp",
       cells: {
-        fld_feature: "原生 MCP 端点 (/mcp)",
+        fld_feature: "原生 MCP 服务端点 (/mcp)",
         fld_category: "AI 智能体",
         fld_status: "已正式发布",
         fld_verified: true,
@@ -320,23 +844,12 @@ export const DEMO_TABLE_DOCUMENT_ZH: TableDocument = {
     {
       id: "rec_clipper",
       cells: {
-        fld_feature: "Web Clipper 网页与推文剪藏",
+        fld_feature: "Web Clipper 剪藏与微信聊天归档",
         fld_category: "多端客户端",
         fld_status: "已正式发布",
         fld_verified: true,
         fld_date: "2026-09-25",
         fld_docs: [],
-      },
-    },
-    {
-      id: "rec_windows",
-      cells: {
-        fld_feature: "Windows x64 桌面端 Preview",
-        fld_category: "多端客户端",
-        fld_status: "已正式发布",
-        fld_verified: true,
-        fld_date: "2026-09-26",
-        fld_docs: [{ resourceId: "res_demo_attachment_bundle_zip", filename: "edgeever-attachment-demo.zip", mimeType: "application/zip", byteSize: 153 }],
       },
     },
   ],
@@ -358,6 +871,50 @@ export const DEMO_TABLE_DOCUMENT_EN: TableDocument = {
   ],
   records: [
     {
+      id: "rec_poster",
+      cells: {
+        fld_feature: "Native Poster Notes & Canvas Layout",
+        fld_category: "Visuals & Data",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-10-05",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_acp",
+      cells: {
+        fld_feature: "Desktop ACP Local Agent Integration",
+        fld_category: "AI Agents",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-10-08",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_notebook_site",
+      cells: {
+        fld_feature: "Notebook Knowledge Base Web Publishing",
+        fld_category: "Data & Architecture",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-10-10",
+        fld_docs: [],
+      },
+    },
+    {
+      id: "rec_platforms",
+      cells: {
+        fld_feature: "Full-Platform Apps (macOS / Win / Linux / iOS / Android)",
+        fld_category: "Cross-Platform",
+        fld_status: "Released",
+        fld_verified: true,
+        fld_date: "2026-09-28",
+        fld_docs: [{ resourceId: "res_demo_attachment_bundle_zip", filename: "edgeever-attachment-demo.zip", mimeType: "application/zip", byteSize: 153 }],
+      },
+    },
+    {
       id: "rec_infographic",
       cells: {
         fld_feature: "AntV AI Infographic Notes",
@@ -371,7 +928,7 @@ export const DEMO_TABLE_DOCUMENT_EN: TableDocument = {
     {
       id: "rec_table",
       cells: {
-        fld_feature: "Structured Table & Forms",
+        fld_feature: "Structured Tables & Public Forms",
         fld_category: "Visuals & Data",
         fld_status: "Released",
         fld_verified: true,
@@ -393,23 +950,12 @@ export const DEMO_TABLE_DOCUMENT_EN: TableDocument = {
     {
       id: "rec_clipper",
       cells: {
-        fld_feature: "Web Clipper Page & Post Clips",
+        fld_feature: "Web Clipper & WeChat Chat Archiving",
         fld_category: "Cross-Platform",
         fld_status: "Released",
         fld_verified: true,
         fld_date: "2026-09-25",
         fld_docs: [],
-      },
-    },
-    {
-      id: "rec_windows",
-      cells: {
-        fld_feature: "Windows x64 Desktop Preview",
-        fld_category: "Cross-Platform",
-        fld_status: "Released",
-        fld_verified: true,
-        fld_date: "2026-09-26",
-        fld_docs: [{ resourceId: "res_demo_attachment_bundle_zip", filename: "edgeever-attachment-demo.zip", mimeType: "application/zip", byteSize: 153 }],
       },
     },
   ],
@@ -440,11 +986,11 @@ export const DEMO_SEED_MEMOS_ZH = [
 | **源代码** | 闭源 | 核心闭源，文件开放 | **整栈开源 (AGPL-3.0)** |
 | **云端托管成本** | 商业订阅高昂（$10+/月） | 官方云同步收费（$5+/月） | **100% 永久免费 (Cloudflare 免费额度 / Docker 自建)** |
 | **数据资产所有权** | 专有格式封闭，导出困难 | 本地 Markdown，移动端同步繁琐 | **完全自主掌控 (D1 SQLite 数据库 / R2 / 无损 ZIP 导出)** |
-| **写作与表达矩阵** | 仅富文本，排版易错乱 | 纯 Markdown，缺乏沉浸所见即所得 | **双视图自由切换 (所见即所得 ⇄ 源码) + 原生架构图/流程图/思维导图/AI信息图/多维结构化表格** |
+| **写作与表达矩阵** | 仅富文本，排版易错乱 | 纯 Markdown，缺乏沉浸所见即所得 | **双视图自由切换 (所见即所得 ⇄ 源码) + 原生架构图/流程图/思维导图/AI信息图/多维结构化表格/原生海报笔记** |
 | **自媒体排版分发** | 无样式优化，格式丢失 | 需借助外部排版扩展或工具 | **一键复制到微信公众号 / Substack / Medium / WordPress** |
 | **社交卡片分享** | 截图粗糙或无排版设计 | 需第三方插件实现 | **内置 8 款精美海报主题，支持自定义字体与 PNG/JPEG 导出** |
-| **AI 原生集成生态** | 封闭收费，仅限特定功能 | 需配置复杂的第三方插件 | **原生内置 MCP 服务端点 (\`/mcp\`) 与行内 AI 智能体协同** |
-| **全平台多端覆盖** | 限制免费设备登录数量 | 多端同步与移动端体验门槛高 | **Web / PWA / Android / iOS / macOS / Windows Preview** |
+| **AI 原生集成生态** | 封闭收费，仅限特定功能 | 需配置复杂的第三方插件 | **原生内置 MCP 服务端点 (\`/mcp\`)、桌面端 ACP 本地智能体协同与行内 AI 助手** |
+| **全平台多端覆盖** | 限制免费设备登录数量 | 多端同步与移动端体验门槛高 | **Web / PWA / Android / iOS / macOS / Windows / Linux AppImage** |
 
 ---
 
@@ -457,7 +1003,7 @@ flowchart TD
     subgraph MultiClients["全端客户端矩阵"]
         C1["Web / PWA (离线草稿 & 增量同步)"]
         C2["macOS 桌面端 (Electron + Rust Sidecar)"]
-        C3["Windows 桌面端 (Preview + 上下文集成)"]
+        C3["Windows / Linux 桌面端 (ACP 智能体集成)"]
         C4["Android 原生 App (Expo + SQLite)"]
         C5["iOS 原生 App (SwiftUI + GRDB)"]
         C6["浏览器剪藏插件 (Chrome / Edge / Firefox)"]
@@ -642,13 +1188,22 @@ sequenceDiagram
 
 > 💡 **快速体验小贴士**：
 > 1. 点击右上角 **\`</>\`** 体验丝滑的双视图切换；
-> 2. 浏览侧边栏中的 **AI 信息图** 与 **多维结构化表格** 示例，感受下一代知识库形态；
+> 2. 浏览侧边栏中的 **AI 信息图**、**多维结构化表格** 与 **视觉排版海报** 示例，感受下一代知识库形态；
 > 3. 按下 **\`Cmd/Ctrl + E\`** 试一试阅读保护模式，锁定只读避免误改内容；
 > 4. 按下 **\`Cmd/Ctrl + O\`** 呼出快速切换器 (Quick Switcher)；
-> 5. 点击顶部 **微信图标**，体验一键带格式排版复制；
-> 6. 点击 **“分享为卡片”**，挑选一款你心仪的社交海报风格并导出；
-> 7. 随时在侧边栏或设置中点击 **“恢复 Demo 数据”**，一键重置演示工作区。
+> 5. 体验知识库发布功能：右键笔记本可一键公开发布为带目录树的独立静态知识库网站；
+> 6. 点击顶部 **微信图标**，体验一键带格式排版复制；
+> 7. 点击 **“分享为卡片”**，挑选一款你心仪的社交海报风格并导出；
+> 8. 随时在侧边栏或设置中点击 **“恢复 Demo 数据”**，一键重置演示工作区。
 `,
+  },
+  {
+    id: "memo_demo_poster",
+    notebookId: "nb_demo_features",
+    title: "视觉排版：EdgeEver 极客第二大脑设计海报",
+    tags: ["poster", "design", "visual-layout", "branding"],
+    isPinned: false,
+    markdown: serializePosterDocument(DEMO_POSTER_DOCUMENT_ZH),
   },
   {
     id: "memo_demo_infographic",
@@ -708,6 +1263,20 @@ export const DEMO_SEED_REVISIONS = [
     title: "Welcome to EdgeEver: Modern Open-Source Knowledge Base for Geeks & Creators",
     markdown:
       "## Welcome to EdgeEver (Initial Draft)\n\n- Classic Evernote 3-pane layout & Serverless self-hosted\n- Visual table editing & Markdown source toggle\n- Native MCP & AI agent synergy",
+  },
+  {
+    id: "rev_demo_poster_1",
+    memoId: "memo_demo_poster",
+    revision: 1,
+    title: "视觉排版：EdgeEver 极客第二大脑设计海报",
+    markdown: serializePosterDocument(DEMO_POSTER_DOCUMENT_ZH),
+  },
+  {
+    id: "rev_demo_poster_1_en",
+    memoId: "memo_demo_poster_en",
+    revision: 1,
+    title: "Visual Design: EdgeEver Geek Second Brain Poster Note",
+    markdown: serializePosterDocument(DEMO_POSTER_DOCUMENT_EN),
   },
   {
     id: "rev_demo_infographic_1",
@@ -770,11 +1339,11 @@ export const DEMO_MEMO_ENGLISH = {
 | **Source Code** | Closed source | Closed-source core, open files | **Full-stack open source (AGPL-3.0)** |
 | **Hosting Cost** | Costly commercial subscriptions ($10+/mo) | Official cloud sync subscription ($5+/mo) | **100% Free Forever (Cloudflare Free Tier / Docker Self-Hosted)** |
 | **Data Ownership** | Proprietary lock-in, hard to export | Local Markdown, cumbersome mobile sync | **Full Ownership (D1 SQLite, R2 Storage, Lossless ZIP Archives)** |
-| **Writing & Expressive Matrix** | Rich text only, fragile formatting | Plain Markdown, lacks WYSIWYG flow | **Seamless Dual-View (WYSIWYG ⇄ Source) + Native Architecture/Flowchart/Mind-Map/AI Infographic/Structured Table** |
+| **Writing & Expressive Matrix** | Rich text only, fragile formatting | Plain Markdown, lacks WYSIWYG flow | **Seamless Dual-View (WYSIWYG ⇄ Source) + Native Architecture/Flowchart/Mind-Map/AI Infographic/Structured Table/Poster Notes** |
 | **Publishing Ready** | No typography styling, loses format | Requires 3rd-party plugins or scripts | **One-Click Rich Copy for WeChat, Substack, Medium & WordPress** |
 | **Social Poster Cards** | Basic screenshots without styling | Requires external tools or plugins | **8 Built-in Exquisite Poster Themes with Typography Options & PNG/JPEG Export** |
-| **Native AI Ecosystem** | Paywalled, limited features | Heavy plugin setup required | **Native MCP Server (\`/mcp\`) & Inline AI Agent Synergy** |
-| **Cross-Platform Matrix** | Restricts active free devices | Complex setup across platforms | **Web / PWA / Android / iOS / macOS / Windows Preview** |
+| **Native AI Ecosystem** | Paywalled, limited features | Heavy plugin setup required | **Native MCP Server (\`/mcp\`), Desktop ACP Local Agent Integration & Inline AI** |
+| **Cross-Platform Matrix** | Restricts active free devices | Complex setup across platforms | **Web / PWA / Android / iOS / macOS / Windows / Linux AppImage** |
 
 ---
 
@@ -787,7 +1356,7 @@ flowchart TD
     subgraph MultiClients["Client Matrix"]
         C1["Web / PWA (Offline Drafts & Sync Queue)"]
         C2["macOS Desktop (Electron + Rust Sidecar)"]
-        C3["Windows Desktop (Preview + Context Menu)"]
+        C3["Windows / Linux Desktop (ACP Agent Integration)"]
         C4["Android Native App (Expo + SQLite)"]
         C5["iOS Native App (SwiftUI + GRDB)"]
         C6["Web Clipper (Chrome / Edge / Firefox)"]
@@ -972,13 +1541,18 @@ Export your entire library at any time from **Profile → Import and export**. T
 
 > 💡 **Quick Exploration Tips**:
 > 1. Click **\`</>\`** in the top right to try seamless dual-view toggling;
-> 2. Explore the new **AI Infographic** and **Structured Table** examples in the sidebar;
+> 2. Explore the new **AI Infographic**, **Structured Table**, and **Visual Poster** examples in the sidebar;
 > 3. Press **\`Cmd/Ctrl + E\`** to test reading protection mode against accidental edits;
 > 4. Press **\`Cmd/Ctrl + O\`** to summon the Quick Switcher;
-> 5. Click the **WeChat Icon** to copy formatted rich text ready for publishing;
-> 6. Click **"Share as Card"** to export a stunning social poster card;
-> 7. Click **"Reset Demo Data"** in settings or the sidebar anytime to restore the demo workspace.
+> 5. Try Notebook Web Publishing: right-click any notebook to publish it as a standalone knowledge base site;
+> 6. Click the **WeChat Icon** to copy formatted rich text ready for publishing;
+> 7. Click **"Share as Card"** to export a stunning social poster card;
+> 8. Click **"Reset Demo Data"** in settings or the sidebar anytime to restore the demo workspace.
 `,
+  },
+  memo_demo_poster: {
+    title: "Visual Design: EdgeEver Geek Second Brain Poster Note",
+    markdown: serializePosterDocument(DEMO_POSTER_DOCUMENT_EN),
   },
   memo_demo_infographic: {
     title: "Evolution Milestones: EdgeEver Architecture & Release History",

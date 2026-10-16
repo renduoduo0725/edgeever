@@ -1,23 +1,26 @@
 {
-  "version": "1.119.0",
+  "version": "1.120.0",
   "changes": {
     "en-US": [
-      "New workspaces initialize default notebooks and the welcome note in your interface language, and unedited built-in templates follow the current interface language.",
-      "Search and replace now follows the active editor mode, with literal Markdown source matching, highlighted results, and undoable replacements.",
-      "Desktop AI tools support manual update retries, repair ACP update failures and WorkBuddy startup compatibility, and defer local AI detection until the selector opens.",
-      "Public table forms accept file uploads reliably; image notes preserve proper line breaks; JSON backup restore validates each page before writing to prevent partial restoration of invalid pages."
+      "Duplicate a note together with independent copies of its images and attachments from the note actions menu.",
+      "Refine note image sharing with curated layouts, coordinated typography and neutral colors for the white theme.",
+      "Expand Web Clipper support for article and specialized platforms, including WeChat, Juejin, Douban, Jike and BOSS Zhipin, with improved content and image capture.",
+      "Pasted links no longer include adjacent Chinese, Japanese or Korean prose.",
+      "Improve desktop AI process cleanup by waiting for process closure before removing temporary workspaces."
     ],
     "zh-CN": [
-      "新工作区按界面语言初始化默认笔记本与欢迎笔记，未修改的内置模板随当前界面语言显示。",
-      "查找替换正确跟随当前编辑模式，支持 Markdown 源码字面匹配、结果高亮与可撤销替换。",
-      "桌面 AI 工具支持手动重试更新，修复 ACP 更新失败与 WorkBuddy 启动兼容问题，并将本地 AI 检测延后至打开选择器时。",
-      "修复公开表格表单文件上传及图片笔记换行问题；JSON 备份恢复先校验整页，避免无效页面被部分写入。"
+      "支持从笔记操作菜单复制笔记，同时独立复制图片与附件。",
+      "优化笔记图片分享的主题排版与字体搭配，并修正白色主题的配色。",
+      "扩展网页剪藏对微信公众号、掘金、豆瓣、即刻、BOSS 直聘等文章及垂直平台的支持，改善正文和图片采集。",
+      "修复粘贴链接时将相邻中日韩文字误识别为网址的问题。",
+      "改善桌面 AI 进程清理，等待进程完全关闭后再清理临时工作区。"
     ],
     "ja": [
-      "新しいワークスペースの既定ノートブックとウェルカムノートを表示言語で初期化し、未編集の組み込みテンプレートも現在の表示言語に合わせます。",
-      "検索と置換が現在の編集モードに従い、Markdownソースの文字列一致、結果の強調表示、置換の取り消しに対応します。",
-      "デスクトップAIツールの更新を手動で再試行でき、ACP更新の失敗とWorkBuddyの起動互換性を修正し、ローカルAI検出を選択画面を開くまで延期します。",
-      "公開テーブルフォームのファイルアップロードと画像ノートの改行を修正し、JSONバックアップ復元では書き込み前にページ全体を検証して無効なページの部分復元を防ぎます。"
+      "ノート操作メニューから、画像と添付ファイルの独立したコピーを含むノートの複製に対応しました。",
+      "ノート画像共有のレイアウトと書体の組み合わせを改善し、白いテーマの配色を調整しました。",
+      "Web ClipperのWeChat、Juejin、Douban、Jike、BOSS Zhipinなどの記事・専門プラットフォームへの対応を拡張し、本文と画像の取得を改善しました。",
+      "リンク貼り付け時に隣接する中国語・日本語・韓国語の文章をURLに含める問題を修正しました。",
+      "デスクトップAIプロセスの終了を待ってから一時ワークスペースを削除するよう改善しました。"
     ]
   }
 }

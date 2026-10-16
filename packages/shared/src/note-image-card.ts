@@ -1,8 +1,8 @@
 export type NoteImageFormat = "jpeg" | "png";
-export type NoteImageTheme = "slate" | "aurora" | "sunset" | "midnight" | "editorial" | "terminal" | "film" | "mint" | "lavender";
+export type NoteImageTheme = "paper" | "press" | "highlight" | "slate" | "aurora" | "sunset" | "midnight" | "editorial" | "terminal" | "film" | "mint" | "lavender";
 export type NoteImageBackground = NoteImageTheme | "warm" | "notepad" | "xuan" | "polaroid";
-export type NoteImageFontStyle = "auto" | "sans" | "serif" | "mono";
-export const NOTE_IMAGE_THEME_OPTIONS = ["slate", "mint", "aurora", "sunset", "editorial", "film", "terminal"] as const;
+export type NoteImageFontStyle = "auto" | "sans" | "serif" | "mono" | "kai";
+export const NOTE_IMAGE_THEME_OPTIONS = ["paper", "press", "highlight", "slate", "mint", "aurora", "sunset", "terminal"] as const;
 export type NoteImageFontSize = "sm" | "md" | "lg";
 export type NoteImageCardWidth = "compact" | "standard" | "wide";
 
@@ -38,7 +38,10 @@ export const planNativeNoteImageRender = (width: number, height: number) => {
 const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
 
 export const NOTE_IMAGE_BACKGROUND_COLORS: Record<NoteImageBackground, string> = {
-  slate: "#f8fafc",
+  paper: "#fbf9f4",
+  press: "#f7f7f5",
+  highlight: "#fefce8",
+  slate: "#ffffff",
   aurora: "#a7f3d0",
   sunset: "#fde68a",
   midnight: "#090d16",
@@ -80,29 +83,101 @@ export type ThemeStyleConfig = {
 };
 
 export const NOTE_IMAGE_THEMES: Record<NoteImageTheme, ThemeStyleConfig> = {
-  slate: {
-    canvasBg: "#ffffff",
-    cardBg: "#ffffff",
-    cardBorder: "1px solid #e2e8f0",
+  paper: {
+    canvasBg: "#fbf9f4",
+    cardBg: "#fbf9f4",
+    cardBorder: "none",
     cardShadow: "none",
-    textColor: "#1e293b",
-    headingColor: "#0f172a",
+    textColor: "#2c2925",
+    headingColor: "#1a1816",
+    metaColor: "#8c8275",
+    metaBg: "rgba(140, 130, 117, 0.12)",
+    metaBorder: "rgba(140, 130, 117, 0.22)",
+    accentColor: "#b45309",
+    accentSubtle: "rgba(180, 83, 9, 0.15)",
+    linkBg: "rgba(180, 83, 9, 0.08)",
+    dividerColor: "rgba(140, 130, 117, 0.3)",
+    codeBg: "rgba(140, 130, 117, 0.12)",
+    codeBorder: "rgba(140, 130, 117, 0.25)",
+    codeColor: "#2c2925",
+    quoteBg: "rgba(255, 255, 255, 0.65)",
+    quoteBorder: "#a89f91",
+    tableThBg: "rgba(140, 130, 117, 0.12)",
+    tableBorder: "rgba(140, 130, 117, 0.25)",
+    brandText: "#2c2925",
+    brandMark: "#8c8275",
+  },
+  press: {
+    canvasBg: "linear-gradient(180deg, #f7f7f5 0%, #ededeb 100%)",
+    cardBg: "#ffffff",
+    cardBorder: "1px solid #e2e2e0",
+    cardShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.02)",
+    textColor: "#1f2421",
+    headingColor: "#111412",
     metaColor: "#64748b",
     metaBg: "#f8fafc",
     metaBorder: "#e2e8f0",
-    accentColor: "#16a06e",
-    accentSubtle: "rgba(22, 160, 110, 0.16)",
-    linkBg: "rgba(22, 160, 110, 0.08)",
-    dividerColor: "#e2e8f0",
+    accentColor: "#b91c1c",
+    accentSubtle: "rgba(185, 28, 28, 0.12)",
+    linkBg: "rgba(185, 28, 28, 0.06)",
+    dividerColor: "#111412",
     codeBg: "#f8fafc",
     codeBorder: "#e2e8f0",
     codeColor: "#0f172a",
-    quoteBg: "rgba(240, 253, 244, 0.7)",
-    quoteBorder: "#10b981",
-    tableThBg: "#f8fafc",
+    quoteBg: "#fcfcfb",
+    quoteBorder: "#111412",
+    tableThBg: "#f1f5f9",
     tableBorder: "#e2e8f0",
-    brandText: "#07130b",
-    brandMark: "#16a06e",
+    brandText: "#111412",
+    brandMark: "#b91c1c",
+  },
+  highlight: {
+    canvasBg: "linear-gradient(135deg, #fef9c3 0%, #fef08a 35%, #e0e7ff 100%)",
+    cardBg: "#ffffff",
+    cardBorder: "1px solid rgba(254, 240, 138, 0.6)",
+    cardShadow: "0 20px 48px -12px rgba(234, 179, 8, 0.18), 0 4px 16px rgba(0, 0, 0, 0.04)",
+    textColor: "#1e293b",
+    headingColor: "#0f172a",
+    metaColor: "#475569",
+    metaBg: "rgba(254, 240, 138, 0.45)",
+    metaBorder: "rgba(250, 204, 21, 0.5)",
+    accentColor: "#ca8a04",
+    accentSubtle: "rgba(202, 138, 4, 0.16)",
+    linkBg: "rgba(202, 138, 4, 0.08)",
+    dividerColor: "rgba(254, 215, 170, 0.7)",
+    codeBg: "#fefce8",
+    codeBorder: "#fef08a",
+    codeColor: "#854d0e",
+    quoteBg: "#fefce8",
+    quoteBorder: "#eab308",
+    tableThBg: "#fef9c3",
+    tableBorder: "#fef08a",
+    brandText: "#0f172a",
+    brandMark: "#ca8a04",
+  },
+  slate: {
+    canvasBg: "#ffffff",
+    cardBg: "#ffffff",
+    cardBorder: "1px solid #e4e4e7",
+    cardShadow: "none",
+    textColor: "#3f3f46",
+    headingColor: "#18181b",
+    metaColor: "#71717a",
+    metaBg: "#fafafa",
+    metaBorder: "#e4e4e7",
+    accentColor: "#3f3f46",
+    accentSubtle: "rgba(63, 63, 70, 0.16)",
+    linkBg: "rgba(63, 63, 70, 0.06)",
+    dividerColor: "#e4e4e7",
+    codeBg: "#fafafa",
+    codeBorder: "#e4e4e7",
+    codeColor: "#18181b",
+    quoteBg: "#f4f4f5",
+    quoteBorder: "#71717a",
+    tableThBg: "#f4f4f5",
+    tableBorder: "#e4e4e7",
+    brandText: "#18181b",
+    brandMark: "#3f3f46",
   },
   aurora: {
     canvasBg: "linear-gradient(135deg, #a7f3d0 0%, #67e8f9 40%, #c4b5fd 100%)",
@@ -301,25 +376,61 @@ export const NOTE_IMAGE_THEMES: Record<NoteImageTheme, ThemeStyleConfig> = {
 };
 
 export const NOTE_IMAGE_FONT_FAMILIES: Record<Exclude<NoteImageFontStyle, "auto">, string> = {
-  sans: 'system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
-  serif: '"Songti SC", "Noto Serif SC", "Source Han Serif SC", "STSong", "Hiragino Mincho ProN", Georgia, "Times New Roman", serif',
-  mono: '"JetBrains Mono", "SF Mono", "Fira Code", Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+  sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif',
+  serif: 'Georgia, "Nimbus Roman No9 L", "Songti SC", "Noto Serif SC", "Source Han Serif SC", "Source Han Serif CN", "STSong", "AR PL New Sung", "SimSun", "Hiragino Mincho ProN", serif',
+  mono: '"JetBrains Mono", "SF Mono", "Fira Code", "Cascadia Code", Menlo, Monaco, Consolas, "Liberation Mono", monospace',
+  kai: '"LXGW WenKai", "霞鹜文楷", "Kaiti SC", "STKaiti", "KaiTi", "KaiTi_GB2312", "BiauKai", "楷体", "STFangsong", "FangSong", serif',
 };
 
 /** Theme typography is shared by previews, Web exports and native WebViews. */
 export const resolveNoteImageTypography = (theme: NoteImageTheme, fontStyle: NoteImageFontStyle = "auto") => {
   const resolvedTheme = resolveTheme(undefined, theme);
-  const bodyStyle = fontStyle === "auto"
-    ? (resolvedTheme === "film" || resolvedTheme === "sunset" ? "serif" : "sans")
-    : fontStyle;
-  const headingStyle = fontStyle === "auto"
-    ? (resolvedTheme === "editorial" ? "serif" : resolvedTheme === "terminal" ? "mono" : bodyStyle)
-    : bodyStyle;
+
+  let bodyStyle: Exclude<NoteImageFontStyle, "auto">;
+  let headingStyle: Exclude<NoteImageFontStyle, "auto">;
+
+  if (fontStyle !== "auto") {
+    bodyStyle = fontStyle;
+    headingStyle = fontStyle;
+  } else {
+    switch (resolvedTheme) {
+      case "paper":
+        bodyStyle = "kai";
+        headingStyle = "kai";
+        break;
+      case "press":
+        bodyStyle = "serif";
+        headingStyle = "serif";
+        break;
+      case "terminal":
+        bodyStyle = "mono";
+        headingStyle = "mono";
+        break;
+      case "film":
+      case "sunset":
+        bodyStyle = "serif";
+        headingStyle = "serif";
+        break;
+      case "editorial":
+        bodyStyle = "sans";
+        headingStyle = "serif";
+        break;
+      case "highlight":
+      case "slate":
+      case "mint":
+      case "aurora":
+      default:
+        bodyStyle = "sans";
+        headingStyle = "sans";
+        break;
+    }
+  }
+
   return {
     bodyFamily: NOTE_IMAGE_FONT_FAMILIES[bodyStyle],
     headingFamily: NOTE_IMAGE_FONT_FAMILIES[headingStyle],
-    headingWeight: headingStyle === "serif" ? 700 : 720,
-    lineHeightAdjustment: bodyStyle === "serif" ? 0.08 : bodyStyle === "mono" ? 0.02 : 0,
+    headingWeight: headingStyle === "serif" ? 720 : headingStyle === "kai" ? 650 : 700,
+    lineHeightAdjustment: bodyStyle === "serif" ? 0.08 : bodyStyle === "kai" ? 0.06 : bodyStyle === "mono" ? 0.02 : 0,
   };
 };
 
@@ -383,14 +494,18 @@ export const NOTE_IMAGE_FONT_SIZES: Record<
 export const resolveTheme = (background?: NoteImageBackground, theme?: NoteImageTheme): NoteImageTheme => {
   if (theme === "midnight") return "terminal";
   if (theme === "lavender") return "mint";
+  if (theme === "editorial") return "press";
+  if (theme === "film") return "paper";
+  if (theme === ("notepad" as unknown as NoteImageTheme) || theme === ("xuan" as unknown as NoteImageTheme)) return "press";
+  if (theme === ("polaroid" as unknown as NoteImageTheme)) return "paper";
   if (theme && NOTE_IMAGE_THEMES[theme]) return theme;
-  if (theme === ("notepad" as unknown as NoteImageTheme) || theme === ("xuan" as unknown as NoteImageTheme)) return "editorial";
-  if (theme === ("polaroid" as unknown as NoteImageTheme)) return "film";
   if (background === "warm") return "sunset";
-  if (background === "notepad" || background === "xuan") return "editorial";
-  if (background === "polaroid") return "film";
+  if (background === "notepad" || background === "xuan") return "press";
+  if (background === "polaroid") return "paper";
+  if (background === "editorial") return "press";
+  if (background === "film") return "paper";
   if (background && NOTE_IMAGE_THEMES[background as NoteImageTheme]) return resolveTheme(undefined, background as NoteImageTheme);
-  return "mint";
+  return "paper";
 };
 
 export const buildImageExportBasename = (title: string, fallback: string) => {
@@ -430,7 +545,7 @@ export const buildNoteImageCardMarkup = ({
   bodyHtml,
   theme = "mint",
   fontStyle = "auto",
-  showTitle = true,
+  showTitle = false,
   showNotebook = false,
   showTags = false,
   showUpdatedAt = true,
@@ -504,7 +619,7 @@ export const buildNoteImageCardMarkup = ({
 
   const brandBadgeHtml = `<div class="edgeever-brand-badge">
         <svg class="edgeever-brand-logo" viewBox="0 0 1024 1024" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-          <rect x="100" y="100" width="824" height="824" rx="188" fill="#16a06e" />
+          <rect x="100" y="100" width="824" height="824" rx="188" fill="${theme === "slate" ? "#e4e4e7" : "#16a06e"}" />
           <g transform="translate(100 100) scale(0.74234234) translate(-72 -72)">
             <path fill="#07130b" fill-rule="evenodd" d="M253.5 707.5Q249 678 249.5 655Q250 632 253.5 611.5Q257 591 264.5 568.5Q272 546 281 530Q290 514 287 485Q284 456 283.5 417Q283 378 285 351.5Q287 325 292 299Q297 273 304.5 254.5Q312 236 318.5 227.5Q325 219 336 213Q347 207 358.5 207.5Q370 208 383 213.5Q396 219 407 226.5Q418 234 428 242.5Q438 251 455 268.5Q472 286 485.5 303.5Q499 321 510.5 339Q522 357 528 368.5Q534 380 534 385.5Q534 391 532.5 394.5Q531 398 527.5 401Q524 404 518 405Q512 406 507 404Q502 402 499.5 399.5Q497 397 491.5 386Q486 375 474 357Q462 339 450.5 324.5Q439 310 426 296.5Q413 283 400.5 272.5Q388 262 377 255.5Q366 249 361 248Q356 247 352.5 249.5Q349 252 344.5 261Q340 270 337 280Q334 290 329 325.5Q324 361 323.5 400Q323 439 327 479.5Q331 520 321 538Q311 556 306 568.5Q301 581 297 596Q293 611 291 624.5Q289 638 289 661Q289 684 292 702Q295 720 301 739.5Q307 759 315.5 776.5Q324 794 335 810Q346 826 358 838.5Q370 851 386.5 863.5Q403 876 419.5 884.5Q436 893 456 899.5Q476 906 501 909.5Q526 913 529.5 916Q533 919 534.5 922Q536 925 536 931.5Q536 938 532.5 943Q529 948 524 950Q519 952 505.5 951Q492 950 473 946Q454 942 426 931Q398 920 385.5 912.5Q373 905 359.5 894.5Q346 884 333.5 871.5Q321 859 313 849Q305 839 291 815Q277 791 267.5 764Q258 737 253.5 707.5ZM719 941.5Q716 936 717 929Q718 922 721 918.5Q724 915 727 913.5Q730 912 749 910Q768 908 785 903.5Q802 899 823 889.5Q844 880 860.5 868.5Q877 857 887.5 847Q898 837 911 820Q924 803 932 788.5Q940 774 947.5 753.5Q955 733 959.5 708Q964 683 964 660.5Q964 638 960.5 617.5Q957 597 952.5 582.5Q948 568 943.5 558Q939 548 931 535Q923 522 927 479Q931 436 930.5 400Q930 364 925.5 329Q921 294 917 280Q913 266 909 258.5Q905 251 902 249Q899 247 893 248.5Q887 250 867.5 264Q848 278 835.5 290.5Q823 303 810.5 318Q798 333 783.5 354Q769 375 762 387.5Q755 400 751 402.5Q747 405 742 405.5Q737 406 732 404Q727 402 723.5 397Q720 392 720.5 385Q721 378 736.5 353Q752 328 768 307.5Q784 287 803.5 267Q823 247 834 238Q845 229 858.5 221Q872 213 881 210Q890 207 899.5 207Q909 207 918.5 212Q928 217 935.5 226.5Q943 236 949.5 252Q956 268 960 286Q964 304 967.5 344.5Q971 385 970.5 418Q970 451 967 482.5Q964 514 972 528Q980 542 986 558Q992 574 996 591Q1000 608 1002 624.5Q1004 641 1003.5 667Q1003 693 998 719.5Q993 746 985 768Q977 790 964.5 812Q952 834 940 849Q928 864 915.5 876Q903 888 892.5 896Q882 904 858 917Q834 930 820 935Q806 940 789.5 944Q773 948 753 950Q733 952 727.5 949.5Q722 947 719 941.5ZM378.5 728Q373 718 373 714.5Q373 711 375.5 708Q378 705 387 699Q396 693 405 689Q414 685 426 682.5Q438 680 447.5 680Q457 680 467.5 682Q478 684 490 690Q502 696 512.5 706.5Q523 717 530.5 733Q538 749 539.5 762Q541 775 537 778Q533 781 515.5 784Q498 787 481 786.5Q464 786 451 783Q438 780 428.5 775.5Q419 771 412 766Q405 761 394.5 749.5Q384 738 378.5 728ZM713.5 778Q710 775 710.5 767Q711 759 714 749Q717 739 723.5 727.5Q730 716 740.5 706Q751 696 762 690.5Q773 685 785.5 682.5Q798 680 813 681Q828 682 843.5 688Q859 694 869.5 702.5Q880 711 880 714.5Q880 718 871.5 732Q863 746 853 755.5Q843 765 830.5 772Q818 779 804 782.5Q790 786 772.5 786.5Q755 787 736 784Q717 781 713.5 778ZM406 710Q395 716 398 722.5Q401 729 410 738.5Q419 748 427 753Q435 758 441 760Q447 762 444.5 749.5Q442 737 442.5 726.5Q443 716 445 707.5Q447 699 432 701.5Q417 704 406 710ZM819.5 701Q806 699 808 708.5Q810 718 810 730.5Q810 743 808 750.5Q806 758 806 760Q806 762 807 762Q808 762 815 759Q822 756 830.5 750Q839 744 846 736Q853 728 855.5 722Q858 716 845.5 709.5Q833 703 819.5 701ZM471 759.5Q469 763 469 765Q469 767 472 767.5Q475 768 488.5 768Q502 768 512 766Q522 764 519.5 754Q517 744 511 734Q505 724 498.5 718Q492 712 484.5 708Q477 704 475.5 704Q474 704 475 723Q476 742 474.5 749Q473 756 471 759.5ZM733 750.5Q730 759 730 761.5Q730 764 737 765.5Q744 767 763.5 767Q783 767 779.5 752Q776 737 776 730.5Q776 724 778 714Q780 704 770.5 708Q761 712 753 719.5Q745 727 740.5 734.5Q736 742 733 750.5ZM592.5 848.5Q588 841 588 836.5Q588 832 590 829Q592 826 599.5 822.5Q607 819 613.5 818Q620 817 626.5 817Q633 817 642.5 819Q652 821 655 822.5Q658 824 661.5 828.5Q665 833 664.5 838Q664 843 659.5 850Q655 857 645 867Q635 877 631.5 878.5Q628 880 625 879.5Q622 879 617.5 876Q613 873 605 864.5Q597 856 592.5 848.5Z" />
           </g>
@@ -531,7 +646,7 @@ export const buildNoteImageCardMarkup = ({
       </footer>`
     : "";
 
-  return `<div class="edgeever-image-wrapper">
+  return `<div class="edgeever-image-wrapper" data-theme="${theme}">
   <div class="edgeever-grain-overlay" aria-hidden="true"></div>
   <article class="edgeever-image-card" data-theme="${theme}">
     ${tearStripHtml}
@@ -1028,6 +1143,122 @@ export const generateCardCss = ({
       letter-spacing: -0.01em;
       color: var(--ee-brand-text);
     }
+
+    ${theme === "paper" ? `
+    .edgeever-image-wrapper[data-theme="paper"] {
+      background-color: #fbf9f4;
+      background-image: radial-gradient(#d5cdc0 0.85px, transparent 0.85px);
+      background-size: 20px 20px;
+      padding: 32px 28px;
+    }
+    .edgeever-image-wrapper[data-theme="paper"] .edgeever-grain-overlay {
+      opacity: 0.03;
+    }
+    .edgeever-image-card[data-theme="paper"] {
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      padding: 16px 8px 12px;
+    }
+    .edgeever-image-card[data-theme="paper"] .edgeever-card-title {
+      font-size: calc(var(--ee-title-size) * 0.94);
+      font-weight: 700;
+      letter-spacing: -0.015em;
+    }
+    .edgeever-image-card[data-theme="paper"] .edgeever-card-divider {
+      height: 1px;
+      background: none;
+      border-top: 1px dashed rgba(140, 130, 117, 0.4);
+      margin: 0 0 20px;
+    }
+    .edgeever-image-card[data-theme="paper"] blockquote {
+      border-left: 3px solid #b4a796;
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 6px;
+      padding: 12px 16px;
+    }
+    .edgeever-image-card[data-theme="paper"] blockquote::before {
+      display: none;
+    }
+    ` : ""}
+
+    ${theme === "press" ? `
+    .edgeever-image-card[data-theme="press"] {
+      border: 1px solid #d4d4d8;
+      border-radius: 2px;
+      box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.05);
+    }
+    .edgeever-image-card[data-theme="press"] .edgeever-card-header {
+      border-top: 3.5px solid #111412;
+      padding-top: 14px;
+      position: relative;
+    }
+    .edgeever-image-card[data-theme="press"] .edgeever-card-header::before {
+      content: "";
+      position: absolute;
+      top: 4.5px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #111412;
+    }
+    .edgeever-image-card[data-theme="press"] .edgeever-card-title {
+      font-family: var(--ee-heading-font-family);
+      letter-spacing: -0.01em;
+      margin-top: 10px;
+    }
+    .edgeever-image-card[data-theme="press"] .edgeever-card-divider {
+      height: 1px;
+      background: #111412;
+      margin: 16px 0 24px;
+    }
+    .edgeever-image-card[data-theme="press"] blockquote {
+      border-left: 2px solid #111412;
+      background: #fafaf9;
+      border-radius: 0;
+      padding: 16px 20px 16px 30px;
+      font-style: normal;
+    }
+    .edgeever-image-card[data-theme="press"] blockquote::before {
+      content: "“";
+      font-family: Georgia, "Songti SC", serif;
+      font-size: 46px;
+      top: -14px;
+      left: 6px;
+      color: #b91c1c;
+      opacity: 0.45;
+    }
+    .edgeever-image-card[data-theme="press"] .edgeever-card-body h1 {
+      border-left: 3px solid #b91c1c;
+    }
+    ` : ""}
+
+    ${theme === "highlight" ? `
+    .edgeever-image-card[data-theme="highlight"] {
+      border-radius: 22px;
+      border: 1px solid rgba(253, 224, 71, 0.7);
+      box-shadow: 0 20px 50px -12px rgba(202, 138, 4, 0.16), 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+    .edgeever-image-card[data-theme="highlight"] strong,
+    .edgeever-image-card[data-theme="highlight"] b {
+      background: linear-gradient(104deg, rgba(254, 240, 138, 0.25) 1%, rgba(254, 240, 138, 0.8) 4%, rgba(254, 240, 138, 0.7) 96%);
+      padding: 0.05em 0.35em;
+      border-radius: 4px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+    .edgeever-image-card[data-theme="highlight"] mark {
+      background: linear-gradient(104deg, rgba(250, 204, 21, 0.35) 1%, rgba(250, 204, 21, 0.9) 3%, rgba(250, 204, 21, 0.8) 98%);
+      font-weight: 600;
+    }
+    .edgeever-image-card[data-theme="highlight"] .edgeever-card-title {
+      font-weight: 800;
+    }
+    .edgeever-image-card[data-theme="highlight"] .edgeever-card-body h1 {
+      border-left: 4px solid #eab308;
+    }
+    ` : ""}
 
     ${theme === "editorial" ? `
     .edgeever-image-card[data-theme="editorial"] {

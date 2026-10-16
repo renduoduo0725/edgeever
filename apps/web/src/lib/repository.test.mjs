@@ -473,3 +473,90 @@ describe("guarded plugin saves in the Web repository", () => {
     } finally { restoreWindow(); }
   });
 });
+
+describe("note duplication in the Web repository", () => {
+  test("copies on the server and keeps the copy in the local mirror", async () => {
+    const restoreWindow = installTestWindow();
+    const duplicate = api.duplicateMemo;
+    const calls = [];
+    const scope = "https://demo.edgeever.org|user-1";
+    const copy = { ...(await createLocalMemo(scope, { notebookId: "nb-1" })), id: "memo_copy", title: "Plan (copy)" };
+    api.duplicateMemo = async (memoId, input) => {
+      calls.push({ memoId, input });
+      return { memo: copy };
+    };
+    try {
+      const result = await createWebRepository(scope).duplicateMemo("memo_plan", { title: "Plan (copy)" });
+
+      expect(calls).toEqual([{ memoId: "memo_plan", input: { title: "Plan (copy)" } }]);
+      expect(result.memo).toEqual(copy);
+      const { getLocalMemo } = await import("./local-mirror.ts");
+      expect((await getLocalMemo(scope, "memo_copy"))?.title).toBe("Plan (copy)");
+    } finally {
+      api.duplicateMemo = duplicate;
+      restoreWindow();
+    }
+  });
+
+  test("never copies a note in an unresolved sync conflict", async () => {
+    const restoreWindow = installTestWindow();
+    const duplicate = api.duplicateMemo;
+    const calls = [];
+    api.duplicateMemo = async (memoId) => {
+      calls.push(memoId);
+      return { memo: { id: "memo_copy" } };
+    };
+    const scope = "https://demo.edgeever.org|user-1";
+    try {
+      await localDb.syncQueue.put({
+        id: "memo.update:memo_conflicted",
+        kind: "memo.update",
+        scope,
+        memoId: "memo_conflicted",
+        status: "conflict",
+        payload: { memoId: "memo_conflicted" },
+        attemptCount: 1,
+        lastError: "Memo was updated elsewhere",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        nextAttemptAt: null,
+      });
+
+      await expect(createWebRepository(scope).duplicateMemo("memo_conflicted", { title: "Copy" }))
+        .rejects.toThrow("memo_duplicate_pending_changes");
+      expect(calls).toEqual([]);
+    } finally {
+      api.duplicateMemo = duplicate;
+      restoreWindow();
+    }
+  });
+
+  test("never copies a note whose local edits could not be synchronized", async () => {
+    const restoreWindow = installTestWindow();
+    const duplicate = api.duplicateMemo;
+    const calls = [];
+    api.duplicateMemo = async (memoId) => {
+      calls.push(memoId);
+      return { memo: { id: "memo_copy" } };
+    };
+    const scope = "https://demo.edgeever.org|user-1";
+    try {
+      const memo = await createLocalMemo(scope, { notebookId: "nb-1" });
+      const repository = createWebRepository(scope);
+      await repository.updateMemo(memo, {
+        expectedRevision: memo.revision,
+        expectedContentHash: memo.contentHash,
+        editSessionId: "local-edit",
+        title: "Edited offline",
+        contentJson: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Unsynced" }] }] },
+        tags: [],
+      });
+
+      await expect(repository.duplicateMemo(memo.id, { title: "Copy" })).rejects.toThrow("memo_duplicate_pending_changes");
+      expect(calls).toEqual([]);
+    } finally {
+      api.duplicateMemo = duplicate;
+      restoreWindow();
+    }
+  });
+});

@@ -1,4 +1,6 @@
-import { Lexer, marked, type Token } from "marked";
+import { fromMarkdown } from "mdast-util-from-markdown";
+import { gfmFromMarkdown } from "mdast-util-gfm";
+import { gfm } from "micromark-extension-gfm";
 import { filenameForImage, MAX_IMAGE_BYTES, type ImageNoteClient, type StoredImage } from "./image-clip";
 
 // A long article can reference hundreds of images. Keep the extra uploads after
@@ -28,62 +30,35 @@ type LocatedImage = {
   end: number;
 };
 
-// Code blocks, code spans and raw HTML can contain text that looks like an
-// image; they are located only so the search below steps over them.
-const STEPPED_OVER_TOKENS = new Set(["code", "codespan", "html"]);
-
-const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-// Tokens nested in list items and block quotes are lexed without their
-// indentation or `>` markers, so their raw text may not appear verbatim.
-const findRaw = (markdown: string, raw: string, from: number) => {
-  const exact = markdown.indexOf(raw, from);
-  if (exact !== -1) return { start: exact, end: exact + raw.length };
-  const pattern = new RegExp(raw.split("\n").map(escapeRegExp).join("\\n[ \\t>]*"), "g");
-  pattern.lastIndex = from;
-  const match = pattern.exec(markdown);
-  return match ? { start: match.index, end: match.index + match[0].length } : null;
-};
-
-const imageLabelEnd = (source: string) => {
-  let depth = 0;
-  for (let index = 1; index < source.length; index += 1) {
-    const char = source[index];
-    if (char === "\\") {
-      index += 1;
-    } else if (char === "[") {
-      depth += 1;
-    } else if (char === "]") {
-      depth -= 1;
-      if (depth === 0) return index + 1;
-    }
-  }
-  return -1;
-};
-
 const locatePageImages = (markdown: string): LocatedImage[] => {
+  const labelEnds=new Map<number,number>();
+  const tree=fromMarkdown(markdown,{extensions:[gfm()],mdastExtensions:[gfmFromMarkdown(),{
+    exit:{labelMarker(token){
+      const node=this.stack[this.stack.length-2];
+      if(node?.type === "image" && node.position?.start.offset !== undefined) labelEnds.set(node.position.start.offset,token.end.offset);
+    }},
+  }]});
+  type Node = {type: string; children?: Node[]; identifier?: string; url?: string; title?: string | null; position?: {start: {offset?: number}; end: {offset?: number}}};
+  const definitions=new Map<string,{url: string; title?: string | null}>();
+  // Definitions are document-scoped; CommonMark uses the first occurrence.
+  const collect=(node: Node)=>{
+    if(node.type === "definition" && node.identifier && node.url && !definitions.has(node.identifier)) definitions.set(node.identifier,{url:node.url,title:node.title});
+    for(const child of node.children || []) collect(child);
+  };
+  collect(tree);
   const located: LocatedImage[] = [];
-  let cursor = 0;
-  let lost = false;
-  marked.walkTokens(new Lexer().lex(markdown), (token: Token) => {
-    if (lost || (token.type !== "image" && !STEPPED_OVER_TOKENS.has(token.type))) return;
-    const range = findRaw(markdown, token.raw, cursor);
-    if (!range) {
-      // Stop rather than guess: images after this point keep their addresses.
-      lost = true;
-      return;
+  const visit=(node: Node)=>{
+    if(node.type === "image" || node.type === "imageReference") {
+      const image=node.type === "image" ? node : definitions.get(node.identifier || "");
+      const start=node.position?.start.offset,end=node.position?.end.offset;
+      if(image?.url && start !== undefined && end !== undefined) {
+        const labelEnd=labelEnds.get(start);
+        if(labelEnd !== undefined) located.push({href:image.url,title:image.title ?? null,labelEnd,end});
+      }
     }
-    cursor = range.end;
-    if (token.type !== "image") return;
-    const labelEnd = imageLabelEnd(markdown.slice(range.start, range.end));
-    if (labelEnd < 0) return;
-    located.push({
-      href: token.href,
-      title: token.title ?? null,
-      labelEnd: range.start + labelEnd,
-      end: range.end,
-    });
-  });
+    for(const child of node.children || []) visit(child);
+  };
+  visit(tree);
   return located;
 };
 
@@ -120,7 +95,7 @@ export const replacePageImageUrls = (
   for (const image of locatePageImages(markdown).reverse()) {
     const resourceId = resources.get(image.href);
     if (!resourceId) continue;
-    const title = image.title ? ` "${image.title.replace(/["\\]/g, "\\$&")}"` : "";
+    const title = image.title ? ` "${image.title.replace(/&/g, "&amp;").replace(/\r/g, "&#13;").replace(/\n/g, "&#10;").replace(/\|/g, "&#124;").replace(/["\\]/g, "\\$&")}"` : "";
     result = `${result.slice(0, image.labelEnd)}(/api/v1/resources/${encodeURIComponent(resourceId)}/blob${title})${result.slice(image.end)}`;
   }
   return result;

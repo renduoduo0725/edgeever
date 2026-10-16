@@ -219,17 +219,19 @@ const MOBILE_THEME_OPTIONS: Array<{
   labelEn: string;
   previewBg: string;
 }> = [
+  { id: "paper", labelZh: "纸间便签", labelEn: "Paper Memo", previewBg: "#fbf9f4" },
+  { id: "press", labelZh: "人文报刊", labelEn: "Press Journal", previewBg: "#f7f7f5" },
+  { id: "highlight", labelZh: "社交高光", labelEn: "Highlight", previewBg: "#fefce8" },
   { id: "slate", labelZh: "纯白", labelEn: "Pure White", previewBg: "#ffffff" },
   { id: "mint", labelZh: "薄荷", labelEn: "Mint", previewBg: "#ecfdf5" },
   { id: "aurora", labelZh: "极光渐变", labelEn: "Aurora", previewBg: "#a7f3d0" },
   { id: "sunset", labelZh: "暮色晚霞", labelEn: "Sunset", previewBg: "#fde68a" },
-  { id: "editorial", labelZh: "黑白编辑", labelEn: "Black & White", previewBg: "#f1f3f5" },
   { id: "terminal", labelZh: "极客终端", labelEn: "Terminal", previewBg: "#0d1117" },
-  { id: "film", labelZh: "书页", labelEn: "Book Page", previewBg: "#f4ede4" },
 ];
 
 const MOBILE_FONT_OPTIONS: Array<{ id: NoteImageFontStyle; labelZh: string; labelEn: string }> = [
   { id: "auto", labelZh: "跟随主题", labelEn: "Follow Theme" },
+  { id: "kai", labelZh: "文楷手书", labelEn: "Handwritten Kai" },
   { id: "serif", labelZh: "文艺衬线", labelEn: "Serif" },
   { id: "sans", labelZh: "现代无衬线", labelEn: "Sans" },
   { id: "mono", labelZh: "极客等宽", labelEn: "Mono" },
@@ -519,11 +521,11 @@ export const MemoDetailModal = ({
   const [imageExportStage, setImageExportStage] = useState<"prepare" | "render" | "transfer">("prepare");
   const [imageShareOptionsOpen, setImageShareOptionsOpen] = useState(false);
   const [imageShareFormat, setImageShareFormat] = useState<"jpeg" | "png">("png");
-  const [imageShareTheme, setImageShareTheme] = useState<NoteImageTheme>("mint");
+  const [imageShareTheme, setImageShareTheme] = useState<NoteImageTheme>("paper");
   const [imageShareFontStyle, setImageShareFontStyle] = useState<NoteImageFontStyle>("auto");
   const [imageShareFontSize, setImageShareFontSize] = useState<NoteImageFontSize>("lg");
   const [imageShareCardWidth, setImageShareCardWidth] = useState<NoteImageCardWidth>("wide");
-  const [imageShareTitle, setImageShareTitle] = useState(true);
+  const [imageShareTitle, setImageShareTitle] = useState(false);
   const [imageShareNotebook, setImageShareNotebook] = useState(false);
   const [imageShareTags, setImageShareTags] = useState(false);
   const [imageShareUpdatedAt, setImageShareUpdatedAt] = useState(true);

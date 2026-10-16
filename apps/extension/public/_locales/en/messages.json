@@ -707,5 +707,68 @@
   },
   "clipNotifications": {
     "message": "Clipping notifications"
+  },
+  "saveBossToEdgeEver": {
+    "message": "Save BOSS Zhipin job to EdgeEver"
+  },
+  "saveXueqiuToEdgeEver": {
+    "message": "Save Xueqiu post to EdgeEver"
+  },
+  "platformBoss": {
+    "message": "BOSS Zhipin"
+  },
+  "platformXueqiu": {
+    "message": "Xueqiu"
+  },
+  "pageCaptureLoginRequired": {
+    "message": "Sign in needed"
+  },
+  "pageCaptureLoginHint": {
+    "message": "This job shows a login preview. Sign in on the website and refresh before clipping the full content; selected text can still be saved."
+  },
+  "platformWechat": {
+    "message": "WeChat"
+  },
+  "saveWechatToEdgeEver": {
+    "message": "Save WeChat to EdgeEver"
+  },
+  "platformJike": {
+    "message": "Jike"
+  },
+  "saveJikeToEdgeEver": {
+    "message": "Save Jike to EdgeEver"
+  },
+  "platformSspai": {
+    "message": "SSPAI"
+  },
+  "saveSspaiToEdgeEver": {
+    "message": "Save SSPAI to EdgeEver"
+  },
+  "platformJuejin": {
+    "message": "Juejin"
+  },
+  "saveJuejinToEdgeEver": {
+    "message": "Save Juejin to EdgeEver"
+  },
+  "platformDouban": {
+    "message": "Douban"
+  },
+  "saveDoubanToEdgeEver": {
+    "message": "Save Douban to EdgeEver"
+  },
+  "platformOfficialAccountLabel": {
+    "message": "Official account"
+  },
+  "platformListSourceLabel": {
+    "message": "Source list"
+  },
+  "doubanSelectComment": {
+    "message": "Right-click the short comment and choose “Save Douban to EdgeEver”, or capture selected text."
+  },
+  "pageCaptureRestricted": {
+    "message": "Content restricted"
+  },
+  "pageCaptureRestrictedHint": {
+    "message": "Only a restricted preview is available. Get full reading access on the website and refresh, or select a visible passage to save."
   }
 }

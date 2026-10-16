@@ -21,20 +21,20 @@ export function measureLabel(text: string, size: number, weight: string, family:
 }
 
 export class BadgeBox extends Textbox {
-  static type = 'BadgeBox';
-  static customProperties = ['badgeBg', 'padX', 'padY', 'radius'];
+  static override type = 'BadgeBox';
+  static override customProperties = ['badgeBg', 'padX', 'padY', 'radius'];
   declare badgeBg: string; declare padX: number; declare padY: number; declare radius: number;
   constructor(text: string, options?: Partial<TextboxProps> & Partial<BadgeProps>) { super(text, { badgeBg: '#111111', padX: 0.6, padY: 0.34, radius: 0.5, editable: false, lineHeight: 1, ...options } as Partial<TextboxProps>); }
   private metrics(): Metrics { return measureLabel(this.text.trim(), this.fontSize, String(this.fontWeight), this.fontFamily); }
   /** Size comes from the measured label, not from Fabric's line layout. */
-  initDimensions(): void {
+  override initDimensions(): void {
     const m = this.metrics(); const px = this.padX * this.fontSize, py = this.padY * this.fontSize;
     this.width = m.width + px * 2; this.height = m.ascent + m.descent + py * 2;
     this.textLines = [this.text]; this._textLines = [[...this.text]]; this.dirty = true;
   }
   /** The pill is the visible extent. Fabric's own line cache is never filled here, so its version would throw. */
-  getLineWidth(): number { return this.width; }
-  _render(c: CanvasRenderingContext2D): void {
+  override getLineWidth(): number { return this.width; }
+  override _render(c: CanvasRenderingContext2D): void {
     const w = this.width, h = this.height; const m = this.metrics(); const r = Math.min(h / 2, this.radius * h);
     c.save(); c.fillStyle = this.badgeBg; c.beginPath();
     c.moveTo(-w / 2 + r, -h / 2); c.arcTo(w / 2, -h / 2, w / 2, h / 2, r); c.arcTo(w / 2, h / 2, -w / 2, h / 2, r); c.arcTo(-w / 2, h / 2, -w / 2, -h / 2, r); c.arcTo(-w / 2, -h / 2, w / 2, -h / 2, r); c.closePath(); c.fill();

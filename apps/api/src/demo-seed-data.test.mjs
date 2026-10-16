@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   parseDiagramDocument,
   parseInfographicDocument,
+  parsePosterDocument,
   parseTableDocument,
 } from "@edgeever/shared";
 import { computeDiagramLayoutResult } from "../../../packages/shared/src/diagram-layout.ts";
@@ -22,6 +23,8 @@ describe("demo seed catalog", () => {
     expect(memoIds.size).toBe(DEMO_SEED_MEMOS.length);
     expect(memoIds.has("memo_demo_overview")).toBe(true);
     expect(memoIds.has("memo_demo_overview_en")).toBe(true);
+    expect(memoIds.has("memo_demo_poster")).toBe(true);
+    expect(memoIds.has("memo_demo_poster_en")).toBe(true);
     expect(memoIds.has("memo_demo_infographic")).toBe(true);
     expect(memoIds.has("memo_demo_infographic_en")).toBe(true);
     expect(memoIds.has("memo_demo_table")).toBe(true);
@@ -61,6 +64,18 @@ describe("demo seed catalog", () => {
           }
         }
       }
+    }
+  });
+
+  test("seeds one editable example for poster notes in each language", () => {
+    for (const suffix of ["", "_en"]) {
+      const posterMemo = DEMO_SEED_MEMOS.find((c) => c.id === `memo_demo_poster${suffix}`);
+      expect(posterMemo).toBeDefined();
+      const poster = parsePosterDocument(posterMemo?.markdown);
+      expect(poster).toBeDefined();
+      expect(poster?.templateId).toBe("editorial");
+      expect(poster?.elements.length).toBeGreaterThan(0);
+      expect(poster?.copy?.title).toBeDefined();
     }
   });
 

@@ -166,6 +166,11 @@ export const DeleteMemosSchema = z.object({
   permanent: z.boolean().optional(),
 });
 
+export const DuplicateMemoSchema = z.object({
+  notebookId: z.string().trim().min(1).optional(),
+  title: z.string().trim().max(160).optional(),
+});
+
 export const MergeMemosSchema = z.object({
   memoIds: z.array(z.string().trim().min(1)).min(2).max(50),
   notebookId: z.string().trim().min(1).optional(),

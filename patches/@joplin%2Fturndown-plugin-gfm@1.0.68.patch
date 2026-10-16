@@ -1,0 +1,9 @@
+diff --git a/lib/turndown-plugin-gfm.cjs.js b/lib/turndown-plugin-gfm.cjs.js
+--- a/lib/turndown-plugin-gfm.cjs.js
++++ b/lib/turndown-plugin-gfm.cjs.js
+@@ -222,1 +222,1 @@
+-  filteredContent = filteredContent.replace(/\|+/g, '\\|');
++  filteredContent = filteredContent.replace(/\|/g, '\\|');
+@@ -339,1 +339,2 @@
+ const tableShouldBeHtml = (tableNode, options) => {
++  if (options.preserveTableHtml === false) return false;

@@ -5,6 +5,70 @@ import { platformTarget, platformHtmlMarkdown, publishedTimeText, clipDateTimeTe
 import { readHackerNews } from "./src/hacker-news-clip.ts";
 import { readV2ex } from "./src/v2ex-clip.ts";
 import { readXiaoyuzhou } from "./src/xiaoyuzhou-clip.ts";
+import { markdownToDoc } from "../../packages/shared/src/content.ts";
+import { pageImageRefs, replacePageImageUrls } from "./src/page-images.ts";
+
+test("rich table cells retain their grid, line breaks, inline code and archived images",()=>{
+  const doc=createDocument('<table><tr><th>内容</th><th>代码</th></tr><tr><td><p>首段<br>次行</p><ul><li>one</li><li>two<img src="https://example.test/cell.png"></li></ul><blockquote>引用</blockquote></td><td><pre><code class="language-js">  a || b;\n\n\nconst tag = `&lt;br&gt;`;</code></pre></td></tr></table>');
+  const markdown=platformHtmlMarkdown(doc.body,'https://example.test');
+  expect(markdown).not.toContain('joplin-table-wrapper');expect(markdown).not.toContain('<table');
+  expect(pageImageRefs(markdown,'https://example.test')).toEqual([{href:'https://example.test/cell.png',url:'https://example.test/cell.png'}]);
+  const parsed=markdownToDoc(replacePageImageUrls(markdown,[{href:'https://example.test/cell.png',resourceId:'cell'}]));
+  const table=parsed.content.find(node=>node.type==='table');expect(table.content).toHaveLength(2);expect(table.content[1].content).toHaveLength(2);
+  const nodes=[];const walk=node=>{nodes.push(node);(node.content || []).forEach(walk);};walk(table);
+  expect(nodes.filter(node=>node.type==='hardBreak').length).toBeGreaterThanOrEqual(5);
+  expect(nodes.find(node=>node.type==='image').attrs.src).toBe('/api/v1/resources/cell/blob');
+  const code=nodes.filter(node=>node.marks?.some(mark=>mark.type==='code')).map(node=>node.text);
+  expect(code).toContain('  a || b;');expect(code).toContain('const tag = `<br>`;');
+  const text=nodes.filter(node=>node.type==='text').map(node=>node.text).join('');
+  expect(text).toContain('引用');expect(text).not.toContain('<br><br>');expect(text).not.toContain('```js');
+});
+
+test("table code keeps literal backslash-pipe runs and adjacent columns without adding characters",()=>{
+  const text=node=>node.text || (node.content || []).map(text).join('');
+  for(const kind of ['code','pre']) for(const count of [0,1,2,3,4]) for(const pipes of ['|','||']) {
+    const literal=`${kind==='pre'?'  \t':''}a ${'\\'.repeat(count)}${pipes} b & <br>${kind==='pre'?'\t  ':''}`;
+    const doc=createDocument('<table><tr><th>Code</th><th>Next</th></tr><tr><td id="code"></td><td>end</td></tr></table>');
+    const code=doc.createElement(kind);code.textContent=literal;doc.querySelector('#code').appendChild(code);
+    const table=markdownToDoc(platformHtmlMarkdown(doc.body,'https://example.test')).content.find(node=>node.type==='table');
+    expect(table.content[1].content).toHaveLength(2);
+    expect(table.content[1].content.map(text)).toEqual([literal,'end']);
+  }
+});
+
+test("HTML row spans retain column association and additional header rows remain data",()=>{
+  const doc=createDocument('<table><thead><tr><th>A</th><th>B</th></tr><tr><th>sub A</th><th>sub B</th></tr></thead><tbody><tr><td rowspan="2">both</td><td>row1</td></tr><tr><td>row2</td></tr></tbody></table>');
+  const original=doc.body.outerHTML,markdown=platformHtmlMarkdown(doc.body,'https://example.test');
+  const text=node=>node.text || (node.content || []).map(text).join('');
+  const table=markdownToDoc(markdown).content.find(node=>node.type==='table');
+  expect(table.content.map(row=>row.content.map(text))).toEqual([['A','B'],['sub A','sub B'],['both','row1'],['both','row2']]);
+  expect(doc.body.outerHTML).toBe(original);
+});
+
+test("colspan headings form valid GFM and vertical spans stop at their row group",()=>{
+  const text=node=>node.text || (node.content || []).map(text).join('');
+  const cases=[
+    ['<table><thead><tr><th colspan="2">Group</th><th>Other</th></tr></thead><tbody><tr><td colspan="2">Value</td><td>Final</td></tr></tbody></table>',[['Group','','Other'],['Value','','Final']]],
+    ['<table><tr><th>A</th><th>B</th></tr><tbody><tr><td rowspan="0">group1</td><td>one</td></tr><tr><td>two</td></tr></tbody><tbody><tr><td>group2</td><td>three</td></tr></tbody></table>',[['A','B'],['group1','one'],['group1','two'],['group2','three']]],
+  ];
+  for(const [html,expected] of cases){const table=markdownToDoc(platformHtmlMarkdown(createDocument(html).body,'https://example.test')).content.find(node=>node.type==='table');expect(table?.content.map(row=>row.content.map(text))).toEqual(expected);}
+  const code=markdownToDoc(platformHtmlMarkdown(createDocument('<table><tr><th>Code</th></tr><tr><td><pre>first\n  \nlast</pre></td></tr></table>').body,'https://example.test'));
+  const nodes=[];const walk=node=>{nodes.push(node);(node.content || []).forEach(walk);};walk(code);
+  expect(nodes.filter(node=>node.marks?.some(mark=>mark.type==='code')).map(node=>node.text)).toEqual(['first','  ','last']);
+});
+
+test("table conversion retains repeated pipes in prose and code and escapes literal HTML captions",()=>{
+  const doc=createDocument('<table><caption>&lt;img src=x onerror=alert(1)&gt;</caption><thead><tr><th>表达式</th><th>说明</th></tr></thead><tbody><tr><td>左 || 右，<code>a || b</code></td><td>逻辑或</td></tr></tbody></table>');
+  const markdown=platformHtmlMarkdown(doc.body,'https://example.test');
+  expect(markdown).not.toContain('<img');
+  const parsed=markdownToDoc(markdown),table=parsed.content.find(node=>node.type==='table');
+  expect(table?.content).toHaveLength(2);
+  const text=node=>node.text || (node.content || []).map(text).join('');
+  expect(text(table.content[1].content[0])).toBe('左 || 右，a || b');
+  expect(text(parsed.content[0])).toBe('<img src=x onerror=alert(1)>');
+  expect(text(table.content[1].content[1])).toBe('逻辑或');
+  expect(platformHtmlMarkdown(createDocument('<p>正文</p><table></table>').body,'https://example.test')).toBe('正文');
+});
 
 const labels = {
   score: "Points at capture", externalLink: "Linked page", supplement: "Supplement",
@@ -105,6 +169,21 @@ test("V2EX real DOM keeps both supplements and their times, excluding replies", 
   expect(result.clip.markdown).toContain(clipDateTimeText("2023-12-14T15:00:40+08:00"));
   expect(result.clip.markdown.indexOf("从今天开始转型")).toBeLessThan(result.clip.markdown.indexOf("看看大家多久后能来还愿"));
   expect(result.clip.markdown).not.toContain("抱歉跑个题");
+});
+
+test("V2EX omits invisible article descendants and metadata without requiring optional fields",()=>{
+  const doc=fixture('v2ex'),body=doc.querySelector('.topic_content'),original=body.textContent;
+  const hidden=doc.createElement('p');hidden.style.display='none';hidden.textContent='HIDDEN BODY SENTINEL';body.appendChild(hidden);
+  doc.querySelector('small.gray a').setAttribute('hidden','');doc.querySelector('small.gray span').style.display='none';
+  const result=readV2ex(doc,vUrl,labels);expect(result.ok).toBe(true);
+  expect(result.clip.markdown).not.toContain('HIDDEN BODY SENTINEL');expect(result.clip.markdown).toContain('环境不好');expect(result.clip.markdown).toContain('Supplement 2');
+  expect(result.clip.author).toBeUndefined();expect(result.clip.publishedAt).toBeUndefined();expect(body.textContent).toBe(original+'HIDDEN BODY SENTINEL');
+  doc.querySelector('h1').style.display='none';expect(readV2ex(doc,vUrl,labels)).toEqual({ok:false,reason:'unreadable'});
+});
+
+test("V2EX retains visible descendants restored within an otherwise invisible supplement",()=>{
+  const doc=fixture('v2ex'),supplement=doc.querySelector('.subtle');supplement.style.visibility='hidden';supplement.querySelector('.topic_content').style.visibility='visible';
+  const result=readV2ex(doc,vUrl,labels);expect(result.ok).toBe(true);expect(result.clip.markdown).toContain('从今天开始转型');expect(result.clip.markdown).toContain('看看大家多久后能来还愿');
 });
 
 test("V2EX handles body-only and supplement-only topics, and rejects login or stale pages", () => {

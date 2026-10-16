@@ -1,8 +1,12 @@
-import { articlePlatform } from "./article-platform";
+import { articlePlatform, substackPaywall } from "./article-platform";
+import { articleMetadata, type ArticleContent } from "./article-metadata";
+import { platformReadableCopy, platformText } from "./platform-clip";
 /** Read the displayed newsletter article, excluding subscription and sharing UI. */
-export const substackContent = (doc: Document, pageUrl: string): { title: string; body: Element } | null => {
+export const substackContent = (doc: Document, pageUrl: string): ArticleContent | null => {
   if (articlePlatform(doc,pageUrl) !== "Substack") return null;
-  const article = doc.querySelector('article.newsletter-post');
+  if (substackPaywall(doc)) return null;
+  const liveArticle = doc.querySelector('article.newsletter-post');
+  const article = liveArticle ? platformReadableCopy(liveArticle) : null;
   const title = article?.querySelector('h1.post-title');
   const content = article?.querySelector('.body.markup');
   if (!title?.textContent?.trim() || !content || content.closest('[hidden], [aria-hidden="true"]')) return null;
@@ -14,5 +18,6 @@ export const substackContent = (doc: Document, pageUrl: string): { title: string
     paragraph.textContent = subtitle.textContent.trim();
     body.insertBefore(paragraph,body.firstChild);
   }
-  return body.textContent?.trim() || body.querySelector('img[src]') ? {title:title.textContent.trim(),body} : null;
+  const name=platformText(title);
+  return body.textContent?.trim() || body.querySelector('img[src]') ? {title:name,body,...articleMetadata(doc,pageUrl,name,article!)} : null;
 };

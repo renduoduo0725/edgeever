@@ -1,5 +1,5 @@
 import { createDocument } from "@mixmark-io/domino";
-import { markdownText, markdownUrl, platformHtmlMarkdown, platformTarget, platformText, publishedTime, safePlatformUrl, type PlatformLabels, type PlatformRead } from "./platform-clip";
+import { markdownText, markdownUrl, platformElementHidden, platformHtmlMarkdown, platformReadableCopy, platformTarget, platformText, publishedTime, safePlatformUrl, type PlatformLabels, type PlatformRead } from "./platform-clip";
 
 /** Runs in MAIN because Next's current route props are not in the isolated DOM. */
 export function readXiaoyuzhouStateInPage() {
@@ -20,10 +20,12 @@ export const readXiaoyuzhou = (doc: Document, pageUrl: string, labels: PlatformL
   const target = platformTarget(pageUrl);
   if (target?.platform !== "xiaoyuzhou") return { ok: false, reason: "not-target" };
   const header = doc.querySelector("main header");
-  const title = platformText(header?.querySelector("h1"));
   const notes = doc.querySelector('section[aria-label="节目show notes"] .sn-content article');
   const canonical = doc.querySelector('link[rel="canonical"]')?.getAttribute("href") || "";
-  if (!header || !title || !notes) return { ok: false, reason: "unreadable" };
+  if (!header || !notes) return { ok: false, reason: "unreadable" };
+  const cleanHeader = platformReadableCopy(header);
+  const title = platformText(cleanHeader.querySelector("h1"));
+  if (!title) return { ok: false, reason: "unreadable" };
   if (platformTarget(canonical)?.url !== target.url) return { ok: false, reason: "changed" };
 
   // The sampled page loads the full article before its visual expansion.
@@ -57,21 +59,23 @@ export const readXiaoyuzhou = (doc: Document, pageUrl: string, labels: PlatformL
   // Parse only in Domino's in-memory DOM: validation must not give untrusted
   // markup to a browser HTML sink that could activate scripts or resource loads.
   const expected = createDocument(expectedHtml).body;
-  const markdown = platformHtmlMarkdown(notes, target.url);
-  const fullMarkdown = platformHtmlMarkdown(expected, target.url);
+  const cleanNotes = platformReadableCopy(notes);
+  if (platformElementHidden(notes) && !cleanNotes.hasChildNodes()) return { ok: false, reason: "unreadable" };
+  const markdown = platformHtmlMarkdown(cleanNotes, target.url);
+  const fullMarkdown = platformHtmlMarkdown(platformReadableCopy(expected), target.url);
   if (markdown !== fullMarkdown) return { ok: false, reason: "incomplete" };
   // Only an explicitly empty field establishes that the episode has no notes.
   if (!markdown && expectedHtml.trim()) return { ok: false, reason: "unreadable" };
-  const podcast = header.querySelector('.podcast-title a.name[href^="/podcast/"]');
+  const podcast = cleanHeader.querySelector('.podcast-title a.name[href^="/podcast/"]');
   const podcastName = platformText(podcast);
   const podcastUrl = safePlatformUrl(podcast?.getAttribute("href") || "", target.url);
-  const cover = header.querySelector("img.avatar");
+  const cover = cleanHeader.querySelector("img.avatar");
   const coverUrl = safePlatformUrl(cover?.getAttribute("src") || "", target.url);
   return {
     ok: true,
     clip: {
       ...target, title,
-      publishedAt: publishedTime(header.querySelector("time")),
+      publishedAt: publishedTime(cleanHeader.querySelector("time")),
       markdown: [
         podcastName && podcastUrl ? `${markdownText(labels.podcast)}: [${markdownText(podcastName)}](${markdownUrl(podcastUrl)})` : "",
         coverUrl ? `![${markdownText(title)}](${markdownUrl(coverUrl)})` : "",
