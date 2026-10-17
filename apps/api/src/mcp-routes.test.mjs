@@ -45,12 +45,12 @@ const mcpRequest = (payload, headers = {}) => ({
 
 const modernMcpRequest = (payload, headers = {}) => {
   const params = {
-    ...(payload.params ?? {}),
+    ...payload.params,
     _meta: {
       "io.modelcontextprotocol/protocolVersion": "2026-07-28",
       "io.modelcontextprotocol/clientInfo": { name: "edgeever-test", version: "1.0.0" },
       "io.modelcontextprotocol/clientCapabilities": {},
-      ...(payload.params?._meta ?? {}),
+      ...payload.params?._meta,
     },
   };
   const name = payload.method === "resources/read" ? params.uri : params.name;

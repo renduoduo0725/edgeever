@@ -1,4 +1,6 @@
-export const POSTER_FONTS = [
+import { FONT_CATALOG, FONT_IDS } from "./font-catalog";
+
+const LEGACY_POSTER_FONTS = [
   {
     family: "思源宋体",
     file: "notoserif",
@@ -85,3 +87,9 @@ export const POSTER_FONTS = [
     en: "JetBrains Mono",
   },
 ] as const;
+
+// Persist existing family names; source URLs and display names come from one catalog.
+export const POSTER_FONTS = [
+  ...LEGACY_POSTER_FONTS.filter(font => !FONT_IDS.some(id => FONT_CATALOG[id].posterFamily === font.family)),
+  ...FONT_IDS.map(id => ({ family: FONT_CATALOG[id].posterFamily, file: "", zh: FONT_CATALOG[id].zh, en: FONT_CATALOG[id].en })),
+];

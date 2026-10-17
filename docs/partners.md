@@ -1,6 +1,6 @@
 # 🤝 Sponsors & Partners
 
-EdgeEver is an open-source, AI-native personal knowledge base and Evernote alternative. We remain fully open-source, transparent, and neutral, while welcoming sustainable collaborations with the broader commercial and developer ecosystems. We invite enterprises, cloud providers, AI platforms, and developer tooling teams to partner with us.
+EdgeEver is an open-source, AI-native personal knowledge base and modern productivity workspace. We remain fully open-source, transparent, and neutral, while welcoming sustainable collaborations with the broader commercial and developer ecosystems. We invite enterprises, cloud providers, AI platforms, and developer tooling teams to partner with us.
 
 ---
 

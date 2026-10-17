@@ -155,7 +155,7 @@ export default defineConfig({
       manifest: {
         name: "EdgeEver",
         short_name: "EdgeEver",
-        description: "EdgeEver：基于 Cloudflare 全家桶自托管的开源印象笔记。",
+        description: "EdgeEver：基于 Cloudflare 与 Docker 自托管的现代化开源笔记与 AI 个人知识库。",
         start_url: "/",
         scope: "/",
         display: "standalone",
@@ -311,6 +311,13 @@ export default defineConfig({
         strictExecutionOrder: true,
         codeSplitting: {
           groups: [
+            {
+              // Font coverage tables are static data used by image sharing.
+              // Keep them out of the editor component's JavaScript chunk.
+              name: "note-image-font-manifest",
+              test: /[\\/]note-image-font-manifest\.ts$/,
+              priority: 51,
+            },
             {
               name: "vendor-code-highlight",
               test: /node_modules[\\/](?:lowlight|highlight\.js)[\\/]/,

@@ -6,7 +6,6 @@ import {
   DEFAULT_CUSTOM_LIGHT_COLORS,
   normalizeThemeColors,
   type CustomEditorTheme,
-  type ThemeColors,
 } from "@/lib/custom-editor-theme";
 
 export {

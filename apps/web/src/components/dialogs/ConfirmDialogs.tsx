@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { AlertTriangle, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -22,7 +22,6 @@ export const AppConfirmDialog = ({
   isWorking = false,
   title,
   tone = "danger",
-  closeOnBrowserBack,
   onCancel,
   onConfirm,
 }: {

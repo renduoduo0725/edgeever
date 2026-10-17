@@ -129,6 +129,7 @@ export const validateAttachmentUpload = (size: number) => {
 export const normalizeFilename = (filename: string) => filename
   .trim()
   .replace(/[\\/]/g, "-")
+  // oxlint-disable-next-line no-control-regex -- strips control characters from resource filenames
   .replace(/[\u0000-\u001f\u007f]/g, "")
   .slice(0, 160);
 

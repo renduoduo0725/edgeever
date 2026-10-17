@@ -56,7 +56,7 @@ describe("demo seed catalog", () => {
       expect(table?.fields.length).toBeGreaterThan(0);
       expect(table?.records.length).toBeGreaterThan(0);
       for (const record of table?.records ?? []) {
-        for (const [fieldId, cellValue] of Object.entries(record.cells)) {
+        for (const cellValue of Object.values(record.cells)) {
           if (Array.isArray(cellValue)) {
             for (const item of cellValue) {
               expect(item.resourceId).toBeDefined();

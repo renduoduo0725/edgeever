@@ -27,7 +27,6 @@ import {
   Trash2,
   KeyRound,
   CheckSquare,
-  ArrowDownWideNarrow,
   LayoutList,
   List,
   FileText as FileIcon,
@@ -37,11 +36,7 @@ import {
   Folder,
   Merge,
   FilePlus2,
-  Compass,
-  Layers,
-  Settings,
   MoreVertical,
-  CheckCircle2,
   TagX,
   Image as ImageIcon,
   Share2,
@@ -84,7 +79,6 @@ import type {
   NotebookMoveOption,
 } from "@/lib/app-helpers";
 import { contentEnterMotion, paneEnterMotion } from "@/lib/motion";
-import type { SyncQueueSummary } from "@/lib/sync-queue";
 import { api } from "@/lib/api";
 import { isLocalMemoId } from "@/lib/local-mirror";
 import { copyTextToClipboard } from "@/lib/clipboard";
@@ -351,20 +345,6 @@ const MobileSelectionActionBar = ({
   );
 };
 
-const CheckCircleCheck = ({ className }: { className?: string }) => (
-  <svg
-    className={cn("h-4 w-4 fill-current", className)}
-    viewBox="0 0 20 20"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      fillRule="evenodd"
-      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-      clipRule="evenodd"
-    />
-  </svg>
-);
-
 export const MemoListPane = ({
   notebooks,
   notebook,
@@ -431,11 +411,8 @@ export const MemoListPane = ({
   setMobileMoveOpen,
   mobileMoreOpen,
   setMobileMoreOpen,
-  desktopFilterOpen,
   setDesktopFilterOpen,
-  desktopSortOpen,
   setDesktopSortOpen,
-  desktopActionsOpen,
   setDesktopActionsOpen,
   isLoading,
   isRefreshing,
@@ -563,7 +540,6 @@ export const MemoListPane = ({
   const listScrollRef = useRef<HTMLDivElement | null>(null);
   const [listScrollElement, setListScrollElement] = useState<HTMLDivElement | null>(null);
   const [isDesktopList, setIsDesktopList] = useState(isDesktopViewport);
-  const moveTargetSelectRef = useRef<HTMLSelectElement | null>(null);
   const previousSelectionModeRef = useRef(selectionMode);
   const skipSelectedMemoAutoScrollRef = useRef(false);
   const setListScrollNode = useCallback((node: HTMLDivElement | null) => {
@@ -627,8 +603,6 @@ export const MemoListPane = ({
           ? t("workspace.selection.updatingPin")
           : selectionPinLabel;
   const selectionToggleTitle = canToggleVisibleMemoSelection ? visibleSelectionToggleLabel : t("memoList.noSelectableInList");
-  const moveTargetTitle =
-    view === "trash" ? t("workspace.selection.trashCannotMove") : notebooks.length === 0 ? t("workspace.selection.noMovableNotebook") : isMoving ? t("workspace.selection.moving") : t("memoList.moveToNotebook");
   const searchActive = Boolean(search.trim());
   const hasListConstraint = searchActive || filterMode !== "all" || Boolean(selectedTag);
   const activeFilterLabel = filterOptions.find((option) => option.value === filterMode)?.label ?? t("options.memoFilter.all");
@@ -955,7 +929,7 @@ export const MemoListPane = ({
     setMemoContextMenu(null);
   };
 
-  const handleOpenSelectionKeyboardContextMenu = (memo: MemoSummary, target: HTMLElement) => {
+  const handleOpenSelectionKeyboardContextMenu = (memo: MemoSummary) => {
     if (!isDesktopViewport()) {
       return;
     }
@@ -1014,26 +988,6 @@ export const MemoListPane = ({
   const handleListDensityChange = (value: MemoListDensity) => {
     setListDensity(value);
     writeMemoListDensityPreference(value);
-  };
-
-  const handleMoveTargetSelectKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.currentTarget.blur();
-      listRootRef.current?.focus();
-      return;
-    }
-
-    if (event.key !== "Enter") {
-      return;
-    }
-
-    if (selectedMemoIds.size === 0 || !moveTargetNotebookId || isMoving || view === "trash") {
-      return;
-    }
-
-    event.preventDefault();
-    onMoveSelectedMemos(moveTargetNotebookId);
   };
 
   const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -1548,7 +1502,7 @@ export const MemoListPane = ({
                       onDelete={() => onDeleteMemo(memo.id)}
                       onOpenContextMenu={(event) => handleOpenMemoContextMenu(memo, event)}
                       onOpenSelectionContextMenu={(event) => handleOpenSelectionContextMenu(memo, event)}
-                      onOpenSelectionKeyboardContextMenu={(target) => handleOpenSelectionKeyboardContextMenu(memo, target)}
+                      onOpenSelectionKeyboardContextMenu={() => handleOpenSelectionKeyboardContextMenu(memo)}
                       onOpenKeyboardContextMenu={(target) => handleOpenMemoKeyboardContextMenu(memo, target)}
                       onToggle={(event) => handleToggleMemo(memo.id, event)}
                     />

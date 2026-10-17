@@ -58,7 +58,7 @@ const MARKDOWN = `
 - **行内公式**：例如质能方程 $E = mc^2$。
 - **多行独立公式块**：
 $$
-\oint_{\\partial \\Omega} \\mathbf{E} \\cdot d\\mathbf{S} = \\frac{1}{\\varepsilon_0} \\iiint_{\\Omega} \\rho \\, dV
+\\oint_{\\partial \\Omega} \\mathbf{E} \\cdot d\\mathbf{S} = \\frac{1}{\\varepsilon_0} \\iiint_{\\Omega} \\rho \\, dV
 $$
 
 - [x] 已完成的待办

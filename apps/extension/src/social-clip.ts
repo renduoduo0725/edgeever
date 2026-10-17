@@ -455,7 +455,7 @@ export const readLinkedin = (doc: Document, target: PlatformTarget): PlatformRea
     link.closest(LINKEDIN_CARD_SELECTOR) === card && platformText(link));
   const person = actorLinks.find(link => {
     const url = safePlatformUrl(link.getAttribute('href') || '', target.url);
-    return url && /(^|\.)linkedin\.com$/.test(new URL(url).hostname) && /^\/in\//.test(new URL(url).pathname);
+    return url && /(^|\.)linkedin\.com$/.test(new URL(url).hostname) && new URL(url).pathname.startsWith("/in/");
   });
   const author = text(record(schema?.author)?.name) || platformText(own('.update-components-actor__title, [data-tracking-control-name="public_post_feed-actor-name"]'))
     || platformText(person?.querySelector('p') || person) || actorLinks.map(platformText).find(Boolean);

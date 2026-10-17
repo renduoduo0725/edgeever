@@ -177,7 +177,7 @@ describe("scheduled task routes", () => {
   });
 
   test("does not expose task management to API-token actors", async () => {
-    const { app, environment } = createFixture();
+    const { environment } = createFixture();
     const tokenApp = new Hono();
     tokenApp.use("/api/v1/*", async (context, next) => {
       context.set("auth", { ...auth, kind: "agent", actorType: "agent" });

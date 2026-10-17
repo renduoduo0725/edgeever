@@ -1,3 +1,9 @@
+import type { FontLoadStatus } from "@/lib/font-load-state";
+import { useFontPreviewStatus } from "@/lib/use-font-preview-status";
+import { FontLoadFeedback } from "@/components/FontLoadFeedback";
+import { FONT_CATALOG, FONT_IDS } from "@edgeever/shared/font-catalog";
+import { prepareNoteImageAssets } from "@edgeever/shared/note-image-fonts";
+import { noteImageAssetUrls } from "@edgeever/shared/note-image-assets";
 import { Check, Copy, Download, LoaderCircle, Palette, Share2, Type } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,13 +27,14 @@ import {
   type NoteImageCardWidth,
   type NoteImageFontSize,
   type NoteImageFontStyle,
-  type NoteImageFormat,
   type NoteImageTheme,
   type PreparedNoteImage,
 } from "@/lib/note-image-export";
-import { NOTE_IMAGE_THEME_OPTIONS, NOTE_IMAGE_THEMES, resolveNoteImageTypography } from "@edgeever/shared/note-image-card";
+import { NOTE_IMAGE_THEME_OPTIONS, buildNoteImageCardMarkup, escapeCardHtml, generateCardCss } from "@edgeever/shared/note-image-card";
 import { getHtmlImageEmbedNoticeKind } from "@/lib/note-html-export";
+import { readNoteImagePreferences, writeNoteImagePreferences, type NoteImagePreferences } from "@/lib/note-image-preference";
 import { cn } from "@/lib/utils";
+import { NoteImageFontLabel } from "./NoteImageFontLabel";
 
 export type ShareNoteImageSource = Omit<DownloadNoteImageOptions, "background" | "format">;
 
@@ -37,6 +44,8 @@ const FONT_OPTIONS: Array<{ id: NoteImageFontStyle; labelKey: string }> = [
   { id: "serif", labelKey: "editor.imageShare.fontStyles.serif" },
   { id: "sans", labelKey: "editor.imageShare.fontStyles.sans" },
   { id: "mono", labelKey: "editor.imageShare.fontStyles.mono" },
+  ...FONT_IDS.map(id => ({ id, labelKey: FONT_CATALOG[id].labelKey })),
+
 ];
 
 const SIZE_OPTIONS: Array<{ id: NoteImageFontSize; labelKey: string }> = [
@@ -51,6 +60,63 @@ const WIDTH_OPTIONS: Array<{ id: NoteImageCardWidth; labelKey: string }> = [
   { id: "wide", labelKey: "editor.imageShare.cardWidths.wide" },
 ];
 
+/** Use the export renderer itself so thumbnails show each theme's actual layout. */
+const NoteImageThemePreview = ({
+  theme, fontStyle, title, body, quote,
+}: {
+  theme: NoteImageTheme;
+  fontStyle: NoteImageFontStyle;
+  title: string;
+  body: string;
+  quote: string;
+}) => {
+  const containerRef = useRef<HTMLSpanElement>(null);
+  const [scale, setScale] = useState(0.24);
+  const [assetCss, setAssetCss] = useState("");
+  useEffect(() => {
+    let active = true;
+    setAssetCss("");
+    void prepareNoteImageAssets({ theme, fontStyle, text: `${title} ${body} ${quote}`, urls: noteImageAssetUrls })
+      .then(assets => { if (active) setAssetCss(assets.css); })
+      .catch(() => { /* The full preview reports asset loading errors and offers retry. */ });
+    return () => { active = false; };
+  }, [theme, fontStyle, title, body, quote]);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setScale(entry.contentRect.width / NOTE_IMAGE_CARD_WIDTH_PIXELS.compact);
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+  const document = useMemo(() => `<!doctype html><html><head><meta charset="utf-8"><style>
+    html, body { margin: 0; padding: 0; overflow: hidden; }
+    ${assetCss}
+    ${generateCardCss({ theme, fontStyle, fontSize: "lg", cardWidth: "compact" })}
+    .edgeever-image-wrapper { min-height: 600px; }
+    </style></head><body>${buildNoteImageCardMarkup({
+      theme,
+      title,
+      bodyHtml: `<p>${escapeCardHtml(body)}</p><blockquote><p>${escapeCardHtml(quote)}</p></blockquote>`,
+      showTitle: true,
+      showUpdatedAt: false,
+      showBranding: false,
+    })}</body></html>`, [theme, fontStyle, title, body, quote, assetCss]);
+  return (
+    <span ref={containerRef} aria-hidden="true" className="pointer-events-none relative block h-28 overflow-hidden rounded-md bg-slate-100">
+      <iframe
+        aria-hidden="true"
+        tabIndex={-1}
+        sandbox=""
+        srcDoc={document}
+        className="absolute left-0 top-0 origin-top-left border-0"
+        style={{ width: NOTE_IMAGE_CARD_WIDTH_PIXELS.compact, height: 600, transform: `scale(${scale})` }}
+      />
+    </span>
+  );
+};
+
 export const ShareNoteImageDialog = ({
   open,
   onOpenChange,
@@ -61,48 +127,29 @@ export const ShareNoteImageDialog = ({
   source: ShareNoteImageSource;
 }) => {
   const { t } = useTranslation();
-  const [format, setFormat] = useState<NoteImageFormat>("png");
-  const [theme, setTheme] = useState<NoteImageTheme>("paper");
-  const [fontStyle, setFontStyle] = useState<NoteImageFontStyle>("auto");
-  const [fontSize, setFontSize] = useState<NoteImageFontSize>("lg");
-  const [cardWidth, setCardWidth] = useState<NoteImageCardWidth>("wide");
-  const [showTitle, setShowTitle] = useState(false);
-  const [showNotebook, setShowNotebook] = useState(false);
-  const [showTags, setShowTags] = useState(false);
-  const [showUpdatedAt, setShowUpdatedAt] = useState(true);
-  const [showReadingTime, setShowReadingTime] = useState(false);
-  const [showAuthor, setShowAuthor] = useState(false);
-  const [author, setAuthor] = useState(() => {
-    try {
-      return localStorage.getItem("edgeever_share_author_name") || "";
-    } catch {
-      return "";
-    }
-  });
-  const [showBranding, setShowBranding] = useState(true);
-  const [prepared, setPrepared] = useState<PreparedNoteImage | null>(null);
-  const [previewUrl, setPreviewUrl] = useState("");
-  const [error, setError] = useState(false);
-  const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "failed">("idle");
-  const generationRef = useRef(0);
-  const copyAttemptRef = useRef(0);
+  const [preferences, setPreferences] = useState(readNoteImagePreferences);
+  const [fontMenuOpen, setFontMenuOpen] = useState(false);
+  const {
+    format, theme, fontStyle, fontSize, cardWidth, showTitle, showNotebook, showTags,
+    showUpdatedAt, showReadingTime, showAuthor, author, showBranding,
+  } = preferences;
+  const setPreference = <K extends keyof NoteImagePreferences>(key: K, value: NoteImagePreferences[K]) => {
+    setPreferences(current => ({ ...current, [key]: value }));
+  };
 
   useEffect(() => {
-    if (!open) return;
-    setFormat("png");
-    setTheme("paper");
-    setFontStyle("auto");
-    setFontSize("lg");
-    setCardWidth("wide");
-    setShowTitle(false);
-    setShowNotebook(false);
-    setShowTags(false);
-    setShowUpdatedAt(true);
-    setShowReadingTime(false);
-    setShowAuthor(Boolean(author));
-    setShowBranding(true);
-    setCopyState("idle");
-  }, [author, open, source.title]);
+    writeNoteImagePreferences(preferences);
+  }, [preferences]);
+
+  const [prepared, setPrepared] = useState<PreparedNoteImage | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [error, setError] = useState<false | true | "font">(false);
+  const [retry, setRetry] = useState(0);
+  const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "failed">("idle");
+  const [contentFontStatus, setContentFontStatus] = useState<FontLoadStatus>("loading");
+  const { status: selectedFontStatus, onPreviewStatus } = useFontPreviewStatus(`${fontStyle}:${theme}:${retry}`, contentFontStatus);
+  const generationRef = useRef(0);
+  const copyAttemptRef = useRef(0);
 
   useEffect(() => {
     if (!open) return;
@@ -111,6 +158,8 @@ export const ShareNoteImageDialog = ({
     setCopyState("idle");
     setPrepared(null);
     setError(false);
+    setContentFontStatus("loading");
+    const controller = new AbortController();
     const timer = window.setTimeout(() => {
       void createNoteImage({
         ...source,
@@ -131,6 +180,8 @@ export const ShareNoteImageDialog = ({
         notebook: showNotebook ? source.notebook : "",
         tags: showTags ? source.tags : [],
         updatedAt: showUpdatedAt ? source.updatedAt : "",
+        signal: controller.signal,
+        onFontLoadStatus: status => { if (generation === generationRef.current) setContentFontStatus(status); },
       })
         .then((result) => {
           if (generation !== generationRef.current) return;
@@ -140,11 +191,15 @@ export const ShareNoteImageDialog = ({
           });
           setPrepared(result);
         })
-        .catch(() => {
-          if (generation === generationRef.current) setError(true);
+        .catch((reason: unknown) => {
+          if (generation === generationRef.current) setError(reason instanceof Error && reason.message === "NOTE_IMAGE_FONT_UNAVAILABLE" ? "font" : true);
         });
     }, 180);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      if (generationRef.current === generation) generationRef.current++;
+      controller.abort();
+    };
   }, [
     author,
     cardWidth,
@@ -152,6 +207,7 @@ export const ShareNoteImageDialog = ({
     fontStyle,
     format,
     open,
+    retry,
     showAuthor,
     showBranding,
     showNotebook,
@@ -212,8 +268,8 @@ export const ShareNoteImageDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[94vh] max-w-5xl gap-0 overflow-hidden p-0">
-        <DialogHeader className="border-b border-slate-200 px-5 py-3.5 pr-12 text-left">
+      <DialogContent className="flex max-h-[94dvh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="shrink-0 border-b border-slate-200 px-5 py-3.5 pr-12 text-left">
           <DialogTitle className="flex items-center gap-2 text-sm leading-6 font-semibold">
             <Share2 className="h-4.5 w-4.5 text-slate-700" />
             {t("editor.imageShare.title")}
@@ -221,14 +277,14 @@ export const ShareNoteImageDialog = ({
           <DialogDescription className="sr-only">{t("editor.imageShare.description")}</DialogDescription>
         </DialogHeader>
 
-        <div className="grid min-h-0 flex-1 gap-0 md:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="relative flex min-h-72 flex-1 flex-col overflow-auto bg-slate-100/90 md:max-h-[75vh]">
+        <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto md:overflow-hidden md:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="relative flex min-h-72 flex-1 flex-col overflow-auto bg-[#e9e9e7] md:max-h-[72vh]">
             <div className="flex min-h-full w-full flex-col items-center justify-start p-4 sm:p-6">
               {previewUrl && prepared ? (
-                <div className="my-auto flex w-full items-center justify-center transition-all duration-150">
+                <div className="my-auto flex w-full items-center justify-center">
                   <img
                     alt={t("editor.imageShare.previewAlt")}
-                    className="block rounded-xl shadow-xl transition-all duration-150"
+                    className="block shadow-lg"
                     style={{
                       width: `${NOTE_IMAGE_CARD_WIDTH_PIXELS[cardWidth] || 800}px`,
                       maxWidth: "100%",
@@ -238,8 +294,9 @@ export const ShareNoteImageDialog = ({
                   />
                 </div>
               ) : error ? (
-                <div className="my-auto flex min-h-64 items-center justify-center text-xs leading-5 text-rose-600" role="alert">
-                  {t("editor.imageExport.error")}
+                <div className="my-auto flex min-h-64 flex-col items-center justify-center gap-3 text-xs leading-5 text-rose-600" role="alert">
+                  {t(error === "font" ? "editor.imageShare.remoteFontError" : "editor.imageExport.error")}
+                  <Button variant="outline" size="sm" onClick={() => setRetry(value => value + 1)}>{t("editor.imageShare.retry")}</Button>
                 </div>
               ) : (
                 <div className="my-auto flex min-h-64 items-center justify-center gap-2 text-xs leading-5 text-slate-500" role="status">
@@ -261,8 +318,6 @@ export const ShareNoteImageDialog = ({
                 {NOTE_IMAGE_THEME_OPTIONS.map((id) => {
                   const isSelected = theme === id;
                   const label = t(`editor.imageShare.themes.${id}`);
-                  const style = NOTE_IMAGE_THEMES[id];
-                  const typography = resolveNoteImageTypography(id, fontStyle);
                   return (
                     <button
                       key={id}
@@ -274,16 +329,19 @@ export const ShareNoteImageDialog = ({
                           : "border-slate-200 bg-card text-slate-700 hover:border-slate-300 hover:bg-slate-50/70",
                       )}
                       type="button"
-                      onClick={() => setTheme(id)}
+                      onClick={() => setPreference("theme", id)}
                     >
-                      <span aria-hidden="true" className="block rounded p-2" style={{ background: style.canvasBg }}>
-                        <span className="block rounded-sm border p-2" style={{ background: style.cardBg, border: style.cardBorder, color: style.textColor, fontFamily: typography.bodyFamily }}>
-                          <span className="block truncate text-[11px]" style={{ color: style.headingColor, fontFamily: typography.headingFamily, fontWeight: typography.headingWeight }}>{source.title || label}</span>
-                          <span className="mt-1 block truncate text-[9px]">{t("editor.imageShare.previewBody")}</span>
-                          <span className="mt-1 block truncate border-l-2 pl-1 text-[9px]" style={{ borderColor: style.quoteBorder, background: style.quoteBg }}>{t("editor.imageShare.previewQuote")}</span>
-                        </span>
+                      <NoteImageThemePreview
+                        theme={id}
+                        fontStyle={fontStyle}
+                        title={source.title || label}
+                        body={t("editor.imageShare.previewBody")}
+                        quote={t("editor.imageShare.previewQuote")}
+                      />
+                      <span className="flex items-center justify-between gap-1 px-0.5">
+                        <span className="truncate">{label}</span>
+                        {isSelected ? <Check className="h-3.5 w-3.5 shrink-0" /> : null}
                       </span>
-                      <span className="truncate">{label}</span>
                     </button>
                   );
                 })}
@@ -296,25 +354,21 @@ export const ShareNoteImageDialog = ({
                 <Type className="h-3.5 w-3.5" />
                 {t("editor.imageShare.fontStyle")}
               </legend>
-              <div className="grid grid-cols-2 gap-1.5">
-                {FONT_OPTIONS.map((item, idx) => (
-                  <button
-                    key={item.id}
-                    aria-pressed={fontStyle === item.id}
-                    className={cn(
-                      "h-8 rounded-md border text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20",
-                      idx === 0 && "col-span-2",
-                      fontStyle === item.id
-                        ? "border-slate-900 bg-slate-100 text-slate-950 font-semibold"
-                        : "border-slate-200 bg-card text-slate-600 hover:bg-slate-50",
-                    )}
-                    type="button"
-                    onClick={() => setFontStyle(item.id)}
-                  >
-                    {t(item.labelKey)}
-                  </button>
-                ))}
-              </div>
+              <Select value={fontStyle} onOpenChange={setFontMenuOpen} onValueChange={(value) => setPreference("fontStyle", value as NoteImageFontStyle)}>
+                <SelectTrigger aria-label={t("editor.imageShare.fontStyle")} className="h-9 w-full text-xs font-normal">
+                  <SelectValue>
+                    <NoteImageFontLabel label={t(FONT_OPTIONS.find(item => item.id === fontStyle)!.labelKey)} fontStyle={fontStyle} theme={theme} enabled={open} status={error === true ? undefined : selectedFontStatus} onStatusChange={onPreviewStatus} retryKey={retry} />
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {FONT_OPTIONS.map((item) => (
+                    <SelectItem key={item.id} value={item.id} textValue={t(item.labelKey)}>
+                      <NoteImageFontLabel label={t(item.labelKey)} fontStyle={item.id} theme={theme} enabled={open && fontMenuOpen} visibleOnly />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {error === true ? null : <FontLoadFeedback status={selectedFontStatus} onRetry={() => setRetry(value => value + 1)} />}
 
               {/* Font Size */}
               <div className="space-y-1.5 pt-1">
@@ -331,7 +385,7 @@ export const ShareNoteImageDialog = ({
                           : "border-slate-200 bg-card text-slate-600 hover:bg-slate-50",
                       )}
                       type="button"
-                      onClick={() => setFontSize(item.id)}
+                      onClick={() => setPreference("fontSize", item.id)}
                     >
                       {t(item.labelKey)}
                     </button>
@@ -354,7 +408,7 @@ export const ShareNoteImageDialog = ({
                           : "border-slate-200 bg-card text-slate-600 hover:bg-slate-50",
                       )}
                       type="button"
-                      onClick={() => setCardWidth(item.id)}
+                      onClick={() => setPreference("cardWidth", item.id)}
                     >
                       {t(item.labelKey)}
                     </button>
@@ -370,17 +424,20 @@ export const ShareNoteImageDialog = ({
               </legend>
               <div className="space-y-2">
                 {([
-                  ["title", showTitle, setShowTitle],
-                  ["notebook", showNotebook, setShowNotebook],
-                  ["tags", showTags, setShowTags],
-                  ["updatedAt", showUpdatedAt, setShowUpdatedAt],
-                  ["readingTime", showReadingTime, setShowReadingTime],
-                  ["author", showAuthor, setShowAuthor],
-                  ["branding", showBranding, setShowBranding],
-                ] as const).map(([key, checked, setChecked]) => (
+                  ["title", showTitle, "showTitle"],
+                  ["notebook", showNotebook, "showNotebook"],
+                  ["tags", showTags, "showTags"],
+                  ["updatedAt", showUpdatedAt, "showUpdatedAt"],
+                  ["readingTime", showReadingTime, "showReadingTime"],
+                  ["author", showAuthor, "showAuthor"],
+                  ["branding", showBranding, "showBranding"],
+                ] as const).map(([key, checked, preferenceKey]) => (
                   <div key={key} className="space-y-1.5">
                     <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-700">
-                      <Checkbox checked={checked} onCheckedChange={(value) => setChecked(value === true)} />
+                      <Checkbox checked={checked} onCheckedChange={(value) => {
+                        const enabled = value === true;
+                        setPreference(preferenceKey, enabled);
+                      }} />
                       {t(`editor.imageShare.fields.${key}`)}
                     </label>
                     {key === "author" && showAuthor && (
@@ -390,12 +447,7 @@ export const ShareNoteImageDialog = ({
                           value={author}
                           onChange={(e) => {
                             const val = e.target.value;
-                            setAuthor(val);
-                            try {
-                              localStorage.setItem("edgeever_share_author_name", val);
-                            } catch {
-                              // Ignore localStorage error
-                            }
+                            setPreference("author", val);
                           }}
                           placeholder={t("editor.imageShare.authorPlaceholder")}
                           className="h-7 w-full rounded border border-slate-300 px-2 text-xs text-slate-800 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none"
@@ -411,7 +463,7 @@ export const ShareNoteImageDialog = ({
             {/* Format Selection */}
             <label className="grid gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
               {t("editor.imageShare.format")}
-              <Select value={format} onValueChange={(value) => setFormat(value as NoteImageFormat)}>
+              <Select value={format} onValueChange={(value) => setPreference("format", value as NoteImagePreferences["format"])}>
                 <SelectTrigger className="h-8 text-xs font-normal normal-case tracking-normal text-slate-700">
                   <SelectValue />
                 </SelectTrigger>
@@ -444,7 +496,7 @@ export const ShareNoteImageDialog = ({
             {t("editor.imageShare.copyFailed")}
           </p>
         ) : null}
-        <DialogFooter className="border-t border-slate-200 px-5 py-3">
+        <DialogFooter className="shrink-0 border-t border-slate-200 px-5 py-3">
           <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>

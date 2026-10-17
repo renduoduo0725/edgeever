@@ -185,7 +185,7 @@ const cleanLicense = (value: string) => collapse(value).replace(/\s+license$/i, 
 
 const cleanLanguage = (value: string) => {
   const text = collapse(value).replace(/\s+\d+(?:\.\d+)?%$/, "").trim();
-  if (!text || text.length > 40 || /%$/.test(text) || /^languages?$/i.test(text)) return "";
+  if (!text || text.length > 40 || text.endsWith("%") || /^languages?$/i.test(text)) return "";
   return text;
 };
 

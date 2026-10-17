@@ -16,7 +16,7 @@ const fixture=(name)=>createDocument(readFileSync(new URL(`./fixtures/platforms/
 const read=(name,doc=fixture(name))=>name.startsWith("jike") ? readJike(doc,urls[name]) : name.startsWith("douban") ? readDouban(doc,platformTarget(urls[name]),urls[name]) : readArticle(doc,urls[name],"公众号");
 
 test("article URLs normalize aliases and tracking, retaining only WeChat query identity/signature",()=>{
-  for (const [name,url] of Object.entries(urls)) expect(platformTarget(url+"?from=share#comments")?.url).toBe(url);
+  for (const url of Object.values(urls)) expect(platformTarget(url+"?from=share#comments")?.url).toBe(url);
   const long="https://mp.weixin.qq.com/s?__biz=MzA%3D%3D&mid=123&idx=1&sn=abc&scene=21&pass_ticket=unused";
   expect(platformTarget(long)).toEqual({platform:"wechat",id:"MzA==/123/1",url:"https://mp.weixin.qq.com/s?__biz=MzA%3D%3D&mid=123&idx=1&sn=abc"});
   expect(platformTarget(long.replace("&sn=abc", ""))?.platform).toBe("wechat");
@@ -235,7 +235,7 @@ test("Douban short comments bind to the chosen own permalink and do not capture 
 
 
 test("Jike declared content cannot lose its entire text or links, and media cannot be replaced by duplicates",()=>{
-  for(const mode of ["remove","hidden"]){const doc=fixture("jike-grid"),text=doc.querySelector('.text');mode==="remove"?text.remove():text.setAttribute('hidden','');expect(read("jike-grid",doc)).toEqual({ok:false,reason:"incomplete"});}
+  for(const mode of ["remove","hidden"]){const doc=fixture("jike-grid"),text=doc.querySelector('.text');if(mode==="remove")text.remove();else text.setAttribute('hidden','');expect(read("jike-grid",doc)).toEqual({ok:false,reason:"incomplete"});}
   const links=fixture("jike-long");for(const link of Array.from(links.querySelectorAll('.text a[href]')))link.remove();expect(read("jike-long",links)).toEqual({ok:false,reason:"incomplete"});
   const wrong=fixture("jike-long");wrong.querySelector('.text a[href]').setAttribute('href','https://m.okjike.com/originalPosts/6715e824d9dc81724c2ec74d');expect(read("jike-long",wrong)).toEqual({ok:false,reason:"incomplete"});
   const images=fixture("jike-grid"),first=images.querySelector('.image-item img').getAttribute('src');for(const img of Array.from(images.querySelectorAll('.image-item img')))img.setAttribute('src',first);expect(read("jike-grid",images)).toEqual({ok:false,reason:"incomplete"});
@@ -244,7 +244,7 @@ test("Jike declared content cannot lose its entire text or links, and media cann
 test("hidden visual date and rating fields are omitted while optional short-comment time does not gate text",()=>{
   const doc=fixture("douban-book");doc.querySelector('.main-meta').textContent='';const time=doc.createElement('span');time.setAttribute('content','2024-07-31');time.setAttribute('hidden','');time.textContent='2024-07-31 17:37:35';doc.querySelector('.main-meta').appendChild(time);
   const rating=doc.querySelector('.main-title-rating');rating.setAttribute('title','HIDDEN RATING');rating.setAttribute('hidden','');const result=read('douban-book',doc);expect(result.clip.publishedAt).toBeUndefined();expect(result.clip.markdown).not.toContain('HIDDEN RATING');
-  for(const action of ['remove','href']){const list=fixture('douban-comments'),card=list.querySelector('.comment-item'),time=card.querySelector('.comment-time');action==='remove'?time.remove():time.removeAttribute('href');const target=doubanCommentTarget(card,'https://book.douban.com/subject/36864764/comments/');const saved=readDouban(list,target,'https://book.douban.com/subject/36864764/comments/');expect(saved.ok).toBe(true);expect(saved.clip.markdown).toContain('/subject/36864764/comments/#c-4237804504');}
+  for(const action of ['remove','href']){const list=fixture('douban-comments'),card=list.querySelector('.comment-item'),time=card.querySelector('.comment-time');if(action==='remove')time.remove();else time.removeAttribute('href');const target=doubanCommentTarget(card,'https://book.douban.com/subject/36864764/comments/');const saved=readDouban(list,target,'https://book.douban.com/subject/36864764/comments/');expect(saved.ok).toBe(true);expect(saved.clip.markdown).toContain('/subject/36864764/comments/#c-4237804504');}
 });
 
 const jikeFeedUrl='https://m.okjike.com/topics/63579abb6724cc583b9bba9a';

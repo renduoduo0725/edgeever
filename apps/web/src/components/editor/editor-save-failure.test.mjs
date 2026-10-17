@@ -54,6 +54,18 @@ describe("classifyEditorSaveFailure", () => {
   });
 
   test("falls back to a generic error for unknown failures", () => {
-    expect(classifyEditorSaveFailure(new Error("boom"))).toEqual({ kind: "error" });
+    expect(classifyEditorSaveFailure(new Error("boom"))).toEqual({ kind: "error", reasonKey: null });
+  });
+
+  test("explains a save blocked by the suspicious overwrite guard", () => {
+    const error = new MemoSaveRequestError(
+      new ApiRequestError("Save blocked because the title changed while most of the note content disappeared.", 409, "suspicious_memo_overwrite"),
+      queuedPayload,
+      "",
+    );
+    expect(classifyEditorSaveFailure(error)).toEqual({
+      kind: "error",
+      reasonKey: "editor.saveState.errorReason.suspiciousOverwrite",
+    });
   });
 });

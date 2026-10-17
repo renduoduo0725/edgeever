@@ -67,7 +67,7 @@ const normalizeAttachmentFilename = (label: string, resourceId: string) => {
   const withoutPrefix = label.replace(/^\s*(?:附件[：:]|Attachment:)\s*/i, "").trim();
   const colonParts = withoutPrefix.split(/[：:]\s*/).filter(Boolean);
   const candidate = (colonParts.at(-1) || withoutPrefix)
-    .replace(/^[\s📎📄📦📊🗃️🗂️]+/u, "")
+    .replace(/^[\uFE0F\s📎📄📦📊🗃🗂]+/u, "")
     .trim();
   return candidate || resourceId;
 };
@@ -225,6 +225,7 @@ export const getMobileAttachmentUpdatePayload = (contentJson: TiptapDoc) => ({
 export const getMobileResourceUpdatePayload = getMobileAttachmentUpdatePayload;
 
 const safeCacheFilename = (filename: string) =>
+  // oxlint-disable-next-line no-control-regex -- strips control characters from cached filenames
   filename.trim().replace(/[\\/]/g, "-").replace(/[\u0000-\u001f\u007f]/g, "").slice(0, 160) || "attachment";
 
 const EXT_BY_MIME: Record<string, string> = {

@@ -34,6 +34,7 @@ export class MarkdownExportMemoryLimitError extends Error {
 
 export const sanitizeExportPathSegment = (value: string, fallback: string) => {
   const sanitized = value
+    // oxlint-disable-next-line no-control-regex -- replaces control characters in export paths
     .replace(/[\u0000-\u001f<>:"/\\|?*]/g, "-")
     .replace(/\s+/g, " ")
     .replace(/[. ]+$/g, "")

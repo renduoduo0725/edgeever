@@ -1,10 +1,9 @@
-import type { MemoSummary, Notebook, TiptapDoc } from "@edgeever/shared";
+import type { MemoSummary, Notebook } from "@edgeever/shared";
 import { DEFAULT_MEMO_TITLE } from "@edgeever/shared";
 import { getMobileNotebookSearchVisibleIds } from "@edgeever/shared/mobile-ui";
 import type { MemoFilterMode, MemoSortMode } from "@edgeever/client";
 import { buildNotebookTree, type NotebookNode, type NotebookNodeComparator } from "./utils";
 import * as React from "react";
-import type { ReactNode } from "react";
 import type { TFunction } from "i18next";
 
 export type Pane = "notebooks" | "memos" | "editor";

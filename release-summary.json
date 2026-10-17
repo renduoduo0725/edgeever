@@ -1,26 +1,41 @@
 {
-  "version": "1.120.0",
+  "version": "1.121.0",
   "changes": {
     "en-US": [
-      "Duplicate a note together with independent copies of its images and attachments from the note actions menu.",
-      "Refine note image sharing with curated layouts, coordinated typography and neutral colors for the white theme.",
-      "Expand Web Clipper support for article and specialized platforms, including WeChat, Juejin, Douban, Jike and BOSS Zhipin, with improved content and image capture.",
-      "Pasted links no longer include adjacent Chinese, Japanese or Korean prose.",
-      "Improve desktop AI process cleanup by waiting for process closure before removing temporary workspaces."
+      "Add a table context menu with copy and paste for faster editing.",
+      "Refresh note image sharing themes, remember sharing preferences across clients, and add cached fonts with live previews.",
+      "Unify the font catalog for note bodies and posters, improve font selection, and show loading status with retry on failure.",
+      "Open internal note links in the destination notebook so navigation stays consistent.",
+      "Restore desktop connections to WorkBuddy 5.8+ and show actionable reasons when local agent connections fail.",
+      "Fix clearing local desktop data when the app uses an account-specific data directory.",
+      "Keep Android automatic synchronization running after a sync pass fails to settle.",
+      "Prevent the diagram shape menu from blocking editing and create new diagram labels in the interface language.",
+      "Make save status explanations accessible from the keyboard and localize warnings for rejected suspicious overwrites.",
+      "Reduce desktop installation size by excluding development-only files from production packages."
     ],
     "zh-CN": [
-      "支持从笔记操作菜单复制笔记，同时独立复制图片与附件。",
-      "优化笔记图片分享的主题排版与字体搭配，并修正白色主题的配色。",
-      "扩展网页剪藏对微信公众号、掘金、豆瓣、即刻、BOSS 直聘等文章及垂直平台的支持，改善正文和图片采集。",
-      "修复粘贴链接时将相邻中日韩文字误识别为网址的问题。",
-      "改善桌面 AI 进程清理，等待进程完全关闭后再清理临时工作区。"
+      "新增表格右键菜单，支持复制和粘贴，提升表格编辑效率。",
+      "优化笔记长图分享主题，跨客户端记住分享偏好，并提供带缓存和实时预览的字体选择。",
+      "统一笔记正文与海报字体目录，优化字体选择位置，并显示加载状态、支持失败重试。",
+      "修复笔记内部链接跳转，打开目标笔记时同步切换到所在笔记本。",
+      "恢复桌面端对 WorkBuddy 5.8+ 的连接，并在本地智能体连接失败时显示具体原因。",
+      "修复桌面端使用账户专属数据目录时无法清除本地数据的问题。",
+      "修复 Android 一轮同步收尾失败后自动同步可能停止的问题。",
+      "修复图形菜单阻挡编辑的问题，新建图表标签跟随界面语言。",
+      "保存状态提示支持键盘聚焦查看，并完善可疑覆盖保存被拒绝时的多语言提示。",
+      "桌面安装包排除仅开发时使用的文件，减少安装体积。"
     ],
     "ja": [
-      "ノート操作メニューから、画像と添付ファイルの独立したコピーを含むノートの複製に対応しました。",
-      "ノート画像共有のレイアウトと書体の組み合わせを改善し、白いテーマの配色を調整しました。",
-      "Web ClipperのWeChat、Juejin、Douban、Jike、BOSS Zhipinなどの記事・専門プラットフォームへの対応を拡張し、本文と画像の取得を改善しました。",
-      "リンク貼り付け時に隣接する中国語・日本語・韓国語の文章をURLに含める問題を修正しました。",
-      "デスクトップAIプロセスの終了を待ってから一時ワークスペースを削除するよう改善しました。"
+      "表の右クリックメニューでコピーと貼り付けが使えるようになりました。",
+      "ノート画像の共有テーマを改善し、端末間で共有設定を保持。フォントのキャッシュとプレビューに対応しました。",
+      "本文とポスターのフォント一覧を統一し、選択操作と読み込み状況の表示、失敗時の再試行を改善しました。",
+      "内部ノートリンクを開く際に、リンク先のノートブックへ正しく移動するよう修正しました。",
+      "デスクトップ版のWorkBuddy 5.8以降への接続を修正し、ローカルエージェントの接続失敗理由を表示します。",
+      "アカウント別のデータディレクトリを使用する場合に、デスクトップのローカルデータを消去できない問題を修正しました。",
+      "同期の終了処理が失敗した後もAndroidの自動同期が継続するよう修正しました。",
+      "図形メニューが編集を妨げる問題を修正し、新規図表のラベルを画面の言語に合わせます。",
+      "保存状況の説明をキーボードで確認できるようにし、不審な上書き保存の拒否メッセージを多言語化しました。",
+      "開発専用ファイルを除外し、デスクトップのインストール容量を削減しました。"
     ]
   }
 }

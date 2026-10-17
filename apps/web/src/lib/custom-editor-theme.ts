@@ -173,6 +173,7 @@ export const parseCustomEditorThemeFile = (source: string): PortableCustomEditor
 export const customEditorThemeFileName = (name: string) => {
   const safeName = name
     .trim()
+    // oxlint-disable-next-line no-control-regex -- replaces control characters in theme filenames
     .replace(/[\u0000-\u001f<>:"/\\|?*]+/g, "-")
     .replace(/\s+/g, " ")
     .replace(/[. ]+$/g, "")

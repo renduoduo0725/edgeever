@@ -12,13 +12,11 @@ import {
   History,
   RotateCcw,
   Trash2,
-  Tags,
   ReplaceAll,
   Paperclip,
   Pencil,
   Sparkles,
   Type,
-  X,
   Check,
   CircleAlert,
   LoaderCircle,
@@ -34,6 +32,7 @@ import {
   LockOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EditorTableContextMenu } from "@/components/EditorTableContextMenu";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { WeChatCopyProgress } from "@/components/WeChatCopyProgress";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
@@ -48,13 +47,10 @@ import {
   nextTitleStatusClearance,
 } from "@/components/MemoEditorChromeDensity";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
-import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EditorToolbar } from "./EditorToolbar";
 import { EditorOutline } from "./EditorOutline";
 import { SelectionAiActions } from "./editor/SelectionAiActions";
@@ -68,7 +64,6 @@ import {
 } from "./editor/editor-instance-identity";
 import {
   analyzeMarkdownModeContent,
-  isMarkdownSourceUnchanged,
   resolveMarkdownModeContent,
 } from "./editor/editor-mode-content";
 import { useEditorMarkdownMode } from "./editor/useEditorMarkdownMode";
@@ -306,7 +301,6 @@ import {
   shouldInsertDroppedResourceFiles,
   isCreatedMemoEditorFocused,
   isEditorReady,
-  MemoSaveRequestError,
   releaseEditorMedia,
   resetEditorDocument,
   shouldRetryCreatedMemoFocus,
@@ -470,6 +464,7 @@ const RichEditorPane = ({
     setSaveState,
   } = useEditorSaveStatus();
   const [storageSaveError, setStorageSaveError] = useState(false);
+  const [saveErrorReasonKey, setSaveErrorReasonKey] = useState<string | null>(null);
   const [richTableEditBlocked, setRichTableEditBlocked] = useState(false);
   const revertingUnsafeMarkdownRef = useRef(false);
   const [hydratedEditorMemoId, setHydratedEditorMemoId] = useState<string | null>(null);
@@ -3015,6 +3010,7 @@ const RichEditorPane = ({
       }
 
       setSaveConflictInfo(null);
+      setSaveErrorReasonKey(failure.reasonKey);
       setSaveState("error");
     },
   });
@@ -3581,6 +3577,8 @@ const RichEditorPane = ({
     tagsText,
     title,
   });
+  const saveStatusReason = saveConflictReason
+    ?? (saveState === "error" && saveErrorReasonKey ? t(saveErrorReasonKey) : null);
 
   useLayoutEffect(() => {
     const title = headerTitleSlot;
@@ -4019,16 +4017,17 @@ const RichEditorPane = ({
                     : t("editor.uploadState.fileUploading")}
               </span>
             )}
-            <IconTooltip label={saveConflictReason ? `${saveStatusLabel}. ${saveConflictReason}` : saveStatusLabel}>
+            <IconTooltip label={saveStatusReason ? `${saveStatusLabel}. ${saveStatusReason}` : saveStatusLabel}>
             <m.span
               key={`${saveState}-${String(hasUnsavedChanges)}`}
+              tabIndex={0}
               className={cn(
                 "hidden items-center gap-1 rounded-md text-xs font-medium sm:inline-flex",
                 savedQuietly ? "px-1 text-slate-400" : cn("px-1.5 py-0.5", saveStateClassName),
               )}
               role="status"
               aria-live="polite"
-              aria-label={saveState === "conflict" && saveConflictReason ? `${saveStatusLabel}. ${saveConflictReason}` : saveStatusLabel}
+              aria-label={saveStatusReason ? `${saveStatusLabel}. ${saveStatusReason}` : saveStatusLabel}
               {...statusSettleMotion}
             >
               {saveState === "saving" ? (
@@ -4043,17 +4042,19 @@ const RichEditorPane = ({
               {savedQuietly ? null : saveLabel}
             </m.span>
             </IconTooltip>
+            <IconTooltip label={saveStatusReason ? `${mobileStatusLabel}. ${saveStatusReason}` : mobileStatusLabel}>
             <m.span
               key={`${imageUploadState}-${saveState}-${String(hasUnsavedChanges)}`}
+              tabIndex={0}
               className={cn("inline-flex max-w-[5.5rem] truncate rounded-full px-2 py-1 text-xs font-medium sm:hidden", mobileStatusClassName)}
               role="status"
               aria-live="polite"
-              title={saveConflictReason ?? undefined}
-              aria-label={saveState === "conflict" && saveConflictReason ? `${saveLabel}. ${saveConflictReason}` : undefined}
+              aria-label={saveStatusReason ? `${mobileStatusLabel}. ${saveStatusReason}` : mobileStatusLabel}
               {...statusSettleMotion}
             >
               {mobileStatusLabel}
             </m.span>
+            </IconTooltip>
             </div>
             <MemoEditorToolbarDivider className="mx-0.5 hidden h-4 sm:block" />
             <div className="flex items-center gap-0.5">
@@ -4135,7 +4136,7 @@ const RichEditorPane = ({
                   {onCreatePoster && !effectiveReadOnly && <DropdownMenuItem disabled={!memo || saveMutation.isPending} onSelect={() => {
                     const selection = editor?.state.selection;
                     const text = selection && !selection.empty ? editor?.state.doc.textBetween(selection.from, selection.to, "\n") ?? "" : editor?.getText() ?? memo?.contentText ?? "";
-                    void (async () => { if (!memo) return; if (hasUnsavedChangesRef.current) await saveMutation.mutateAsync(); await onCreatePoster(memoRef.current ?? memo, text); })().catch((error) => setSaveState("error"));
+                    void (async () => { if (!memo) return; if (hasUnsavedChangesRef.current) await saveMutation.mutateAsync(); await onCreatePoster(memoRef.current ?? memo, text); })().catch(() => setSaveState("error"));
                   }}>{t("poster.createFromNote")}</DropdownMenuItem>}
                   {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && (
                     <DropdownMenuItem
@@ -4504,9 +4505,11 @@ const RichEditorPane = ({
                     onAsk={() => requestSelectionAi("ask")}
                   />
                 </BubbleMenu>
-                <AttachmentTranscriptContext.Provider value={attachmentTranscriptContext}>
-                  <EditorContent editor={editor} />
-                </AttachmentTranscriptContext.Provider>
+                <EditorTableContextMenu editor={editor} readOnly={effectiveReadOnly}>
+                  <AttachmentTranscriptContext.Provider value={attachmentTranscriptContext}>
+                    <EditorContent editor={editor} />
+                  </AttachmentTranscriptContext.Provider>
+                </EditorTableContextMenu>
               </div>
             )}
           </div>

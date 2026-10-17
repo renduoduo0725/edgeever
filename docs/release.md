@@ -39,7 +39,26 @@ non-user-facing commit with a concrete reason:
 
 The coverage audit runs before any local or GitHub mutation. Its mapping is
 stored in the tracking Issue, not in the public Release notes. Public notes
-contain only user-visible changes, impact, and necessary migration guidance.
+contain user-visible changes, impact, necessary migration guidance, and optional
+contributor acknowledgments.
+
+To thank contributors to this version, optionally append one `--contributor`
+per GitHub username to the release command:
+
+```bash
+--contributor alice --contributor "@bob"
+```
+
+Review the list before publishing. Include code, translation, documentation, or
+issue-reporting contributions that helped this version; omit bots and avoid
+repeating the maintainer by default. Usernames may include a leading `@` and
+are deduplicated without regard to case, preserving the first spelling and order.
+The script appends `贡献者 / Contributors：@alice @bob` after the bilingual notes;
+omitting the option leaves the notes unchanged. GitHub uses the mentions to
+display its native Contributors avatar list. No accounts are inferred from commits
+or checked against GitHub. Preview the text with `--dry-run`. Resuming an existing
+Draft preserves its notes; edit that Draft directly if its acknowledgments need
+correction before publishing.
 
 Use `--dry-run` to inspect commit coverage, the native rebuild plan, and notes.
 After publication, the command does not download, install, or launch the macOS

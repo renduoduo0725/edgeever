@@ -115,7 +115,8 @@ const runNpm = (args, cwd, { executablePath = process.execPath, spawnImpl = spaw
   child.once("error", (error) => { clearTimeout(timer); reject(error); });
   child.once("exit", (code) => {
     clearTimeout(timer);
-    code === 0 ? resolve() : reject(new Error("adapter_install_failed"));
+    if (code === 0) resolve();
+    else reject(new Error("adapter_install_failed"));
   });
 });
 

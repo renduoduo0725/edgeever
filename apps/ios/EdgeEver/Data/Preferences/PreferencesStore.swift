@@ -32,6 +32,55 @@ enum AppUILocale {
     }
 }
 
+/// Local image-share choices, independent of the current note or sheet lifetime.
+struct NoteImageSharePreferences: Codable, Equatable {
+    var theme: String = "gradient"
+    var fontStyle: String = "auto"
+    var fontSize: String = "lg"
+    var cardWidth: String = "wide"
+    var format: String = "png"
+    var showTitle: Bool = true
+    var showNotebook: Bool = false
+    var showTags: Bool = false
+    var showUpdatedAt: Bool = true
+    var showBranding: Bool = true
+
+    init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case theme, fontStyle, fontSize, cardWidth, format, showTitle, showNotebook, showTags, showUpdatedAt, showBranding
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        if let value = try? values.decode(String.self, forKey: .theme),
+           ["gradient", "glass", "quote", "book", "memo", "bento", "black-sun", "frame", "handwritten", "code"].contains(value) {
+            theme = value
+        }
+        if let value = try? values.decode(String.self, forKey: .fontStyle),
+           ["auto", "serif", "sans", "mono", "kai", "smiley", "wenkai", "zhuque", "heavy", "puhui", "puhui-heavy", "youshe", "shuhei"].contains(value) {
+            fontStyle = value
+        }
+        if let value = try? values.decode(String.self, forKey: .fontSize),
+           ["sm", "md", "lg"].contains(value) {
+            fontSize = value
+        }
+        if let value = try? values.decode(String.self, forKey: .cardWidth),
+           ["compact", "standard", "wide"].contains(value) {
+            cardWidth = value
+        }
+        if let value = try? values.decode(String.self, forKey: .format),
+           ["png", "jpeg"].contains(value) {
+            format = value
+        }
+        showTitle = (try? values.decode(Bool.self, forKey: .showTitle)) ?? true
+        showNotebook = (try? values.decode(Bool.self, forKey: .showNotebook)) ?? false
+        showTags = (try? values.decode(Bool.self, forKey: .showTags)) ?? false
+        showUpdatedAt = (try? values.decode(Bool.self, forKey: .showUpdatedAt)) ?? true
+        showBranding = (try? values.decode(Bool.self, forKey: .showBranding)) ?? true
+    }
+}
+
 @Observable
 @MainActor
 final class PreferencesStore {
@@ -64,8 +113,22 @@ final class PreferencesStore {
         didSet { persistAiAssistantLastAction() }
     }
 
+    var noteImageShare: NoteImageSharePreferences {
+        didSet {
+            if let data = try? JSONEncoder().encode(noteImageShare) {
+                defaults.set(data, forKey: Keys.noteImageShare)
+            }
+        }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        if let data = defaults.data(forKey: Keys.noteImageShare),
+           let saved = try? JSONDecoder().decode(NoteImageSharePreferences.self, from: data) {
+            self.noteImageShare = saved
+        } else {
+            self.noteImageShare = NoteImageSharePreferences()
+        }
         self.localeCode = defaults.string(forKey: Keys.locale) ?? "system"
         self.useCompression = defaults.object(forKey: Keys.compression) as? Bool ?? true
         self.showDescendantNotes = defaults.object(forKey: Keys.showDescendantNotes) as? Bool ?? true
@@ -157,6 +220,7 @@ final class PreferencesStore {
     }
 
     private enum Keys {
+        static let noteImageShare = "edgeever.ios.noteImagePreferences"
         static let locale = "edgeever.ios.locale"
         static let compression = "edgeever.ios.imageCompression"
         static let showDescendantNotes = "edgeever.ios.showDescendantNotes"

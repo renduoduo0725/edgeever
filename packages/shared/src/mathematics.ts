@@ -3,11 +3,9 @@ import { BlockMath, InlineMath } from "@tiptap/extension-mathematics";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { TextSelection, type Transaction } from "@tiptap/pm/state";
 import {
-  BLOCK_MATH_NODE_TYPE,
   edgeEverBlockMathMarkdownTokenizer,
   edgeEverInlineMathMarkdownTokenizer,
   findInlineMathSpans,
-  INLINE_MATH_NODE_TYPE,
   matchBlockMathText,
   matchInlineMathSuffix,
 } from "./mathematics-markdown";

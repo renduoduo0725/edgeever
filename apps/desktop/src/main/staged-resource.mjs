@@ -13,7 +13,9 @@ export const normalizeStagedResourceMetadataInput = (input) => {
   const type = typeof input.type === "string" && input.type.trim() ? input.type.trim() : "application/octet-stream";
   const size = Number(input.size);
   if (!memoId || memoId.length > MAX_STAGED_RESOURCE_MEMO_ID_LENGTH) throw new Error("Invalid staged resource memo id");
+  // oxlint-disable-next-line no-control-regex -- rejects control characters in staged resource names
   if (!name || name.length > MAX_STAGED_RESOURCE_NAME_LENGTH || /[\u0000-\u001f\u007f]/.test(name)) throw new Error("Invalid staged resource name");
+  // oxlint-disable-next-line no-control-regex -- rejects control characters in staged resource types
   if (type.length > MAX_STAGED_RESOURCE_TYPE_LENGTH || /[\u0000-\u001f\u007f]/.test(type)) throw new Error("Invalid staged resource type");
   if (!Number.isSafeInteger(size) || size <= 0 || size > MAX_STAGED_RESOURCE_BYTES) {
     throw new Error("Staged resource must be between 1 byte and 1 GiB");

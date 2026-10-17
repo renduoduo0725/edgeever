@@ -28,4 +28,8 @@ fi
 RES_OUT="$ROOT/EdgeEver/Resources/EditorBundle"
 mkdir -p "$RES_OUT"
 cp -f "$OUT/index.html" "$RES_OUT/index.html"
+if [[ -d "$OUT/assets" ]]; then
+  mkdir -p "$RES_OUT/assets"
+  rsync -a --delete "$OUT/assets/" "$RES_OUT/assets/"
+fi
 echo "Built EditorBundle → $OUT (mirrored to $RES_OUT)"

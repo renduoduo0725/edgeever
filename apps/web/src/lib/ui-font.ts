@@ -1,4 +1,5 @@
 import {
+  BUNDLED_FONT_STACKS,
   type EditorBodyFontChoice,
   type EditorBodyFontPreference,
   isEditorBodyFontChoice,
@@ -35,7 +36,7 @@ const writeStorage = (key: string, value: string) => {
 export const readUiFontPreference = (): UiFontPreference => {
   const storedChoice = readStorage(UI_FONT_STORAGE_KEY);
   const customFamily = readStorage(UI_FONT_CUSTOM_STORAGE_KEY) ?? "";
-  if (!isEditorBodyFontChoice(storedChoice)) return { ...DEFAULT_PREFERENCE, customFamily };
+  if (!isEditorBodyFontChoice(storedChoice) || !["system", "custom", ...Object.keys(BUNDLED_FONT_STACKS)].includes(storedChoice)) return { ...DEFAULT_PREFERENCE, customFamily };
   return { choice: storedChoice, customFamily };
 };
 
@@ -47,7 +48,9 @@ export const writeUiFontPreference = (preference: UiFontPreference) => {
 export const applyUiFontPreference = (preference = readUiFontPreference()) => {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
-  const stack = resolveEditorBodyFontStack(preference);
+  const stack = preference.choice in BUNDLED_FONT_STACKS
+    ? BUNDLED_FONT_STACKS[preference.choice as keyof typeof BUNDLED_FONT_STACKS]
+    : resolveEditorBodyFontStack(preference);
   if (!stack) {
     delete root.dataset.uiFont;
     root.style.removeProperty("--ui-font-family");

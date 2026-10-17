@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { isMemoEditBindingValid, isSuspiciousMemoOverwrite } from "./memo-safety.ts";
+import {
+  getMemoSaveErrorReasonKey,
+  isMemoEditBindingValid,
+  isSuspiciousMemoOverwrite,
+  SUSPICIOUS_MEMO_OVERWRITE_MESSAGE,
+} from "./memo-safety.ts";
 
 describe("isSuspiciousMemoOverwrite", () => {
   test("blocks the production incident shape", () => {
@@ -63,5 +68,18 @@ describe("isMemoEditBindingValid", () => {
 
   test("rejects a different edit-session id", () => {
     expect(isMemoEditBindingValid(current, session, { ...request, editSessionId: "edit_2" })).toBe(false);
+  });
+});
+
+describe("getMemoSaveErrorReasonKey", () => {
+  test("maps the suspicious overwrite rejection by code or by its server message", () => {
+    const key = "editor.saveState.errorReason.suspiciousOverwrite";
+    expect(getMemoSaveErrorReasonKey("suspicious_memo_overwrite")).toBe(key);
+    expect(getMemoSaveErrorReasonKey(null, ` ${SUSPICIOUS_MEMO_OVERWRITE_MESSAGE} `)).toBe(key);
+  });
+
+  test("leaves other errors to their original message", () => {
+    expect(getMemoSaveErrorReasonKey("memo_not_found", "Memo not found")).toBeNull();
+    expect(getMemoSaveErrorReasonKey(null, null)).toBeNull();
   });
 });

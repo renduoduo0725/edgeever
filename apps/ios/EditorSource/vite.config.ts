@@ -2,7 +2,8 @@ import { defineConfig } from "vite";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 export default defineConfig({
-  plugins: [viteSingleFile()],
+  plugins: [viteSingleFile({ useRecommendedBuildConfig: false })],
+  base: "./",
   // The shared workspace package is linked from outside EditorSource. Preserve
   // that symlink so Vite resolves its TipTap imports from this package's clean
   // install as well as from a fully installed monorepo checkout.
@@ -12,10 +13,14 @@ export default defineConfig({
   build: {
     outDir: "../EditorBundle",
     emptyOutDir: true,
-    assetsInlineLimit: 100_000_000,
+    // Keep large, on-demand card fonts out of the editor's initial HTML parse.
+    assetsInlineLimit: (path) => !path.includes("/note-image-assets/"),
     cssCodeSplit: false,
     rollupOptions: {
       input: "index.html",
+      // The script is inlined into root index.html, so asset URLs must also
+      // be calculated relative to the root rather than assets/editor.js.
+      output: { inlineDynamicImports: true, entryFileNames: "editor.js" },
     },
   },
 });

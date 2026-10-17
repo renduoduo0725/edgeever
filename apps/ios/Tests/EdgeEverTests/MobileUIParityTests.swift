@@ -4,6 +4,55 @@ import XCTest
 
 /// Exercises shipped parity helpers (same semantics as Android `@edgeever/shared/mobile-ui` + notebooks).
 final class MobileUIParityTests: XCTestCase {
+    @MainActor
+    func testImageShareChoicesPersistAcrossStoreRecreation() throws {
+        let suite = "image-share-tests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let first = PreferencesStore(defaults: defaults)
+        first.noteImageShare.theme = "book"
+        first.noteImageShare.fontStyle = "serif"
+        first.noteImageShare.fontSize = "md"
+        first.noteImageShare.cardWidth = "compact"
+        first.noteImageShare.format = "jpeg"
+        first.noteImageShare.showTitle = false
+        first.noteImageShare.showNotebook = true
+        first.noteImageShare.showTags = true
+        first.noteImageShare.showUpdatedAt = false
+        first.noteImageShare.showBranding = false
+        let reopened = PreferencesStore(defaults: try XCTUnwrap(UserDefaults(suiteName: suite)))
+        XCTAssertEqual(reopened.noteImageShare, first.noteImageShare)
+        // False and true choices both persist when changed back.
+        reopened.noteImageShare = NoteImageSharePreferences()
+        XCTAssertEqual(PreferencesStore(defaults: defaults).noteImageShare, NoteImageSharePreferences())
+    }
+
+    func testImageShareInvalidFieldsDoNotDiscardValidChoices() throws {
+        let raw = #"{"theme":"removed","fontStyle":"serif","fontSize":12,"cardWidth":"compact","format":"svg","showTitle":false,"showNotebook":true,"showTags":"true","showUpdatedAt":false,"showBranding":false}"#
+        let settings = try JSONDecoder().decode(NoteImageSharePreferences.self, from: Data(raw.utf8))
+        XCTAssertEqual(settings.theme, "gradient")
+        XCTAssertEqual(settings.fontStyle, "serif")
+        XCTAssertEqual(settings.fontSize, "lg")
+        XCTAssertEqual(settings.cardWidth, "compact")
+        XCTAssertEqual(settings.format, "png")
+        XCTAssertFalse(settings.showTitle)
+        XCTAssertTrue(settings.showNotebook)
+        XCTAssertFalse(settings.showTags)
+        XCTAssertFalse(settings.showUpdatedAt)
+        XCTAssertFalse(settings.showBranding)
+    }
+
+    @MainActor
+    func testImageShareCorruptStorageFallsBackWithoutRewritingOnLoad() throws {
+        let suite = "image-share-corrupt-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let raw = Data("{broken".utf8)
+        defaults.set(raw, forKey: "edgeever.ios.noteImagePreferences")
+        XCTAssertEqual(PreferencesStore(defaults: defaults).noteImageShare, NoteImageSharePreferences())
+        XCTAssertEqual(defaults.data(forKey: "edgeever.ios.noteImagePreferences"), raw)
+    }
+
     func testUnmatchedSystemLanguageUsesEnglishUI() {
         // Japanese is a first-class UI language, so a Japanese system no longer falls back to English.
         XCTAssertFalse(AppUILocale.usesEnglish(preferenceCode: "system", systemLanguageCode: "ja"))

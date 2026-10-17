@@ -1,3 +1,4 @@
+import { FONT_IDS, FONT_CATALOG } from "@edgeever/shared/font-catalog";
 import { afterEach, describe, expect, test } from "bun:test";
 import {
   EDITOR_BODY_FONT_CUSTOM_STORAGE_KEY,
@@ -25,6 +26,19 @@ describe("editor body font preference", () => {
   afterEach(() => {
     delete globalThis.window;
     delete globalThis.document;
+  });
+
+  test("all catalog fonts survive saving and restoring while legacy choices remain readable", () => {
+    const values = installLocalStorage();
+    for (const id of FONT_IDS) {
+      writeEditorBodyFontPreference({ choice: id, customFamily: "" });
+      expect(readEditorBodyFontPreference().choice).toBe(id);
+      expect(resolveEditorBodyFontStack({ choice: id, customFamily: "" })).toContain(FONT_CATALOG[id].family);
+    }
+    for (const id of ["system", "wenkai", "wenkai-screen", "zhuque", "source-han-serif", "neo-zhi-song", "source-han-sans", "source-serif", "custom"]) {
+      values.set(EDITOR_BODY_FONT_STORAGE_KEY, id);
+      expect(readEditorBodyFontPreference().choice).toBe(id);
+    }
   });
 
   test("defaults to the system face and ignores unknown choices", () => {

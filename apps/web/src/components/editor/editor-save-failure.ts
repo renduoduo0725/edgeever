@@ -1,3 +1,5 @@
+import { getMemoSaveErrorReasonKey } from "@edgeever/shared";
+import { ApiRequestError } from "@/lib/api";
 import { LocalDatabaseUnavailableError } from "@/lib/local-database-recovery";
 import { getMemoSaveConflictInfo, type MemoSaveConflictInfo } from "@/lib/memo-save-conflict";
 import { shouldQueueMemoSaveError } from "@/lib/sync-queue";
@@ -8,7 +10,7 @@ export type EditorSaveFailure =
   | { kind: "storage" }
   | { kind: "conflict"; conflict: MemoSaveConflictInfo }
   | { kind: "queue"; payload: MemoUpdateSyncPayload; tagsText: string }
-  | { kind: "error" };
+  | { kind: "error"; reasonKey: string | null };
 
 export const classifyEditorSaveFailure = (error: unknown): EditorSaveFailure => {
   if (error instanceof LocalDatabaseUnavailableError) {
@@ -25,7 +27,10 @@ export const classifyEditorSaveFailure = (error: unknown): EditorSaveFailure => 
     return { kind: "queue", payload: error.payload, tagsText: error.tagsText };
   }
 
-  return { kind: "error" };
+  return {
+    kind: "error",
+    reasonKey: sourceError instanceof ApiRequestError ? getMemoSaveErrorReasonKey(sourceError.code, sourceError.message) : null,
+  };
 };
 
 export const shouldLeaveEditorAfterSaveError = (error: unknown) =>

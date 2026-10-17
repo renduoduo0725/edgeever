@@ -1,7 +1,7 @@
 import type { Notebook, NotebookCreateInput } from "@edgeever/shared";
 import type { AuditActor } from "./api-context";
 import { AppError } from "./app-error";
-import { audit, auditStatement } from "./audit";
+import { auditStatement } from "./audit";
 import { createId, isoNow, slugify } from "./entity-utils";
 import type { DatabaseAdapter } from "./storage-contract";
 import { isInboxNotebook, workspaceInboxId } from "./workspace-provisioning";

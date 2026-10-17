@@ -42,11 +42,17 @@ targets:
       - path: EdgeEver
         excludes:
           - Resources/Info.plist
+          - Resources/EditorBundle/assets
+      - path: EdgeEver/Resources/EditorBundle/assets
+        type: folder
+        buildPhase: resources
     resources:
       - path: EdgeEver/Resources/Assets.xcassets
       - path: EdgeEver/Resources/Localizable.xcstrings
       - path: EdgeEver/Resources/PrivacyInfo.xcprivacy
       - path: EdgeEver/Resources/EditorBundle
+        excludes:
+          - assets
     dependencies:
       - package: GRDB
         product: GRDB

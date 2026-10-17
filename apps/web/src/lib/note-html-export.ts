@@ -66,6 +66,7 @@ export const getHtmlImageEmbedNoticeKind = (
 
 export const buildHtmlFilename = (title: string, fallback: string) => {
   const sanitized = title
+    // oxlint-disable-next-line no-control-regex -- replaces control characters in export filenames
     .replace(/[\u0000-\u001f<>:"/\\|?*]/g, "-")
     .replace(/\s+/g, " ")
     .replace(/[. ]+$/g, "")

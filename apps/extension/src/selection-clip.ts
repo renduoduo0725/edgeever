@@ -1,7 +1,7 @@
 /** Plain-text fallback when the clicked selection no longer has matching DOM. */
 export const selectionTextMarkdown = (value: string) => value
   // Entities keep Markdown, HTML and automatic links from reinterpreting literal text.
-  .replace(/[!-/:-@\[-`{-~]/g, (character) => `&#${character.charCodeAt(0)};`)
+  .replace(/[!-/:-@[-`{-~]/g, (character) => `&#${character.charCodeAt(0)};`)
   .replace(/^[ \t]+/gm, (indent) => indent.replace(/ /g, "&#32;").replace(/\t/g, "&#9;"));
 
 const escapeMarkdownLabel = (value: string) =>

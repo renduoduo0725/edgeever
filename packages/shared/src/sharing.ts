@@ -1,3 +1,4 @@
+import { FONT_IDS } from "./font-catalog";
 import type { TiptapDoc, TiptapNode, TiptapTextNode } from "./content";
 import type { PublicNoteProse } from "./note-prose";
 import { parseMemoLinkHref } from "./note-links";
@@ -49,6 +50,7 @@ export const PUBLISHED_NOTE_BODY_FONTS = [
   "neo-zhi-song",
   "source-han-sans",
   "source-serif",
+  ...FONT_IDS.filter(id => id !== "wenkai" && id !== "zhuque"),
 ] as const;
 
 export type PublishedNoteBodyFont = (typeof PUBLISHED_NOTE_BODY_FONTS)[number];

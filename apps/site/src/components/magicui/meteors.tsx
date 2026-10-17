@@ -12,7 +12,7 @@ export const Meteors = ({ number = 20, className }: MeteorsProps) => {
   );
 
   useEffect(() => {
-    const styles = [...new Array(number)].map(() => ({
+    const styles = Array.from({ length: number }, () => ({
       top: 0,
       left: Math.floor(Math.random() * (400 - -400) + -400) + "px",
       animationDelay: Math.random() * (0.8 - 0.2) + 0.2 + "s",

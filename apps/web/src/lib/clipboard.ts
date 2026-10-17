@@ -75,18 +75,35 @@ const toPngBlob = (blob: Blob): Promise<Blob | null> => {
   return new Promise((resolve) => {
     const image = document.createElement("img");
     const url = URL.createObjectURL(blob);
+    const finish = (png: Blob | null) => {
+      URL.revokeObjectURL(url);
+      image.onload = image.onerror = null;
+      image.src = "";
+      resolve(png);
+    };
     image.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      canvas.getContext("2d")?.drawImage(image, 0, 0);
-      URL.revokeObjectURL(url);
-      canvas.toBlob((png) => resolve(png), "image/png");
+      const releaseCanvas = () => { canvas.width = canvas.height = 0; };
+      try {
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          releaseCanvas();
+          finish(null);
+          return;
+        }
+        context.drawImage(image, 0, 0);
+        canvas.toBlob((png) => {
+          releaseCanvas();
+          finish(png);
+        }, "image/png");
+      } catch {
+        releaseCanvas();
+        finish(null);
+      }
     };
-    image.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(null);
-    };
+    image.onerror = () => finish(null);
     image.src = url;
   });
 };

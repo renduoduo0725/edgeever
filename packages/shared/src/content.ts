@@ -3,18 +3,18 @@ import {
   createEdgeEverDocumentExtensions,
   type CreateEdgeEverDocumentExtensionsOptions,
 } from "./document-extensions";
-import { MergeDivider, MERGE_DIVIDER_NODE_TYPE } from "./merge-divider";
-import { PdfAttachment, PDF_ATTACHMENT_NODE_TYPE, upgradeStandalonePdfLinks } from "./pdf-attachment";
-import { FileAttachment, FILE_ATTACHMENT_NODE_TYPE, upgradeStandaloneFileLinks } from "./file-attachment";
+import { MERGE_DIVIDER_NODE_TYPE } from "./merge-divider";
+import { PDF_ATTACHMENT_NODE_TYPE, upgradeStandalonePdfLinks } from "./pdf-attachment";
+import { FILE_ATTACHMENT_NODE_TYPE, upgradeStandaloneFileLinks } from "./file-attachment";
 import {
   BLOCK_MATH_NODE_TYPE,
   createEdgeEverMarkdownMathematics,
   INLINE_MATH_NODE_TYPE,
 } from "./mathematics-markdown";
 import { projectNativeUnknownContentForMarkdown } from "./mobile-content-compatibility";
-import { PluginEmbed, PLUGIN_EMBED_NODE_TYPE } from "./plugin-embed";
+import { PLUGIN_EMBED_NODE_TYPE } from "./plugin-embed";
 import { NEW_IMAGE_WIDTH_PERCENT, parseImageWidth } from "./image-display";
-import { ImageGallery, IMAGE_GALLERY_NODE_TYPE, groupConsecutiveImagesIntoGalleries, normalizeImageGalleries } from "./image-gallery";
+import { IMAGE_GALLERY_NODE_TYPE, groupConsecutiveImagesIntoGalleries, normalizeImageGalleries } from "./image-gallery";
 import { EMPTY_EXTERNAL_LINK_NODE_TYPE } from "./empty-external-link";
 import { FRONT_MATTER_LANGUAGE, createFrontMatterNode, getFrontMatterSource, splitMarkdownFrontMatter } from "./front-matter";
 

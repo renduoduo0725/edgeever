@@ -21,8 +21,6 @@ import {
   Tag,
   Paperclip,
   Trash2,
-  KeyRound,
-  LogOut,
   CloudOff,
   AlertTriangle,
   RefreshCw,
@@ -35,7 +33,6 @@ import {
   Workflow,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -53,7 +50,7 @@ import { cn } from "@/lib/utils";
 import { useShowDescendantNotesPreference } from "@/lib/descendant-notes-preference";
 import { BETA_BADGE_CLASSNAME } from "@/lib/workspace-ui";
 import type { Notebook, AuthUser, NoteCreateKind } from "@edgeever/shared";
-import type { NotebookNode, NotebookDropPosition, NotebookSortMode } from "@/lib/app-helpers";
+import type { NotebookDropPosition, NotebookSortMode } from "@/lib/app-helpers";
 import type { SyncQueueSummary } from "@/lib/sync-queue";
 import {
   buildNotebookTree,
@@ -509,11 +506,6 @@ export const NotebookPane = ({
   isSyncingQueuedChanges,
   onSyncQueuedChanges,
   onDiscardConflicts,
-  imageCompressionEnabled,
-  onImageCompressionChange,
-  authRequired,
-  onLogout,
-  isLoggingOut,
   demoMode = false,
   onResetDemo,
   isResettingDemo = false,

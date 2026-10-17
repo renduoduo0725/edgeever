@@ -145,7 +145,7 @@ export const diagramDocumentToX6Cells = (
           } : {}),
         },
         ...(mindVisual ? { underline: mindVisual.underline } : {}),
-        ...(architectureVisual?.attrs ?? {}),
+        ...architectureVisual?.attrs,
       },
     };
   });

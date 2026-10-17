@@ -181,6 +181,32 @@ describe("diagram document", () => {
     expect(fallback).toContain("classDef archDatabase");
   });
 
+  test("uses supplied starter labels and keeps the structure of each default diagram", () => {
+    const localized = createDefaultDiagramDocument("architecture", {
+      architectureSystem: "Aplikacja",
+      architectureClient: "Klient webowy",
+      architectureApi: "Usługa API",
+      architectureDatabase: "Baza danych",
+      architectureStorage: "Magazyn obiektów",
+      architectureQuery: "Odczyt / zapis",
+      architectureFiles: "Pliki",
+    });
+    const fallback = createDefaultDiagramDocument("architecture");
+    expect(localized.nodes.map((node) => node.label)).toEqual(["Aplikacja", "Klient webowy", "Usługa API", "Baza danych", "Magazyn obiektów"]);
+    expect(localized.edges.map((edge) => edge.label)).toEqual(["HTTPS", "Odczyt / zapis", "Pliki"]);
+    const withoutLabels = (document) => ({
+      ...document,
+      nodes: document.nodes.map(({ label: _label, ...node }) => node),
+      edges: document.edges.map(({ label: _label, ...edge }) => edge),
+    });
+    expect(withoutLabels(localized)).toEqual(withoutLabels(fallback));
+
+    expect(createDefaultDiagramDocument("mind-map", { mindMapRoot: "Main topic" }).nodes[0].label).toBe("Main topic");
+    expect(createDefaultDiagramDocument("mind-map").nodes[0].label).toBe("核心主题");
+    expect(createDefaultDiagramDocument("flowchart", { flowchartStart: "Start", flowchartProcess: "Process step", flowchartEnd: "End" })
+      .nodes.map((node) => node.label)).toEqual(["Start", "Process step", "End"]);
+  });
+
   test("projects forward diagonal architecture edges through horizontal anchors", () => {
     const document = createDefaultDiagramDocument("architecture");
     const edge = document.edges[0];

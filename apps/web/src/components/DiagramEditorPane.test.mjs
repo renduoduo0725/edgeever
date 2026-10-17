@@ -275,10 +275,17 @@ describe("diagram editor canvas surface", () => {
   test("reuses the architecture shape-library trigger across every diagram kind", () => {
     expect(toolbarSource).toContain("export const DiagramToolbarAddTrigger");
     expect(toolbarSource).toContain("<DropdownMenuTrigger asChild>");
-    expect(toolbarSource).toContain('<Button size="sm" variant="soft" onPointerEnter={onPointerEnter}>');
+    expect(toolbarSource).toContain('if (event.pointerType === "mouse") onPointerEnter(event);');
     expect(toolbarSource).toContain('<Boxes className="h-4 w-4" />');
     expect(toolbarSource).toContain('{t("diagram.componentLibrary")}');
     expect(source.match(/<DiagramToolbarAddTrigger onPointerEnter=/g)).toHaveLength(2);
+  });
+
+  test("keeps a shape menu opened by hover from blocking the rest of the editor", () => {
+    // Touch fires pointerenter right before the pointerdown that toggles the
+    // menu, and a modal menu hides the back button while it is open.
+    expect(toolbarSource).not.toContain("onPointerEnter={onPointerEnter}");
+    expect(source.match(/<DropdownMenu modal=\{false\} open=\{open\}/g)).toHaveLength(2);
   });
 
   test("exposes connection handles on flowcharts and architecture components with safe connection rules", () => {

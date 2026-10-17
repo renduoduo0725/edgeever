@@ -9,7 +9,6 @@ import {
   Gradient,
   Path,
   Shadow,
-  Point,
   util,
   type FabricObject,
 } from "fabric";
@@ -119,7 +118,7 @@ export const posterObject = async (
       ? element.fill
       : undefined;
   if (element.type === "text") {
-    await loadPosterFont(element.fontFamily);
+    await loadPosterFont(element.fontFamily, element.text);
     const textOptions = {
       ...options,
       width: element.width,

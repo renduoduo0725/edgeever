@@ -26,6 +26,15 @@ directories:
 files:
   - src/**
   - package.json
+  # Apply to application code and production dependencies. Keep executable JS,
+  # npm commands (including test.js), node-gyp, schemas and license notices.
+  - "!**/*.{test,spec}.{js,cjs,mjs,ts,cts,mts}"
+  - "!**/{test,tests,__tests__,__mocks__}/**"
+  - "!**/*.map"
+  - "!**/*.d.{ts,cts,mts}"
+  # Zod's standard import/require exports use compiled JS/CJS; src is only
+  # selected by its opt-in @zod/source development condition.
+  - "!**/node_modules/zod/src/**"
 extraResources:
   - from: ../../scripts
     to: mcp-bridge
@@ -36,6 +45,7 @@ extraResources:
     to: web
     filter:
       - "**/*"
+      - "!**/*.map"
   - from: assets
     to: tray
     filter:

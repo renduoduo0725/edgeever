@@ -394,7 +394,7 @@ export const applyDiagramOperations = async (
     }
     if (current.kind === "architecture" && affectedBoundaryIds.size > 0) {
       const nodeById = new Map(next.nodes.map((node) => [node.id, node]));
-      for (const boundaryId of [...affectedBoundaryIds]) {
+      for (const boundaryId of Array.from(affectedBoundaryIds)) {
         let parentId = nodeById.get(boundaryId)?.parentId;
         while (parentId) {
           affectedBoundaryIds.add(parentId);

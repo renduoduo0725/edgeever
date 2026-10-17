@@ -14,6 +14,7 @@ const WINDOWS_RESERVED_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i;
 
 export const buildMarkdownFilename = (title: string, fallback: string) => {
   const sanitized = title
+    // oxlint-disable-next-line no-control-regex -- replaces control characters in export filenames
     .replace(/[\u0000-\u001f<>:"/\\|?*]/g, "-")
     .replace(/\s+/g, " ")
     .replace(/[. ]+$/g, "")

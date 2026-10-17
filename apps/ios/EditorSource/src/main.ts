@@ -1,3 +1,5 @@
+import { prepareNoteImageAssets } from "@edgeever/shared/note-image-fonts";
+import { noteImageAssetUrls } from "@edgeever/shared/note-image-assets";
 import "./styles.css";
 import "katex/dist/katex.min.css";
 import { Graph } from "@antv/x6";
@@ -1297,6 +1299,8 @@ async function exportNoteImage(request: ImageExportRequest) {
   document.body.appendChild(host);
 
   try {
+    const assets = await prepareNoteImageAssets({ theme: resolvedTheme, fontStyle, text: [request.title, request.notebook, ...(request.tags || []), request.updatedAt, bodyHtml].join(" "), urls: noteImageAssetUrls });
+    style.textContent = assets.css + generateCardCss({ theme: resolvedTheme, fontStyle, fontSize, cardWidth });
     const images = Array.from(documentRoot.querySelectorAll<HTMLImageElement>("img"));
     await Promise.race([
       Promise.all([
@@ -1341,7 +1345,7 @@ async function exportNoteImage(request: ImageExportRequest) {
         }
       },
       pixelRatio: renderPlan.pixelRatio,
-      skipFonts: true,
+      fontEmbedCSS: assets.fontCss,
       width,
     });
     let canvas: HTMLCanvasElement;

@@ -120,7 +120,7 @@ describe("shared companion MCP adapter", () => {
   });
 
   const operations = [
-    ["create_memo", n => ({ notebookId: "ideas", title: "New", contentMarkdown: "Exact new body" })],
+    ["create_memo", () => ({ notebookId: "ideas", title: "New", contentMarkdown: "Exact new body" })],
     ["update_memo", n => ({ memoId: n[0].id, title: "Changed", contentMarkdown: "Exact replacement" })],
     ["merge_memos", n => ({ memoIds: n.map(note => note.id), title: "Merged", notebookId: "target" })],
     ["move_memos", n => ({ memoIds: [n[0].id], notebookId: "target" })],

@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useColorScheme } from "react-native";
 import { readMobileThemePreference, writeMobileThemePreference, type MobileThemePreference } from "./preferences";
 import {
-  resolveMobileThemeStyles,
   type MobileResolvedTheme,
 } from "./mobile-theme-colors";
 export { resolveMobileThemeColor, resolveMobileThemeStyles, type MobileResolvedTheme } from "./mobile-theme-colors";

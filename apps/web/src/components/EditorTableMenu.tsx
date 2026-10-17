@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+import { getEditorTableActions } from "@/lib/editor-table-actions";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { Table } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -21,12 +23,12 @@ export const EditorTableMenu = ({ editor, readOnly }: EditorTableMenuProps) => {
   const ready = Boolean(editor && !editor.isDestroyed);
   const tableActiveState = useEditorState({
     editor,
-    selector: ({ editor: activeEditor }) =>
-      (activeEditor?.isActive("table") ? 1 : 0)
-      | (activeEditor?.isActive("tableHeader") ? 2 : 0),
+    selector: ({ editor: activeEditor }) => ({
+      inTable: activeEditor?.isActive("table") ?? false,
+      disabled: getEditorTableActions(activeEditor, readOnly).map((action) => action.disabled),
+    }),
   });
-  const inTable = Boolean((tableActiveState ?? 0) & 1);
-  const inTableHeader = Boolean((tableActiveState ?? 0) & 2);
+  const inTable = Boolean(tableActiveState?.inTable);
   const disabled = readOnly || !ready;
 
   const run = (command: (activeEditor: Editor) => void) => {
@@ -61,43 +63,18 @@ export const EditorTableMenu = ({ editor, readOnly }: EditorTableMenuProps) => {
         <TooltipContent side="bottom">{t("editorToolbar.table")}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="start">
-        <DropdownMenuItem
-          disabled={inTable}
-          onSelect={() => run((activeEditor) => activeEditor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run())}
-        >
+        <DropdownMenuItem disabled={inTable} onSelect={() => run((activeEditor) => activeEditor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run())}>
           {t("editorToolbar.insertTable")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled={!inTable} onSelect={() => run((activeEditor) => activeEditor.chain().focus().addRowAfter().run())}>
-          {t("editorToolbar.addTableRow")}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={!inTable || inTableHeader}
-          onSelect={() => run((activeEditor) => {
-            if (!activeEditor.isActive("tableHeader")) {
-              activeEditor.chain().focus().deleteRow().run();
-            }
-          })}
-        >
-          {t("editorToolbar.deleteTableRow")}
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled={!inTable} onSelect={() => run((activeEditor) => activeEditor.chain().focus().addColumnAfter().run())}>
-          {t("editorToolbar.addTableColumn")}
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled={!inTable} onSelect={() => run((activeEditor) => activeEditor.chain().focus().deleteColumn().run())}>
-          {t("editorToolbar.deleteTableColumn")}
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled={!inTable} onSelect={() => run((activeEditor) => activeEditor.chain().focus().toggleHeaderRow().run())}>
-          {t("editorToolbar.toggleTableHeader")}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-rose-700 focus:text-rose-800"
-          disabled={!inTable}
-          onSelect={() => run((activeEditor) => activeEditor.chain().focus().deleteTable().run())}
-        >
-          {t("editorToolbar.deleteTable")}
-        </DropdownMenuItem>
+        {getEditorTableActions(editor, readOnly).map((action) => (
+          <Fragment key={action.key}>
+            {action.destructive ? <DropdownMenuSeparator /> : null}
+            <DropdownMenuItem disabled={action.disabled} className={action.destructive ? "text-rose-700 focus:text-rose-800" : undefined} onSelect={() => action.run()}>
+              {t(action.key)}
+            </DropdownMenuItem>
+          </Fragment>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

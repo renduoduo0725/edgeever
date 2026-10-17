@@ -1,6 +1,6 @@
 import { assertLocalMemoSnapshot } from "./local-memo-guard";
 import { localizeDefaultMemoTemplate } from "@edgeever/shared/memo-template-seeds";
-import { markdownToDoc, type MemoDetail, type MemoRevision, type MemoSummary, type MemoTemplate, type Notebook, type Resource, type ResourceListItem, type ResourceStorageSummary, type TagSummary, type TiptapDoc } from "@edgeever/shared";
+import { markdownToDoc, type MemoDetail, type MemoRevision, type MemoTemplate, type Notebook, type Resource, type ResourceListItem, type ResourceStorageSummary, type TagSummary, type TiptapDoc } from "@edgeever/shared";
 import { api } from "@/lib/api";
 import {
   getLocalMemo,

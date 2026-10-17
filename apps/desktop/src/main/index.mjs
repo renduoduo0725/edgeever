@@ -35,6 +35,7 @@ import { showWindow } from "./window-visibility.mjs";
 import { globalShortcutAccelerator, normalizeGlobalShortcutBinding, replaceGlobalShortcut, toggleMainWindow } from "./global-shortcut.mjs";
 import { trayIconPath } from "./tray-icon.mjs";
 import { writeImageClipboard, writeRichClipboard, writeTextClipboard } from "./clipboard-write.mjs";
+import { registerClipboardReadIpc } from "./clipboard-read.mjs";
 import { captureScreenToNote, createScreenshotCaptureGuard, screenshotImportIpcPayload, writeScreenshotTempPath } from "./screenshot-capture.mjs";
 import { LocalDataResetError, scheduleMacLocalDataReset } from "./local-data-reset.mjs";
 import { buildDesktopDiagnosticIssueUrl, normalizeDesktopDiagnostic } from "./desktop-diagnostics.mjs";
@@ -1479,6 +1480,10 @@ const attachEditContextMenu = (contents) => {
   });
 };
 
+const desktopRendererEntryUrl = () => app.isPackaged && !process.env.EDGE_EVER_DESKTOP_WEB_URL
+  ? (usePrivateAppProtocol ? DESKTOP_APP_ENTRY_URL : pathToFileURL(join(process.resourcesPath, "web/index.html")).href)
+  : webUrl;
+
 const createWindow = async () => {
   const state = await readWindowState();
   mainWindow = new BrowserWindow({
@@ -1568,9 +1573,7 @@ const createWindow = async () => {
     void writeDiagnostic("renderer.responsive");
   });
 
-  const rendererEntryUrl = app.isPackaged && !process.env.EDGE_EVER_DESKTOP_WEB_URL
-    ? (usePrivateAppProtocol ? DESKTOP_APP_ENTRY_URL : pathToFileURL(join(process.resourcesPath, "web/index.html")).href)
-    : webUrl;
+  const rendererEntryUrl = desktopRendererEntryUrl();
   const guardNavigation = (event, url) => {
     if (isAllowedAppNavigation(url, rendererEntryUrl)) return;
     event.preventDefault();
@@ -1767,6 +1770,11 @@ const startApplication = async () => {
   ipcMain.handle("desktop:copy-text", (_event, value) => writeTextClipboard(clipboard, value));
   ipcMain.handle("desktop:copy-html", (_event, input) => writeRichClipboard(clipboard, ClipboardItem, input));
   ipcMain.handle("desktop:copy-image", (_event, bytes) => writeImageClipboard(clipboard, ClipboardItem, bytes));
+  registerClipboardReadIpc(ipcMain, {
+    clipboard,
+    getMainWindow: () => mainWindow,
+    getRendererUrl: desktopRendererEntryUrl,
+  });
   ipcMain.handle("desktop:set-session-token", async (event, value) => {
     if (event.sender !== mainWindow?.webContents || event.senderFrame !== event.sender.mainFrame || instanceChangePending) throw new Error("Session update forbidden");
     await saveDesktopSessionToken(value);

@@ -1,4 +1,4 @@
-import { DEFAULT_MEMO_TITLE } from "@edgeever/shared";
+import { DEFAULT_MEMO_TITLE, getMemoSaveErrorReasonKey } from "@edgeever/shared";
 import { enUS, ja, pl, zhCN } from "@edgeever/shared/i18n";
 import { resolveSupportedLocale } from "@edgeever/shared/i18n/locales";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -837,6 +837,12 @@ export const translateMobileText = (value: string, locale: SupportedMobileLocale
 
 let currentResolvedMobileLocale: SupportedMobileLocale = resolveSystemLocale();
 export const translateCurrentMobileText = (value: string) => translateMobileText(value, currentResolvedMobileLocale);
+
+/** Maps a known English server sync error to its zh-CN source text so the localized components translate it. */
+export const toMobileSyncErrorSourceText = (message: string | null) => {
+  const key = message ? getMemoSaveErrorReasonKey(null, message) : null;
+  return (key && zhStrings.get(key)) || message;
+};
 
 export const localizeUntitledMemoTitle = (
   title: string | null | undefined,

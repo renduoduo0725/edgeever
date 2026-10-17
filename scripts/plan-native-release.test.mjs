@@ -2,6 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { planNativeRelease } from "./plan-native-release.mjs";
 
 describe("native release planning", () => {
+  test("rebuilds desktop when production archive validation changes", () => {
+    for (const file of ["scripts/desktop-production-files.mjs", "scripts/verify-desktop-production-runtime.cjs"]) {
+      expect(planNativeRelease("desktop", [file])).toEqual({ rebuild: true, relevantChanges: [file] });
+    }
+  });
   test("does not rebuild Android for root scripts, versions, or documentation", () => {
     expect(
       planNativeRelease("mobile", [

@@ -57,6 +57,7 @@
 		88A1141343A4E255A8050CB6 /* RevisionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 328A2DAC7E7DC89F4782B5FB /* RevisionsView.swift */; };
 		88C20914237162E295798B54 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 1B167394120674FECA86D42F /* GRDB */; };
 		8C761DABADB93F2F15E21E80 /* EditFabButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2829CE5DF5C15ACF41CC17DA /* EditFabButton.swift */; };
+		8E1CB597E6534EBFAD4B43FE /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 01D34117A78B1F5C367ACDBB /* assets */; };
 		90FFFFD00B2D19F96EA299C8 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5126510AFB9AFBF7ABADB45 /* Models.swift */; };
 		93556FDCB87BB93990221E01 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8691859094F8C08AE49FE27D /* Assets.xcassets */; };
 		94456E5BCAB7496FAD4685A6 /* Pow in Frameworks */ = {isa = PBXBuildFile; productRef = E37BD605D826474D3E842F31 /* Pow */; };
@@ -120,6 +121,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		01D34117A78B1F5C367ACDBB /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = EdgeEver/Resources/EditorBundle/assets; sourceTree = SOURCE_ROOT; };
 		033565CE2E96EC2D23105188 /* ListActionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListActionsSheet.swift; sourceTree = "<group>"; };
 		0531FC6AA81DAF0A55B42362 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
 		0EF7E97C950002FA22EFB7C8 /* AiDirectStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiDirectStream.swift; sourceTree = "<group>"; };
@@ -342,6 +344,7 @@
 		821234A55C8B7CF544B28EE6 /* EditorBundle */ = {
 			isa = PBXGroup;
 			children = (
+				01D34117A78B1F5C367ACDBB /* assets */,
 				AB02424D0412FE36C4BCD116 /* index.html */,
 			);
 			path = EditorBundle;
@@ -618,6 +621,7 @@
 				93556FDCB87BB93990221E01 /* Assets.xcassets in Resources */,
 				06D2661CAB0ADED27F322649 /* Localizable.xcstrings in Resources */,
 				C37DA99E090A783562506CDA /* PrivacyInfo.xcprivacy in Resources */,
+				8E1CB597E6534EBFAD4B43FE /* assets in Resources */,
 				08D0159B8F194E04C02B69BF /* index.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -800,7 +804,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.120.0;
+				MARKETING_VERSION = 1.121.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -890,7 +894,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.120.0;
+				MARKETING_VERSION = 1.121.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

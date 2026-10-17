@@ -10,6 +10,8 @@ import {
   resolveMemoContentDoc,
   resolveMergedMemoTitle,
   isSuspiciousMemoOverwrite,
+  SUSPICIOUS_MEMO_OVERWRITE_ERROR,
+  SUSPICIOUS_MEMO_OVERWRITE_MESSAGE,
   isMemoEditBindingValid,
   listTableAttachmentResourceIds,
   normalizeTags,
@@ -29,7 +31,6 @@ import { sha256 } from "./hash-utils";
 import { getRequiredString } from "./mcp-json-rpc";
 import {
   escapeLike,
-  listMemos,
   mapMemoSummary,
   toFtsQuery,
   type MemoSummaryRow,
@@ -1349,8 +1350,8 @@ export const updateMemoRecord = async (
     isSuspiciousMemoOverwrite(current.title, current.content_text, title, contentText)
   ) {
     return {
-      error: "suspicious_memo_overwrite",
-      message: "Save blocked because the title changed while most of the note content disappeared.",
+      error: SUSPICIOUS_MEMO_OVERWRITE_ERROR,
+      message: SUSPICIOUS_MEMO_OVERWRITE_MESSAGE,
     };
   }
   const tags = input.tags === undefined ? parseJsonArray(current.tags_json) : normalizeTags(input.tags);

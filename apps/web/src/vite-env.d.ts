@@ -38,6 +38,7 @@ interface EdgeEverDesktopBridge {
   copyText(value: string): Promise<boolean>;
   copyHtml(html: string, plainText: string): Promise<boolean>;
   copyImage(bytes: Uint8Array): Promise<boolean>;
+  readClipboard?(): Promise<{ html: string; text: string; images: Uint8Array[] }>;
   setSessionToken(value: string): Promise<{ stored: boolean }>;
   clearSessionToken(): Promise<{ stored: false }>;
   testPicGoConnection(endpoint: string): Promise<boolean>;

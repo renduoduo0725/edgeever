@@ -65,7 +65,7 @@ export const platformTarget = (pageUrl: string): PlatformTarget | null => {
     return id ? { platform: "xiaoyuzhou", id, url: `https://www.xiaoyuzhoufm.com/episode/${id}` } : null;
   }
   if (url.hostname === "www.zhipin.com" || url.hostname === "zhipin.com") {
-    const id = /^\/job_detail\/([a-zA-Z0-9_~\-]+)\.html$/.exec(url.pathname)?.[1];
+    const id = /^\/job_detail\/([a-zA-Z0-9_~-]+)\.html$/.exec(url.pathname)?.[1];
     return id ? { platform: "boss", id, url: `https://www.zhipin.com/job_detail/${id}.html` } : null;
   }
   if (url.hostname === "xueqiu.com" || url.hostname === "www.xueqiu.com") {

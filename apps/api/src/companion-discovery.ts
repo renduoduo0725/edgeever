@@ -1,6 +1,6 @@
 import { learnCompanionPreferences, refreshCompanionPreferences, applicableMemories } from "./companion-learning";
 import { selectCompanionMemories } from "./companion-memory-context";
-import { CompanionDiscoveryOutputSchema, type CompanionDiscoveryItem, type CompanionDiscoveryOutput, type CompanionDiscoverySettings,
+import { CompanionDiscoveryOutputSchema, type CompanionDiscoveryItem, type CompanionDiscoverySettings,
   type CompanionDiscoverySettingsInput, type MemoDetail } from "@edgeever/shared";
 import type { DatabaseAdapter } from "./storage-contract";
 import type { CompanionScope } from "./companion-service";

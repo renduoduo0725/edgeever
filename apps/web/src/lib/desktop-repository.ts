@@ -161,13 +161,9 @@ export const createDesktopRepository = (): EdgeEverRepository => ({
       return local;
     }
     if (typeof navigator !== "undefined" && !navigator.onLine) return local;
-    try {
-      const remote = await api.listTemplates();
-      await Promise.all(remote.templates.map((template) => request("template.cache", { template })));
-      return remote;
-    } catch (error) {
-      throw error;
-    }
+    const remote = await api.listTemplates();
+    await Promise.all(remote.templates.map((template) => request("template.cache", { template })));
+    return remote;
   },
   createTemplate: (input) => request("template.create", input).then((result) => {
     window.dispatchEvent(new CustomEvent("edgeever:sync-queue-changed"));

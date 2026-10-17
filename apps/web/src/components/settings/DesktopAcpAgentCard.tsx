@@ -158,7 +158,12 @@ const DesktopAcpAgentCardBody = ({ bridge }: { bridge: boolean }) => {
     adapterId === "workbuddyCn" ? method.id !== "external" : adapterId === "workbuddyIntl" ? method.id !== "internal" : true
   )) ?? [];
   const canRetryLogin = desktopAcpLoginRetryAvailable(shown);
+  // Host failure details are sanitized before crossing the desktop bridge.
+  const failureReason = shown?.state === "failed"
+    ? shown.detail?.trim().slice(0, 160) || t("aiAssistant.agentSource.connectionFailureUnknown")
+    : null;
   const hasDetails = Boolean(
+    failureReason ||
     canRetryLogin ||
     shown?.state === "not_installed" ||
     shown?.state === "needs_login" ||
@@ -408,6 +413,11 @@ const DesktopAcpAgentCardBody = ({ bridge }: { bridge: boolean }) => {
 
               {hasDetails ? (
                 <div className="space-y-1.5 text-[11px] leading-4 text-slate-500">
+                  {failureReason ? (
+                    <p className="select-text whitespace-pre-wrap [overflow-wrap:anywhere]">
+                      {t("aiAssistant.agentSource.connectionFailureReason", { reason: failureReason })}
+                    </p>
+                  ) : null}
                   {shown?.state === "not_installed" ? (
                     <p>
                       {t(adapterId === "claudeCode" ? "aiAssistant.agentSource.claudeCodeMissingHint" : adapterId === "openClaw" ? "aiAssistant.agentSource.openClawMissingHint" : adapterId === "hermesAgent" ? "aiAssistant.agentSource.hermesAgentMissingHint" : adapterId === "grokBuild" ? "aiAssistant.agentSource.grokBuildMissingHint" : adapterId === "deepseekHarness" ? "aiAssistant.agentSource.deepseekHarnessMissingHint" : adapterId === "piAgent" ? shown.detail === "adapter_missing" ? "aiAssistant.agentSource.piAgentAdapterMissingHint" : "aiAssistant.agentSource.piAgentMissingHint" : adapterId === "workbuddyCn" || adapterId === "workbuddyIntl" ? "aiAssistant.agentSource.workbuddyMissingHint" : "aiAssistant.agentSource.installHint")}

@@ -8,7 +8,8 @@ describe("editor body font preference", () => {
     const fontFaces = readFileSync(new URL("../../lib/editor-body-font-faces.ts", import.meta.url), "utf8");
 
     expect(preferenceCard).toContain('t("settings.editorBodyFontTitle")');
-    expect(preferenceCard).toContain('value="wenkai"');
+    expect(preferenceCard).toContain('includeCatalog ? FONT_IDS : ["wenkai", "zhuque"]');
+    expect(preferenceCard).toContain('value={id} textValue={t(FONT_CATALOG[id].labelKey)}');
     expect(preferenceCard).toContain('value="source-han-serif"');
     expect(preferenceCard).toContain('value="custom"');
     expect(fontFaces).toContain('fontFace("EdgeEver Kai"');

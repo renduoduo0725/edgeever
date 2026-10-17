@@ -1,3 +1,4 @@
+import { PUBLISHED_NOTE_BODY_FONTS } from "./sharing";
 import { z } from "zod";
 import {
   MAX_NOTE_PROSE_CSS_BYTES,
@@ -348,6 +349,7 @@ export const AiDefaultModelUpdateSchema = z.object({
 });
 
 export const AiAttachmentSchema = z.object({
+  // oxlint-disable-next-line no-control-regex -- rejects control characters in attachment filenames
   filename: z.string().trim().min(1).max(255).regex(/^[^\u0000-\u001F\u007F]+$/),
   mediaType: z.enum(AI_ATTACHMENT_MEDIA_TYPES),
   base64Data: z.string().min(1).max(Math.ceil(MAX_AI_ATTACHMENT_BYTES / 3) * 4),
@@ -440,7 +442,7 @@ export const MemoShareUpdateSchema = SharePasswordUpdateSchema;
 export const NotebookShareUpdateSchema = SharePasswordUpdateSchema;
 
 export const NoteBodyFontUpdateSchema = z.object({
-  bodyFont: z.enum(["wenkai", "wenkai-screen", "zhuque", "source-han-serif", "neo-zhi-song", "source-han-sans", "source-serif"]).nullable(),
+  bodyFont: z.enum(PUBLISHED_NOTE_BODY_FONTS).nullable(),
 });
 
 const noteProseHexColor = z.string().regex(/^#[0-9a-f]{6}$/i);

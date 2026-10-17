@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { localizeMissingNotebookName, localizeUntitledMemoTitle, translateMobileText } from "./mobile-locale.tsx";
+import { localizeMissingNotebookName, localizeUntitledMemoTitle, toMobileSyncErrorSourceText, translateMobileText } from "./mobile-locale.tsx";
 
 describe("mobile locale translation", () => {
   test("keeps Chinese copy unchanged for the Chinese locale", () => {
@@ -101,5 +101,14 @@ describe("mobile locale translation", () => {
     expect(localizeMissingNotebookName("ja")).toBe("未分類");
     expect(localizeMissingNotebookName("pl")).toBe("Nieprzypisane");
     expect(localizeMissingNotebookName("zh-CN")).toBe("未分类");
+  });
+
+  test("localizes the suspicious overwrite sync error the server reports in English", () => {
+    const source = toMobileSyncErrorSourceText("Save blocked because the title changed while most of the note content disappeared.");
+    expect(translateMobileText(source, "pl")).toStartWith("Zapis zablokowany");
+    expect(translateMobileText(source, "en-US")).toStartWith("Save blocked: the title changed");
+    expect(translateMobileText(source, "zh-CN")).toStartWith("已阻止保存");
+    expect(toMobileSyncErrorSourceText("Network request failed")).toBe("Network request failed");
+    expect(toMobileSyncErrorSourceText(null)).toBeNull();
   });
 });

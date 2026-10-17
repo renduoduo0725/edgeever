@@ -71,7 +71,7 @@ export const readXueqiu = (doc: Document, target: PlatformTarget, sourceUrl: str
   const title = (titleNode ? platformText(platformReadableCopy(titleNode)) : "") || platformText(clean).slice(0, 120);
   if (!markdown || !title) return { ok: false, reason: "unreadable" };
   const cleanTime = timeLink ? platformReadableCopy(timeLink) : null;
-  const published = cleanTime && /^发布于/.test(platformText(cleanTime)) ? publishedTime(cleanTime.querySelector("time")) : undefined;
+  const published = cleanTime && platformText(cleanTime).startsWith("发布于") ? publishedTime(cleanTime.querySelector("time")) : undefined;
   return { ok: true, clip: { ...target, title, author: author ? platformText(platformReadableCopy(author)) || undefined : undefined, publishedAt: published,
     markdown, tags: ["web-clip", "xueqiu", "投资", ...xueqiuStocks(clean, target.url)], completeness: "complete" } };
 };

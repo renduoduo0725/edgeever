@@ -4,7 +4,7 @@ export const jaSiteTagline =
 export const jaSiteCopy = {
   layout: {
     defaultDescription:
-      "EdgeEver はオープンソースで AI ネイティブな、セルフホスト型のノートと知識ベースです。Evernote の三ペインを残しつつ、ローカル ACP Agent 連携、伴走サイドバー、図解ノート、マルチ端末同期を備え、macOS、Windows、Linux、iOS、Android、ブラウザ Clipper に対応。Cloudflare の無料枠または Docker で同じアプリを動かせます。",
+      "EdgeEver はオープンソースで AI ネイティブな、セルフホスト型のノートと知識ベースです。クラシックな三ペイン（ツリー階層・ノート一覧・エディタ）の高い作業効率を活かしつつ、ローカル ACP Agent 連携、伴走サイドバー、図解ノート、マルチ端末同期を備え、macOS、Windows、Linux、iOS、Android、ブラウザ Clipper に対応。Cloudflare の無料枠または Docker で同じアプリを動かせます。",
     defaultTitle: `EdgeEver - ${jaSiteTagline}`,
     imageAlt: "EdgeEver ノートアプリのスクリーンショット",
     ogLocale: "ja_JP",
@@ -38,7 +38,7 @@ export const jaSiteCopy = {
   },
   hero: {
     slogan: jaSiteTagline,
-    popHighlight: "オープンソースの Evernote 代替 · ネイティブ AI 連携 · 全プラットフォーム対応",
+    popHighlight: "クラシックな三ペインの現代的知識ベース · ネイティブ AI 連携 · 全プラットフォーム対応",
     demo: "ライブデモ",
     agentInstall: "AI で導入",
     getApps: "アプリ：",
@@ -57,7 +57,7 @@ export const jaSiteCopy = {
     card1: {
       badge: "クラシック UI",
       title: "三ペインはそのまま、より軽く速く",
-      desc: "ノートブックツリー、ノート一覧、編集エリアを残しています。リッチテキストと Markdown を切り替えられ、入れ子、全画面フォーカス、明暗カスタム CSS プリセットにも対応。",
+      desc: "クラシックで高効率な三ペインの作業体験（ツリー階層・ノート一覧・エディタ）を継承。リッチテキストと Markdown を切り替えられ、入れ子、全画面フォーカス、明暗カスタム CSS プリセットにも対応。",
       subBadge: "両ビュー / フォーカス / カスタム CSS",
       treeTitle: "ノートブック",
       folder1: "01_Work_Inbox",
@@ -70,7 +70,7 @@ export const jaSiteCopy = {
       note2Title: "ローカル ACP Agent 連携",
       note2Sub: "Codex / Antigravity 協調...",
       editorTitle: "EdgeEver Architecture",
-      editorBody: "EdgeEver は Evernote の三ペインに、AI Agent 連携と柔軟な導入を足したものです。",
+      editorBody: "EdgeEver はクラシックな三ペインに、AI Agent 連携と柔軟な導入を足したものです。",
       editorSaveTag: "SQLite に自動保存",
     },
     card2: {
@@ -212,7 +212,7 @@ export const jaSiteCopy = {
       },
       {
         title: "クラシックな三ペイン、フォーカスモード、外観設定",
-        summary: "ノートブックツリー、ノート一覧、編集エリアを残し、リッチテキスト、Markdown、外観カスタムを両立します。",
+        summary: "クラシックな三ペイン（ツリー階層・ノート一覧・エディタ）を残し、リッチテキスト、Markdown、外観カスタムを両立します。",
         points: [
           "長期の知識ベース向けに、入れ子のノートブックは制限しません。",
           "デスクトップの全画面フォーカス、ノートブックのドラッグ並べ替え、複数ノートの一括移動や結合。",

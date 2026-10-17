@@ -5,6 +5,7 @@ export {
   compactFlowchartNodeSize,
   flowchartNodePresentation,
   compactMindMapNodeSize,
+  fitDefaultDiagramLabels,
   computeDiagramLayout,
   computeDiagramLayoutResult,
   DIAGRAM_READABLE_MIN_SCALE,

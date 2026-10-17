@@ -174,7 +174,15 @@ export const DiagramToolbarAddTrigger = ({
   const { t } = useTranslation();
   return (
     <DropdownMenuTrigger asChild>
-      <Button size="sm" variant="soft" onPointerEnter={onPointerEnter}>
+      <Button
+        size="sm"
+        variant="soft"
+        // Hover opening is for mice. A touch fires pointerenter right before the
+        // pointerdown that toggles the menu, which would close it again.
+        onPointerEnter={(event) => {
+          if (event.pointerType === "mouse") onPointerEnter(event);
+        }}
+      >
         <Boxes className="h-4 w-4" />
         {t("diagram.componentLibrary")}
         <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
@@ -257,7 +265,6 @@ const DiagramZoomPercentField = ({
 };
 
 export const DiagramToolbar = ({
-  appearance,
   canRedo,
   canUndo,
   hasSelection,

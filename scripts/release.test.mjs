@@ -343,6 +343,31 @@ describe("release automation", () => {
     ])).toMatchObject({ installDesktop: true });
   });
 
+  test("accepts optional contributors and deduplicates GitHub usernames", () => {
+    const args = [
+      "--issue-title", "Release",
+      "--bump", "patch",
+      "--label", "maintenance",
+      "--change-en", "Update the release flow.",
+      "--change-zh", "更新发布流程。",
+      "--change-locale", "ja:リリースフローを更新します。",
+      "--change-commit", "abc1234",
+    ];
+    expect(parseReleaseArgs(args).contributors).toEqual([]);
+    expect(parseReleaseArgs([
+      ...args,
+      "--contributor", " @Alice ",
+      "--contributor", "alice",
+      "--contributor", "bob-smith",
+    ]).contributors).toEqual(["Alice", "bob-smith"]);
+    for (const username of ["alice,bob", "https://github.com/alice", "@@alice", "-alice", "alice-", "a--b", "a".repeat(40), "alice\n@bob", "bot[bot]"]) {
+      expect(() => parseReleaseArgs([...args, "--contributor", username]))
+        .toThrow("Invalid --contributor GitHub username");
+    }
+    expect(() => parseReleaseArgs([...args, "--contributor"]))
+      .toThrow("--contributor requires a value");
+  });
+
   test("requires Japanese App Store What's New", () => {
     expect(() =>
       parseReleaseArgs([
@@ -501,11 +526,28 @@ describe("release automation", () => {
     expect(notes.indexOf("优化发布流程。"))
       .toBeLessThan(notes.indexOf("Improve the release flow."));
     expect(notes).not.toContain("## Verification");
+    expect(notes).not.toContain("Contributors");
     expect(notes).not.toContain("## 验证");
     expect(notes).not.toContain("bun run");
     expect(notes).not.toContain("Version bump");
     expect(notes).not.toContain("release plan");
     expect(notes).not.toContain("\\n");
+  });
+
+  test("appends manually selected contributors after unchanged bilingual notes", () => {
+    const options = {
+      changesEn: ["Improve the release flow."],
+      changesZh: ["优化发布流程。"],
+      issueNumber: 126,
+    };
+    const original = buildReleaseNotes(options);
+    expect(buildReleaseNotes({ ...options, contributors: [] })).toBe(original);
+    expect(buildReleaseNotes({
+      ...options,
+      contributors: ["@Alice", "alice", "bob-smith"],
+    })).toBe(`${original}\n贡献者 / Contributors：@Alice @bob-smith\n`);
+    expect(() => buildReleaseNotes({ ...options, contributors: ["alice\n@bob"] }))
+      .toThrow("Invalid --contributor GitHub username");
   });
 
   test("builds the in-app summary from the same bilingual release changes", () => {

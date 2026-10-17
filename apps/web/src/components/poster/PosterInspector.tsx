@@ -1,3 +1,4 @@
+import type { FontLoadStatus } from "@/lib/font-load-state";
 import {
   AlignCenter,
   AlignHorizontalDistributeCenter,
@@ -24,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import type { PosterElement } from "@edgeever/shared";
-import { POSTER_FONTS } from "@/lib/poster-design/fonts";
+import { PosterFontPicker } from "./PosterFontPicker";
 import {
   PosterColor,
   PosterNumber,
@@ -35,6 +36,8 @@ export type PosterAlign =
   "left" | "center" | "right" | "top" | "middle" | "bottom";
 export function PosterInspector({
   elements,
+  fontStatus,
+  onRetryFont,
   disabled,
   onPatch,
   onAlign,
@@ -43,6 +46,8 @@ export function PosterInspector({
   onImageFit,
   zh,
 }: {
+  fontStatus: FontLoadStatus;
+  onRetryFont: () => void;
   elements: PosterElement[];
   disabled: boolean;
   onPatch: (patch: Partial<PosterElement>) => void;
@@ -110,6 +115,16 @@ export function PosterInspector({
           </PosterTool>
         </div>
       </div>
+      {active?.type === "text" && (
+        <PosterFontPicker
+          status={fontStatus}
+          onRetry={onRetryFont}
+          value={active.fontFamily}
+          disabled={!editable}
+          zh={zh}
+          onChange={(family) => onPatch({ fontFamily: family })}
+        />
+      )}
       {active && (
         <Input
           aria-label={t("poster.layerName")}
@@ -200,22 +215,6 @@ export function PosterInspector({
                 })
               }
             />
-            <select
-              aria-label={t("poster.fontFamily")}
-              className="h-9 w-full rounded-md border border-slate-200 bg-card px-2 text-xs"
-              value={active.fontFamily}
-              disabled={!editable}
-              onChange={(event) => onPatch({ fontFamily: event.target.value })}
-            >
-              <option value="sans-serif">{t("poster.sans")}</option>
-              <option value="serif">{t("poster.serif")}</option>
-              <option value="monospace">{t("poster.mono")}</option>
-              {POSTER_FONTS.map((font) => (
-                <option key={font.family} value={font.family}>
-                  {zh ? font.zh : font.en}
-                </option>
-              ))}
-            </select>
             <div className="flex items-end gap-2">
               <div className="min-w-0 flex-1">
                 <PosterNumber

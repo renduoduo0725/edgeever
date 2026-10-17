@@ -17,6 +17,12 @@ function step(name) {
 }
 
 describe("desktop release workflow", () => {
+  test("checks archive contents and packaged dependencies before accepting installers", () => {
+    expect(desktopPackageVerifier).toContain("assertDesktopProductionFiles(paths)");
+    expect(desktopPackageVerifier).toContain("verify-desktop-production-runtime.cjs");
+    expect(desktopPackageVerifier).toContain('ELECTRON_RUN_AS_NODE: "1"');
+    expect(desktopPackageVerifier.match(/listAsarFiles\(asarPath, executable\)/g)).toHaveLength(3);
+  });
   test("keeps the installed application and automatic update identity stable", () => {
     expect(desktopBuilderConfig).toContain("appId: org.edgeever.desktop");
     expect(desktopBuilderConfig).toContain([

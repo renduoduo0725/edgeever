@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import { File as ExpoFile } from "expo-file-system";
-import { ActivityIndicator, Check, ChevronDown, ChevronLeft, RotateCcw } from "../components/icons";
+import { ActivityIndicator, ChevronDown, ChevronLeft, RotateCcw } from "../components/icons";
 import { BackHandler, KeyboardAvoidingView, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Alert, Pressable, Text, TextInput } from "../components/LocalizedText";
@@ -29,7 +29,6 @@ import { createMobileDataScope, upsertLocalMemo } from "../lib/local-mirror";
 import { recordEditorStartup } from "../lib/startup-performance";
 import { prepareUploadAsset, type MobileImageUploadAsset } from "../lib/mobile-image-upload";
 import { uploadMobileResource } from "../lib/mobile-resource-upload";
-import MobileWebClipCapture from "../components/MobileWebClipCapture";
 import LocalTiptapEditor, { type LocalTiptapEditorRef } from "../components/LocalTiptapEditor";
 import { SAFE_DOM_WEBVIEW_PROPS } from "../lib/mobile-dom";
 import { safeDomCall } from "../lib/safe-dom-call";
@@ -52,9 +51,6 @@ import { createOptimisticMemo, type MobileMemoUpdatePayload } from "./workspace-
 import { styles } from "./workspace-styles";
 import { NotebookPickerModal, SmartTagButton, TagPickerModal } from "./WorkspacePickers";
 import {
-  deleteMobileResourceFromDoc,
-  getMobileResourceUpdatePayload,
-  renameMobileResourceInDoc,
   type MobileResourceTarget,
 } from "../lib/mobile-attachments";
 import {
@@ -153,7 +149,6 @@ export const CreateMemoModal = ({
   initialSharedImages = [],
   notebooks,
   onCreated,
-  onDismiss,
   onQueued,
   syncQueueScope,
 }: {
@@ -1268,19 +1263,4 @@ const createLocalImagePreviewDataUrl = async (asset: { mimeType?: string | null;
   const file = new ExpoFile(asset.uri);
   const mimeType = asset.mimeType || file.type || "application/octet-stream";
   return `data:${mimeType};base64,${await file.base64()}`;
-};
-
-const appendResourceMarkdown = (
-  currentMarkdown: string,
-  resource: {
-    filename: string;
-    kind: "image" | "attachment";
-    url: string;
-  }
-) => {
-  const label = resource.filename.replace(/\]/g, "\\]");
-  const markdown = resource.kind === "image" ? `![${label}](${resource.url})` : `附件：[${label}](${resource.url})`;
-  const trimmed = currentMarkdown.trimEnd();
-
-  return trimmed ? `${trimmed}\n\n${markdown}\n` : `${markdown}\n`;
 };

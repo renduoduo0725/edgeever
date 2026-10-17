@@ -398,6 +398,7 @@ describe("companion HTTP contracts", () => {
     expect((await getCompanionTurn(db, scope, payload.id))).toMatchObject({ status: "failed", response: "partial response" });
   });
   test("maps provider HTTP 400 without leaking the response body", async () => {
+    // oxlint-disable-next-line require-yield -- the provider stream fails before its first chunk
     const { request } = fixture({ stream: async () => ({ totalUsage: Promise.resolve({}), fullStream: (async function* () {
       const error = new Error("Invalid schema sk-secret");
       error.statusCode = 400;

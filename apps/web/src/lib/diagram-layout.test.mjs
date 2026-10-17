@@ -8,6 +8,7 @@ import {
   computeDiagramLayout,
   computeDiagramLayoutResult,
   DIAGRAM_READABLE_MIN_SCALE,
+  fitDefaultDiagramLabels,
   getDiagramLayoutViewport,
 } from "./diagram-layout.ts";
 
@@ -472,5 +473,40 @@ describe("diagram auto layout", () => {
       maxScale: 1,
       minScale: DIAGRAM_READABLE_MIN_SCALE,
     });
+  });
+
+  test("keeps the default starter geometry and refits longer translated labels", () => {
+    for (const kind of ["mind-map", "flowchart", "architecture"]) {
+      const document = createDefaultDiagramDocument(kind);
+      expect(fitDefaultDiagramLabels(document)).toBe(document);
+    }
+
+    const document = createDefaultDiagramDocument("mind-map", {
+      mindMapRoot: "Temat główny",
+      mindMapCapture: "Zbieranie pomysłów",
+      mindMapQuickNotes: "Szybkie notatki",
+    });
+    const fitted = fitDefaultDiagramLabels(document);
+    expect(fitted).not.toBe(document);
+    expect(fitted.nodes[0].width).toBeGreaterThanOrEqual(compactMindMapNodeSize("Temat główny", true).width);
+    for (const [index, left] of fitted.nodes.entries()) {
+      for (const right of fitted.nodes.slice(index + 1)) {
+        const overlaps = left.x < right.x + right.width && right.x < left.x + left.width
+          && left.y < right.y + right.height && right.y < left.y + left.height;
+        expect(overlaps).toBe(false);
+      }
+    }
+    const byId = Object.fromEntries(fitted.nodes.map((node) => [node.id, node]));
+    expect(byId["topic-1-a"].x).toBeGreaterThanOrEqual(byId["topic-1"].x + byId["topic-1"].width);
+
+    const architecture = fitDefaultDiagramLabels(createDefaultDiagramDocument("architecture", {
+      architectureStorage: "Magazyn obiektów i plików",
+    }));
+    const boundary = architecture.nodes.find((node) => node.id === "system");
+    for (const child of architecture.nodes.filter((node) => node.parentId === "system")) {
+      expect(child.x).toBeGreaterThan(boundary.x);
+      expect(child.x + child.width).toBeLessThan(boundary.x + boundary.width);
+      expect(child.y + child.height).toBeLessThan(boundary.y + boundary.height);
+    }
   });
 });

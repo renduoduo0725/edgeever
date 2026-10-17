@@ -189,7 +189,7 @@ describe("EdgeEverPluginHost", () => {
       set: async (pluginId, key, value) => secrets.set(`${pluginId}:${key}`, value),
       remove: async (pluginId, key) => secrets.delete(`${pluginId}:${key}`),
       clearNamespace: async (pluginId) => {
-        for (const key of [...secrets.keys()]) if (key.startsWith(`${pluginId}:`)) secrets.delete(key);
+        for (const key of Array.from(secrets.keys())) if (key.startsWith(`${pluginId}:`)) secrets.delete(key);
       },
     };
     const packageStorage = {
@@ -289,7 +289,7 @@ describe("EdgeEverPluginHost", () => {
       put: async (value) => packages.set(`${value.pluginId}:${value.version}`, value),
       remove: async (pluginId, version) => {
         if (version) packages.delete(`${pluginId}:${version}`);
-        else for (const key of [...packages.keys()]) if (key.startsWith(`${pluginId}:`)) packages.delete(key);
+        else for (const key of Array.from(packages.keys())) if (key.startsWith(`${pluginId}:`)) packages.delete(key);
       },
     };
     const secretStorage = {
@@ -331,7 +331,7 @@ describe("EdgeEverPluginHost", () => {
       put: async (value) => packages.set(`${value.pluginId}:${value.version}`, value),
       remove: async (id, version) => {
         if (version) packages.delete(`${id}:${version}`);
-        else for (const key of [...packages.keys()]) if (key.startsWith(`${id}:`)) packages.delete(key);
+        else for (const key of Array.from(packages.keys())) if (key.startsWith(`${id}:`)) packages.delete(key);
       },
     };
     const host = new EdgeEverPluginHost({ repository, scope: "test", packageStorage });

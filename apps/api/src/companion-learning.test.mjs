@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { Database } from "bun:sqlite";
 import { globSync, readFileSync } from "node:fs";
 import { createSelfHostedStorageAdapter } from "./self-hosted-storage-adapter.ts";
-import { createMemoRecord, moveMemosToNotebook, updateMemoRecord } from "./memo-service.ts";
+import { createMemoRecord, moveMemosToNotebook } from "./memo-service.ts";
 import { updateTagsForMemos } from "./tag-service.ts";
 import { learnCompanionPreferences, applicableMemories } from "./companion-learning.ts";
 import { listCompanionMemories, forgetCompanionMemory, saveCompanionMemory, companionRevision, importCompanionMemories } from "./companion-service.ts";

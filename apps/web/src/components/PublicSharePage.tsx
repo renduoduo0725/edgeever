@@ -220,7 +220,7 @@ export const PublicSharePasswordForm = ({
 };
 
 export const PublicSharePage = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { token = "" } = useParams();
   const shareQuery = useQuery({
     queryKey: ["public-share", token],

@@ -84,6 +84,7 @@ Options:
   --change-locale <tag:text> Required Japanese bullet as ja: or ja-JP:; other locales optional
   --change-commit <sha,...>  Commits covered by the corresponding bilingual bullet
   --ignore-commit <sha:why>  Explicitly exclude a non-user-facing commit; may be repeated
+  --contributor <username>   Credit a contributor to this release; optional, may be repeated
   --install-desktop          Install and launch the final DMG after publication
   --dry-run                  Print the plan and generated notes without mutations
   --help                     Show this help
@@ -100,6 +101,7 @@ export const parseReleaseArgs = (argv) => {
     localizedChanges: [],
     changeCommits: [],
     ignoredCommits: [],
+    contributors: [],
     installDesktop: false,
     dryRun: false,
     help: false,
@@ -115,6 +117,7 @@ export const parseReleaseArgs = (argv) => {
     ["--change-locale", "localizedChanges"],
     ["--change-commit", "changeCommits"],
     ["--ignore-commit", "ignoredCommits"],
+    ["--contributor", "contributors"],
   ]);
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -196,7 +199,21 @@ export const parseReleaseArgs = (argv) => {
     );
   }
   options.localizedChanges = localizedChanges;
+  options.contributors = normalizeContributors(options.contributors);
   return options;
+};
+
+const normalizeContributors = (contributors) => {
+  const unique = new Map();
+  for (const value of contributors) {
+    const username = value.trim().replace(/^@/, "");
+    if (!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(username)) {
+      throw new Error(`Invalid --contributor GitHub username: ${value}`);
+    }
+    const key = username.toLowerCase();
+    if (!unique.has(key)) unique.set(key, username);
+  }
+  return [...unique.values()];
 };
 
 const RELEASE_COMMIT_PATTERN = /^chore: release v\d+\.\d+\.\d+ \[skip ci\]$/;
@@ -391,6 +408,7 @@ export const buildReleaseNotes = ({
   changesEn,
   changesZh,
   issueNumber,
+  contributors = [],
 }) => [
   "## 主要更新",
   "",
@@ -404,6 +422,10 @@ export const buildReleaseNotes = ({
   "",
   `Related Issue: #${issueNumber}`,
   "",
+  ...(contributors.length ? [
+    `贡献者 / Contributors：${normalizeContributors(contributors).map((username) => `@${username}`).join(" ")}`,
+    "",
+  ] : []),
 ].join("\n");
 
 export const buildReleaseSummary = ({ version, changesEn, changesZh, localizedChanges = {} }) => ({
@@ -1526,6 +1548,7 @@ const releaseMain = async (options) => {
       changesZh: options.changesZh,
       localizedChanges: options.localizedChanges,
       issueNumber: 0,
+      contributors: options.contributors,
     }));
     return;
   }
@@ -1587,6 +1610,7 @@ const releaseMain = async (options) => {
       changesEn: options.changesEn,
       changesZh: options.changesZh,
       issueNumber,
+      contributors: options.contributors,
     });
     const draftUrl = run("gh", [
       "release",

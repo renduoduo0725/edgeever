@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { existsSync, openSync, closeSync, readFileSync, readSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { listPackage } from "@electron/asar";
 import { assertMacIcnsComplete } from "./desktop-icns.mjs";
 import { isVisualCppRuntimeDll, readPeImportedDlls } from "./pe-imports.mjs";
+import { assertDesktopProductionFiles } from "./desktop-production-files.mjs";
 
 const outputDirectory = join(process.cwd(), "release", "desktop");
 const version = JSON.parse(
@@ -25,9 +27,16 @@ const walk = (directory) => {
 const files = walk(outputDirectory);
 const requestedPlatform = process.env.EDGE_EVER_VERIFY_TARGET ?? process.platform;
 const requestedArch = process.env.EDGE_EVER_DESKTOP_ARCH ?? process.arch;
-const listAsarFiles = (asarPath) => new Set(
-  listPackage(asarPath).map((path) => path.replaceAll("\\", "/")),
-);
+const listAsarFiles = (asarPath, executable) => {
+  const paths = new Set(listPackage(asarPath).map((path) => path.replaceAll("\\", "/")));
+  assertDesktopProductionFiles(paths);
+  execFileSync(executable, [fileURLToPath(new URL("./verify-desktop-production-runtime.cjs", import.meta.url)), asarPath], {
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: "1" },
+    timeout: 150_000,
+    stdio: "inherit",
+  });
+  return paths;
+};
 
 const verifyMachOArch = (path, arch, label) => {
   const result = spawnSync("lipo", ["-archs", path], { encoding: "utf8" });
@@ -104,7 +113,7 @@ if (requestedPlatform === "darwin") {
   assert.match(shareExtensionInfo, /NSExtensionActivationSupportsFileWithMaxCount/, "WeChat share extension must accept shared files");
   const asarPath = join(appResources, "app.asar");
   assert.ok(existsSync(asarPath), `macOS app bundle is missing app.asar: ${asarPath}`);
-  const asarFiles = listAsarFiles(asarPath);
+  const asarFiles = listAsarFiles(asarPath, executable);
   assert.ok(asarFiles.has("/src/preload/index.cjs"), "macOS app bundle must contain the sandbox-compatible CommonJS preload");
   assert.ok(!asarFiles.has("/src/preload/index.mjs"), "macOS app bundle must not contain the unsupported ESM preload");
   const appIconPath = join(appResources, "icon.icns");
@@ -138,7 +147,7 @@ if (requestedPlatform === "darwin") {
   );
   const asarPath = join(resources, "app.asar");
   assert.ok(existsSync(asarPath), `Windows app bundle is missing app.asar: ${asarPath}`);
-  const asarFiles = listAsarFiles(asarPath);
+  const asarFiles = listAsarFiles(asarPath, executable);
   assert.ok(asarFiles.has("/src/preload/index.cjs"), "Windows app bundle must contain the sandbox-compatible CommonJS preload");
   assert.ok(!asarFiles.has("/src/preload/index.mjs"), "Windows app bundle must not contain the unsupported ESM preload");
 } else if (requestedPlatform === "linux") {
@@ -162,7 +171,7 @@ if (requestedPlatform === "darwin") {
   verifyGlibcBaseline(sidecar);
   const asarPath = join(resources, "app.asar");
   assert.ok(existsSync(asarPath), `Linux app bundle is missing app.asar: ${asarPath}`);
-  const asarFiles = listAsarFiles(asarPath);
+  const asarFiles = listAsarFiles(asarPath, executable);
   assert.ok(asarFiles.has("/src/preload/index.cjs"), "Linux app bundle must contain the sandbox-compatible CommonJS preload");
   assert.ok(!asarFiles.has("/src/preload/index.mjs"), "Linux app bundle must not contain the unsupported ESM preload");
 } else {

@@ -129,7 +129,7 @@ const path = z.object({
     .string()
     .min(1)
     .max(100_000)
-    .regex(/^[MmLlHhVvCcSsQqTtAaZz\d\s,.eE+\-]+$/),
+    .regex(/^[MmLlHhVvCcSsQqTtAaZz\d\s,.eE+-]+$/),
 });
 export const PosterElementSchema = z.union([text, shape, image, path]);
 export const PosterDocumentSchema = z
@@ -294,7 +294,7 @@ export const posterFallbackMarkdown = (document: PosterDocument) =>
       : "",
     ...document.elements
       .filter((element): element is PosterText => element.type === "text")
-      .map((element) => element.text.replace(/([\\`*_{}\[\]<>#!])/g, "\\$1")),
+      .map((element) => element.text.replace(/([\\`*_{}[\]<>#!])/g, "\\$1")),
     document.sourceMemoId ? `[Source](#memo=${document.sourceMemoId})` : "",
     ...document.elements
       .filter((element) => element.type === "image")

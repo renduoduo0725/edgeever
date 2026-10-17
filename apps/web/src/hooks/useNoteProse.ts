@@ -4,7 +4,6 @@ import {
   resolveNoteProse,
   type AccountNoteProse,
   type NoteProsePatch,
-  type ResolvedNoteProse,
 } from "@edgeever/shared";
 import { api } from "@/lib/api";
 import { readLocalNoteProseMigration } from "@/lib/note-prose-local";

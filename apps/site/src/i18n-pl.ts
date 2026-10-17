@@ -4,8 +4,8 @@ export const plSiteTagline =
 export const plSiteCopy = {
   layout: {
     defaultDescription:
-      "EdgeEver to otwartoźródłowa, natywnie wspierająca AI baza wiedzy i alternatywa dla Evernote. Klasyczny układ trzech paneli na macOS, Windows, Linux, iOS, Android i w Web Clipper, z natywną współpracą z lokalnymi agentami ACP, paskiem bocznym towarzysza i notatkami z diagramami. Działa w darmowym planie Cloudflare albo w Dockerze.",
-    defaultTitle: "Otwartoźródłowa, samodzielnie hostowana alternatywa dla Evernote | EdgeEver",
+      "EdgeEver to otwartoźródłowa, natywnie wspierająca AI baza wiedzy i nowoczesna przestrzeń do notatek. Klasyczny układ trzech paneli (drzewo katalogów · lista notatek · edytor) na macOS, Windows, Linux, iOS, Android i w Web Clipper, z natywną współpracą z lokalnymi agentami ACP, paskiem bocznym towarzysza i notatkami z diagramami. Działa w darmowym planie Cloudflare albo w Dockerze.",
+    defaultTitle: `EdgeEver - ${plSiteTagline}`,
     imageAlt: "Zrzut ekranu aplikacji do notatek EdgeEver",
     ogLocale: "pl_PL",
   },
@@ -38,7 +38,7 @@ export const plSiteCopy = {
   },
   hero: {
     slogan: plSiteTagline,
-    popHighlight: "Otwartoźródłowa alternatywa dla Evernote · Natywna współpraca z AI · Aplikacje na wszystkie platformy",
+    popHighlight: "Nowoczesna baza wiedzy w trzech panelach · Natywna współpraca z AI · Aplikacje na wszystkie platformy",
     demo: "Demo na żywo",
     agentInstall: "Wdróż z AI",
     getApps: "Pobierz aplikacje:",
@@ -57,7 +57,7 @@ export const plSiteCopy = {
     card1: {
       badge: "Klasyczny interfejs",
       title: "Klasyczny układ trzech paneli – szybszy i lżejszy",
-      desc: "Zachowuje drzewo notatników, listę notatek i główny edytor. Przełączaj się swobodnie między tekstem sformatowanym a źródłem Markdown. Nieograniczone zagnieżdżanie, tryb skupienia oraz własne presety CSS dla jasnego i ciemnego motywu.",
+      desc: "Zachowuje wygodny układ trzech paneli (drzewo katalogów · lista notatek · edytor). Przełączaj się swobodnie między tekstem sformatowanym a źródłem Markdown. Nieograniczone zagnieżdżanie, tryb skupienia oraz własne presety CSS dla jasnego i ciemnego motywu.",
       subBadge: "Dwa widoki / Tryb skupienia / Własny CSS",
       treeTitle: "Notatniki",
       folder1: "01_Work_Inbox",
@@ -70,7 +70,7 @@ export const plSiteCopy = {
       note2Title: "Połączenie z lokalnym agentem ACP",
       note2Sub: "Codex / Antigravity lokalnie...",
       editorTitle: "EdgeEver Architecture",
-      editorBody: "EdgeEver łączy klasyczny trzypanelowy układ Evernote ze współpracą z agentami AI i elastycznymi opcjami wdrożenia.",
+      editorBody: "EdgeEver łączy klasyczny trzypanelowy układ ze współpracą z agentami AI i elastycznymi opcjami wdrożenia.",
       editorSaveTag: "Zapisano automatycznie w SQLite",
     },
     card2: {
@@ -212,7 +212,7 @@ export const plSiteCopy = {
       },
       {
         title: "Klasyczne trzy panele, tryb skupienia i wygląd",
-        summary: "Zachowuje drzewo notatników, listę notatek i edytor, obsługując tekst sformatowany, źródło Markdown i własne presety wyglądu.",
+        summary: "Zachowuje układ trzech paneli (drzewo katalogów · lista notatek · edytor), obsługując tekst sformatowany, źródło Markdown i własne presety wyglądu.",
         points: [
           "Nieograniczone zagnieżdżanie notatników dla długoterminowych osobistych baz wiedzy.",
           "Pełnoekranowy tryb skupienia na desktopie, zmiana kolejności notatników przeciąganiem oraz zbiorcze przenoszenie i scalanie notatek.",

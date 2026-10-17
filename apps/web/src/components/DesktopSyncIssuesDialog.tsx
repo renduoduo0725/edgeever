@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, ExternalLink, LoaderCircle, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
-import { buildGitHubFeedbackUrl, type DesktopOutboxItem, type Notebook } from "@edgeever/shared";
+import { buildGitHubFeedbackUrl, getMemoSaveErrorReasonKey, type DesktopOutboxItem, type Notebook } from "@edgeever/shared";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -201,6 +201,7 @@ export const DesktopSyncIssuesDialog = ({
               const working = workingId === item.id;
               const lastAttemptAt = formatTime(item.updatedAt);
               const nextAttemptAt = item.retryable ? formatTime(item.nextAttemptAt) : null;
+              const lastErrorReasonKey = getMemoSaveErrorReasonKey(item.lastErrorCode, item.lastError);
               return (
                 <section key={item.id} className="rounded-lg border border-amber-200 bg-amber-50/60 p-4">
                   <div className="flex items-start gap-3">
@@ -210,7 +211,7 @@ export const DesktopSyncIssuesDialog = ({
                         <span className="text-sm font-semibold text-slate-900">{t(operationLabelKey(item.kind), { defaultValue: item.kind })}</span>
                         <span className="text-xs text-slate-500">{t("notebookPane.syncDetails.attempts", { count: item.attemptCount })}</span>
                       </div>
-                      <p className="mt-1 break-words text-sm text-amber-900">{item.lastError || t("notebookPane.syncDetails.unknownError")}</p>
+                      <p className="mt-1 break-words text-sm text-amber-900">{lastErrorReasonKey ? t(lastErrorReasonKey) : item.lastError || t("notebookPane.syncDetails.unknownError")}</p>
                       {item.lastErrorCode ? <p className="mt-1 text-xs text-slate-500">{t("notebookPane.syncDetails.errorCode", { code: item.lastErrorCode })}</p> : null}
                       {lastAttemptAt ? <p className="mt-1 text-xs text-slate-500">{t("notebookPane.syncDetails.lastAttempt", { time: lastAttemptAt })}</p> : null}
                       {nextAttemptAt ? <p className="mt-1 text-xs text-slate-500">{t("notebookPane.syncDetails.nextRetry", { time: nextAttemptAt })}</p> : null}

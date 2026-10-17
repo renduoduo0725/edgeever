@@ -23,3 +23,16 @@ export const isMemoEditBindingValid = (
   session.baseRevision === current.revision &&
   request.expectedContentHash === current.contentHash &&
   session.baseContentHash === current.contentHash;
+
+export const SUSPICIOUS_MEMO_OVERWRITE_ERROR = "suspicious_memo_overwrite";
+export const SUSPICIOUS_MEMO_OVERWRITE_MESSAGE =
+  "Save blocked because the title changed while most of the note content disappeared.";
+
+/**
+ * i18n key for a save rejection the server reports in English. The mobile sync
+ * queue stores only the message, so the message is matched as well as the code.
+ */
+export const getMemoSaveErrorReasonKey = (code: string | null | undefined, message?: string | null) =>
+  code === SUSPICIOUS_MEMO_OVERWRITE_ERROR || message?.trim() === SUSPICIOUS_MEMO_OVERWRITE_MESSAGE
+    ? "editor.saveState.errorReason.suspiciousOverwrite"
+    : null;

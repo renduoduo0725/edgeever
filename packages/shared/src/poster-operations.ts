@@ -69,7 +69,7 @@ export const posterPatchSchema = z.object({
   radius: z.number().min(0).max(4096).optional(),
   resourceId: z.string().min(1).max(160).regex(/^[\w-]+$/).optional(),
   crop: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1), width: z.number().min(0.01).max(1), height: z.number().min(0.01).max(1) }).strict().refine(crop => crop.x + crop.width <= 1 && crop.y + crop.height <= 1).nullable().optional(),
-  path: z.string().min(1).max(100000).regex(/^[MmLlHhVvCcSsQqTtAaZz\d\s,.eE+\-]+$/).optional(),
+  path: z.string().min(1).max(100000).regex(/^[MmLlHhVvCcSsQqTtAaZz\d\s,.eE+-]+$/).optional(),
   text: z.string().max(8000).optional(),
   fill: z.string().regex(/^#[0-9a-f]{6}$/i).optional(),
   fontSize: z.number().finite().min(4).max(8192).optional(),

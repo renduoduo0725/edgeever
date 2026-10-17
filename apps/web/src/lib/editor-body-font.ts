@@ -1,3 +1,6 @@
+import { FONT_IDS, isRemoteNoteImageFont, catalogFontStack } from "@edgeever/shared/font-catalog";
+import { watchEditorCatalogFont } from "./editor-catalog-fonts";
+
 export const EDITOR_BODY_FONT_STORAGE_KEY = "edgeever.editorBodyFont";
 export const EDITOR_BODY_FONT_CUSTOM_STORAGE_KEY = "edgeever.editorBodyFontCustom";
 
@@ -10,6 +13,7 @@ export const EDITOR_BODY_FONT_CHOICES = [
   "neo-zhi-song",
   "source-han-sans",
   "source-serif",
+  ...FONT_IDS.filter(id => id !== "wenkai" && id !== "zhuque"),
   "custom",
 ] as const;
 
@@ -23,7 +27,7 @@ export type EditorBodyFontPreference = {
 const CJK_FALLBACK =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif';
 
-export const BUNDLED_FONT_STACKS: Record<Exclude<EditorBodyFontChoice, "system" | "custom">, string> = {
+export const BUNDLED_FONT_STACKS = {
   wenkai: `"EdgeEver Kai", ${CJK_FALLBACK}`,
   "wenkai-screen": `"EdgeEver Kai Screen", ${CJK_FALLBACK}`,
   zhuque: `"EdgeEver Fangsong", ${CJK_FALLBACK}`,
@@ -31,11 +35,12 @@ export const BUNDLED_FONT_STACKS: Record<Exclude<EditorBodyFontChoice, "system" 
   "neo-zhi-song": `"EdgeEver Zhi Song", ${CJK_FALLBACK}`,
   "source-han-sans": `"EdgeEver Hei", ${CJK_FALLBACK}`,
   "source-serif": `"Source Serif 4", ${CJK_FALLBACK}`,
-};
+} as const;
 
 export const getFontChoicePreviewStack = (choice: EditorBodyFontChoice): string | undefined => {
   if (choice === "system" || choice === "custom") return undefined;
-  return BUNDLED_FONT_STACKS[choice];
+  const bundled = BUNDLED_FONT_STACKS[choice as keyof typeof BUNDLED_FONT_STACKS];
+  return isRemoteNoteImageFont(choice) ? `${catalogFontStack(choice)}, ${bundled ?? CJK_FALLBACK}` : bundled;
 };
 
 const CUSTOM_FONT_FAMILY_PATTERN = /^[\p{L}\p{N}\s,'"._-]+$/u;
@@ -63,7 +68,7 @@ export const resolveEditorBodyFontStack = (preference: EditorBodyFontPreference)
     const family = sanitizeEditorBodyFontFamily(preference.customFamily);
     return family ? `${family}, ${CJK_FALLBACK}` : null;
   }
-  return BUNDLED_FONT_STACKS[preference.choice];
+  return getFontChoicePreviewStack(preference.choice);
 };
 
 const readStorage = (key: string) => {
@@ -96,6 +101,7 @@ export const writeEditorBodyFontPreference = (preference: EditorBodyFontPreferen
 
 export const applyEditorBodyFontPreference = (preference = readEditorBodyFontPreference()) => {
   if (typeof document === "undefined") return;
+  watchEditorCatalogFont(isRemoteNoteImageFont(preference.choice) ? preference.choice : undefined);
   const root = document.documentElement;
   const stack = resolveEditorBodyFontStack(preference);
   if (!stack) {

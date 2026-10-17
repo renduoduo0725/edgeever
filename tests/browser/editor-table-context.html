@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Table context menu regression checks</title></head>
+<body><main style="padding:24px"><h1>Table context menu regression checks</h1><p>Local fixture only. Does not read or change notes. Clipboard access is stubbed during these checks.</p><button id="run" style="border:1px solid;padding:8px">Run regression checks</button><button id="demo" style="border:1px solid;padding:8px">Open manual fixture</button><p id="summary" role="status">Ready</p><ol id="results"></ol><div id="fixture"></div></main><script type="module">
+import RefreshRuntime from "/@react-refresh";
+RefreshRuntime.injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;
+window.__vite_plugin_react_preamble_installed__ = true;
+</script><script type="module" src="./editor-table-context.browser.tsx"></script></body></html>

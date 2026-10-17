@@ -4,6 +4,7 @@ import {
   Ellipse,
   FabricObject,
   Gradient,
+  Group,
   Line,
   Path,
   Pattern,
@@ -202,11 +203,9 @@ export async function buildPosterDesign(input: {
   zh: boolean;
   palette?: { bg?: string; ink?: string; accent?: string };
 }): Promise<PosterDocument> {
-  await loadDesignFonts(input.zh);
   const template =
     TEMPLATES.find((entry) => entry.id === input.id) ?? TEMPLATES[0]!;
-  usePairing(
-    input.zh
+  const pairing = input.zh
       ? resolvePair(template.id, (family) =>
           POSTER_FONTS.some((font) => font.family === family),
         )
@@ -218,10 +217,27 @@ export async function buildPosterDesign(input: {
           body: "Inter",
           titleBold: true,
           missing: [],
-        },
-  );
+        };
+  await loadDesignFonts([pairing.title, pairing.body, "DM Serif Display"].filter((family): family is string => Boolean(family)), [input.title, input.subtitle, input.badge, ...(input.points ?? []), "No. 01 2026"].join(" "));
+  const build = () => {
+    usePairing(pairing);
+    try { return template.build({ ...input }); }
+    finally { usePairing(undefined); }
+  };
+  // Explicit families and fixed template labels may differ from the main pairing.
+  // Load those before the final build so wrapping uses the actual glyph metrics.
+  const initial = build();
+  const texts: Array<{ family: string; text: string }> = [];
+  const collect = (objects: FabricObject[]) => {
+    for (const object of objects) {
+      if ("fontFamily" in object && typeof object.fontFamily === "string" && "text" in object && typeof object.text === "string") texts.push({ family: object.fontFamily, text: object.text });
+      if (object instanceof Group) collect(object.getObjects());
+    }
+  };
+  collect(initial.objects);
+  await loadDesignFonts(texts.map(object => object.family), texts.map(object => object.text).join(" "));
   try {
-    const built = template.build({ ...input });
+    const built = build();
     const elements = built.objects
       .map(posterPrimitiveFromObject)
       .filter((value): value is PosterElement => Boolean(value));

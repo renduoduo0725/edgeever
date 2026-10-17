@@ -23,16 +23,6 @@ struct MemoDetailView: View {
     @State private var imageExportRequestId: String?
     @State private var imageExportBuffer = MemoImageExportBuffer()
     @State private var imageShareOptionsOpen = false
-    @State private var imageShareFormat = "png"
-    @State private var imageShareTheme = "mint"
-    @State private var imageShareFontStyle = "auto"
-    @State private var imageShareFontSize = "lg"
-    @State private var imageShareCardWidth = "wide"
-    @State private var imageShareTitle = true
-    @State private var imageShareNotebook = false
-    @State private var imageShareTags = false
-    @State private var imageShareUpdatedAt = true
-    @State private var imageShareBranding = true
     @State private var imageExportIntent: MemoImageExportIntent = .share
     @State private var error: String?
     @State private var conflictItem: OutboxItem?
@@ -56,7 +46,8 @@ struct MemoDetailView: View {
     @State private var initialShareImageHandled = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        @Bindable var preferences = env.preferences
+        return VStack(spacing: 0) {
             detailHeader
             if syncStatus == .conflict, memo != nil {
                 conflictBanner
@@ -187,28 +178,46 @@ struct MemoDetailView: View {
             NavigationStack {
                 Form {
                     Section(env.preferences.t("主题风格", en: "Theme", pl: "Motyw")) {
-                        Picker(env.preferences.t("主题风格", en: "Theme", pl: "Motyw"), selection: $imageShareTheme) {
-                            Text(env.preferences.t("纯白", en: "Pure White", pl: "Czysta biel")).tag("slate")
-                            Text(env.preferences.t("薄荷", en: "Mint", pl: "Mięta")).tag("mint")
-                            Text(env.preferences.t("极光渐变", en: "Aurora", pl: "Zorza")).tag("aurora")
-                            Text(env.preferences.t("暮色晚霞", en: "Sunset", pl: "Zachód słońca")).tag("sunset")
-                            Text(env.preferences.t("黑白编辑", en: "Black & White", pl: "Czerń i biel")).tag("editorial")
-                            Text(env.preferences.t("极客终端", en: "Terminal", pl: "Terminal")).tag("terminal")
-                            Text(env.preferences.t("书页", en: "Book Page", pl: "Strona książki")).tag("film")
+                        Picker(env.preferences.t("主题风格", en: "Theme", pl: "Motyw"), selection: $preferences.noteImageShare.theme) {
+                            Text(env.preferences.t("默认", en: "Classic", pl: "Klasyczny")).tag("gradient")
+                            Text(env.preferences.t("透明", en: "Glass", pl: "Szkło")).tag("glass")
+                            Text(env.preferences.t("金句", en: "Quote", pl: "Cytat")).tag("quote")
+                            Text(env.preferences.t("书摘", en: "Book excerpt", pl: "Fragment książki")).tag("book")
+                            Text(env.preferences.t("备忘录", en: "Memo", pl: "Notatka")).tag("memo")
+                            Text(env.preferences.t("便当", en: "Bento", pl: "Bento")).tag("bento")
+                            Text(env.preferences.t("黑日", en: "Black Sun", pl: "Czarne słońce")).tag("black-sun")
+                            Text(env.preferences.t("框界", en: "Frame", pl: "Ramka")).tag("frame")
+                            Text(env.preferences.t("手写", en: "Handwritten", pl: "Pismo odręczne")).tag("handwritten")
+                            Text(env.preferences.t("代码", en: "Code", pl: "Kod")).tag("code")
                         }
                         .pickerStyle(.menu)
                     }
                     Section(env.preferences.t("字体风格", en: "Typography", pl: "Typografia")) {
-                        Picker(env.preferences.t("字体风格", en: "Typography", pl: "Typografia"), selection: $imageShareFontStyle) {
+                        Picker(env.preferences.t("字体风格", en: "Typography", pl: "Typografia"), selection: $preferences.noteImageShare.fontStyle) {
                             Text(env.preferences.t("跟随主题", en: "Follow Theme", pl: "Zgodnie z motywem")).tag("auto")
                             Text(env.preferences.t("文艺衬线", en: "Serif", pl: "Szeryfowa")).tag("serif")
                             Text(env.preferences.t("现代无衬线", en: "Sans", pl: "Bezszeryfowa")).tag("sans")
                             Text(env.preferences.t("极客等宽", en: "Mono", pl: "Monospace")).tag("mono")
+                            Text(env.preferences.t("得意黑", en: "Smiley Sans", pl: "Smiley Sans")).tag("smiley")
+                            Text(env.preferences.t("霞鹜文楷", en: "LXGW WenKai", pl: "LXGW WenKai")).tag("wenkai")
+                            Text(env.preferences.t("朱雀仿宋", en: "Zhuque Fangsong", pl: "Zhuque Fangsong")).tag("zhuque")
+                            Text(env.preferences.t("思源黑体 Heavy", en: "Noto Sans SC Heavy", pl: "Noto Sans SC Heavy")).tag("heavy")
+                            Text(env.preferences.t("普惠体", en: "PuHuiTi", pl: "PuHuiTi")).tag("puhui")
+                            Text(env.preferences.t("普惠体 Heavy", en: "PuHuiTi Heavy", pl: "PuHuiTi Heavy")).tag("puhui-heavy")
+                            Text(env.preferences.t("优设标题黑", en: "YouShe Title", pl: "YouShe Title")).tag("youshe")
+                            Text(env.preferences.t("阿里妈妈数黑体", en: "Alimama ShuHei", pl: "Alimama ShuHei")).tag("shuhei")
                         }
                         .pickerStyle(.menu)
+                        Text(env.preferences.t(
+                            "下载型字体首次使用需联网并缓存；普惠体等推荐字体使用完整文件，首次下载较大。",
+                            en: "Downloadable fonts need a connection on first use and are cached. PuHuiTi and other recommended fonts use larger, complete original files.",
+                            pl: "Czcionki są pobierane przy pierwszym użyciu i zapisywane lokalnie. PuHuiTi i inne polecane czcionki używają większych, pełnych plików."
+                        ))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     }
                     Section(env.preferences.t("字号大小", en: "Font size", pl: "Rozmiar czcionki")) {
-                        Picker(env.preferences.t("字号大小", en: "Font size", pl: "Rozmiar czcionki"), selection: $imageShareFontSize) {
+                        Picker(env.preferences.t("字号大小", en: "Font size", pl: "Rozmiar czcionki"), selection: $preferences.noteImageShare.fontSize) {
                             Text(env.preferences.t("紧凑", en: "Compact", pl: "Kompaktowy")).tag("sm")
                             Text(env.preferences.t("标准", en: "Standard", pl: "Standardowy")).tag("md")
                             Text(env.preferences.t("舒适", en: "Comfortable", pl: "Wygodny")).tag("lg")
@@ -216,7 +225,7 @@ struct MemoDetailView: View {
                         .pickerStyle(.segmented)
                     }
                     Section(env.preferences.t("卡片宽度", en: "Card width", pl: "Szerokość karty")) {
-                        Picker(env.preferences.t("卡片宽度", en: "Card width", pl: "Szerokość karty"), selection: $imageShareCardWidth) {
+                        Picker(env.preferences.t("卡片宽度", en: "Card width", pl: "Szerokość karty"), selection: $preferences.noteImageShare.cardWidth) {
                             Text(env.preferences.t("紧凑", en: "Compact", pl: "Kompaktowy")).tag("compact")
                             Text(env.preferences.t("标准", en: "Standard", pl: "Standardowy")).tag("standard")
                             Text(env.preferences.t("宽屏", en: "Wide", pl: "Szeroka")).tag("wide")
@@ -224,14 +233,14 @@ struct MemoDetailView: View {
                         .pickerStyle(.segmented)
                     }
                     Section(env.preferences.t("显示内容", en: "Content elements", pl: "Elementy treści")) {
-                        Toggle(env.preferences.t("笔记标题", en: "Note title", pl: "Tytuł notatki"), isOn: $imageShareTitle)
-                        Toggle(env.preferences.t("笔记本", en: "Notebook", pl: "Notatnik"), isOn: $imageShareNotebook)
-                        Toggle(env.preferences.t("标签", en: "Tags", pl: "Tagi"), isOn: $imageShareTags)
-                        Toggle(env.preferences.t("更新时间", en: "Updated time", pl: "Czas aktualizacji"), isOn: $imageShareUpdatedAt)
-                        Toggle(env.preferences.t("EdgeEver 品牌标识", en: "EdgeEver branding", pl: "Oznaczenie EdgeEver"), isOn: $imageShareBranding)
+                        Toggle(env.preferences.t("笔记标题", en: "Note title", pl: "Tytuł notatki"), isOn: $preferences.noteImageShare.showTitle)
+                        Toggle(env.preferences.t("笔记本", en: "Notebook", pl: "Notatnik"), isOn: $preferences.noteImageShare.showNotebook)
+                        Toggle(env.preferences.t("标签", en: "Tags", pl: "Tagi"), isOn: $preferences.noteImageShare.showTags)
+                        Toggle(env.preferences.t("更新时间", en: "Updated time", pl: "Czas aktualizacji"), isOn: $preferences.noteImageShare.showUpdatedAt)
+                        Toggle(env.preferences.t("EdgeEver 品牌标识", en: "EdgeEver branding", pl: "Oznaczenie EdgeEver"), isOn: $preferences.noteImageShare.showBranding)
                     }
                     Section(env.preferences.t("图片格式", en: "Image format", pl: "Format obrazu")) {
-                        Picker(env.preferences.t("图片格式", en: "Image format", pl: "Format obrazu"), selection: $imageShareFormat) {
+                        Picker(env.preferences.t("图片格式", en: "Image format", pl: "Format obrazu"), selection: $preferences.noteImageShare.format) {
                             Text(env.preferences.t("PNG · 超清无损", en: "PNG · Best for text", pl: "PNG · Najlepszy do tekstu")).tag("png")
                             Text(env.preferences.t("JPEG · 体积小", en: "JPEG · Smaller file", pl: "JPEG · Mniejszy plik")).tag("jpeg")
                         }
@@ -250,16 +259,16 @@ struct MemoDetailView: View {
                             imageShareOptionsOpen = false
                             exportMemoImage(
                                 memo,
-                                format: imageShareFormat,
-                                theme: imageShareTheme,
-                                fontStyle: imageShareFontStyle,
-                                fontSize: imageShareFontSize,
-                                cardWidth: imageShareCardWidth,
-                                showTitle: imageShareTitle,
-                                showNotebook: imageShareNotebook,
-                                showTags: imageShareTags,
-                                showUpdatedAt: imageShareUpdatedAt,
-                                showBranding: imageShareBranding,
+                                format: env.preferences.noteImageShare.format,
+                                theme: env.preferences.noteImageShare.theme,
+                                fontStyle: env.preferences.noteImageShare.fontStyle,
+                                fontSize: env.preferences.noteImageShare.fontSize,
+                                cardWidth: env.preferences.noteImageShare.cardWidth,
+                                showTitle: env.preferences.noteImageShare.showTitle,
+                                showNotebook: env.preferences.noteImageShare.showNotebook,
+                                showTags: env.preferences.noteImageShare.showTags,
+                                showUpdatedAt: env.preferences.noteImageShare.showUpdatedAt,
+                                showBranding: env.preferences.noteImageShare.showBranding,
                                 intent: .preview
                             )
                         }

@@ -1,258 +1,111 @@
 import { describe, expect, test } from "bun:test";
 import {
-  NOTE_IMAGE_BACKGROUND_COLORS,
-  NOTE_IMAGE_THEMES,
-  NOTE_IMAGE_THEME_OPTIONS,
-  NOTE_IMAGE_FONT_FAMILIES,
-  resolveNoteImageTypography,
-  buildImageExportBasename,
-  buildNoteImageCardMarkup,
-  estimateReadingStats,
-  generateCardCss,
-  resolveTheme,
+  NOTE_IMAGE_THEME_OPTIONS, NOTE_IMAGE_THEMES, NOTE_IMAGE_BACKGROUND_COLORS, NOTE_IMAGE_FONT_FAMILIES,
+  resolveTheme, resolveNoteImageTypography, buildImageExportBasename, buildNoteImageCardMarkup,
+  estimateReadingStats, generateCardCss,
 } from "./note-image-card";
+import { zhCN } from "./i18n/zh-CN";
+import { enUS } from "./i18n/en-US";
+import { ja } from "./i18n/ja";
+import { pl } from "./i18n/pl";
 
-describe("note-image-card shared module", () => {
-  test("resolves theme correctly with fallbacks", () => {
-    expect(resolveTheme(undefined, "editorial")).toBe("press");
-    expect(resolveTheme(undefined, "terminal")).toBe("terminal");
-    expect(resolveTheme(undefined, "film")).toBe("paper");
-    expect(resolveTheme(undefined, "notepad")).toBe("press");
-    expect(resolveTheme(undefined, "xuan")).toBe("press");
-    expect(resolveTheme(undefined, "polaroid")).toBe("paper");
-    expect(resolveTheme("warm", undefined)).toBe("sunset");
-    expect(resolveTheme(undefined, undefined)).toBe("paper");
-  });
-
-  test("retired themes resolve to active choices in both legacy inputs", () => {
-    expect(NOTE_IMAGE_THEME_OPTIONS).toHaveLength(8);
-    expect(NOTE_IMAGE_THEME_OPTIONS).toEqual(["paper", "press", "highlight", "slate", "mint", "aurora", "sunset", "terminal"]);
-    for (const [legacy, active] of [["midnight", "terminal"], ["lavender", "mint"], ["editorial", "press"], ["film", "paper"]]) {
-      expect(NOTE_IMAGE_THEME_OPTIONS).not.toContain(legacy);
-      expect(resolveTheme(undefined, legacy)).toBe(active);
-      expect(resolveTheme(legacy)).toBe(active);
-      const css = generateCardCss({ theme: legacy, fontStyle: "auto", fontSize: "md", cardWidth: "standard" });
-      expect(css).toContain(NOTE_IMAGE_THEMES[active].canvasBg);
-      const markup = buildNoteImageCardMarkup({ title: "Legacy", bodyHtml: "<p>Content</p>", theme: legacy });
-      expect(markup).toContain(`data-theme="${active}"`);
-    }
-  });
-
-  test("theme typography pairs headings and body while explicit fonts override both", () => {
+describe("note image templates", () => {
+  test("every selectable template is localized and has renderable colors", () => {
     for (const theme of NOTE_IMAGE_THEME_OPTIONS) {
-      const auto = resolveNoteImageTypography(theme);
-      const expectedBody = theme === "paper"
-        ? "kai"
-        : theme === "terminal"
-        ? "mono"
-        : theme === "film" || theme === "sunset" || theme === "press"
-        ? "serif"
-        : "sans";
-      const expectedHeading = theme === "paper"
-        ? "kai"
-        : theme === "terminal"
-        ? "mono"
-        : theme === "editorial" || theme === "film" || theme === "sunset" || theme === "press"
-        ? "serif"
-        : "sans";
-
-      expect(auto.bodyFamily).toBe(NOTE_IMAGE_FONT_FAMILIES[expectedBody]);
-      expect(auto.headingFamily).toBe(NOTE_IMAGE_FONT_FAMILIES[expectedHeading]);
-
-      for (const fontStyle of ["sans", "serif", "mono", "kai"]) {
-        const manual = resolveNoteImageTypography(theme, fontStyle);
-        expect(manual.bodyFamily).toBe(NOTE_IMAGE_FONT_FAMILIES[fontStyle]);
-        expect(manual.headingFamily).toBe(NOTE_IMAGE_FONT_FAMILIES[fontStyle]);
-        const css = generateCardCss({ theme, fontStyle, fontSize: "md", cardWidth: "standard" });
-        expect(css).toContain(`--ee-heading-font-family: ${manual.headingFamily}`);
-        expect(css).not.toMatch(/\n\s+font-family: "Songti SC"/);
-      }
-    }
-  });
-
-  test("manual mono font does not add terminal decoration to a light theme", () => {
-    const markup = buildNoteImageCardMarkup({ title: "Paper", bodyHtml: "<p>Content</p>", theme: "slate", fontStyle: "mono" });
-    expect(markup).not.toContain("edgeever-terminal-header");
-  });
-
-  test("defaults to hiding note title unless explicitly enabled", () => {
-    const defaultMarkup = buildNoteImageCardMarkup({ title: "Hidden Title", bodyHtml: "<p>Content</p>" });
-    expect(defaultMarkup).not.toContain("edgeever-card-title");
-    expect(defaultMarkup).not.toContain("Hidden Title");
-
-    const visibleMarkup = buildNoteImageCardMarkup({ title: "Visible Title", bodyHtml: "<p>Content</p>", showTitle: true });
-    expect(visibleMarkup).toContain("edgeever-card-title");
-    expect(visibleMarkup).toContain("Visible Title");
-  });
-
-  test("retains valid colors for current themes and legacy slate exports", () => {
-    const expectedThemes = ["paper", "press", "highlight", "slate", "aurora", "sunset", "midnight", "editorial", "terminal", "film", "mint", "lavender"];
-    for (const theme of expectedThemes) {
       expect(NOTE_IMAGE_THEMES[theme]).toBeDefined();
-      expect(NOTE_IMAGE_BACKGROUND_COLORS[theme]).toBeDefined();
-      expect(NOTE_IMAGE_THEMES[theme].cardBg).toBeDefined();
-      expect(NOTE_IMAGE_THEMES[theme].textColor).toBeDefined();
+      expect(NOTE_IMAGE_BACKGROUND_COLORS[theme]).toMatch(/^#[\da-f]{6}$/i);
+      for (const locale of [zhCN, enUS, ja, pl]) expect(locale.editor.imageShare.themes[theme]).toBeTruthy();
+    }
+    for (const retired of ["paper", "press", "highlight", "slate", "mint", "aurora", "sunset", "terminal"]) {
+      expect(NOTE_IMAGE_THEME_OPTIONS).not.toContain(retired);
     }
   });
 
-  test("generates rich card markup with title, date, and official EdgeEver logo badge", () => {
+  test("old export settings resolve to supported templates through either input", () => {
+    const mapping = {
+      paper: "handwritten", press: "book", highlight: "memo", slate: "frame", mint: "quote",
+      aurora: "gradient", sunset: "glass", terminal: "code", midnight: "black-sun", editorial: "frame",
+      film: "book", lavender: "glass", notepad: "memo", xuan: "handwritten", polaroid: "frame", warm: "glass",
+    };
+    for (const [old, active] of Object.entries(mapping)) {
+      expect(resolveTheme(old)).toBe(active);
+      expect(resolveTheme(undefined, old)).toBe(active);
+      expect(buildNoteImageCardMarkup({ title: "Note", bodyHtml: "<p>Text</p>", theme: old })).toContain(`data-theme="${active}"`);
+    }
+    expect(resolveTheme()).toBe("gradient");
+    expect(resolveTheme("book", "missing")).toBe("book");
+    expect(resolveTheme("__proto__", "constructor")).toBe("gradient");
+  });
+
+  test("explicit fonts override both heading and body for every template", () => {
+    expect(resolveNoteImageTypography("book").bodyFamily).toContain("SourceHanSerifCN_SemiBold");
+    expect(resolveNoteImageTypography("handwritten").bodyFamily).toContain("Long Cang");
+    expect(resolveNoteImageTypography("code").bodyFamily).toContain("Geist Mono Variable");
+    for (const theme of NOTE_IMAGE_THEME_OPTIONS) for (const font of ["sans", "serif", "kai", "mono"]) {
+      const typography = resolveNoteImageTypography(theme, font);
+      expect(typography.bodyFamily).toBe(NOTE_IMAGE_FONT_FAMILIES[font]);
+      expect(typography.headingFamily).toBe(NOTE_IMAGE_FONT_FAMILIES[font]);
+    }
+  });
+
+  test("unselected metadata stays private in all decorations", () => {
+    for (const theme of NOTE_IMAGE_THEME_OPTIONS) {
+      const markup = buildNoteImageCardMarkup({
+        theme, title: "Private title", notebook: "Private notebook", author: "Private author", tags: ["Private tag"],
+        updatedAt: "Private date", bodyHtml: "<p>Public body</p>", showUpdatedAt: false, showBranding: false,
+      });
+      for (const hidden of ["Private title", "Private notebook", "Private author", "Private tag", "Private date", "EdgeEver"]) expect(markup).not.toContain(hidden);
+      expect(markup).toContain("<p>Public body</p>");
+    }
+  });
+
+  test("escapes enabled metadata while preserving prepared rich text", () => {
     const markup = buildNoteImageCardMarkup({
-      title: "Shared Card Title",
-      notebook: "Work",
-      tags: ["feature", "design"],
-      updatedAt: "2026-08-22",
-      bodyHtml: "<p>Note body text</p>",
-      theme: "slate",
-      fontStyle: "serif",
-      showTitle: true,
-      showNotebook: false,
-      showTags: false,
-      showUpdatedAt: true,
-      showBranding: true,
+      theme: "frame", title: '<img src=x onerror="x">', notebook: "A&B", tags: ["<tag>"],
+      author: "<author>", updatedAt: "<date>", bodyHtml: '<p><strong>Kept</strong></p><img src="data:image/png;base64,AA==">',
+      showTitle: true, showNotebook: true, showTags: true, showAuthor: true,
     });
-
-    expect(markup).toContain("Shared Card Title");
-    expect(markup).toContain("2026-08-22");
-    expect(markup).toContain("edgeever-brand-logo");
-    expect(markup).toContain("EdgeEver");
-    expect(markup).not.toContain("edgeever-meta-notebook");
-    expect(markup).not.toContain("edgeever-meta-tag");
+    expect(markup).not.toContain('<img src=x');
+    expect(markup).toContain("&lt;img");
+    expect(markup).toContain("A&amp;B");
+    expect(markup).toContain("#&lt;tag&gt;");
+    expect(markup).toContain("&lt;author&gt;");
+    expect(markup).toContain("&lt;date&gt;");
+    expect(markup).toContain('<p><strong>Kept</strong></p><img src="data:image/png;base64,AA==">');
   });
 
-  test("generates press styling when legacy editorial theme is requested", () => {
-    const markup = buildNoteImageCardMarkup({
-      title: "Editorial Dispatch",
-      bodyHtml: "<p>Deep analytical reporting on modern engineering.</p>",
-      theme: "editorial",
-      fontStyle: "serif",
-      showTitle: true,
-      author: "@tianma",
-      showAuthor: true,
-    });
-    expect(markup).toContain('data-theme="press"');
-    expect(markup).toContain("@tianma");
-
-    const css = generateCardCss({
-      theme: "editorial",
-      fontStyle: "serif",
-      fontSize: "md",
-      cardWidth: "standard",
-    });
-    expect(css).toContain('data-theme="press"');
-    expect(css).toContain("border-top: 3.5px solid #111412");
+  test("code window respects the title and notebook visibility switches", () => {
+    const hidden = buildNoteImageCardMarkup({ theme: "code", title: "Secret", notebook: "Hidden", bodyHtml: "" });
+    expect(hidden).toContain("note.md");
+    expect(hidden).not.toContain("Secret");
+    expect(hidden).not.toContain("Hidden");
+    const shown = buildNoteImageCardMarkup({ theme: "code", title: "Visible", bodyHtml: "", showTitle: true });
+    expect(shown.match(/Visible/g)).toHaveLength(1);
+    const mono = buildNoteImageCardMarkup({ theme: "book", title: "Note", bodyHtml: "", fontStyle: "mono" });
+    expect(mono).not.toContain("edgeever-terminal-header");
   });
 
-  test("generates terminal header for the terminal theme", () => {
-    const markup = buildNoteImageCardMarkup({
-      title: "Code Memo",
-      notebook: "TerminalNote",
-      bodyHtml: "<p>console.log()</p>",
-      theme: "terminal",
-      fontStyle: "mono",
-    });
-    expect(markup).toContain("edgeever-terminal-header");
-    expect(markup).toContain("TerminalNote");
-
-    const css = generateCardCss({
-      theme: "terminal",
-      fontStyle: "mono",
-      fontSize: "md",
-      cardWidth: "standard",
-    });
-    expect(css).toContain('data-theme="terminal"');
+  test("an empty author does not create an empty footer when branding is hidden", () => {
+    const markup = buildNoteImageCardMarkup({ title: "Note", bodyHtml: "", author: "  ", showAuthor: true, showBranding: false });
+    expect(markup).not.toContain("edgeever-card-footer");
   });
 
-  test("generates paper styling when legacy film theme is requested", () => {
-    const markup = buildNoteImageCardMarkup({
-      title: "Memories in Summer",
-      notebook: "Journal",
-      bodyHtml: "<p>A quick reflection on building delightful software.</p>",
-      theme: "film",
-      fontStyle: "serif",
-      showTitle: true,
-      showReadingTime: true,
-      author: "@tianma",
-      showAuthor: true,
-      showBranding: true,
-    });
-
-    expect(markup).toContain("edgeever-grain-overlay");
-    expect(markup).toContain('data-theme="paper"');
-    expect(markup).toContain("@tianma");
-    expect(markup).toContain("edgeever-footer-author");
-    expect(markup).toContain("edgeever-meta-reading");
-
-    const css = generateCardCss({
-      theme: "film",
-      fontStyle: "serif",
-      fontSize: "md",
-      cardWidth: "standard",
-    });
-    expect(css).toContain('data-theme="paper"');
-    expect(css).toContain("background-color: #fbf9f4");
+  test("export styles stay scoped and do not depend on viewport height", () => {
+    for (const theme of NOTE_IMAGE_THEME_OPTIONS) {
+      const css = generateCardCss({ theme, fontStyle: "auto", fontSize: "lg", cardWidth: "compact" });
+      expect(css).not.toContain(":root");
+      expect(css).not.toMatch(/(?:^|\n)\s*\*\s*\{/);
+      expect(css).not.toMatch(/\d+vh/);
+      expect(css).not.toMatch(/url\(["']?https?:\/\//);
+    }
   });
 
-  test("calculates reading stats for mixed Chinese and English text", () => {
-    const stats = estimateReadingStats("<p>这里是中文内容五十字。</p><p>Some english words here.</p>");
-    expect(stats.totalCount).toBeGreaterThan(0);
-    expect(stats.minutes).toBeGreaterThanOrEqual(1);
-  });
-
-  test("generates paper theme with warm background and borderless structure", () => {
-    const markup = buildNoteImageCardMarkup({
-      title: "Daily Reflections",
-      bodyHtml: "<p>Thoughts on a quiet morning.</p>",
-      theme: "paper",
-    });
-    expect(markup).toContain('data-theme="paper"');
-    const css = generateCardCss({
-      theme: "paper",
-      fontStyle: "sans",
-      fontSize: "md",
-      cardWidth: "standard",
-    });
-    expect(css).toContain('.edgeever-image-wrapper[data-theme="paper"]');
-    expect(css).toContain("background-color: #fbf9f4");
-    expect(css).toContain("radial-gradient");
-  });
-
-  test("generates press theme with classic double rule and editorial styling", () => {
-    const markup = buildNoteImageCardMarkup({
-      title: "The Architecture of Thought",
-      bodyHtml: "<blockquote>A good system makes right paths easy.</blockquote>",
-      theme: "press",
-      fontStyle: "serif",
-    });
-    expect(markup).toContain('data-theme="press"');
-    const css = generateCardCss({
-      theme: "press",
-      fontStyle: "serif",
-      fontSize: "md",
-      cardWidth: "standard",
-    });
-    expect(css).toContain('.edgeever-image-card[data-theme="press"]');
-    expect(css).toContain("border-top: 3.5px solid #111412");
-  });
-
-  test("generates highlight theme with vivid marker styles on strong text", () => {
-    const markup = buildNoteImageCardMarkup({
-      title: "Key Takeaways",
-      bodyHtml: "<p>Remember to <strong>focus on what matters</strong>.</p>",
-      theme: "highlight",
-    });
-    expect(markup).toContain('data-theme="highlight"');
-    const css = generateCardCss({
-      theme: "highlight",
-      fontStyle: "sans",
-      fontSize: "md",
-      cardWidth: "standard",
-    });
-    expect(css).toContain('.edgeever-image-card[data-theme="highlight"]');
-    expect(css).toContain("background: linear-gradient(104deg, rgba(254, 240, 138");
-  });
-
-  test("sanitizes filenames and guards against reserved Windows names", () => {
-    expect(buildImageExportBasename("CON", "fallback")).toBe("_CON");
-    expect(buildImageExportBasename("My Note/Title?*", "fallback")).toBe("My Note-Title--");
+  test("keeps mixed-language reading statistics and portable filenames", () => {
+    const stats = estimateReadingStats("<p>中文阅读与 English words.</p>");
+    expect(stats.totalCount).toBe(7);
+    expect(stats.minutes).toBe(1);
+    expect(buildImageExportBasename(" Roadmap: Q3/Q4. ", "Untitled")).toBe("Roadmap- Q3-Q4");
+    expect(buildImageExportBasename("CON", "Untitled")).toBe("_CON");
+    expect(buildImageExportBasename("   ", "Untitled")).toBe("Untitled");
   });
 });

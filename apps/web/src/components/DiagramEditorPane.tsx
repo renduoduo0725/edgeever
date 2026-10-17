@@ -4,7 +4,7 @@ import { formatMindMapOutline, projectMindMapOutline, updateMindMapOutlineDraft,
 import { MindMapOutlineEditor } from "@/components/MindMapOutlineEditor";
 import { focusArchitectureRelations } from "@/lib/architecture-relations";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Dom, Export, Graph, History, Keyboard, Scroller, Selection, type Edge, type Node } from "@antv/x6";
 import * as m from "motion/react-m";
 import {
@@ -12,7 +12,6 @@ import {
   AppWindow,
   ArrowDownUp,
   Binary,
-  Blocks,
   Bot,
   Box,
   Boxes,
@@ -686,7 +685,7 @@ const DiagramInsertMenu = ({
 }) => {
   const [open, setOpen] = useState(false);
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
       <DiagramToolbarAddTrigger onPointerEnter={() => setOpen(true)} />
       <DropdownMenuContent align="start">
         {items.map((item) => {
@@ -875,7 +874,7 @@ const bindDiagramScrollerFit = (graph: Graph) => {
       gridWidth as number | undefined,
       gridHeight,
       padding as number | undefined,
-      applyDiagramScrollerFitOptions({ ...(options ?? {}) }, bounds),
+      applyDiagramScrollerFitOptions({ ...options }, bounds),
     );
   }) as typeof graph.fitToContent & { edgeeverBound?: boolean };
   bound.edgeeverBound = true;
@@ -1240,7 +1239,7 @@ const nodeMetadata = (
         text: diagramNodePresentation(node, kind).text,
         lineHeight: mindStyle?.visual.label.lineHeight ?? flowchartStyle?.label.lineHeight ?? architectureStyle?.label.lineHeight ?? 18,
       },
-      ...(architectureStyle?.attrs ?? {}),
+      ...architectureStyle?.attrs,
     },
     ...(hasPorts ? { ports: {
       groups: {
@@ -1325,7 +1324,6 @@ const diagramEdgeLabel = (
       },
     };
   }
-  const flowchart = null;
   return {
     position: { distance: 0.5, offset: 0 },
     attrs: {
@@ -2043,7 +2041,6 @@ export const DiagramEditorPane = ({
   useEffect(() => {
     if (!containerRef.current || !document) return;
     const appearance = appearanceRef.current;
-    const palette = resolveDiagramPalette(documentTheme, appearance);
     let graph!: Graph;
     graph = new Graph({
       container: containerRef.current,

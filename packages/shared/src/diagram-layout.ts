@@ -1,4 +1,4 @@
-import { compactFlowchartNodeSize, flowchartNodePresentation, visualTextUnits } from "./diagram-node-presentation";
+import { flowchartNodePresentation, visualTextUnits } from "./diagram-node-presentation";
 export { compactFlowchartNodeSize, flowchartNodePresentation } from "./diagram-node-presentation";
 import { DIAGRAM_READABLE_MIN_SCALE, FLOWCHART_LAYOUT_SPACING } from "./diagram-flowchart-style";
 export {
@@ -24,10 +24,12 @@ import {
   ARCHITECTURE_DIAGRAM_SCHEMA_VERSION,
   DIAGRAM_DEFAULT_THEME,
   DIAGRAM_SCHEMA_VERSION,
+  createDefaultDiagramDocument,
   type ArchitectureResourceIcon,
   type DiagramDocument,
   type DiagramEdgeKind,
   type DiagramKind,
+  type DiagramNode,
   type DiagramNodeShape,
   type DiagramStructure,
   type DiagramTheme,
@@ -1188,4 +1190,41 @@ export const compileDiagramIr = (ir: DiagramIr): DiagramDocument => {
     if (geometry) Object.assign(node, geometry);
   }
   return document;
+};
+
+// Starter documents carry node sizes chosen for their default labels. When a
+// translated label needs more room than the label it replaces, size every node
+// for its label and lay the document out again, as compileDiagramIr does.
+export const fitDefaultDiagramLabels = (document: DiagramDocument): DiagramDocument => {
+  const labelSize = (node: DiagramNode, nodes: DiagramNode[]) => document.kind === "mind-map"
+    ? mindMapNodePresentation(node.label, mindMapNodeRole(nodes, node.id), document.structure)
+    : document.kind === "architecture"
+      ? architectureNodeSizeForLabel(node.shape, node.label)
+      : flowchartNodePresentation(node.shape, node.label);
+  const defaults = createDefaultDiagramDocument(document.kind);
+  const defaultNodes = new Map(defaults.nodes.map((node) => [node.id, node]));
+  const needsRoom = document.nodes.some((node) => {
+    const defaultNode = defaultNodes.get(node.id);
+    if (!defaultNode) return false;
+    const size = labelSize(node, document.nodes);
+    const defaultSize = labelSize(defaultNode, defaults.nodes);
+    return size.width > defaultSize.width || size.height > defaultSize.height;
+  });
+  if (!needsRoom) return document;
+  const fitted: DiagramDocument = {
+    ...document,
+    nodes: document.nodes.map((node) => {
+      const size = labelSize(node, document.nodes);
+      return { ...node, width: Math.max(node.width, size.width), height: Math.max(node.height, size.height) };
+    }),
+    edges: document.edges.map((edge) => ({ ...edge })),
+  };
+  const layout = computeDiagramLayoutResult(fitted, {
+    direction: document.kind === "flowchart" ? "top-to-bottom" : "left-to-right",
+  });
+  for (const node of fitted.nodes) {
+    const geometry = layout.nodes[node.id];
+    if (geometry) Object.assign(node, geometry);
+  }
+  return fitted;
 };

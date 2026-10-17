@@ -96,7 +96,7 @@ export const siteCopy = {
   "zh-CN": {
     layout: {
       defaultDescription:
-        "EdgeEver 是开源、原生支持 AI 的自托管笔记与知识库工作区。保留经典印象笔记三栏体验，支持 ACP 本机 Agent 深度协同、AI 伴侣侧边栏、可视化图表笔记与多端同步，覆盖 macOS、Windows、Linux、iOS、Android 与浏览器剪藏，支持在 Cloudflare 免费额度内运行或使用 Docker 一键自托管。",
+        "EdgeEver 是开源、原生支持 AI 的自托管笔记与知识库工作区。保留经典三栏高效体验，支持 ACP 本机 Agent 深度协同、AI 伴侣侧边栏、可视化图表笔记与多端同步，覆盖 macOS、Windows、Linux、iOS、Android 与浏览器剪藏，支持在 Cloudflare 免费额度内运行或使用 Docker 一键自托管。",
       defaultTitle: `EdgeEver - ${siteTaglines["zh-CN"]}`,
       imageAlt: "EdgeEver 笔记应用截图",
       ogLocale: "zh_CN",
@@ -130,7 +130,7 @@ export const siteCopy = {
     },
     hero: {
       slogan: siteTaglines["zh-CN"],
-      popHighlight: "印象笔记开源平替 · 原生 AI 协同 · 全平台客户端覆盖",
+      popHighlight: "经典三栏现代化知识库 · 原生 AI 协同 · 全平台客户端覆盖",
       demo: "在线演示",
       agentInstall: "一键 AI 部署",
       getApps: "获取客户端：",
@@ -147,7 +147,7 @@ export const siteCopy = {
       card1: {
         badge: "经典重现",
         title: "经典三栏与专注模式，熟悉更轻快",
-        desc: "保留印象笔记式的笔记本树、笔记列表与主编辑区。支持富文本与 Markdown 源码双视图自由切换、无限层级嵌套、全屏专注模式与明暗自定义 CSS 样式预设。",
+        desc: "保留经典高效的三栏工作区体验（目录树 · 笔记列表 · 编辑写作）。支持富文本与 Markdown 源码双视图自由切换、无限层级嵌套、全屏专注模式与明暗自定义 CSS 样式预设。",
         subBadge: "双视图 / 专注模式 / 自定义 CSS",
         treeTitle: "笔记本目录",
         folder1: "01_工作收件箱",
@@ -160,7 +160,7 @@ export const siteCopy = {
         note2Title: "本机 ACP Agent 接入",
         note2Sub: "Codex / Antigravity 本地协同...",
         editorTitle: "EdgeEver 核心架构设计",
-        editorBody: "EdgeEver 将印象笔记经典的 3 栏工作区、原生 AI Agent 联动与自由部署架构完美结合。",
+        editorBody: "EdgeEver 将经典的 3 栏工作区、原生 AI Agent 联动与自由部署架构完美结合。",
         editorSaveTag: "已自动保存至 SQLite",
       },
       card2: {
@@ -302,7 +302,7 @@ export const siteCopy = {
         },
         {
           title: "经典三栏布局、专注模式与外观定制",
-          summary: "保留印象笔记式的笔记本树、笔记列表和主编辑区，兼顾流畅富文本写作、Markdown 源码与个性化外观。",
+          summary: "保留经典高效的三栏工作区（目录树 · 笔记列表 · 编辑写作），兼顾流畅富文本写作、Markdown 源码与个性化外观。",
           points: [
             "支持无限级嵌套笔记本，适合长期沉淀与结构化分类的大型个人知识库。",
             "桌面端一键开启全屏专注模式，笔记本拖拽排序，笔记支持多选批量移动与合并。",
@@ -371,8 +371,8 @@ export const siteCopy = {
   "en-US": {
     layout: {
       defaultDescription:
-        "EdgeEver is an open-source, AI-native knowledge base and Evernote alternative. Enjoy a classic three-pane workspace across macOS, Windows, Linux, iOS, Android, and Web Clipper, with native ACP local agent synergy, companion sidebar, and visual diagram notes, running within Cloudflare's free tier or on Docker.",
-      defaultTitle: "Open-Source, Self-Hosted Evernote Alternative | EdgeEver",
+        "EdgeEver is an open-source, AI-native knowledge base and modern notes workspace. Enjoy a classic three-pane productivity workflow (Tree View · Note List · Editor) across macOS, Windows, Linux, iOS, Android, and Web Clipper, with native ACP local agent synergy, companion sidebar, and visual diagram notes, running within Cloudflare's free tier or on Docker.",
+      defaultTitle: `EdgeEver - ${siteTaglines["en-US"]}`,
       imageAlt: "EdgeEver notes app screenshot",
       ogLocale: "en_US",
     },
@@ -405,7 +405,7 @@ export const siteCopy = {
     },
     hero: {
       slogan: siteTaglines["en-US"],
-      popHighlight: "Open-Source Evernote Alternative · Native AI Synergy · Multi-Platform Apps",
+      popHighlight: "Classic Three-Pane AI Workspace · Native AI Synergy · Multi-Platform Apps",
       demo: "Live demo",
       agentInstall: "Deploy with AI",
       getApps: "Get Apps:",
@@ -422,7 +422,7 @@ export const siteCopy = {
       card1: {
         badge: "Classic UI",
         title: "Classic Three-Pane Layout, Faster & Lighter",
-        desc: "Preserves the notebook tree, note list, and main editor. Switch freely between rich text and Markdown source, with unlimited nesting depth, focus mode, and light/dark custom CSS presets.",
+        desc: "Preserves the classic three-pane productivity workflow (Tree View · Note List · Editor). Switch freely between rich text and Markdown source, with unlimited nesting depth, focus mode, and light/dark custom CSS presets.",
         subBadge: "Dual View / Focus Mode / Custom CSS",
         treeTitle: "Notebooks",
         folder1: "01_Work_Inbox",
@@ -435,7 +435,7 @@ export const siteCopy = {
         note2Title: "Local ACP Agent Connection",
         note2Sub: "Codex / Antigravity local synergy...",
         editorTitle: "EdgeEver Architecture",
-        editorBody: "EdgeEver combines the classic Evernote 3-pane layout with AI Agent synergy and flexible deployment options.",
+        editorBody: "EdgeEver combines the classic 3-pane layout with AI Agent synergy and flexible deployment options.",
         editorSaveTag: "Auto-saved to SQLite",
       },
       card2: {
@@ -577,7 +577,7 @@ export const siteCopy = {
         },
         {
           title: "Classic Three-Pane Workflow, Focus Mode & Appearance",
-          summary: "Preserves the notebook tree, note list, and editor while supporting rich text, Markdown source, and custom appearance presets.",
+          summary: "Preserves the classic three-pane productivity workflow (Tree View · Note List · Editor) while supporting rich text, Markdown source, and custom appearance presets.",
           points: [
             "Unlimited nested notebooks for long-term personal knowledge bases.",
             "Full-screen focus mode on desktop, drag-and-drop notebook reordering, and multi-note batch move or merge.",

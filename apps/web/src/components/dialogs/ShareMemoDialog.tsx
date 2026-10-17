@@ -112,13 +112,6 @@ export const ShareMemoDialog = ({
     markCopied(target, await copyTextToClipboard(value));
   };
 
-  const copiedLabel = (target: "link" | "password" | "both", idleKey: string) =>
-    copyState === "copied" && copyTarget === target
-      ? "sharing.copied"
-      : copyState === "error" && copyTarget === target
-        ? "sharing.copyFailed"
-        : idleKey;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent

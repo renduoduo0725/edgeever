@@ -1,6 +1,7 @@
 import type { DiagramNodeShape } from "./diagram";
 
 export const visualTextUnits = (label: string) => Array.from(label).reduce(
+  // oxlint-disable-next-line no-control-regex -- tests for characters outside Latin-1
   (total, character) => total + (/[^\u0000-\u00ff]/.test(character) ? 1 : 0.55),
   0,
 );
