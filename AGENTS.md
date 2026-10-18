@@ -52,6 +52,8 @@
 Related Issue: #<issue-number>
 ```
 
+12. **外部贡献者署名**：维护者本人无需署名；外部贡献逐条注明账号与 PR，或集中致谢。正文名单不重复列名，保留 GitHub 原生 Contributors 头像区。参数用法见 `docs/release.zh-CN.md` / `docs/release.md`。
+
 ## 环境、部署与组件约束
 
 - **Cloudflare 部署**：严格按 `docs/agent-deploy-cloudflare.md` 执行。

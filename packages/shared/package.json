@@ -24,7 +24,8 @@
     "./font-catalog": "./src/font-catalog.ts",
     "./font-loader": "./src/font-loader.ts",
     "./note-image-fonts": "./src/note-image-fonts.ts",
-    "./note-image-preferences": "./src/note-image-preferences.ts"
+    "./note-image-preferences": "./src/note-image-preferences.ts",
+    "./public-page-headers": "./src/public-page-headers.ts"
   },
   "types": "./src/index.ts",
   "dependencies": {

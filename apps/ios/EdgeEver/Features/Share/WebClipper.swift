@@ -63,12 +63,13 @@ enum WebClipper {
     static func build(
         _ sourceURL: URL,
         capturedAt: Date = Date(),
-        labels: WebClipLabels = .chinese
+        labels: WebClipLabels = .chinese,
+        session: URLSession = .shared
     ) async -> WebClipDraft {
         var request = URLRequest(url: sourceURL)
         request.setValue("text/html,application/xhtml+xml", forHTTPHeaderField: "Accept")
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse,
                   (200 ..< 300).contains(http.statusCode),
                   let html = String(data: data, encoding: .utf8)

@@ -4,7 +4,7 @@ import {
   clipNotebookId,
   edgeEverFormRequest,
   edgeEverRequest,
-  getInstanceOrigin,
+  getInstancePermissionPattern,
   getSettings,
   listNotebooks,
   uploadMemoImage,
@@ -94,6 +94,7 @@ import { youtubeCaptureFromRead, youtubeTargetFromUrl } from "./video/youtube";
 import { t } from "./i18n";
 import { readXiaoyuzhouStateInPage } from "./xiaoyuzhou-clip";
 import { jikeLoginPost } from "./jike-clip";
+import { readJikeWebStateInPage } from "./jike-web-state";
 import { bossLoginRequired } from "./boss-clip";
 import {
   isPlatformClip,
@@ -376,7 +377,7 @@ const ensureClipperReady = async () => {
   if (!settings.instanceUrl || !settings.token) {
     throw new Error(t("completePluginConfiguration"));
   }
-  const granted = await chrome.permissions.contains({ origins: [`${getInstanceOrigin(settings.instanceUrl)}/*`] });
+  const granted = await chrome.permissions.contains({ origins: [getInstancePermissionPattern(settings.instanceUrl)] });
   if (!granted) throw new Error(t("instancePermissionRequired"));
   return settings;
 };
@@ -587,7 +588,6 @@ const pendingTweetReads = new Map<string, (result: unknown) => void>();
 const pendingGithubReads = new Map<string, (result: unknown) => void>();
 const pendingPlatformReads = new Map<string, {
   tabId: number;
-  sourceUrl: string;
   resolve: (result: unknown) => void;
 }>();
 const pendingXhsReads = new Map<string, (result: unknown) => void>();
@@ -1322,6 +1322,11 @@ const describePlatformError = (error: unknown) => {
   return describeGithubError(error);
 };
 
+const isJikeWebFeed = (url: string) => url.startsWith("https://web.okjike.com/") && !platformTarget(url);
+const readJikeWebState = async (tabId: number, id?: string) => (await chrome.scripting.executeScript({
+  target: { tabId, frameIds: [0] }, world: "MAIN", func: readJikeWebStateInPage, args: id ? [id] : [],
+}))[0]?.result;
+
 const readPlatformFromPage = async (tabId: number, target: PlatformTarget, selectionFirst: boolean, sourceUrl: string, selectionText?: string) => {
   const requestId = crypto.randomUUID();
   return new Promise<unknown>((resolve, reject) => {
@@ -1329,7 +1334,7 @@ const readPlatformFromPage = async (tabId: number, target: PlatformTarget, selec
       pendingPlatformReads.delete(requestId);
       reject(new Error(t("captureTimeout")));
     }, 10_000);
-    pendingPlatformReads.set(requestId, { tabId, sourceUrl, resolve: (result) => {
+    pendingPlatformReads.set(requestId, { tabId, resolve: (result) => {
       clearTimeout(timeout);
       pendingPlatformReads.delete(requestId);
       resolve(result);
@@ -1338,12 +1343,13 @@ const readPlatformFromPage = async (tabId: number, target: PlatformTarget, selec
       const xiaoyuzhouState = target.platform === "xiaoyuzhou"
         ? (await chrome.scripting.executeScript({ target: { tabId, frameIds: [0] }, world: "MAIN", func: readXiaoyuzhouStateInPage }))[0]?.result
         : undefined;
+      const jikeState = target.platform === "jike" && isJikeWebFeed(sourceUrl) ? await readJikeWebState(tabId,target.id) : undefined;
       await chrome.scripting.executeScript({
         target: { tabId, frameIds: [0] },
         func: (payload: unknown) => {
           (globalThis as { __edgeeverPlatformClipPayload?: unknown }).__edgeeverPlatformClipPayload = payload;
         },
-        args: [{ requestId, url: target.url, sourceUrl, selectionFirst, selectionText, xiaoyuzhouState }],
+        args: [{ requestId, url: target.url, sourceUrl, selectionFirst, selectionText, xiaoyuzhouState, jikeState }],
       });
       await chrome.scripting.executeScript({ target: { tabId, frameIds: [0] }, files: ["assets/capture-platform.js"] });
     };
@@ -1381,6 +1387,10 @@ const performPlatformSave = async (tabId: number, pageUrl: string, selectionFirs
     "---", clip.markdown,
   ].filter(Boolean).join("\n\n") : toMarkdown(selection!);
   const notebookId = await notebookForClip(settings);
+  if (target.platform === "jike" && isJikeWebFeed(pageUrl) && clip) {
+    const live = await readJikeWebState(tabId,target.id);
+    if (live?.pageUrl !== pageUrl || live.post.id !== target.id) throw new Error(t("platformPageChanged"));
+  }
   // Notebook lookup and capture can both outlive a navigation. Bind the save
   // to the detail page the user clicked, not the next active tab or episode.
   const current = await chrome.tabs.get(tabId);
@@ -1401,10 +1411,15 @@ const savePlatformFromMenu = async (info: { pageUrl?: string; frameId?: number }
     const pageUrl = info.pageUrl || tab?.url || "";
     let selectedUrl = pageUrl;
     if (socialPlatform(pageUrl)) {
-      const located = (await chrome.scripting.executeScript({ target: { tabId, frameIds: [0] }, func: () =>
-        document.querySelector("[data-edgeever-social-target]")?.getAttribute("data-edgeever-social-target") || ""
-      }))[0]?.result;
-      if (typeof located === "string" && platformTarget(located)?.platform === socialPlatform(pageUrl)) selectedUrl = located;
+      if (isJikeWebFeed(pageUrl)) {
+        const state = await readJikeWebState(tabId);
+        if (state?.pageUrl === pageUrl) selectedUrl = `https://m.okjike.com/originalPosts/${state.post.id}`;
+      } else {
+        const located = (await chrome.scripting.executeScript({ target: { tabId, frameIds: [0] }, func: () =>
+          document.querySelector("[data-edgeever-social-target]")?.getAttribute("data-edgeever-social-target") || ""
+        }))[0]?.result;
+        if (typeof located === "string" && platformTarget(located)?.platform === socialPlatform(pageUrl)) selectedUrl = located;
+      }
       if (!platformTarget(selectedUrl)) {
         await chrome.scripting.executeScript({target:{tabId,frameIds:[0]},files:["assets/social-target.js"]});
         throw new Error(t(socialPlatform(pageUrl) === "douban" ? "doubanSelectComment" : "socialSelectPost"));
@@ -1674,6 +1689,7 @@ const saveVideoFromMenu = async (
 };
 
 const registerClipMenus = () => {
+  if (!chrome.contextMenus) return;
   // Chrome and Firefox fold an extension into a submenu when more than one of
   // its items is visible. These contexts stay disjoint so each command remains
   // on the top-level menu: a photo saves the image, selected words save the
@@ -1779,7 +1795,7 @@ const createClipMenus = () => {
 
 chrome.runtime.onInstalled.addListener(registerClipMenus);
 
-chrome.contextMenus.onClicked.addListener((info: { menuItemId?: string | number; srcUrl?: string; pageUrl?: string; frameUrl?: string; linkUrl?: string; frameId?: number; selectionText?: string }, tab?: { id?: number; url?: string; title?: string }) => {
+chrome.contextMenus?.onClicked.addListener((info: { menuItemId?: string | number; srcUrl?: string; pageUrl?: string; frameUrl?: string; linkUrl?: string; frameId?: number; selectionText?: string }, tab?: { id?: number; url?: string; title?: string }) => {
   if (PLATFORM_MENUS.some((menu) => menu.id === info.menuItemId)) {
     void savePlatformFromMenu(info, tab);
     return;
@@ -1817,7 +1833,7 @@ chrome.contextMenus.onClicked.addListener((info: { menuItemId?: string | number;
   }
 });
 
-chrome.windows.onRemoved.addListener((windowId: number) => {
+chrome.windows?.onRemoved.addListener((windowId: number) => {
   void chrome.storage.session.get([IMAGE_SAVE_WINDOW_KEY, TWEET_WINDOW_KEY, XHS_WINDOW_KEY, ZHIHU_WINDOW_KEY]).then((stored: Record<string, unknown>) => {
     if (stored[IMAGE_SAVE_WINDOW_KEY] === windowId) {
       void chrome.storage.session.remove(IMAGE_SAVE_WINDOW_KEY);
@@ -1883,7 +1899,9 @@ chrome.runtime.onMessage.addListener((message: { type?: string; page?: unknown; 
     const pending = pendingPlatformReads.get(message.requestId);
     const sender = _sender as { id?: string; tab?: { id?: number }; frameId?: number; url?: string } | undefined;
     if (pending && sender && sender.id === chrome.runtime.id && sender.tab?.id === pending.tabId && sender.frameId === 0) {
-      pending.resolve(sender.url === pending.sourceUrl ? message.result : { ok: false, reason: "changed" });
+      // sender.url can retain the original document URL after SPA navigation.
+      // The page reader checks its live URL; performPlatformSave checks the tab again before creation.
+      pending.resolve(message.result);
     }
     return false;
   }

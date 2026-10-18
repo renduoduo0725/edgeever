@@ -1437,7 +1437,9 @@ const api: EdgeEverEditorAPI = {
     const modeChanged = nextMode !== mode;
     mode = nextMode;
     locale = opts.locale === "en-US" || opts.locale === "ja" || opts.locale === "pl" ? opts.locale : "zh-CN";
-    editor.setEditable(mode === "editor");
+    // Configuring a reused WebView is not a document edit. TipTap otherwise emits
+    // an update for its old (often empty) body before native pushes the share seed.
+    editor.setEditable(mode === "editor", false);
     setToolbarVisible(mode === "editor");
     document.documentElement.dataset.theme = opts.theme || "light";
     document.body.classList.toggle("viewer-mode", mode === "viewer");

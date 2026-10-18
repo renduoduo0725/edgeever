@@ -1,4 +1,34 @@
 import Foundation
+
+// BEGIN GENERATED FONT CATALOG — bun scripts/sync-font-catalog.mjs
+enum NoteImageFontCatalog {
+    static let choices: [(id: String, zh: String, en: String)] = [
+        (id: "smiley", zh: "得意黑", en: "Smiley Sans"),
+        (id: "wenkai", zh: "霞鹜文楷", en: "LXGW WenKai"),
+        (id: "zhuque", zh: "朱雀仿宋", en: "Zhuque Fangsong"),
+        (id: "heavy", zh: "思源黑体 Heavy", en: "Noto Sans SC Heavy"),
+        (id: "puhui", zh: "普惠体", en: "PuHuiTi"),
+        (id: "puhui-heavy", zh: "普惠体 Heavy", en: "PuHuiTi Heavy"),
+        (id: "youshe", zh: "优设标题黑", en: "YouShe Title"),
+        (id: "shuhei", zh: "阿里妈妈数黑体", en: "Alimama ShuHei"),
+        (id: "source-han-serif", zh: "思源宋体", en: "Noto Serif SC"),
+        (id: "anton", zh: "Anton", en: "Anton"),
+        (id: "douyin", zh: "抖音美好体", en: "Douyin Sans"),
+        (id: "mashan", zh: "马善政楷书", en: "Ma Shan Zheng"),
+        (id: "jiangcheng", zh: "江城圆体", en: "Jiangcheng Rounded"),
+        (id: "huangyou", zh: "站酷庆科黄油体", en: "ZCOOL QingKe HuangYou"),
+        (id: "glow", zh: "未来荧黑", en: "Glow Sans"),
+        (id: "kuaile", zh: "站酷快乐体", en: "ZCOOL KuaiLe"),
+        (id: "source-han-sans", zh: "思源黑体", en: "Noto Sans SC"),
+        (id: "source-han-serif-heavy", zh: "思源宋体 Heavy", en: "Noto Serif SC Heavy"),
+        (id: "inter", zh: "Inter", en: "Inter"),
+        (id: "dmserif", zh: "DM Serif Display", en: "DM Serif Display"),
+        (id: "bebas", zh: "Bebas Neue", en: "Bebas Neue"),
+        (id: "spacegrotesk", zh: "Space Grotesk", en: "Space Grotesk"),
+        (id: "jetbrains", zh: "JetBrains Mono", en: "JetBrains Mono"),
+    ]
+}
+// END GENERATED FONT CATALOG
 import Observation
 import SwiftUI
 
@@ -58,7 +88,7 @@ struct NoteImageSharePreferences: Codable, Equatable {
             theme = value
         }
         if let value = try? values.decode(String.self, forKey: .fontStyle),
-           ["auto", "serif", "sans", "mono", "kai", "smiley", "wenkai", "zhuque", "heavy", "puhui", "puhui-heavy", "youshe", "shuhei"].contains(value) {
+           (["auto", "serif", "sans", "mono", "kai"] + NoteImageFontCatalog.choices.map(\.id)).contains(value) {
             fontStyle = value
         }
         if let value = try? values.decode(String.self, forKey: .fontSize),

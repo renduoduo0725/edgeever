@@ -4,6 +4,7 @@ import {createDocument} from '@mixmark-io/domino';
 import {readFileSync} from 'node:fs';
 import {platformTarget, socialPlatform} from './src/platform-clip.ts';
 import {readSocial,socialPostCard} from './src/social-clip.ts';
+import {docToText,markdownToDoc} from '../../packages/shared/src/content.ts';
 export const socialSamples={
  bluesky:{url:'https://bsky.app/profile/bsky.app/post/3mhgg5ja5gc2w',title:'v1.119 is live!',author:'Bluesky',images:1,text:"what's a bot and what's not."},
  facebook:{url:'https://www.facebook.com/NASA/posts/pfbid0dPToN66CzcAHGMoaNe3jszH4FfBKvqkE5gogCNJkTxXDPsSGYrGvcVwsLgByyMQQl',author:'NASA - National Aeronautics and Space Administration',images:1,text:'in the red cloud'},
@@ -52,6 +53,30 @@ test('Threads shortened visible links bind to the loaded caption without reading
  expect(r.clip.markdown.match(/!\[/g)).toHaveLength(1);
  const a=d.querySelector('a[href="http://go.nasa.gov/Artemis2LunarScience"]');a.setAttribute('href','https://example.test/unrelated');
  expect(readSocial(d,target)).toEqual({ok:false,reason:'unreadable'});
+});
+test('Threads wrapped short links bind only the visible card to the full caption',()=>{
+ const target=platformTarget('https://www.threads.com/@nasa/post/DeMqtuYgkaL');
+ const read=href=>{
+  const d=fixture('threads-short-link');
+  d.querySelector('a[href="http://go.nasa.gov/Artemis2LunarScience"]').setAttribute('href',href);
+  return readSocial(d,target);
+ };
+ const destination='http://go.nasa.gov/Artemis2LunarScience';
+ const wrapped='https://l.threads.com/?u='+encodeURIComponent(destination)+'&h=site-tracking';
+ const r=read(wrapped);expect(r.ok).toBe(true);
+ expect(r.clip.author).toBe('nasa');expect(r.clip.markdown).toContain('go.nasa.gov/Artemis2LunarScience');
+ expect(r.clip.markdown).not.toContain('site-tracking');expect(r.clip.markdown.match(/!\[/g)).toHaveLength(1);
+ for(const href of [
+  'https://l.threads.com/?u='+encodeURIComponent('https://example.test/unrelated'),
+  'https://l.threads.com/?u='+encodeURIComponent('javascript:alert(1)'),
+  'https://l.threads.com/',
+  'https://l.threads.com.example.test/?u='+encodeURIComponent(destination),
+  'https://l.threads.com/other?u='+encodeURIComponent(destination),
+ ]) expect(read(href)).toEqual({ok:false,reason:'unreadable'});
+ const truncated=fixture('threads-short-link');
+ const a=truncated.querySelector('a[href="http://go.nasa.gov/Artemis2LunarScience"]');
+ a.setAttribute('href',wrapped);a.parentElement.firstElementChild.textContent='Truncated body…';
+ expect(readSocial(truncated,target)).toEqual({ok:false,reason:'unreadable'});
 });
 test('LinkedIn signed-in and guest cards share identical body formatting and link destinations',()=>{
  const target=platformTarget(linkedinUgcUrl);
@@ -190,12 +215,23 @@ test('LinkedIn expanded text remains readable when the toggle becomes See less',
 
 test('Bluesky feed uses the visible exact post and keeps the sampled quote and its image without SEO JSON',()=>{
  const d=fixture('bluesky-feed');const r=readSocial(d,platformTarget('https://bsky.app/profile/bsky.app/post/3mxhdhodv222n'));
- expect(r.ok).toBe(true);expect(r.clip.title).toBe('a masterclass in alt text');expect(r.clip.markdown).toContain('Mr. Joshua');expect(r.clip.markdown).toContain('Lil bone people');expect(r.clip.markdown).not.toContain('minesweeper');expect(r.clip.publishedAt.precision).toBe('relative');
+ expect(r.ok).toBe(true);expect(r.clip.title).toBe('a masterclass in alt text');expect(docToText(markdownToDoc(r.clip.markdown))).toContain('Mr. Joshua');expect(r.clip.markdown).toContain('Lil bone people');expect(r.clip.markdown).not.toContain('minesweeper');expect(r.clip.publishedAt.precision).toBe('relative');
 });
 test('Bluesky feed retains the sampled Minesweeper link destination',()=>{
  const r=readSocial(fixture('bluesky-feed'),platformTarget('https://bsky.app/profile/mikelacher.bsky.social/post/3mxepywf4ec2j'));
  expect(r.ok).toBe(true);
  expect(r.clip.markdown).toContain('[minesweeper.mikelacher.com](https://minesweeper.mikelacher.com/)');
+});
+test('Bluesky feed quote link preview remains a parsed image and link in the stored document',()=>{
+ const d=fixture('bluesky-feed-preview'),before=d.body.innerHTML;
+ const r=readSocial(d,platformTarget('https://bsky.app/profile/bsky.app/post/3mxzez2m7wk2r'));expect(r.ok).toBe(true);
+ const parsed=markdownToDoc(r.clip.markdown),images=[],links=[];
+ const visit=n=>{if(n.type==='image')images.push(n.attrs.src);for(const m of n.marks||[])if(m.type==='link')links.push(m.attrs.href);for(const c of n.content||[])visit(c)};visit(parsed);
+ expect(images).toHaveLength(1);expect(images[0]).toContain('/img/feed_fullsize/');
+ expect(links).toContain('https://thenpw.ghost.io/bluesky-wants-more-pro-wrestling-fans/');
+ expect(docToText(parsed)).toContain('interviewed Bluesky\'s Harry Packer about pro wrestling.');
+ expect(docToText(parsed)).toContain('Fans "You want a place');
+ expect(docToText(parsed)).not.toContain('![');expect(docToText(parsed)).not.toContain('](');expect(d.body.innerHTML).toBe(before);
 });
 test('Bluesky rendered links keep full destinations and line breaks with or without SEO text',()=>{
  for(const seo of [true,false]) {
@@ -549,4 +585,47 @@ for(const placement of ['card','header']) test(`LinkedIn personal metadata canno
  expect(r.clip.publishedAt).toEqual({value:'5 个月前',precision:'relative'});
  Array.from(d.querySelectorAll('p')).find(n=>n.textContent.trim()==='5 个月前').remove();
  expect(readSocial(d,platformTarget(linkedinPersonUrl)).clip.publishedAt).toBeUndefined();
+});
+
+for (const invalid of [null, "different-post", "different-route", "invalid-alias"]) test(`Facebook permalink dialog alias ${invalid || "preserves the current post and metadata"}`, () => {
+ const d=fixture('facebook'),target=platformTarget(socialSamples.facebook.url);
+ const alias='pfbid02hCQ2Dyn2D7bjf8FnAL1moEL4JZpzzhvrt25T4UvzYjpryGmgGcMNRSnajxUhBnaNl';
+ for(const a of d.querySelectorAll('a[href]'))a.setAttribute('href',a.getAttribute('href').replaceAll(target.id,alias));
+ const script=d.querySelector('script');const story=JSON.parse(script.textContent.replaceAll(target.id,alias));
+ const route={canonicalRouteName:invalid==='different-route'?'anotherRoute':'comet.fbweb.CometSinglePostDialogRoute',url:invalid==='different-post'?'/NASA/posts/123':new URL(target.url).pathname,params:{page_token:'NASA',story_token:invalid==='invalid-alias'?'not-a-post':alias}};
+ script.textContent=JSON.stringify(story);
+ const routeScript=d.createElement("script");routeScript.type="application/json";routeScript.textContent=JSON.stringify(route);d.head.appendChild(routeScript);
+ const result=readSocial(d,target);
+ if(invalid){expect(result).toEqual({ok:false,reason:'unreadable'});return;}
+ expect(result.ok).toBe(true);expect(result.clip.url).toBe(target.url);
+ expect(result.clip.author).toBe(socialSamples.facebook.author);
+ expect(result.clip.markdown).toContain(socialSamples.facebook.text);
+ expect(result.clip.markdown.match(/!\[/g)).toHaveLength(1);
+ expect(result.clip.publishedAt).toEqual({value:new Date(story.creation_time*1000).toISOString(),precision:'datetime'});
+});
+
+for(const label of ['收起','See less'])test(`Facebook expanded body excludes its ${label} control but keeps literal content`,()=>{
+ const d=fixture('facebook'),body=d.querySelector('[data-ad-preview="message"]');
+ body.appendChild(d.createTextNode(`Literal ${label}`));const button=d.createElement('span');button.setAttribute('role','button');button.textContent=label;body.appendChild(button);
+ const r=readSocial(d,platformTarget(socialSamples.facebook.url));expect(r.ok).toBe(true);
+ expect(r.clip.markdown).toContain(`Literal ${label}`);expect(r.clip.markdown.split(label)).toHaveLength(2);
+});
+
+test('Bluesky quote image alt badges are UI while alt descriptions and prose survive',()=>{
+ const d=fixture('bluesky-feed'),target=platformTarget('https://bsky.app/profile/bsky.app/post/3mxhdhodv222n');
+ const card=socialPostCard(d,target),quote=card.querySelector('[role="link"][aria-label^="Post by "]'),button=quote.querySelector('button:has(img)');
+ const holder=d.createElement('div');button.replaceWith(holder);holder.appendChild(button);
+ const badge=d.createElement('div');badge.style.position='absolute';badge.innerHTML='<div>替代文本</div>';holder.appendChild(badge);
+ const prose=d.createElement('p');prose.textContent='正文中的替代文本与 ALT 需要保留。';quote.appendChild(prose);
+ const before=d.body.innerHTML,r=readSocial(d,target);expect(r.ok).toBe(true);
+ const parsed=markdownToDoc(r.clip.markdown),text=docToText(parsed);expect(text).toContain('正文中的替代文本与 ALT 需要保留。');expect(text.match(/替代文本/g)).toHaveLength(1);
+ expect(r.clip.markdown).toContain('Lil bone people');expect(r.clip.markdown).toContain('/img/feed_fullsize/');expect(d.body.innerHTML).toBe(before);
+});
+
+test('Threads native pressable quote stays inside the parent boundary and cannot substitute its caption',()=>{
+ const d=fixture('threads'),target=platformTarget(socialSamples.threads.url),script=d.querySelector('script'),data=JSON.parse(script.textContent),caption=data.caption.text;
+ data.text_post_app_info={share_info:{quoted_post:{code:'Quote123',user:{username:'esa'},caption:{text:'Quoted science.'},media_type:19}}};script.textContent=JSON.stringify(data);
+ const state=script.cloneNode(true);d.body.innerHTML=`<div data-pressable-container="true"><div><a href="${target.url}"><time datetime="2026-10-01T00:00:00Z">Parent</time></a><a href="/@nasa">NASA</a><p></p><div data-pressable-container="true"><a href="https://www.threads.com/@esa/post/Quote123"><time datetime="2026-09-01T00:00:00Z">Quote</time></a><p>Quoted science.</p><button>Like quote</button><button>Reply quote</button><button>Share quote</button></div><button>Like</button><button>Reply</button><button>Share</button></div></div><div data-pressable-container="true"><a href="/@other/post/Other123"><time datetime="2026-10-01T00:00:00Z">Neighbor</time></a><p>Neighbor sentinel</p></div>`;d.body.appendChild(state);
+ d.querySelector('p').textContent=caption;const r=readSocial(d,target);expect(r.ok).toBe(true);expect(r.clip.markdown).toContain('Quoted science.');expect(r.clip.markdown).not.toContain('Neighbor sentinel');
+ d.querySelector('p').setAttribute('hidden','');d.querySelector('[data-pressable-container] [data-pressable-container] p').textContent=caption;expect(readSocial(d,target)).toEqual({ok:false,reason:'unreadable'});
 });

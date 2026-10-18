@@ -2,7 +2,45 @@
 
 [简体中文](browser-clipper-platforms.zh-CN.md)
 
-Related to [Issue #493](https://github.com/tianma-if/edgeever/issues/493) and the [implementation plan](browser-clipper-platform-expansion-plan.md). Updated: 2026-10-15. Phase 1 is merged; Phase 2 and the remaining requested adapters are implemented locally; extension-store publication and full cross-browser live acceptance remain pending.
+Related to [Issue #493](https://github.com/tianma-if/edgeever/issues/493) and the [implementation plan](browser-clipper-platform-expansion-plan.md). Platform adapters were merged through #505, #521 and #578; cross-browser and signed-in live acceptance continues in the [Issue #588 acceptance matrix](browser-clipper-acceptance-588.md). The records below retain their original code, environment and acceptance boundaries.
+
+The 2026-10-18 follow-up covers the specified current Jike Web feed, signed-in LinkedIn company feed, Bluesky quoted feed and complete Substack article in Edge/Firefox. See the matrix above for repairs and remaining browser-environment limits.
+
+The ninth round on 2026-10-18 adds Edge signed-in Xueqiu recommended, Facebook expanded, Jike following and Bluesky quoted feed cards, repairing classic Xueqiu targeting. Four notes and thirteen images reopen with sources blocked. See the acceptance record for minor formatting observations, build boundaries and cleanup evidence.
+
+The tenth round on 2026-10-18 adds Edge Douban movie/music/diary/comment and ego lite public Medium acceptance, repairing CJK bold boundaries, Bluesky badges and missing Medium in-story link previews. All 476 extension tests pass; see the acceptance record for native saves, source-blocked reopen and cleanup.
+
+The 2026-10-18 overall review fixes Jike button-media loss, Jike/Medium restored-visible descendants being rejected and missing Medium body h1 headings. All 3,743 non-E2E tests pass, including 481 extension tests; one Windows-only case is conditionally skipped. See the acceptance record for independent review and build boundaries.
+
+## 2026-10-18 audit against the original #493 requirements
+
+The [original issue and maintainer closure](https://github.com/tianma-if/edgeever/issues/493#issuecomment-6208560808) are fetched again and compared with current code, fixtures, regressions and live records. GitHub confirms #505, #521 and #578 are MERGED. All 15 groups/17 platforms have implementations. The issue closes development delivery; store publication, every browser/layout and full signed-in BOSS acceptance remain separate. “Live” below only means the recorded samples.
+
+| Original requirement | Implementation/evidence | Result/boundary |
+| --- | --- | --- |
+| Facebook: complete own post, actor, time, photos, exclude controls/comments | social-clip; expansion capture; signed-in Edge three-photo feed | Implemented; sampled live coverage |
+| Instagram: post/carousel, merged captions, handle, time | social-clip; three-image and 20-media regression/live cases | Implemented; sampled live coverage |
+| LinkedIn: full post, see more, name/job title, time/photos | social-clip/capture-platform; personal/job-title, company feed, SDUI UGC | Implemented; sampled live coverage |
+| Substack: article, author/time, formatting, remove Subscribe/paywall UI | substack-content/article-metadata; full article, paid refusal/selection | Implemented; sampled live coverage |
+| Medium: body/subtitle/author, code highlighting, remove recommendations | medium-content; capture-bundle code preservation; controlled language/highlight probe | Body/subtitle/two images live; rounds eleven/twelve verify 40 real code blocks/highlighting in all three browsers |
+| Hacker News: Ask body/Show link, author, score/time | hacker-news-clip; body/link/UTC tests and native actions | Implemented; sampled live coverage |
+| Threads/Bluesky: post, actor/time, quotes/original images | social-clip quote regressions; native Bluesky quotes | Edge text/photo quotes and Firefox/ego lite photo quotes pass; other recorded samples retained |
+| BOSS: job, salary, city, duties/requirements/company | boss-clip; full-field and restricted fixtures | Implemented; full signed-in persistence/reopen belongs to #589 |
+| Xueqiu: article/research, author/images, investment/stock tags | xueqiu-clip; stock-tag fixtures, signed-in eight-image feed | Implemented; sampled live coverage |
+| Xiaoyuzhou: episode, complete Show Notes, timestamps, hosts/show | xiaoyuzhou-clip; explicit hosts, six nodes, over-one-hour timestamps | Implemented; no inference of hosts from show authors |
+| WeChat: rich body, account/author, cover/inline images, cleanup | article-clip; code/lazy-image/cover/footer regressions, 21 live images | Implemented; sampled live coverage |
+| Jike: complete/expanded post, actor/time, original single/grid images | jike-clip/jike-web-state; order/identity/expansion and live cases | Implemented; round twelve rechecks latest filtering in all three browsers |
+| V2EX: body and every supplement as Markdown | v2ex-clip; two supplements/times, replies excluded | Implemented; sampled live coverage |
+| Sspai/Juejin: body, code, structured large images | article-clip/platform-clip; language/indent/table and real archival | Implemented; Edge Sspai 8/9 correctly reports partial archival |
+| Douban: book/movie/music long/short reviews and diaries | douban-clip; all types/three short-comment hosts, Edge follow-up | Implemented; sampled live coverage |
+
+Shared requirements are traced through actual persistence: `performPlatformSave` stores title, actor/job title, original time, source and platform tags. Medium/Substack use `createMemo` with `web-clip` and platform tags. Images enter existing `page-images` download/upload/rewrite with honest partial-failure feedback; this is not every client's cold-start offline proof. All 16 new menu messages are nonempty in zh_CN/en/ja. Platform extraction/identity/save regressions exist. The just-completed 3,743 non-E2E results are retained rather than rerunning everything for read-only inspection.
+
+The audit identified two targeted live gaps: a Medium code story and a Threads quote. Existing controlled code/quote regressions did not represent their current real DOM. Round eleven subsequently exposed and fixed Medium language/newline loss and rejection of nested Threads quote timestamps; the earlier controlled results were not live proof.
+
+Round eleven closes both checks using the signed-in native Edge extension: public Medium story `1a538c9389fe` preserves all characters/newlines in 40 code blocks and their 38 JavaScript/two XML languages. Reopening with sources/CDNs blocked produces 551 actual syntax spans. Threads text quote `@mosseri/DeAlGo0I71T` and photo quote `@mkbhd/DehHSaCnEmU` save/reopen with main and quoted captions, quoted actor and original photo intact. Independent source downloads match archived image bytes. These targeted gaps are closed without extending latest-build coverage to every layout or browser. Risk, checks and cleanup are recorded in [round eleven of #588](browser-clipper-acceptance-588.md).
+
+#493 retains its development-delivery closure boundary; #587 store delivery/update, #588 browsers/signed-in flows and #589 full BOSS jobs remain separate. Initial read-only audit evidence: `/private/tmp/edgeever-issue-493-audit-20261018`; repair/live evidence: `/private/tmp/edgeever-issue-588-20261017-uz6mqhpj/evidence/eleventh`. No commit, push, deployment or GitHub issue update.
 
 ## 2026-10-15 PR submission verification
 
@@ -311,3 +349,15 @@ The complete live-site save workflow with the extension loaded in each of Chrome
 The review corrected a truncated Instagram parent caption by saving the complete loaded per-slide captions, retaining independent parent text. It also bound Meta readability and context-menu targeting to the same post card, excluded hidden Facebook/Bluesky/LinkedIn bodies, removed an unsupported Bluesky image-count guess based on ordinary fractions, and stopped recognized unreadable Medium/Substack articles from falling back to whole-page extraction. Article identity and Markdown conversion now reuse shared helpers. The previous Instagram checks did not assert the final slide text; the new regression and Chromium editor check do.
 
 The end-to-end fixture suite covers all 15 samples through the real extension, local API, image archiving and reopening with source hosts blocked, plus unreadable/hidden refusal and cleanup. It uses the same workerd directly for extension, API assertions and editor API requests because the local development proxy intermittently times out. This verifies the local business flow, not the proxy or live CDN behavior across every site/browser. The HTML safety browser check also passes. Firefox is build/lint checked only; there is no new Firefox runtime acceptance in this review.
+
+2026-10-18 follow-up: the user manually triggered ego lite’s native toolbar twice for the full Substack article. Both saves archived 3/3 images and passed source/CDN-blocked reopening, with matching bodies and six decoded images. Test data and the dedicated token were removed, preserving original data. See the [#588 acceptance record](browser-clipper-acceptance-588.md).
+
+2026-10-18 sixth-round follow-up: Firefox added Instagram 20-media and Douban movie/music reviews, diary and a single short comment; Edge added Instagram 20-media and a public Facebook detail. Seven notes and 52 attachments passed actual saving and source-blocked reopening. Edge Threads/LinkedIn safely refuse under login overlays, with signed-in acceptance pending user sign-in; Firefox Medium remains blocked by site verification. Test data, tokens, copied sessions and helpers were cleaned, preserving original data and product artifact hashes. See the [#588 acceptance record](browser-clipper-acceptance-588.md).
+
+2026-10-18 seventh-round follow-up: after user sign-in in the original Edge window, Threads four-image/short-link details and LinkedIn SDUI UGC eight-image detail passed native-toolbar saving, complete source-body comparison and source-blocked reopening. All 13 attachments match independent source downloads in order. Three notes, 13 resources and the dedicated token were cleaned, preserving original data and website logins. Edge Medium still awaits user handling of Cloudflare verification. See the [#588 acceptance record](browser-clipper-acceptance-588.md).
+
+2026-10-18 Medium eighth-round follow-up: after separate user verification in Edge/Firefox, the public story “Come to my Medium Day talk” passed native saving, all 16 body blocks/five list items/ending, 1/1 image archival and source-blocked reopening in both browsers. The original story now has a member preview; Edge verifies only its 11 visible text blocks and one image, with no hidden paid body. Three notes/resources and the dedicated token were cleaned, preserving original data, site logins and verification state. See the [#588 acceptance record](browser-clipper-acceptance-588.md).
+
+2026-10-18 round twelve verifies the final build’s Medium 40 code blocks/highlighting and Threads photo quote in Firefox/ego lite, plus nine Jike image positions in all three browsers. Firefox/ego lite each reopen eleven local images with sources blocked; Edge Jike honestly reports 8/9 archival and reopens eight local files. Seven notes/30 resources/token cleanup, original-data checks and evidence for all six #588 completion conditions are in the [acceptance record](browser-clipper-acceptance-588.md). Ready for maintainer closure review, without a GitHub write; natural card recycling, unsampled layouts and #587/#589 limits remain.
+
+2026-10-18 round thirteen fixes Medium nested-container code and root `pre` paragraph language/newline omissions, removing an unsupported language-length limit. Full non-E2E 3,746 and extension 484 tests pass; independent reviews converge. This round is automated verification; prior runtime evidence is not retroactively assigned the new build. See the [acceptance record](browser-clipper-acceptance-588.md).

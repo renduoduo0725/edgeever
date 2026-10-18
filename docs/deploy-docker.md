@@ -188,5 +188,45 @@ docker run --rm -p 8787:8787 \
   edgeever:local
 ```
 
+### System information metadata
+
+**Settings → System information** separates how the image was built from how
+the instance was deployed. Official images fill in the build fields; self-built
+images report them as unknown unless you pass the build arguments below.
+
+| Field | Source | Meaning |
+| ----- | ------ | ------- |
+| Instance build | `--build-arg EDGE_EVER_BUILD_ID` | Commit the image was built from |
+| Image built at | `--build-arg EDGE_EVER_BUILD_CREATED_AT` (ISO 8601) | When the image was built, not when it was deployed or started |
+| Image build source | `--build-arg EDGE_EVER_BUILD_TRIGGER` / `EDGE_EVER_BUILD_METHOD` | How the image was produced, for example `github_release` · `github_actions` for official release images |
+| Container image source | runtime `EDGE_EVER_CONTAINER_IMAGE` | Registry the image was pulled from; set by the official `compose.yaml` |
+| Deployment source | runtime `EDGE_EVER_DEPLOYMENT_TRIGGER` / `EDGE_EVER_DEPLOYMENT_METHOD` | How you deployed this instance; unknown unless you set it |
+| Instance deployment time | Cloudflare only | Docker does not report a deployment time |
+
+Triggers are `github_release`, `main_push` or `manual`. `EDGE_EVER_DEPLOYMENT_METHOD=docker`
+describes a container deployment, while `github_actions`, `cloudflare_workers_builds`
+and `local_cli` describe the mechanism that ran a build or deployment. EdgeEver
+never infers Docker or the registry on its own, because the same server also runs
+directly under Bun and images can be copied between registries. Missing or invalid
+values are shown as unknown.
+
+For a self-built image:
+
+```sh
+docker build \
+  --build-arg EDGE_EVER_BUILD_ID="$(git rev-parse HEAD)" \
+  --build-arg EDGE_EVER_BUILD_CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --build-arg EDGE_EVER_BUILD_TRIGGER=manual \
+  --build-arg EDGE_EVER_BUILD_METHOD=local_cli \
+  --tag edgeever:local .
+docker run --rm -p 8787:8787 \
+  -e EDGE_EVER_AUTH_PASSWORD='replace-with-a-long-random-password' \
+  -e EDGE_EVER_CONTAINER_IMAGE=edgeever:local \
+  -e EDGE_EVER_DEPLOYMENT_TRIGGER=manual \
+  -e EDGE_EVER_DEPLOYMENT_METHOD=docker \
+  -v edgeever-data:/data \
+  edgeever:local
+```
+
 PostgreSQL is not supported in the first Docker release. It remains a future
 storage adapter and will not introduce a separate business-code branch.

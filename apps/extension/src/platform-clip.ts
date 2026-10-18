@@ -88,7 +88,8 @@ export const platformTarget = (pageUrl: string): PlatformTarget | null => {
     }
   }
   if (url.hostname === "m.okjike.com" || url.hostname === "web.okjike.com") {
-    const id = (url.hostname === "m.okjike.com" ? /^\/originalPosts\/([a-f0-9]{24})\/?$/ : /^\/originalPost\/([a-f0-9]{24})\/?$/).exec(url.pathname)?.[1];
+    const id = (url.hostname === "m.okjike.com" ? /^\/originalPosts\/([a-f0-9]{24})\/?$/ : /^\/originalPost\/([a-f0-9]{24})\/?$/).exec(url.pathname)?.[1]
+      || (url.hostname === "web.okjike.com" ? /^\/u\/[^/]+\/post\/([a-f0-9]{24})\/?$/.exec(url.pathname)?.[1] : undefined);
     if (id) return { platform: "jike", id, url: `https://m.okjike.com/originalPosts/${id}` };
   }
   if (url.hostname === "sspai.com" || url.hostname === "www.sspai.com" || url.hostname === "juejin.cn") {
@@ -300,10 +301,23 @@ export const platformHtmlMarkdown = (body: Element | DocumentFragment, baseUrl: 
   const options: TurndownService.Options & {preserveTableHtml: boolean} = { bulletListMarker: "-", codeBlockStyle: "fenced", headingStyle: "atx", linkStyle: "inlined", preserveTableHtml:false };
   const turndown = new TurndownService(options);
   turndown.use(tables);
+  turndown.addRule("platformCjkStrong", {
+    filter: ["strong", "b"],
+    replacement: (content, node) => {
+      // CommonMark cannot close emphasis after punctuation before unspaced
+      // prose. Keep every character, moving only that punctuation outside bold.
+      const suffix = /^[\p{L}\p{N}]/u.test(node.nextSibling?.textContent || "")
+        ? content.match(/[，。！？；：、]+$/u)?.[0] || "" : "";
+      const text = suffix ? content.slice(0, -suffix.length) : content;
+      return text.trim() ? `**${text}**${suffix}` : content;
+    },
+  });
   // Escape literal text at Turndown's text boundary. Code blocks keep their
   // exact bytes, and a pasted HTML tag cannot become a note element.
   const escape=turndown.escape.bind(turndown);
-  turndown.escape=(value)=>escape(value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"));
+  turndown.escape=(value)=>escape(value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"))
+    // TipTap also recognizes alphabetic/Roman list markers, including "Dr.".
+    .replace(/^([ \t]*[A-Za-z]+)([.)])(?=\s)/gm,"$1\\$2");
   const oddPipeBackslashes = (value: string) => Array.from(value.matchAll(/(\\+)\|/g)).some(match => match[1].length % 2 === 1);
   // GFM code spans cannot encode an odd backslash run before a pipe without
   // changing bytes or columns. Keep that fragment as escaped text instead.

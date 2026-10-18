@@ -4,7 +4,7 @@ import { FileText, Folder, Loader2, MessageCircle, Tag, X } from "lucide-react";
 import type {
   CompanionAction, CompanionAnswer, CompanionDiscoverySettings, CompanionEvent, CompanionMention, CompanionTurn, CompanionTurnInput,
 } from "@edgeever/shared";
-import { parseCompanionMentionQuery } from "@edgeever/shared";
+import { parseCompanionMentionQuery, getMemoDisplayTitle } from "@edgeever/shared";
 import { Button } from "@/components/ui/button";
 import { api, ApiRequestError } from "@/lib/api";
 import { companionLocale } from "@/lib/companion-locale";
@@ -118,7 +118,7 @@ export function CompanionChat({
         if (cancelled || !alive.current) return;
         const lower = query.toLowerCase();
         setMentionHits([
-          ...memos.memos.slice(0, 5).map(memo => ({ type: "memo" as const, id: memo.id, title: memo.title || t("common.untitledMemo") })),
+          ...memos.memos.slice(0, 5).map(memo => ({ type: "memo" as const, id: memo.id, title: getMemoDisplayTitle(memo.title, t("common.untitledMemo")) })),
           ...notebooks.notebooks.filter(notebook => !query || notebook.name.toLowerCase().includes(lower)).slice(0, 4)
             .map(notebook => ({ type: "notebook" as const, id: notebook.id, title: notebook.name })),
           ...tags.tags.filter(tag => !query || tag.name.toLowerCase().includes(lower)).slice(0, 4)

@@ -1,3 +1,4 @@
+import { POSTER_FONT_NOTICES } from "./poster-font-notices";
 import { readFontCache, writeFontCache } from "./note-image-font-cache";
 import { FONT_CATALOG, parseRemoteFontCss, remoteFontCssUrl, remoteFontUrls, remoteOriginalFont, remoteFontIntegrity, type RemoteNoteImageFont } from "./font-catalog";
 import { NOTE_IMAGE_REMOTE_FONT_NOTICES } from "./note-image-remote-font-notices";
@@ -29,7 +30,14 @@ export const createRemoteFontResourceLoader = () => {
       pending = (async () => {
         const cached = await readFontCache(url);
         if (cached && await validRemoteResource(cached, css, url)) return cached;
-        for (const mirror of remoteFontUrls(url)) {
+        const mirrors = remoteFontUrls(url);
+        const entry = remoteFontIntegrity(url);
+        // Web/desktop already ship these poster assets. Reuse them without adding
+        // another copy, and cache under the same pinned key used by native WebViews.
+        if (entry?.path.startsWith("gh/") && typeof location !== "undefined" && /^https?:$/.test(location.protocol)) {
+          mirrors.unshift(new URL(`/poster-fonts/${entry.path.split("/").at(-1)}`, location.href).href);
+        }
+        for (const mirror of mirrors) {
           try {
             const data = await new Promise<ArrayBuffer>((resolve, reject) => {
               const request = new XMLHttpRequest();
@@ -44,7 +52,7 @@ export const createRemoteFontResourceLoader = () => {
             if (!await validRemoteResource(data, css, url)) continue;
             await writeFontCache(url, data);
             return data;
-          } catch { /* Try the second pinned mirror. Never send note text to either host. */ }
+          } catch { /* Try the next pinned source. Never send note text in requests. */ }
         }
         throw new Error("NOTE_IMAGE_FONT_UNAVAILABLE");
       })();
@@ -110,8 +118,8 @@ export const loadCatalogFont = async (id: RemoteNoteImageFont, text: string, { e
     return embed ? `@font-face{font-family:"${family}";font-style:normal;font-weight:${block.weight};src:url("${await remoteDataUrl(block.asset)}");unicode-range:${block.range}}` : "";
   }));
   if (!embed || !blocks.length) return "";
-  const notices = original
+  const notices = POSTER_FONT_NOTICES[id] ?? (original
     ? `Original font loaded unchanged from ${original.asset}. Original copyright and licensing metadata are retained in the font container. Alibaba: https://fonts.alibabagroup.com/ ; YouShe: https://www.uisdc.com/ . No conversion or subsetting is performed.`
-    : NOTE_IMAGE_REMOTE_FONT_NOTICES;
+    : NOTE_IMAGE_REMOTE_FONT_NOTICES);
   return `/*! ${notices.replaceAll("*/", "* /")} */\n${css.join("\n")}`;
 };

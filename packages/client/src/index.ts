@@ -140,6 +140,10 @@ export type InstanceHealth = {
   build?: string | null;
   deployment?: DeploymentMetadata | null;
   deploymentVersionCreatedAt?: string | null;
+  /** Self-hosted images only: when the container image was built. */
+  buildCreatedAt?: string | null;
+  /** Self-hosted images only: how the container image was built, not how it was deployed. */
+  buildProvenance?: DeploymentMetadata | null;
   migration?: string | null;
   storage?: {
     database?: "d1" | "sqlite" | string | null;

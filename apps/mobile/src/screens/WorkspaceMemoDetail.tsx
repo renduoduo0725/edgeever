@@ -1,3 +1,4 @@
+import { FONT_CATALOG, FONT_IDS } from "@edgeever/shared/font-catalog";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_MEMO_TITLE, parseDiagramDocument, type MemoDetail, type Notebook, type TiptapDoc } from "@edgeever/shared";
 import {
@@ -239,14 +240,7 @@ const MOBILE_FONT_OPTIONS: Array<{ id: NoteImageFontStyle; labelZh: string; labe
   { id: "serif", labelZh: "文艺衬线", labelEn: "Serif" },
   { id: "sans", labelZh: "现代无衬线", labelEn: "Sans" },
   { id: "mono", labelZh: "极客等宽", labelEn: "Mono" },
-  { id: "smiley", labelZh: "得意黑", labelEn: "Smiley Sans" },
-  { id: "wenkai", labelZh: "霞鹜文楷", labelEn: "LXGW WenKai" },
-  { id: "zhuque", labelZh: "朱雀仿宋", labelEn: "Zhuque Fangsong" },
-  { id: "heavy", labelZh: "思源黑体 Heavy", labelEn: "Noto Sans SC Heavy" },
-  { id: "puhui", labelZh: "普惠体", labelEn: "PuHuiTi" },
-  { id: "puhui-heavy", labelZh: "普惠体 Heavy", labelEn: "PuHuiTi Heavy" },
-  { id: "youshe", labelZh: "优设标题黑", labelEn: "YouShe Title" },
-  { id: "shuhei", labelZh: "阿里妈妈数黑体", labelEn: "Alimama ShuHei" },
+  ...FONT_IDS.map(id => ({ id, labelZh: FONT_CATALOG[id].zh, labelEn: FONT_CATALOG[id].en })),
 ];
 
 const AuthenticatedResourceImage = ({

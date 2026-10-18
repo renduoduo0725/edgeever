@@ -189,6 +189,10 @@ export const WorkspaceScreen = ({
   const memoDraftPrefetchRef = useRef(new Map<string, Promise<MobileMemoDraft | null>>());
   const memoDraftValueRef = useRef(new Map<string, MobileMemoDraft | null>());
   const processedShareUrlRef = useRef<string | null>(null);
+  const incomingShareTaskRef = useRef<object | null>(null);
+  useEffect(() => () => {
+    incomingShareTaskRef.current = null;
+  }, []);
   const onIncomingShareHandledRef = useRef(onIncomingShareHandled);
   onIncomingShareHandledRef.current = onIncomingShareHandled;
   const debouncedSearchText = useDebouncedValue(searchText.trim(), 250);
@@ -655,37 +659,36 @@ export const WorkspaceScreen = ({
       return;
     }
 
-    let active = true;
+    // Payload resolution and notebook refreshes rerun this effect. They must not
+    // cancel an accepted clip or skip its cleanup just because its URL is unchanged.
+    const task = {};
+    incomingShareTaskRef.current = task;
+    const isActive = () => incomingShareTaskRef.current === task;
     processedShareUrlRef.current = sourceUrl;
     setIsImportingShare(true);
     if (isWeChatArticleUrl(sourceUrl)) {
       setIncomingClipCaptureUrl(sourceUrl);
-      return () => {
-        active = false;
-      };
+      return;
     }
     void buildMobileWebClipDraft(sourceUrl, { locale: resolvedLocale })
       .then((draft) => {
-        if (!active) {
+        if (!isActive()) {
           return;
         }
         openIncomingClipDraft(draft);
       })
       .catch(() => {
-        if (active) {
+        if (isActive()) {
           Alert.alert("剪藏失败", "无法读取分享的网页，请稍后重试。");
         }
       })
       .finally(() => {
-        if (active) {
+        if (isActive()) {
+          incomingShareTaskRef.current = null;
           setIsImportingShare(false);
           onIncomingShareHandledRef.current?.();
         }
       });
-
-    return () => {
-      active = false;
-    };
   }, [
     incomingShareError,
     incomingShareIsResolving,

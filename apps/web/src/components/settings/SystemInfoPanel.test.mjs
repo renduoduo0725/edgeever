@@ -30,6 +30,17 @@ describe("system information diagnostic fields", () => {
     expect(syncIssueSource.replaceAll("getShareableWebSystemInfoItems", "")).not.toContain("getWebSystemInfoItems");
   });
 
+  test("shows Docker image build metadata separately from the instance deployment", () => {
+    const selfHosted = source.slice(source.indexOf('diagnostics.instance?.runtime === "self-hosted-bun"'));
+    expect(selfHosted).toContain('t("systemInfo.imageBuiltAt")');
+    expect(selfHosted).toContain("diagnostics.instance.buildCreatedAt");
+    expect(selfHosted).toContain('t("systemInfo.imageBuildSource")');
+    expect(selfHosted).toContain("resolveSystemInfoDeploymentMetadata(diagnostics.instance.buildProvenance, {}, false)");
+    // The deployment time keeps its meaning and never falls back to the image build time.
+    expect(source).toContain("formatInstanceTimestamp(diagnostics.instance?.deploymentVersionCreatedAt, language)");
+    expect(source).not.toContain("deploymentVersionCreatedAt ?? diagnostics.instance?.buildCreatedAt");
+  });
+
   test("includes current device model from client runtime diagnostics", () => {
     expect(source).toContain('t("systemInfo.deviceModel")');
     expect(source).toContain("diagnostics.clientRuntime?.deviceModel");

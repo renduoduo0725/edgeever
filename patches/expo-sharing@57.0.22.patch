@@ -1,8 +1,15 @@
 diff --git a/android/src/main/java/expo/modules/sharing/ShareIntoUtils.kt b/android/src/main/java/expo/modules/sharing/ShareIntoUtils.kt
 --- a/android/src/main/java/expo/modules/sharing/ShareIntoUtils.kt
 +++ b/android/src/main/java/expo/modules/sharing/ShareIntoUtils.kt
-@@ -50,6 +50,20 @@
-   return intent.type != null && allowedShareActions.contains(intent.action)
+@@ -47,9 +47,26 @@
+ internal fun isShareIntent(intent: Intent): Boolean {
+   val allowedShareActions =
+     listOf("android.intent.action.SEND", "android.intent.action.SEND_MULTIPLE")
+-  return intent.type != null && allowedShareActions.contains(intent.action)
++  // Android can recreate a task with its original SEND intent. That is a
++  // history launch, not a new share, even after the JS process has been killed.
++  return intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0 &&
++    intent.type != null && allowedShareActions.contains(intent.action)
  }
  
 +internal fun getShareIntentUris(intent: Intent): List<Uri> {
@@ -147,13 +154,82 @@ diff --git a/android/src/main/java/expo/modules/sharing/dataParsers/SimpleShareI
 diff --git a/src/useIncomingShare.ts b/src/useIncomingShare.ts
 --- a/src/useIncomingShare.ts
 +++ b/src/useIncomingShare.ts
-@@ -60,6 +60,9 @@
-         setIsResolving(true);
+@@ -2,7 +2,7 @@
+ import type { AppStateStatus } from 'react-native';
+ import { AppState } from 'react-native';
+ 
+-import { clearSharedPayloads, getResolvedSharedPayloadsAsync, getSharedPayloads } from './Sharing';
++import { clearSharedPayloads as clearNativeSharedPayloads, getResolvedSharedPayloadsAsync, getSharedPayloads } from './Sharing';
+ import type { ResolvedSharePayload, SharePayload, UseIncomingShareResult } from './Sharing.types';
+ 
+ function sharePayloadsAreEqual(a: SharePayload[], b: SharePayload[]): boolean {
+@@ -42,6 +42,17 @@
+   const [error, setError] = useState<Error | null>(null);
+   const currentSharedDataRef = useRef<SharePayload[]>([]);
+ 
++  const resolutionVersionRef = useRef(0);
++  const clearSharedPayloads = useCallback(() => {
++    clearNativeSharedPayloads();
++    resolutionVersionRef.current += 1;
++    currentSharedDataRef.current = [];
++    setSharedPayloads([]);
++    setResolvedSharedPayloads([]);
++    setError(null);
++    setIsResolving(false);
++  }, []);
++
+   const refreshSharePayloads = useCallback(async () => {
+     try {
+       const newSharedData: SharePayload[] = getSharedPayloads();
+@@ -51,22 +62,28 @@
+         return;
+       }
+ 
++      const version = ++resolutionVersionRef.current;
+       currentSharedDataRef.current = newSharedData;
+       setSharedPayloads(newSharedData);
+       setResolvedSharedPayloads([]);
+       setError(null);
+ 
++      setIsResolving(newSharedData.length > 0);
+       if (newSharedData.length > 0) {
+-        setIsResolving(true);
          try {
            const resolved = await getResolvedSharedPayloadsAsync();
++          if (version !== resolutionVersionRef.current) return;
 +          if (resolved.length === 0) {
 +            throw new Error('Shared content could not be resolved');
 +          }
            setResolvedSharedPayloads(resolved);
          } catch (e) {
++          if (version !== resolutionVersionRef.current) return;
            setError(
+             e instanceof Error ? e : new Error('Unknown error during shared payload resolution')
+           );
+         } finally {
+-          setIsResolving(false);
++          if (version === resolutionVersionRef.current) setIsResolving(false);
+         }
+       }
+     } catch (e) {
+diff --git a/android/src/main/java/expo/modules/sharing/SharingModule.kt b/android/src/main/java/expo/modules/sharing/SharingModule.kt
+--- a/android/src/main/java/expo/modules/sharing/SharingModule.kt
++++ b/android/src/main/java/expo/modules/sharing/SharingModule.kt
+@@ -75,6 +75,17 @@
+ 
+     Function("clearSharedPayloads") {
+       SharingSingleton.intent = null
++      // ReactActivity retains the last SEND intent across task/activity recreation.
++      // Clearing only the singleton lets a consumed share be imported again.
++      appContext.currentActivity?.let { activity ->
++        val intent = activity.intent
++        if (intent != null && (isShareIntent(intent) || intent.data?.host == "expo-sharing")) {
++          activity.intent = Intent(Intent.ACTION_MAIN).apply {
++            component = intent.component
++            addCategory(Intent.CATEGORY_LAUNCHER)
++          }
++        }
++      }
+     }
+ 
+     OnActivityResult { _, (requestCode) ->

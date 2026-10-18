@@ -34,7 +34,7 @@ export type SystemInfoItem = {
   breakAll?: boolean;
 };
 
-type InstanceSystemDiagnostics = Pick<InstanceHealth, "build" | "containerImageSource" | "deployment" | "deploymentVersionCreatedAt" | "migration" | "objectStorageProvider" | "storage"> & {
+type InstanceSystemDiagnostics = Pick<InstanceHealth, "build" | "buildCreatedAt" | "buildProvenance" | "containerImageSource" | "deployment" | "deploymentVersionCreatedAt" | "migration" | "objectStorageProvider" | "storage"> & {
   runtime?: string | null;
 };
 
@@ -80,6 +80,11 @@ const getDeploymentDescription = (
   const method = t(`systemInfo.deploymentMethods.${deployment.method}`);
   return `${trigger} · ${method}`;
 };
+
+const formatInstanceTimestamp = (value: string | null | undefined, language: string) =>
+  value && Number.isFinite(Date.parse(value))
+    ? new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value))
+    : null;
 
 const getContainerImageSourceTranslationKey = (source: string | null | undefined) => {
   if (source === "official-ghcr" || source === "official-cn-mirror" || source === "custom") return source;
@@ -166,9 +171,7 @@ const getWebSystemInfoGroups = (
         { label: t("systemInfo.instanceBuild"), value: diagnostics.instance?.build ?? t("systemInfo.unknown"), mono: true },
         {
           label: t("systemInfo.deploymentVersionTime"),
-          value: diagnostics.instance?.deploymentVersionCreatedAt && Number.isFinite(Date.parse(diagnostics.instance.deploymentVersionCreatedAt))
-            ? new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(new Date(diagnostics.instance.deploymentVersionCreatedAt))
-            : t("systemInfo.unknown"),
+          value: formatInstanceTimestamp(diagnostics.instance?.deploymentVersionCreatedAt, language) ?? t("systemInfo.unknown"),
         },
         { label: t("systemInfo.databaseMigration"), value: diagnostics.instance?.migration ?? t("systemInfo.unknown"), mono: true },
         {
@@ -196,10 +199,20 @@ const getWebSystemInfoGroups = (
           value: t(`systemInfo.deploymentPlatforms.${resolveDeploymentPlatform(diagnostics.instance?.runtime)}`),
         },
         ...(diagnostics.instance?.runtime === "self-hosted-bun"
-          ? [{
-              label: t("systemInfo.containerImageSource"),
-              value: t(`systemInfo.containerImageSources.${getContainerImageSourceTranslationKey(diagnostics.instance.containerImageSource)}`),
-            }]
+          ? [
+              {
+                label: t("systemInfo.containerImageSource"),
+                value: t(`systemInfo.containerImageSources.${getContainerImageSourceTranslationKey(diagnostics.instance.containerImageSource)}`),
+              },
+              {
+                label: t("systemInfo.imageBuiltAt"),
+                value: formatInstanceTimestamp(diagnostics.instance.buildCreatedAt, language) ?? t("systemInfo.unknown"),
+              },
+              {
+                label: t("systemInfo.imageBuildSource"),
+                value: getDeploymentDescription(t, resolveSystemInfoDeploymentMetadata(diagnostics.instance.buildProvenance, {}, false)),
+              },
+            ]
           : []),
         { label: t("systemInfo.deployment"), value: getDeploymentDescription(t, deployment), colSpan: "full" },
       ],

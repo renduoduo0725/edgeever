@@ -2,6 +2,21 @@ import XCTest
 @testable import EdgeEver
 
 final class WebClipperTests: XCTestCase {
+    func testFetchFailuresAlwaysKeepSourceLink() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [ClipFailureProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+
+        for path in ["network-error", "forbidden", "empty-body"] {
+            let source = try XCTUnwrap(URL(string: "https://example.com/\(path)"))
+            let draft = await WebClipper.build(source, session: session)
+            XCTAssertTrue(draft.contentMarkdown.contains("[\(source.absoluteString)](\(source.absoluteString))"))
+            XCTAssertTrue(draft.contentMarkdown.contains(WebClipLabels.chinese.unavailableBody))
+            XCTAssertEqual(draft.tagsText, "web-clip")
+        }
+    }
+
     @MainActor
     func testSharedImagesResolveOnlyFilesInsideHandoffDirectory() throws {
         let directory = FileManager.default.temporaryDirectory
@@ -147,4 +162,26 @@ final class WebClipperTests: XCTestCase {
         XCTAssertTrue(draft.contentMarkdown.contains("出典: [https://example.com/missing](https://example.com/missing)"))
         XCTAssertTrue(draft.contentMarkdown.contains("本文を取り込めませんでした"))
     }
+}
+
+private final class ClipFailureProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        guard let url = request.url else { return }
+        if url.lastPathComponent == "network-error" {
+            client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
+            return
+        }
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: url.lastPathComponent == "forbidden" ? 403 : 200,
+            httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": "text/html"]
+        )!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data("<html><title>Shared post</title></html>".utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
 }

@@ -1,4 +1,5 @@
 import type { CompanionAction } from "@edgeever/shared";
+import { getMemoDisplayTitle } from "@edgeever/shared";
 import { ArrowUpRight, Check, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ export function CompanionToolActionCard({ action, busy, onApply, onDismiss, onOp
   if (action.plan.kind !== "tool") return null;
   const name = action.plan.toolName;
   const title = t(`companion.actions.tools.${name}`, { defaultValue: name });
-  const names = new Map([...action.notes.map(note => [note.id, note.title || t("common.untitledMemo")] as const),
+  const names = new Map([...action.notes.map(note => [note.id, getMemoDisplayTitle(note.title, t("common.untitledMemo"))] as const),
     ...(action.preview?.notebooks ?? []).map(notebook => [notebook.id, notebook.name] as const)]);
   const display = (value: unknown): string => {
     if (typeof value === "string") return names.has(value) ? `${names.get(value)} (${value})` : value;
@@ -45,7 +46,7 @@ export function CompanionToolActionCard({ action, busy, onApply, onDismiss, onOp
                     className="inline-flex max-w-full items-center gap-1 text-xs font-medium text-slate-800 hover:text-slate-950 hover:underline  "
                   >
                     <FileText className="h-3 w-3 shrink-0 text-slate-400" />
-                    <span className="truncate">{note.title || t("common.untitledMemo")}</span>
+                    <span className="truncate">{getMemoDisplayTitle(note.title, t("common.untitledMemo"))}</span>
                     <ArrowUpRight className="h-2.5 w-2.5 shrink-0 opacity-50" />
                   </button>
                   {note.excerpt ? (

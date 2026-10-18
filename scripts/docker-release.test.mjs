@@ -98,6 +98,11 @@ describe("Docker release contract", () => {
     expect(dockerfile).toContain("HEALTHCHECK");
     expect(dockerfile).toContain("ARG EDGE_EVER_BUILD_ID=unknown");
     expect(dockerfile).toContain("EDGE_EVER_BUILD_ID=${EDGE_EVER_BUILD_ID}");
+    for (const name of ["EDGE_EVER_BUILD_CREATED_AT", "EDGE_EVER_BUILD_TRIGGER", "EDGE_EVER_BUILD_METHOD"]) {
+      // Empty by default so self-built images report unknown build metadata.
+      expect(runtimeStage).toContain(`ARG ${name}=\n`);
+      expect(runtimeStage).toContain(`${name}=\${${name}}`);
+    }
     expect(runtimeStage).toContain('CMD ["bun", "scripts/self-hosted-server.js"]');
     expect(readProjectFile("docs/deploy-docker.md")).toContain(
       'Module not found "scripts/self-hosted-server.mjs"',
@@ -189,8 +194,23 @@ describe("Docker release contract", () => {
     expect(workflow).toContain("test ! -e /app/apps/api");
     expect(workflow).toContain("test ! -e /app/packages");
     expect(workflow).toContain("curl --fail --silent --show-error http://127.0.0.1:8787/");
-    expect(workflow).toContain('docker build --build-arg EDGE_EVER_BUILD_ID="${GITHUB_SHA}"');
+    expect(workflow).toContain('docker build \\\n            --build-arg EDGE_EVER_BUILD_ID="${GITHUB_SHA}"');
     expect(workflow).toContain("EDGE_EVER_BUILD_ID=${{ github.sha }}");
+    expect(workflow).toContain("EDGE_EVER_BUILD_CREATED_AT=${{ steps.image.outputs.created_at }}");
+    expect(workflow).toContain("EDGE_EVER_BUILD_TRIGGER=${{ steps.image.outputs.build_trigger }}");
+    expect(workflow).toContain("EDGE_EVER_BUILD_METHOD=github_actions");
+    expect(workflow).toContain("org.opencontainers.image.created=${{ steps.image.outputs.created_at }}");
+    // Draft releases are prepared by workflow_dispatch with release_tag; published only audits.
+    const resolveTags = workflow.slice(workflow.indexOf("- name: Resolve image tags"), workflow.indexOf("- name: Set up QEMU"));
+    const releaseBranch = resolveTags.slice(resolveTags.indexOf('if [[ -n "${RELEASE_TAG}" ]]'), resolveTags.indexOf("          else\n"));
+    expect(releaseBranch).toContain('echo "build_trigger=github_release"');
+    expect(resolveTags).toContain('if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then\n              build_trigger=main_push');
+    expect(resolveTags).toContain("build_trigger=manual");
+    expect(workflow).toContain("docker build --tag edgeever:ci-default .");
+    expect(workflow).toContain('.buildProvenance == {"trigger": "main_push", "method": "github_actions"}');
+    expect(workflow).toContain('.deployment == {"trigger": "manual", "method": "docker"}');
+    expect(workflow).toContain('.build == "unknown" and .buildCreatedAt == null and .buildProvenance == {"trigger": "unknown", "method": "unknown"}');
+    expect(workflow).toContain('.buildProvenance == {"trigger": $trigger, "method": "github_actions"}');
     expect(workflow).not.toContain("TCR_IMAGE_NAME");
     expect(workflow).not.toContain("TENCENT_TCR_USERNAME");
 

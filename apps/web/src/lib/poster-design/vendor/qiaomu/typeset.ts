@@ -16,21 +16,35 @@ export interface Pair { title: string[]; body: string[]; zh: string }
 // the moment before the library has landed.
 const BODY = ['思源黑体', 'PingFang SC', 'Microsoft YaHei'];
 export const MOODS: Record<Mood, Pair> = {
-  heavy: { zh: '稳重有力', title: ['思源黑体 Heavy', '思源黑体 Bold', 'PingFang SC'], body: BODY },
-  punch: { zh: '冲击抓眼', title: ['抖音美好体', '思源黑体 Heavy', '思源黑体 Bold', 'PingFang SC'], body: BODY },
-  tech: { zh: '科技数据', title: ['未来荧黑', '得意黑', '思源黑体 Heavy'], body: BODY },
-  trend: { zh: '潮流年轻', title: ['得意黑', '抖音美好体', '站酷庆科黄油体'], body: BODY },
-  warm: { zh: '亲切活泼', title: ['江城圆体', '站酷庆科黄油体', '猫啃什锦黑', '抖音美好体'], body: BODY },
-  serif: { zh: '文艺深度', title: ['思源宋体 Heavy', '朱雀仿宋', '思源宋体 Bold', 'Songti SC'], body: ['霞鹜文楷', '思源宋体', ...BODY] },
-  brush: { zh: '国风书法', title: ['马善政楷书', '志莽行书', '朱雀仿宋'], body: ['朱雀仿宋', '霞鹜文楷', '思源宋体', ...BODY] },
+  heavy: { zh: '稳重有力', title: ['思源黑体 Heavy', '阿里巴巴普惠体 Heavy', 'PingFang SC'], body: BODY },
+  punch: { zh: '冲击抓眼', title: ['优设标题黑', '阿里妈妈数黑体', '抖音美好体', '思源黑体 Heavy'], body: BODY },
+  tech: { zh: '科技数据', title: ['阿里妈妈数黑体', '未来荧黑', '得意黑', '思源黑体 Heavy'], body: BODY },
+  trend: { zh: '潮流年轻', title: ['得意黑', '阿里妈妈数黑体', '抖音美好体', '站酷庆科黄油体'], body: BODY },
+  warm: { zh: '亲切活泼', title: ['江城圆体', '站酷庆科黄油体', '抖音美好体'], body: BODY },
+  serif: { zh: '文艺深度', title: ['思源宋体 Heavy', '朱雀仿宋', '思源宋体', 'Songti SC'], body: ['霞鹜文楷', '思源宋体', ...BODY] },
+  brush: { zh: '国风书法', title: ['马善政楷书', '朱雀仿宋'], body: ['朱雀仿宋', '霞鹜文楷', '思源宋体', ...BODY] },
 };
 
 const TEMPLATE_FACES: Record<string, string[]> = {
-  keyword: ['得意黑'], riso: ['站酷快乐体', '站酷庆科黄油体'],
-  newspaper: ['思源宋体 Heavy'], mag: ['朱雀仿宋', '思源宋体 Heavy'],
-  notes: ['霞鹜文楷'], numeral: ['未来荧黑'],
-  window: ['未来荧黑', '得意黑'], brush: ['抖音美好体', '思源黑体 Heavy', '思源黑体 Bold'],
-  polaroid: ['霞鹜文楷', '站酷庆科黄油体'], stack: ['抖音美好体', '思源黑体 Heavy', '思源黑体 Bold'],
+  neo: ['优设标题黑', '阿里妈妈数黑体'],
+  bold: ['阿里妈妈数黑体', '优设标题黑'],
+  bili: ['阿里妈妈数黑体', '思源黑体 Heavy'],
+  highlight: ['优设标题黑', '思源黑体 Heavy'],
+  interview: ['优设标题黑', '阿里妈妈数黑体'],
+  frame: ['优设标题黑', '思源黑体 Heavy'],
+  kicker: ['阿里妈妈数黑体', '思源黑体 Heavy'],
+  stack: ['优设标题黑', '阿里妈妈数黑体', '抖音美好体'],
+  regeng: ['抖音美好体', '优设标题黑'],
+  keyword: ['得意黑', '优设标题黑'],
+  riso: ['站酷快乐体', '站酷庆科黄油体'],
+  newspaper: ['思源宋体 Heavy'],
+  mag: ['思源宋体 Heavy', '朱雀仿宋'],
+  notes: ['霞鹜文楷'],
+  numeral: ['未来荧黑', '阿里妈妈数黑体'],
+  number: ['阿里妈妈数黑体', '未来荧黑'],
+  window: ['未来荧黑', '阿里妈妈数黑体', '得意黑'],
+  brush: ['抖音美好体', '思源黑体 Heavy'],
+  polaroid: ['霞鹜文楷', '江城圆体', '站酷庆科黄油体'],
 };
 
 const MOOD_OF: Record<string, Mood> = {
@@ -52,8 +66,9 @@ export interface Resolved { title?: string; body?: string; titleBold: boolean; /
 /** Picks the first installed family of each list. `missing` names the top choice per role when it is not installed. */
 export function resolvePair(templateId: string | undefined, have: (family: string) => boolean): Resolved {
   const mood = MOODS[moodOf(templateId)];
+  const topTitle = TEMPLATE_FACES[templateId ?? '']?.[0] ?? mood.title[0];
   const title = [...(TEMPLATE_FACES[templateId ?? ''] ?? []), ...mood.title, ...BODY].find(have), body = mood.body.find(have);
-  const missing = [mood.title[0], mood.body[0]].filter((f): f is string => !!f && !have(f));
+  const missing = [topTitle, mood.body[0]].filter((f): f is string => !!f && !have(f));
   return { ...(title ? { title } : {}), ...(body ? { body } : {}), titleBold: !!title && HAS_BOLD.has(title), missing: [...new Set(missing)] };
 }
 

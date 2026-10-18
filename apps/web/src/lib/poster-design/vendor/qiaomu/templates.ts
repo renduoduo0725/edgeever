@@ -652,10 +652,10 @@ const PREMIUM: Template[] = [
       return { background: linear(p, 180), objects: keep<FabricObject>(
         kitGlow(w * 0.2, h * 0.3, Math.min(w, h) * 0.55, '#a855f7', 0.5), kitGlow(w * 0.8, h * 0.6, Math.min(w, h) * 0.55, p.accent, 0.5), ...lines, grain(w, h, 0.09, 23),
         ...cropMarks(w, h, m * 0.5, 40 * u, p.accent, Math.max(2, 3 * u)),
-        meta(`● REC  ${(i.badge?.trim() || 'SYS')} / ONLINE`, m, m * 0.85, inner * 0.7, Math.max(16, 20 * u), p.sub, { fontFamily: 'monospace', charSpacing: 120 }),
+        meta(`● REC  ${(i.badge?.trim() || 'SYS')} / ONLINE`, m, m * 0.85, inner * 0.7, Math.max(16, 20 * u), p.sub, { fontFamily: 'JetBrains Mono', charSpacing: 120 }),
         textbox(i.title, m, top, tw, { qcRole: 'title', fontSize: size, fill: p.ink, fontWeight: 'bold', lineHeight: 1.04, shadow: new Shadow({ color: p.accent, blur: 34 * u, offsetX: 0, offsetY: 0 }), charSpacing: -10 }),
         ...sub(i, m, top + th + 26 * u, inner, Math.max(26, 36 * u), p.sub, { fontWeight: 'bold' }),
-        meta('00:03:21:07', m, h - m * 0.85 - 22 * u, inner * 0.5, Math.max(14, 18 * u), p.sub, { fontFamily: 'monospace' }), meta('2.39:1', m + inner * 0.5, h - m * 0.85 - 22 * u, inner * 0.5, Math.max(14, 18 * u), p.sub, { fontFamily: 'monospace', textAlign: 'right' }),
+        meta('00:03:21:07', m, h - m * 0.85 - 22 * u, inner * 0.5, Math.max(14, 18 * u), p.sub, { fontFamily: 'JetBrains Mono' }), meta('2.39:1', m + inner * 0.5, h - m * 0.85 - 22 * u, inner * 0.5, Math.max(14, 18 * u), p.sub, { fontFamily: 'JetBrains Mono', textAlign: 'right' }),
       ) };
     },
   },
@@ -821,7 +821,7 @@ const PREMIUM: Template[] = [
         textbox(i.title, m, top, inner, { qcRole: 'title', fontSize: size, fill: p.ink, fontFamily: SERIF, fontWeight: 'bold', lineHeight: 1.08, textAlign: 'center', charSpacing: 120, shadow: new Shadow({ color: 'rgba(255,170,90,0.45)', blur: 38 * u, offsetX: 0, offsetY: 0 }) }),
         rule(w / 2 - 60 * u, top + th + 24 * u, 120 * u, p.accent, Math.max(2, 3 * u)),
         ...sub(i, m, top + th + 46 * u, inner, Math.max(24, 32 * u), p.sub, { textAlign: 'center', charSpacing: 180 }),
-        ...(w >= h * 1.3 ? [meta('PRESENTED BY QIAOMU', m, h - bar - m * 1.1 - 24 * u, inner * 0.5, Math.max(13, 16 * u), p.sub, { fontFamily: 'monospace' }), meta('2026 · 2.39:1', m + inner * 0.5, h - bar - m * 1.1 - 24 * u, inner * 0.5, Math.max(13, 16 * u), p.sub, { fontFamily: 'monospace', textAlign: 'right' })] : []),
+        ...(w >= h * 1.3 ? [meta('PRESENTED BY QIAOMU', m, h - bar - m * 1.1 - 24 * u, inner * 0.5, Math.max(13, 16 * u), p.sub, { fontFamily: 'JetBrains Mono' }), meta('2026 · 2.39:1', m + inner * 0.5, h - bar - m * 1.1 - 24 * u, inner * 0.5, Math.max(13, 16 * u), p.sub, { fontFamily: 'JetBrains Mono', textAlign: 'right' })] : []),
       ) };
     },
   },
@@ -1071,7 +1071,7 @@ const STUDIO: Template[] = [
         rect(cx, cy, cw, ch, '#ffffff', { rx: r, ry: r, shadow: new Shadow({ color: 'rgba(49,46,129,0.22)', blur: 60 * u, offsetX: 0, offsetY: 24 * u }) }),
         rect(cx, cy, cw, bar, '#f3f4f6', { rx: r, ry: r }), rect(cx, cy + bar / 2, cw, bar / 2, '#f3f4f6'), rule(cx, cy + bar, cw, '#e5e7eb', Math.max(1, 2 * u)),
         dot(cx + bar * 0.55, cy + bar / 2, bar * 0.13, '#ff5f57'), dot(cx + bar * 0.95, cy + bar / 2, bar * 0.13, '#febc2e'), dot(cx + bar * 1.35, cy + bar / 2, bar * 0.13, '#28c840'),
-        textbox(i.badge?.trim() || 'cover.md', cx + bar * 2, cy + (bar - bar * 0.36 * 1.13) / 2, cw - bar * 4, { qcRole: 'badge', fontSize: bar * 0.36, fill: '#6b7280', textAlign: 'center', fontFamily: 'monospace', lineHeight: 1 }),
+        textbox(i.badge?.trim() || 'cover.md', cx + bar * 2, cy + (bar - bar * 0.36 * 1.13) / 2, cw - bar * 4, { qcRole: 'badge', fontSize: bar * 0.36, fill: '#6b7280', textAlign: 'center', fontFamily: 'JetBrains Mono', lineHeight: 1 }),
         rect(cx + pad, ty - kick, Math.max(40, 64 * u), Math.max(6, 9 * u), p.accent, { rx: 4 * u, ry: 4 * u }),
         textbox(i.title, cx + pad, ty, tw, { qcRole: 'title', fontSize: size, fill: p.ink, fontWeight: 'bold', lineHeight: 1.08 }),
         ...sub(i, cx + pad, ty + th + 28 * u, tw, subSize, p.sub),

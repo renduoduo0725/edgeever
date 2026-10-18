@@ -43,14 +43,7 @@ export type ShareBodyAccess = {
 };
 
 export const PUBLISHED_NOTE_BODY_FONTS = [
-  "wenkai",
-  "wenkai-screen",
-  "zhuque",
-  "source-han-serif",
-  "neo-zhi-song",
-  "source-han-sans",
-  "source-serif",
-  ...FONT_IDS.filter(id => id !== "wenkai" && id !== "zhuque"),
+  "wenkai-screen", "neo-zhi-song", "source-serif", ...FONT_IDS,
 ] as const;
 
 export type PublishedNoteBodyFont = (typeof PUBLISHED_NOTE_BODY_FONTS)[number];

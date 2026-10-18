@@ -110,6 +110,7 @@ const FontChoiceFields = ({
         </SelectTrigger>
         <SelectContent className="max-h-80">
           <SelectItem value="system">{t("settings.editorBodyFonts.system")}</SelectItem>
+          {!includeCatalog ? <>
           <SelectItem
             value="wenkai-screen"
             style={{ fontFamily: getFontChoicePreviewStack("wenkai-screen") }}
@@ -150,6 +151,12 @@ const FontChoiceFields = ({
               {t("settings.editorBodyFonts.sourceSerif")}
             </span>
           </SelectItem>
+          </> : null}
+          {includeCatalog && ["wenkai-screen", "neo-zhi-song", "source-serif"].includes(preference.choice) ? (
+            <SelectItem value={preference.choice} style={{ fontFamily: getFontChoicePreviewStack(preference.choice) }}>
+              {t(`settings.editorBodyFonts.${preference.choice === "wenkai-screen" ? "wenkaiScreen" : preference.choice === "neo-zhi-song" ? "neoZhiSong" : "sourceSerif"}`)}
+            </SelectItem>
+          ) : null}
           {(includeCatalog ? FONT_IDS : ["wenkai", "zhuque"] as const).map(id => (
             <SelectItem key={id} value={id} textValue={t(FONT_CATALOG[id].labelKey)}>
               <FontLabel label={t(FONT_CATALOG[id].labelKey)} fontId={includeCatalog ? id : undefined} fontFamily={includeCatalog ? undefined : BUNDLED_FONT_STACKS[id as "wenkai" | "zhuque"]} enabled={fontOpen} visibleOnly />

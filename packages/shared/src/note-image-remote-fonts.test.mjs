@@ -13,7 +13,7 @@ test('all downloadable fonts retain their choice and use a private family withou
   for (const [font, metadata] of Object.entries(NOTE_IMAGE_REMOTE_FONTS)) {
     expect(resolveNoteImagePreferences({ fontStyle: font }).fontStyle).toBe(font);
     expect(resolveNoteImageTypography('book', font).bodyFamily).toContain(metadata.family);
-    expect(remoteFontCssUrl(font)).toMatch(/@\d+\.\d+\.\d+\//);
+    expect(remoteFontCssUrl(font)).toMatch(/@(?:\d+\.\d+\.\d+|[a-f0-9]{40})\//);
   }
   // Explicit system styles must not fetch any optional font manifest or file.
   expect((await prepareNoteImageAssets({ theme: 'book', fontStyle: 'sans', text: '中文', urls: {} })).fontCss).toBe('');

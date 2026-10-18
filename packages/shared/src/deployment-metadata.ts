@@ -1,5 +1,10 @@
 export type DeploymentTrigger = "github_release" | "main_push" | "manual" | "unknown";
-export type DeploymentMethod = "github_actions" | "cloudflare_workers_builds" | "local_cli" | "unknown";
+/**
+ * How code reached its runtime. `docker` describes a container deployment, while
+ * `github_actions`, `cloudflare_workers_builds` and `local_cli` describe the
+ * mechanism that ran the build or deployment.
+ */
+export type DeploymentMethod = "github_actions" | "cloudflare_workers_builds" | "local_cli" | "docker" | "unknown";
 
 export type DeploymentMetadata = {
   trigger: DeploymentTrigger;
@@ -24,7 +29,7 @@ export const resolveDeploymentTrigger = (trigger: string | undefined): Deploymen
 };
 
 export const resolveDeploymentMethod = (method: string | undefined): DeploymentMethod => {
-  if (method === "github_actions" || method === "cloudflare_workers_builds" || method === "local_cli") {
+  if (method === "github_actions" || method === "cloudflare_workers_builds" || method === "local_cli" || method === "docker") {
     return method;
   }
   return "unknown";

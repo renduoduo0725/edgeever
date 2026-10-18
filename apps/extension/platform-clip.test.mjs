@@ -8,6 +8,17 @@ import { readXiaoyuzhou } from "./src/xiaoyuzhou-clip.ts";
 import { markdownToDoc } from "../../packages/shared/src/content.ts";
 import { pageImageRefs, replacePageImageUrls } from "./src/page-images.ts";
 
+test("clipped literal alphabetic list prefixes survive the stored document without losing words",()=>{
+ const doc=createDocument('<p>Dr. Nancy Grace Roman:<br>Mr. Someone</p><p>II. Literal heading</p><ol><li>Actual numbered item</li></ol><pre><code>Dr. exact code\nII. unchanged</code></pre>');
+ const markdown=platformHtmlMarkdown(doc.body,'https://example.test');
+ const parsed=markdownToDoc(markdown),nodes=[];const walk=n=>{nodes.push(n);(n.content||[]).forEach(walk)};walk(parsed);
+ const text=nodes.filter(n=>n.type==='text').map(n=>n.text).join('');
+ expect(text).toContain('Dr. Nancy Grace Roman:');expect(text).toContain('Mr. Someone');expect(text).toContain('II. Literal heading');
+ expect(nodes.filter(n=>n.type==='orderedList')).toHaveLength(1);
+ expect(nodes.find(n=>n.type==='listItem').content[0].content[0].text).toBe('Actual numbered item');
+ expect(nodes.find(n=>n.type==='codeBlock').content[0].text).toBe('Dr. exact code\nII. unchanged');
+});
+
 test("rich table cells retain their grid, line breaks, inline code and archived images",()=>{
   const doc=createDocument('<table><tr><th>内容</th><th>代码</th></tr><tr><td><p>首段<br>次行</p><ul><li>one</li><li>two<img src="https://example.test/cell.png"></li></ul><blockquote>引用</blockquote></td><td><pre><code class="language-js">  a || b;\n\n\nconst tag = `&lt;br&gt;`;</code></pre></td></tr></table>');
   const markdown=platformHtmlMarkdown(doc.body,'https://example.test');
@@ -298,4 +309,15 @@ test("HTML cleanup preserves semantic content and code language on a copy", () =
   expect(markdown).toContain("https://images.example.com/a.png");
   for (const unwanted of ["javascript:", "evil()", "bad()", "分享", "onerror", "<iframe"]) expect(markdown).not.toContain(unwanted);
   expect(body.outerHTML).toBe(before);
+});
+
+test('clipped CJK bold ending in punctuation remains bold next to unspaced prose',()=>{
+ const source='<p><strong>一定要尊重市场规律，某队没法改变规律！</strong>只是起到稳定市场的功能。</p><p>Literal **words** stay literal.</p><pre><code>**exact！**code</code></pre>';
+ const doc=createDocument(source),before=doc.body.innerHTML;
+ const parsed=markdownToDoc(platformHtmlMarkdown(doc.body,'https://example.test'));
+ const nodes=[];const walk=n=>{nodes.push(n);(n.content||[]).forEach(walk)};walk(parsed);
+ const paragraph=parsed.content[0];expect(paragraph.content.map(n=>n.text||'').join('')).toBe('一定要尊重市场规律，某队没法改变规律！只是起到稳定市场的功能。');
+ expect(paragraph.content.some(n=>n.text==='一定要尊重市场规律，某队没法改变规律'&&n.marks?.some(m=>m.type==='bold'))).toBe(true);
+ expect(parsed.content[1].content.map(n=>n.text||'').join('')).toBe('Literal **words** stay literal.');
+ expect(nodes.find(n=>n.type==='codeBlock').content[0].text).toBe('**exact！**code');expect(doc.body.innerHTML).toBe(before);
 });

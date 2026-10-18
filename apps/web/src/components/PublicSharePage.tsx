@@ -24,7 +24,9 @@ import {
   resolveNoteProse,
   type PublicMemoShare,
   type ShareBodyAccess,
+  getMemoDisplayTitle,
 } from "@edgeever/shared";
+import { resolveSupportedLocale } from "@edgeever/shared/i18n/locales";
 import { applyEditorBodyFontPreference } from "@/lib/editor-body-font";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
 import { PdfAttachment } from "@/components/editor/PdfAttachment";
@@ -104,7 +106,7 @@ const SharedRichText = ({ content }: { content: PublicMemoShare["contentJson"] }
     editorProps: {
       attributes: {
         class: "prose prose-slate max-w-none focus:outline-none",
-        "aria-label": "Shared note content",
+        "aria-label": t("sharing.contentLabel"),
       },
     },
   }, [content]);
@@ -239,7 +241,7 @@ export const PublicSharePage = () => {
     document.head.appendChild(robots);
     if (share) {
       document.title = withEnvironmentTitlePrefix(
-        `${share.title?.trim() || t("common.untitledMemo")} · EdgeEver`,
+        `${getMemoDisplayTitle(share.title, t("common.untitledMemo"))} · EdgeEver`,
         { development: import.meta.env.DEV, profile: __EDGEEVER_DEVELOPMENT_PROFILE__ },
       );
     } else if (passwordRequired) {
@@ -364,7 +366,7 @@ export const PublicShareArticle = ({
               layout === "site" && "order-1",
             )}
           >
-            {share.title?.trim() || t("common.untitledMemo")}
+            {getMemoDisplayTitle(share.title, t("common.untitledMemo"))}
           </h1>
           {share.tags.length > 0 ? (
             <div
@@ -401,13 +403,7 @@ export const PublicShareArticle = ({
             />
           ) : null}
           <SharedDocument
-            locale={
-              (i18n.resolvedLanguage || i18n.language || "zh-CN").startsWith(
-                "en",
-              )
-                ? "en-US"
-                : "zh-CN"
-            }
+            locale={resolveSupportedLocale(i18n.resolvedLanguage || i18n.language)}
             share={share}
             token={token}
             access={access}

@@ -301,10 +301,9 @@ struct MemoEditView: View {
         .task {
             await loadInitial()
             contentHydrated = true
-            // editorReady flips true from TipTap onBodyReady (or fallback below).
+            // Only TipTap's acknowledged content push may mark the body ready.
             try? await Task.sleep(nanoseconds: 800_000_000)
             if !Task.isCancelled, !editorReady {
-                editorReady = true
                 if initialFocus == .title {
                     focusTitleOnce()
                 } else {
@@ -853,7 +852,6 @@ struct MemoEditView: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 50_000_000)
             SharedTipTapRuntime.editor.focusEnd()
-            editorReady = true
         }
     }
 

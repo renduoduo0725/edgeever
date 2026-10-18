@@ -19,8 +19,11 @@
   <p>
     <a href="https://t.me/+wwUx1BYLrIdiZjY1"><img src="assets/readme/community/telegram.svg" alt="Telegram" width="16" height="16" align="absmiddle" /> Grupa na Telegramie</a> &nbsp;|&nbsp;
     <a href="https://demo.edgeever.org">🌐 Demo na żywo</a> &nbsp;|&nbsp;
-    <a href="#pobierz-aplikacje">📱 Pobierz aplikacje</a> &nbsp;|&nbsp;
-    <a href="#features">Najważniejsze funkcje i zastosowania</a>
+    <a href="#aplikacje-i-rozszerzenia">📱 Aplikacje i rozszerzenia</a> &nbsp;|&nbsp;
+    <a href="#features">Macierz funkcji i zastosowań</a>
+  </p>
+  <p align="center">
+    <img src="assets/readme/edgeever-hero-v6.png" alt="Podgląd przestrzeni roboczej EdgeEver" width="800" />
   </p>
 </div>
 
@@ -35,7 +38,7 @@ EdgeEver to nowoczesna, otwartoźródłowa przestrzeń do notatek i zarządzania
 
 Wielu użytkowników **aplikacji do notatek i osobistych baz wiedzy** szuka po prostu **niezawodnej, otwartej i szybkiej** osobistej bazy wiedzy. Popularne rozwiązania mają jednak swoje ograniczenia:
 
-* **Evernote**: Kiedyś oferowało najpłynniejszą i najbardziej bezproblemową synchronizację w chmurze między wieloma urządzeniami. Z czasem stało się jednak rozbudowanym komercyjnym pakietem: przybyło reklam i dodatków, wzrosło zużycie zasobów, ograniczono darmowy plan, a zaawansowane funkcje AI są kosztowne. Trudno też połączyć je z samodzielnie hostowanymi usługami i prywatnymi procesami AI.
+* **Evernote**: Oferuje najpłynniejszą i najbardziej bezproblemową synchronizację w chmurze między wieloma urządzeniami. Z czasem stało się jednak rozbudowanym komercyjnym pakietem: przybyło reklam i dodatków, wzrosło zużycie zasobów, ograniczono darmowy plan, a zaawansowane funkcje AI są kosztowne. Trudno też połączyć je z samodzielnie hostowanymi usługami i prywatnymi procesami AI.
 * **Obsidian**: Pliki są otwarte, ale sam program ma zamknięty kod. Oficjalna synchronizacja jest płatna, a konfiguracja innych metod wymaga pracy. Przy tysiącach notatek lub wielu wtyczkach skanowanie lokalnych plików spowalnia uruchamianie i wyszukiwanie. Obrazy i załączniki powiększają magazyn, utrudniają synchronizację mobilną i mogą pozostawać po usunięciu notatek.
 * **Memos i notatki strumieniowe**: Są proste, ale interfejs przypominający oś czasu różni się od uporządkowanej pracy w trzech panelach.
 * **SiYuan i systemy oparte na blokach**: Oferują wiele funkcji i własny hosting, lecz szczegółowa struktura bloków utrudnia szybkie zapisywanie myśli i pisanie dłuższego tekstu. Brakuje im również bezpłatnego wdrożenia bezserwerowego, a synchronizacja między urządzeniami wymaga płatnej subskrypcji lub dodatkowo płatnego dostępu do S3/WebDAV.
@@ -48,7 +51,9 @@ Wielu użytkowników **aplikacji do notatek i osobistych baz wiedzy** szuka po p
 
 Publiczne demo resetuje się codziennie o 3:00 czasu chińskiego (UTC+8) i przywraca przykładowe notatki. Nie zapisuj w nim prywatnych danych.
 
-## Pobierz aplikacje
+## Aplikacje i rozszerzenia
+
+### Pobierz aplikacje
 
 <p>
   <a href="https://github.com/tianma-if/edgeever/releases/latest"><img src="assets/readme/platforms/macos.svg" alt="Pobierz EdgeEver na macOS" width="40" height="40" /></a>&nbsp;&nbsp;
@@ -60,34 +65,30 @@ Publiczne demo resetuje się codziennie o 3:00 czasu chińskiego (UTC+8) i przyw
 
 > Aplikacja na iOS wymaga Apple ID spoza Chin kontynentalnych.
 
+### Rozszerzenie Web Clipper
+
+<p>
+  <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/chrome/chrome.svg" alt="Zainstaluj EdgeEver Web Clipper w Chrome" width="36" height="36" /></a>&nbsp;&nbsp;
+  <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/edge/edge.svg" alt="Zainstaluj EdgeEver Web Clipper w Edge" width="36" height="36" /></a>&nbsp;&nbsp;
+  <a href="https://addons.mozilla.org/firefox/addon/edgeever-web-clipper/"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/firefox/firefox.svg" alt="Zainstaluj EdgeEver Web Clipper w Firefoxie" width="36" height="36" /></a>
+</p>
+
+- Przekształca artykuły w przejrzysty Markdown lub zapisuje zaznaczony tekst i obrazy bezpośrednio w Twojej instancji.
+- Głębokie, ustrukturyzowane zapisywanie treści z ponad 20 platform: społecznościowych (X, Xiaohongshu, WeChat, Jike, Douban, Threads, Bluesky), serwisów czytelniczych i technicznych (Zhihu, Reddit, GitHub, V2EX, Hacker News, Medium, Substack) oraz wideo i podcastów (Bilibili, YouTube, Xiaoyuzhou).
+
 <a id="features"></a>
-## Najważniejsze funkcje i zastosowania
+## Macierz funkcji i zastosowań
 
-EdgeEver łączy zbieranie materiałów z różnych źródeł, tworzenie treści wizualnych i współpracę w jednym środowisku:
+Wszechstronny obszar roboczy łączący zbieranie inspiracji, głębokie tworzenie i gromadzenie wiedzy:
 
-### Zapisywanie treści i przechowywanie plików
-- **Zapisywanie treści jednym kliknięciem na różnych platformach**: Rozszerzenie przeglądarki jest głęboko dostosowane do ponad 15 wiodących serwisów społecznościowych, forów i platform wideo, w tym [galerii Xiaohongshu](docs/best-practices.md#2-one-click-xiaohongshu-red-note-clipping), [wpisów i cytatów z X (Twittera)](docs/best-practices.md#3-one-click-x-twitter-post--quote-clipping), [odpowiedzi z Zhihu](docs/best-practices.md#4-one-click-zhihu-answer--column-article-clipping), [Reddita](docs/best-practices.md#5-one-click-reddit-discussion-post-clipping), [GitHuba](docs/best-practices.md#8-one-click-github-repository-metadata-clipping), YouTube i Bilibili. Udostępnianie systemowe na telefonie pozwala szybko zapisać [zdjęcia](docs/best-practices.md#9-one-click-mobile-image-sharing-to-notes) i [artykuły z WeChat](docs/best-practices.md#10-one-click-wechat-article-clipping-on-mobile).
-- **Archiwizacja rozmów WeChat**: Na macOS można zaimportować całą rozmowę przez „Forward to Other Apps → EdgeEver”, zachowując uczestników, znaczniki czasu, cytowane odpowiedzi i naklejki. Obrazy trafiają do notatki, a nagrania audio i wideo są zapisywane jako załączniki. Zobacz [przewodnik po archiwizacji rozmów](docs/best-practices.md#1-one-click-wechat-chat-history-archiving).
-- **Załączniki i kompresja obrazów po stronie klienta**: Dodawaj pliki PDF, dokumenty Office, archiwa i multimedia. Przesyłanie strumieniowe w częściach obsługuje załączniki do 1 GiB. Cicha kompresja obrazów w przeglądarce zmniejsza rozmiar zrzutów ekranu i dużych zdjęć o 50–90%, przyspieszając ładowanie i oszczędzając miejsce.
-
-### Notatki wizualne i współpraca z bazami danych
-- **Diagramy i infografiki**: Poproś asystenta AI zwykłym językiem o interaktywne, edytowalne [mapy myśli, schematy blokowe lub diagramy architektury](docs/best-practices.md#11-ai-conversational-generation-of-mind-maps-flowcharts--architecture-diagrams). Zobacz [opis notatek z diagramami](docs/visual-diagram-notes.md); obsługiwane jest też renderowanie bloków Mermaid. Wbudowane szablony pozwalają tworzyć [infografiki, w tym osie czasu, porównania i wykresy kwadrantowe](docs/best-practices.md#12-ai-powered-generation-of-professional-infographics).
-- **Wielowymiarowe tabele AI i publiczne formularze**: Na podstawie polecenia w języku naturalnym twórz [tabele do zarządzania projektami, treściami, zasobami i innymi procesami](docs/best-practices.md#13-instant-multi-dimensional-database-table-generation-via-ai-prompt), z odpowiednimi typami pól i przykładowymi rekordami. Jednym kliknięciem udostępnij [publiczny formularz](docs/best-practices.md#14-one-click-public-online-form-collection-from-database-tables), który zbiera odpowiedzi bez logowania bezpośrednio do tabeli.
-- **Natywne notatki plakatowe i wizualny układ AI**: Natywne notatki plakatowe oparte na płótnie z bogatymi szablonami kart graficznych i dopracowanymi układami; kliknij dwukrotnie, aby edytować tekst lub zamienić obrazy i elementy zastępcze, z responsywnym powiększeniem jednym kliknięciem; asystenci AI oraz protokoły ACP i MCP mogą bezpośrednio tworzyć, interpretować i wspólnie dopracowywać zawartość plakatów.
-- **Dwa widoki edycji, organizacja przestrzeni i publiczna baza wiedzy**: Na komputerze przełączaj się między edytorem tekstu sformatowanego a źródłem Markdown. Korzystaj z trzech paneli z regulowaną szerokością, trybu skupienia, dowolnie zagnieżdżonych notatników, zbiorczego łączenia i przenoszenia notatek oraz sortowania przez przeciąganie. Dostępna jest historia wersji; oprócz udostępniania pojedynczych notatek z hasłem, publikuj **całe notatniki jako samodzielne witryny bazy wiedzy z drzewem nawigacji** i ochroną hasłem.
-
-### Publikowanie i udostępnianie
-- **WeChat Official Account i kopiowanie ze stylami**: Twórz tekst sformatowany ze stylami CSS i [kopiuj notatki jednym kliknięciem do edytora WeChat Official Account](docs/best-practices.md#6-one-click-note-copy-to-wechat-official-account--blogs), newsletterów lub blogów.
-- **Grafiki z notatek i eksport**: Zamień notatkę w [estetyczną grafikę do udostępniania](docs/best-practices.md#7-ai-rss-daily-digest--elegant-image-poster-sharing) jednym kliknięciem, wybierając spośród dopracowanych motywów wizualnych, awatarów monogramowych, adaptacyjnej typografii i układów. Pojedyncze notatki można eksportować do Markdown, HTML lub PDF.
-- **Codzienne podsumowania RSS tworzone przez AI**: Oficjalna wtyczka subskrypcji RSS zbiera wpisy z kanałów i blogów, filtruje szum przy użyciu AI i przygotowuje zwięzłe notatki z podsumowaniem dnia.
-
-### Natywni agenci AI i otwarty ekosystem
-- **Protokoły MCP i ACP**: Wbudowany Model Context Protocol (MCP) pozwala zewnętrznym agentom AI czytać i porządkować notatki. Aplikacja desktopowa używa Agent Client Protocol (ACP), aby współpracować bezpośrednio z lokalnymi agentami, takimi jak Codex, Antigravity, Claude Code i WorkBuddy.
-- **Własne modele AI i API wtyczek**: Podłącz wielu dostawców zgodnych z OpenAI, Anthropic lub Gemini oraz własne serwery pośredniczące. AI może streszczać, wydobywać informacje, sprawdzać tekst, tłumaczyć i wspierać redakcję. Możliwości aplikacji rozszerzysz przez [API tworzenia wtyczek](docs/plugin-development.md).
-
-### Otwarta architektura, wiele platform i bezpieczeństwo
-- **Elastyczne wdrożenie i kontrola nad danymi**: Korzystaj z darmowego planu Cloudflare (około 150 tys. krótkich notatek i 50 tys. obrazów) albo wdróż aplikację przez Dockera na VPS, NAS lub serwerze domowym, aby przechowywać miliony notatek. Standardowa baza SQLite, REST API, narzędzia CLI i bezstratny eksport oraz import pełnego archiwum ZIP pomagają zachować niezależność danych.
-- **Wiele platform i ochrona środowiska produkcyjnego**: Oficjalne aplikacje działają w [przeglądarce, na Androidzie](https://play.google.com/store/apps/details?id=org.edgeever.mobile&hl=pl), [macOS](https://github.com/tianma-if/edgeever/releases), [Windows](https://github.com/tianma-if/edgeever/releases/latest), [Linuksie](https://github.com/tianma-if/edgeever/releases/latest) i [iOS](https://apps.apple.com/pl/app/edgeever/id6792625631). Rozszerzenie Web Clipper jest dostępne dla [Chrome](https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo), [Edge](https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo) i [Firefox](https://addons.mozilla.org/firefox/addon/edgeever-web-clipper/). Synchronizacja we własnym środowisku nie ogranicza liczby urządzeń; aplikacja desktopowa ma niewielkie zużycie pamięci, a dostępne są wersje robocze offline, kolejki synchronizacji, ochrona serwera przed atakami siłowymi i odizolowane przestrzenie użytkowników.
+| Moduł | Funkcje podstawowe | Funkcje zaawansowane |
+| :--- | :--- | :--- |
+| **Pisanie i edycja** | • Klasyczny układ z 3 panelami i regulowaną szerokością<br>• Płynne przełączanie między edytorem wizualnym (WYSIWYG) a kodem Markdown<br>• Podświetlanie składni, wzory matematyczne, listy zadań i tryb skupienia<br>• Błyskawiczny automatyczny zapis, natychmiastowa synchronizacja na wielu urządzeniach i historia zmian | • **Natywne notatki plakatowe**: Układy kart graficznych na płótnie, szybka edycja dwuklikiem<br>• **Formatowanie dla WeChat Official Account**: Kopiowanie ze stylami inline bezpośrednio do newsletterów/blogów<br>• **Eksport grafik i dokumentów**: Estetyczne szablony, awatary monogramowe; eksport do MD, HTML i PDF |
+| **Organizacja i wyszukiwanie** | • Nieograniczone zagnieżdżanie notatników i drzewo folderów<br>• System tagów, sortowanie przeciąganiem, łączenie i przenoszenie notatek<br>• Błyskawiczne wyszukiwanie pełnotekstowe z filtrami | • **Samodzielna publikacja bazy wiedzy**: Publikuj całe notatniki jako statyczne strony dokumentacji z nawigacją i ochroną hasłem<br>• Wiele odizolowanych przestrzeni użytkowników |
+| **Zapisywanie i załączniki** | • Obsługa załączników dowolnego formatu (PDF, Office, wideo, archiwa)<br>• Precyzyjne wycinanie tekstu i obrazów ze stron w rozszerzeniu przeglądarki<br>• Udostępnianie systemowe w telefonie do zapisu zdjęć i artykułów | • **Ustrukturyzowane zapisywanie z wielu platform**: Dostosowane do Xiaohongshu, X (Twittera), Zhihu, Reddita, GitHuba, YouTube i 20+ serwisów<br>• **Archiwizacja rozmów WeChat**: Import całych rozmów na macOS ze znacznikami czasu, cytatami, emotikonami i załącznikami<br>• **Cicha kompresja obrazów**: Zmniejszenie rozmiaru o 50–90%; strumieniowe przesyłanie plików do 1 GiB |
+| **Dane i wizualizacje** | • Natywna edycja tabel i renderowanie tabel Markdown<br>• Natywne diagramy Mermaid (schematy blokowe, sekwencje, architektura) | • **Wielowymiarowe tabele AI**: Tworzenie tabel biznesowych z promptu (z tagami, datami i polami wyboru)<br>• **Publiczne formularze zbierania danych**: Udostępnianie formularzy bez logowania i zapis odpowiedzi w czasie rzeczywistym<br>• **Generowanie infografik i map myśli przez AI**: Osi czasu, porównania, macierze i mapy myśli |
+| **AI i ekosystem** | • Asystent AI w panelu bocznym do streszczeń, korekty, tłumaczeń i redakcji<br>• Własne klucze API (BYOK): zgodność z OpenAI, Claude, Gemini i serwerami proxy | • **Protokoły MCP i ACP**: Wbudowany MCP do odczytu/zapisu przez agentów zewnętrznych; ACP w aplikacji desktopowej do współpracy z lokalnymi agentami<br>• **Inteligentne podsumowania RSS AI**: Agregacja źródeł, filtrowanie szumu i generowanie zwięzłych podsumowań<br>• API tworzenia wtyczek do rozbudowy funkcji |
+| **Synchronizacja i fundament** | • Natychmiastowa synchronizacja bez opóźnień na komputerach, telefonach i w sieci bez limitu urządzeń<br>• Oficjalne aplikacje na Web, macOS, Windows, Linux, iOS i Android<br>• Architektura offline-first i kolejka synchronizacji: płynne pisanie bez sieci, automatyczna synchronizacja po połączeniu<br>• Standardowa baza SQLite, bezstratny eksport/import archiwów ZIP i Markdown | • **Zero kosztów serwera na zawsze**: 100% działania w darmowym planie Cloudflare (~150 tys. notatek i ~50 tys. obrazów)<br>• **Elastyczny hosting Docker**: Wdrożenie na VPS, NAS lub domowym serwerze dla milionów notatek z natychmiastową synchronizacją<br>• Ochrona serwera przed atakami brute-force i bezpieczna izolacja |
 
 👉 Wszystkie 14 scenariuszy ze zrzutami ekranu opisuje [pełny przewodnik po funkcjach i zastosowaniach](docs/best-practices.md).
 
@@ -123,22 +124,34 @@ Wdróż EdgeEver przez GitHub i Cloudflare:
 
 ### Opcja B: Ręczne wdrożenie online
 
+<details>
+<summary>📖 Rozwiń: 6 kroków konfiguracji ręcznej w przeglądarce</summary>
+
 Konfiguracja obejmuje sześć kroków w interfejsie przeglądarkowym:
 
 1. **Utwórz Fork repozytorium**: Kliknij **Fork** w prawym górnym rogu strony GitHub, aby utworzyć kopię EdgeEver na swoim koncie.
 2. **Utwórz zasoby Cloudflare**: Utwórz bazę D1 `edgeever` i zasobnik R2 `edgeever-resources`.
 3. **Zaimportuj i skonfiguruj projekt**: W Cloudflare **Workers & Pages** utwórz Worker `edgeever` z gałęzi `main` swojego Forka. Użyj katalogu głównego repozytorium i zachowaj domyślne polecenie wdrożenia Workers Builds. Token API musi mieć prawo do odczytu i modyfikacji D1. Polecenie wdrożenia utworzy powiązania zasobów; nie edytuj plików Forka.
 4. **Wybierz hasło administratora**: Ustaw hasło, najlepiej o długości co najmniej 32 znaków. Po utworzeniu Workera zapisz je jako sekret środowiska uruchomieniowego `EDGE_EVER_AUTH_PASSWORD`.
-5. **Zbuduj i sprawdź aplikację**: **Save and Deploy** tworzy Workera i uruchamia build. Jeśli zakończy się błędem z powodu braku sekretu administratora, dodaj sekret z kroku 4 i ponów próbę. Domyślna nazwa użytkownika to `admin`; aby ją zmienić, ustaw zmienną Workers Builds `EDGE_EVER_AUTH_USERNAME` przed ponownym buildem. Po wdrożeniu sprawdź, czy `/api/health` zwraca `200`, i zaloguj się.
+5. **Zbuduj i sprawdź aplikację**: Kliknij **Save and Deploy**, aby utworzyć Workera i uruchomić build (niepowodzenie pierwszego buildu z powodu braku sekretu administratora jest zjawiskiem normalnym; dodaj sekret z kroku 4 i ponów próbę). Domyślna nazwa użytkownika to `admin`; aby ją zmienić, ustaw zmienną Workers Builds `EDGE_EVER_AUTH_USERNAME` przed ponownym buildem. Po wdrożeniu sprawdź, czy `/api/health` zwraca `200`, i zaloguj się.
 6. **Włącz automatyczne aktualizacje**: W zakładce **Actions** Forka kliknij **I understand my workflows, go ahead and enable them**, a następnie ręcznie uruchom raz workflow **Update deployed EdgeEver**.
 
 > Pełne instrukcje i konfigurację znajdziesz w [przewodniku wdrożenia online](docs/deploy-cloudflare-button.md).
 
-> 💡 **Domena i dostęp**: Możesz użyć domyślnej domeny `*.workers.dev` lub podłączyć własną w ustawieniach Workera: **Settings → Domains & Routes**.
+</details>
 
-> 💡 **Aktywacja Cloudflare R2**: Choć [darmowy limit przestrzeni R2](https://developers.cloudflare.com/r2/pricing/#free-tier) wystarcza na typowe notatki, najpierw trzeba aktywować subskrypcję R2 i dodać metodę płatności. Cloudflare [obsługuje](https://developers.cloudflare.com/billing/get-started/update-billing-info/#supported-payment-methods) karty UnionPay, Visa i Mastercard oraz PayPal, Apple Pay i Google Pay.
+<details>
+<summary>📌 Uwagi dotyczące wdrożenia na Cloudflare (własna domena i darmowy limit R2)</summary>
+
+> **Domena i dostęp**: Możesz użyć domyślnej domeny `*.workers.dev` lub podłączyć własną w ustawieniach Workera: **Settings → Domains & Routes**.
+>
+> **Aktywacja Cloudflare R2**: Choć [darmowy limit przestrzeni R2](https://developers.cloudflare.com/r2/pricing/#free-tier) wystarcza na typowe notatki, najpierw trzeba aktywować subskrypcję R2 i dodać metodę płatności. Cloudflare [obsługuje](https://developers.cloudflare.com/billing/get-started/update-billing-info/#supported-payment-methods) karty UnionPay, Visa i Mastercard oraz PayPal, Apple Pay i Google Pay.
+
+</details>
 
 ### Opcja C: Docker na VPS lub NAS
+
+Wariant Docker używa tego samego interfejsu, tras API, usług, uwierzytelniania, implementacji MCP i migracji co Cloudflare. Kontener korzysta z SQLite oraz plików lokalnych lub magazynu zgodnego z S3 i obsługuje architektury `amd64` oraz `arm64`. Zobacz [wdrożenie EdgeEver przez Dockera](docs/deploy-docker.md) oraz [architekturę własnego hostingu](docs/self-hosting-architecture.md).
 
 Użyj instalatora hostowanego w GitHubie i oficjalnego obrazu GHCR:
 
@@ -154,39 +167,57 @@ Po instalacji aktualizacje domyślnie uruchamiają się codziennie. Aby zaktuali
 
 ---
 
-## Logowanie wielu użytkowników i zużycie miejsca
+## Zaawansowana konfiguracja i zarządzanie
 
-Jedna instancja obsługuje wiele kont. Administrator może tworzyć i wyłączać konta oraz resetować ich hasła w **Profil → Członkowie**. Każdy użytkownik otrzymuje odizolowaną przestrzeń z notatnikami, notatkami, załącznikami, Koszem, importem i eksportem oraz tokenami MCP. Przejrzysty panel zużycia miejsca pozwala na bieżąco monitorować przestrzeń zajmowaną przez załączniki w całej instancji i na poszczególnych kontach.
+### Kopia zapasowa, eksport i migracja danych
 
-## Rozszerzenie Web Clipper
+Zarówno przy codziennych kopiach zapasowych, bezproblemowej migracji między instancjami, jak i przenoszeniu notatek z innych platform, EdgeEver zapewnia niezawodny i pełny transfer danych:
 
-<p>
-  <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/chrome/chrome.svg" alt="Zainstaluj EdgeEver Web Clipper w Chrome" width="36" height="36" /></a>&nbsp;&nbsp;
-  <a href="https://chromewebstore.google.com/detail/edgeever-web-clipper/gjadpfmanienmlofajibkfkkpfdkclgo"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/edge/edge.svg" alt="Zainstaluj EdgeEver Web Clipper w Edge" width="36" height="36" /></a>&nbsp;&nbsp;
-  <a href="https://addons.mozilla.org/firefox/addon/edgeever-web-clipper/"><img src="https://raw.githubusercontent.com/alrra/browser-logos/58881b84c4d73adc03c06fa2c275a7abee02d935/src/firefox/firefox.svg" alt="Zainstaluj EdgeEver Web Clipper w Firefoxie" width="36" height="36" /></a>
-</p>
+- **Natywne kopie zapasowe i przywracanie EdgeEver**: W aplikacji w **Profil → Import i eksport** można w każdej chwili wyeksportować lub zaimportować archiwum ZIP EdgeEver. Rozpakowany katalog `notes/` zawiera bezpośrednio czytelne pliki Markdown oraz załączniki do lokalnego archiwizowania, a wewnętrzne dane strukturalne pozwalają na bezstratne i pełne odtworzenie bazy na innej instancji EdgeEver. Podczas importu zachowywane są istniejące, niezwiązane dane na instancji docelowej, a rekordy o tych samych identyfikatorach są automatycznie aktualizowane.
+- **Płynna migracja z innych platform**:
+  - **Evernote**: [docs/evernote-migration-guide.md](docs/evernote-migration-guide.md)
+  - **flomo**: [docs/flomo-migration-guide.md](docs/flomo-migration-guide.md)
+  - **Memos**: [docs/memos-migration-guide.md](docs/memos-migration-guide.md)
+  - **Notion**: [docs/notion-migration-guide.md](docs/notion-migration-guide.md)
 
-- **Wydobywanie treści artykułów**: Rozszerzenie pobiera tekst i przekształca go w przejrzysty Markdown, zachowując adres źródłowy oraz czas zapisania.
-- **Zapisywanie zaznaczenia i obrazów z menu kontekstowego**: Dodawaj zaznaczony tekst lub obraz wskazany prawym przyciskiem myszy bez przechwytywania całej strony.
-- **Głęboka integracja z platformami społecznościowymi i forami**: Dedykowane, ustrukturyzowane zapisywanie treści z ponad 15 wiodących platform, w tym X (Twittera), Xiaohongshu, Zhihu, Reddita, GitHuba, YouTube i Bilibili.
-- **Bezpośrednie prywatne połączenie**: Rozszerzenie wysyła materiały do Twojej instancji EdgeEver bez pośrednictwa zewnętrznych usług.
+### Integracja z AI i protokołem MCP
 
-## Społeczność i opinie
+Utwórz token API w **Profil → API / MCP** i skopiuj konfigurację Remote MCP jednym kliknięciem. Agenci AI, tacy jak Claude Code, Cursor, Antigravity i OpenClaw, będą mogli bezpiecznie zarządzać Twoją bazą wiedzy w zakresie uprawnień konta. EdgeEver obsługuje pełne tworzenie, odczyt, edycję i usuwanie notatek tekstowych, diagramów (map myśli, schematów blokowych i diagramów architektury), tabel strukturalnych oraz natywnych notatek plakatowych. Agenci mogą też zarządzać strukturą notatników, tagami, załącznikami, historią wersji, szablonami i instrukcjami AI.
 
-- Błędy, propozycje funkcji i problemy z wdrożeniem zgłaszaj przez [GitHub Issues](https://github.com/tianma-if/edgeever/issues).
-- Przed wniesieniem zmian przeczytaj [poradnik współtworzenia](CONTRIBUTING.md). Jeśli Twój Fork służy również do wdrożenia EdgeEver, pozostaw jego gałąź `main` wyłącznie do wdrożeń. Do synchronizacji, prac rozwojowych i pull requestów utwórz osobną gałąź od oficjalnego `upstream/main`; nie rozwijaj aplikacji ani nie używaj opcji Sync fork na wdrożeniowej gałęzi `main`.
+> 💡 **Inspiracja:**
+> Użyj AI jako pomocnika w porządkowaniu wiedzy: zamieniaj pomysły w interaktywne mapy myśli, diagramy i tabele, dostarczając agentom własny kontekst. Edytor tekstu sformatowanego i typografia EdgeEver pomagają dopracować wynik do postaci gotowej do publikacji.
 
-### Społeczność na Telegramie
+### Logowanie wielu użytkowników i zarządzanie miejscem
 
-Zapraszamy do społeczności EdgeEver, skupiającej twórców i pasjonatów vibe codingu oraz AI. Rozmawiajmy o nowoczesnej produktywności opartej na AI i sprawdzonych praktykach budowania osobistej bazy wiedzy.
+Jedna instancja obsługuje wiele kont.
 
-👉 [Dołącz do grupy na Telegramie](https://t.me/+wwUx1BYLrIdiZjY1)
+Administrator może tworzyć i wyłączać konta oraz resetować ich hasła w **Profil → Członkowie**. Każdy użytkownik otrzymuje odizolowaną przestrzeń z notatnikami, notatkami, załącznikami, Koszem, importem i eksportem oraz tokenami MCP. Przejrzysty panel zużycia miejsca pozwala na bieżąco monitorować przestrzeń zajmowaną przez załączniki w całej instancji i na poszczególnych kontach.
 
-## Wtyczki i motywy
+### Rozszerzenia pamięci masowej i zewnętrzny hosting obrazów
+
+- **Magazyn obiektów OSS**: Właściciel instancji może skonfigurować magazyn zgodny z S3 w **Profil → Zaawansowane → Magazyn obiektów OSS**. Zmiana magazynu nie przenosi istniejących załączników ani ich nie modyfikuje.
+- **Integracja z PicGo na komputerze**: Aplikacja desktopowa opcjonalnie współpracuje z lokalną usługą PicGo, przesyłając wstawiane obrazy bezpośrednio do GitHuba, SM.MS, Upyun, Qiniu lub własnego hostingu, co ogranicza zużycie miejsca i transferu we własnym środowisku.
+
+### Wtyczki i motywy
 
 Aplikacje Web i desktopowa obsługują wtyczki oraz własne motywy, instalowane z oficjalnego marketplace, GitHuba lub adresu manifestu i synchronizowane między urządzeniami. Programiści mogą rozszerzać aplikację przez `@edgeever/plugin-api`; zobacz [przewodnik tworzenia wtyczek](docs/plugin-development.md) i [zasady publikowania w marketplace](docs/plugin-marketplace-policy.md).
 
-## Stos technologiczny
+---
+
+## Przewodnik dla deweloperów i współtworzenie
+
+### Szybki start
+
+```sh
+bun install
+bun run dev
+```
+
+W lokalnym środowisku deweloperskim logowanie następuje automatycznie. Nowa baza używa danych `owner` / `edgeever-local-dev`. Wyloguj się, aby sprawdzić ekran logowania.
+
+### Architektura i stos technologiczny
+
+#### Stos technologiczny
 
 - Monorepo oparte na Bun z aplikacją Web, API, oficjalną stroną i pakietem współdzielonych typów.
 - Interfejs: Vite, React, React Router, TanStack Query, Tailwind CSS, shadcn/ui i Radix UI.
@@ -198,16 +229,10 @@ Aplikacje Web i desktopowa obsługują wtyczki oraz własne motywy, instalowane 
 - Backend: jedna aplikacja biznesowa Hono/Zod z REST API i Remote MCP. Cloudflare używa Workers/D1/R2, a Docker używa Bun/SQLite oraz plików lokalnych lub S3.
 - Oficjalna strona: statyczna witryna Astro w `apps/site`, wdrażana niezależnie na Cloudflare Pages.
 
-## Szybki start
+#### Struktura projektu
 
-```sh
-bun install
-bun run dev
-```
-
-W lokalnym środowisku deweloperskim logowanie następuje automatycznie. Nowa baza używa danych `owner` / `edgeever-local-dev`. Wyloguj się, aby sprawdzić ekran logowania.
-
-## Struktura projektu
+<details>
+<summary>📁 Rozwiń, aby zobaczyć: Struktura projektu monorepo</summary>
 
 ```text
 apps/web          Interfejs Vite + React, PWA, wersje robocze offline i kolejka synchronizacji
@@ -220,7 +245,7 @@ apps/site         Oficjalna strona Astro, wdrażana niezależnie
 packages/client   Współdzielony klient API dla aplikacji Web i mobilnej
 packages/shared   Współdzielone typy, schematy Zod, konwersja TipTap / Markdown
 crates/desktop-sidecar
-                   Proces pomocniczy Rust dla lokalnego SQLite, pracy offline, kopii i plików
+                  Proces pomocniczy Rust dla lokalnego SQLite, pracy offline, kopii i plików
 scripts           Wrapper Wrangler, haszowanie haseł, CLI, most MCP stdio, import Evernote ENEX
 migrations        Wspólne migracje D1/SQLite dopisywane bez zmiany wcześniejszych plików
 docs              Dokumentacja architektury, migracji i wdrażania
@@ -228,52 +253,41 @@ docs              Dokumentacja architektury, migracji i wdrażania
 wrangler.toml     Konfiguracja Cloudflare Workers, Assets, D1 i R2
 ```
 
-## Formaty treści
+</details>
 
-Treść notatki jest przechowywana w trzech postaciach:
+#### Model przechowywania danych
+
+EdgeEver przechowuje treść notatki jednocześnie w trzech formatach, aby pogodzić wydajność edycji, otwartość danych i szybkość wyszukiwania pełnotekstowego:
 
 ```text
-content_json      Dokument TipTap/ProseMirror, główne źródło dla edytora
-content_markdown  Format API, agentów, importu i eksportu
-content_text      Tekst do wyszukiwania, podsumowań i indeksowania
+content_json      Dokument TipTap/ProseMirror, autorytatywny format dla edytora
+content_markdown  Format API, agentów, eksportu i integracji z zewnętrznym ekosystemem
+content_text      Format do wyszukiwania pełnotekstowego, podsumowań i indeksowania
 ```
 
-W **Profil → Import i eksport** można wyeksportować lub zaimportować archiwum ZIP EdgeEver. Katalog `notes/` zawiera czytelne pliki Markdown, a dane strukturalne pozwalają całkowicie odtworzyć instancję. Import zachowuje niezwiązane dane w instancji docelowej i nadpisuje rekordy o tych samych identyfikatorach EdgeEver.
+### Kluczowe mechanizmy i decyzje projektowe
 
-## MCP
+- **Cicha kompresja po stronie klienta**: Aby uniknąć zużywania limitów obliczeniowych na środowiskach Serverless (np. Cloudflare Workers), kompresja obrazów odbywa się w całości w kliencie Web przed wysłaniem (konwersja PNG/JPEG/WebP/AVIF na WebP, ograniczenie dłuższego boku do 2560px; brak powiększenia rozmiaru zachowuje oryginał). Punkty końcowe REST API i MCP zapisują bezpośrednio oryginalną treść otrzymaną od klienta.
+- **Offline-first i harmonogram synchronizacji**: Aplikacje Web, PWA i desktopowe przesyłają zmiany automatycznie po 30 sekundach braku aktywności w pisaniu, a przy widocznym oknie sprawdzają zmiany w chmurze co 5 minut. Ponowne przejście do aplikacji lub ręczne odświeżenie natychmiast synchronizuje dane. Wartości te można konfigurować przez `DEFERRED_MEMO_SYNC_DELAY_MS` i `BACKGROUND_WORKSPACE_REFRESH_INTERVAL_MS` w [`apps/web/src/lib/workspace-refresh.ts`](apps/web/src/lib/workspace-refresh.ts).
 
-Utwórz token API w **Profil → API / MCP** i skopiuj konfigurację Remote MCP jednym kliknięciem. Agenci AI, tacy jak Claude Code, Cursor, Antigravity i OpenClaw, będą mogli bezpiecznie zarządzać Twoją bazą wiedzy w zakresie uprawnień konta. EdgeEver obsługuje pełne tworzenie, odczyt, edycję i usuwanie notatek tekstowych, diagramów (map myśli, schematów blokowych i diagramów architektury), tabel strukturalnych oraz natywnych notatek plakatowych. Agenci mogą też zarządzać strukturą notatników, tagami, załącznikami, historią wersji, szablonami i instrukcjami AI.
+### Współtworzenie kodu
 
-> 💡 **Inspiracja:**
-> Użyj AI jako pomocnika w porządkowaniu wiedzy: zamieniaj pomysły w interaktywne mapy myśli, diagramy i tabele, dostarczając agentom własny kontekst. Edytor tekstu sformatowanego i typografia EdgeEver pomagają dopracować wynik do postaci gotowej do publikacji.
+Serdecznie zapraszamy społeczność do współtworzenia projektu! Przed przesłaniem kodu pamiętaj o poniższych zasadach:
 
-## Kompresja obrazów
+- Przed wniesieniem zmian przeczytaj [poradnik współtworzenia](CONTRIBUTING.md).
+- **Izolacja wdrożenia i gałęzi**: Jeśli Twój GitHub Fork służy również do wdrożenia EdgeEver online, pozostaw jego gałąź `main` wyłącznie do wdrożeń. Do prac rozwojowych i pull requestów utwórz osobną gałąź od oficjalnego `upstream/main`; nie twórz zmian bezpośrednio na gałęzi `main` ani nie wykonuj na niej opcji Sync fork.
 
-Obrazy są kompresowane przed przesłaniem w aplikacji Web; steruje tym ustawienie **Kompresuj obrazy w notatkach**. Po włączeniu pliki PNG, JPEG, WebP i AVIF są konwertowane na WebP, jeśli zmniejsza to ich rozmiar. Najdłuższy bok jest ograniczony do `2560px`. Gdy kompresja nie daje oszczędności, aplikacja zachowuje oryginał.
+---
 
-EdgeEver nie przetwarza obrazów po stronie Workera, co ogranicza zużycie zasobów obliczeniowych i limitów przetwarzania. Przesyłanie przez REST API i MCP przechowuje plik otrzymany od klienta bez dodatkowej kompresji na serwerze.
+## Społeczność i opinie
 
-## Zaawansowane przechowywanie plików i zewnętrzny hosting obrazów
+- **Zgłaszanie uwag i propozycji**: Błędy, propozycje funkcji i pytania dotyczące wdrożenia zgłaszaj przez [GitHub Issues](https://github.com/tianma-if/edgeever/issues).
 
-- **Magazyn obiektów OSS**: Właściciel instancji może skonfigurować magazyn zgodny z S3 w **Profil → Zaawansowane → Magazyn obiektów OSS**. Zmiana magazynu nie przenosi istniejących załączników ani ich nie modyfikuje.
-- **Integracja z PicGo na komputerze**: Aplikacja desktopowa opcjonalnie współpracuje z lokalną usługą PicGo, przesyłając wstawiane obrazy bezpośrednio do GitHuba, SM.MS, Upyun, Qiniu lub własnego hostingu, co ogranicza zużycie miejsca i transferu we własnym środowisku.
+### Społeczność na Telegramie
 
-## Migracja
+Zapraszamy do społeczności EdgeEver, skupiającej twórców i pasjonatów vibe codingu oraz AI. Rozmawiajmy o nowoczesnej produktywności opartej na AI i sprawdzonych praktykach budowania osobistej bazy wiedzy.
 
-Jeśli chcesz przenieść notatki z innej aplikacji do EdgeEver, skorzystaj z poniższych przewodników (obecnie po angielsku):
-
-- **Evernote**: [docs/evernote-migration-guide.md](docs/evernote-migration-guide.md)
-- **flomo**: [docs/flomo-migration-guide.md](docs/flomo-migration-guide.md)
-- **Memos**: [docs/memos-migration-guide.md](docs/memos-migration-guide.md)
-- **Notion**: [docs/notion-migration-guide.md](docs/notion-migration-guide.md)
-
-## Wdrożenie przez Dockera
-
-Wariant Docker używa tego samego interfejsu, tras API, usług, uwierzytelniania, implementacji MCP i migracji co Cloudflare. Kontener korzysta z SQLite oraz plików lokalnych lub magazynu zgodnego z S3 i obsługuje architektury `amd64` oraz `arm64`. Zobacz [wdrożenie EdgeEver przez Dockera](docs/deploy-docker.md) oraz [architekturę własnego hostingu](docs/self-hosting-architecture.md).
-
-## Czas synchronizacji
-
-Aplikacje Web, PWA i desktopowa przesyłają zmiany notatek po 30 sekundach bezczynności i sprawdzają zmiany zdalne co 5 minut, gdy są widoczne. Ponowne przejście do aplikacji i ręczne odświeżenie działają od razu. Parametry `DEFERRED_MEMO_SYNC_DELAY_MS` i `BACKGROUND_WORKSPACE_REFRESH_INTERVAL_MS` znajdują się w [`apps/web/src/lib/workspace-refresh.ts`](apps/web/src/lib/workspace-refresh.ts).
+👉 [Dołącz do grupy na Telegramie](https://t.me/+wwUx1BYLrIdiZjY1)
 
 ## Wsparcie projektu
 

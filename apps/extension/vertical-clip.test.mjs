@@ -177,11 +177,12 @@ for (const selector of [".article__container", ".article__bd__detail"]) test(`Xu
   expect(readXueqiu(doc, platformTarget(xueqiuUrl), xueqiuUrl).ok).toBe(false);
 });
 
-test("Xueqiu pointer targets the own header in a real truncated feed; preview requires opening its detail", () => {
-  const window = createWindow(fixtureText("xueqiu-feed"), "https://www.xueqiu.com/");
+for (const classic of [false, true]) test(`Xueqiu ${classic ? 'classic signed-in' : 'module'} feed pointer targets only its own header; preview requires its detail`, () => {
+  const html = classic ? fixtureText("xueqiu-feed").replace(/(?:style_)?(timeline__item__(?:main|info)|date-and-source|user-name)_[\w-]+/g, '$1') : fixtureText("xueqiu-feed");
+  const window = createWindow(html, "https://www.xueqiu.com/");
   const [script] = bundleTestScripts(["social-target"]);
   runInContext(script, createContext({ document: window.document, location: window.location, Element: window.Element, Node: window.Node, URL }));
-  const cards = [...window.document.querySelectorAll('[class*="timeline__item__main_"]')];
+  const cards = [...window.document.querySelectorAll('.timeline__item__main, [class*="timeline__item__main_"]')];
   expect(cards).toHaveLength(2);
   const target = xueqiuCardTarget(cards[0]);
   expect(target.url).toBe("https://xueqiu.com/6114376649/411862401");

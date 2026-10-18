@@ -1,4 +1,5 @@
 import type { CompanionAction } from "@edgeever/shared";
+import { getMemoDisplayTitle } from "@edgeever/shared";
 import { ArrowUpRight, Check, FileText, GitMerge } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,7 @@ export function CompanionActionCard({ action, busy, onApply, onDismiss, onOpenNo
                       onClick={() => onOpenNote(note.id, note.notebookId)}
                     >
                       <FileText className="h-3 w-3 shrink-0 text-slate-400" />
-                      <span className="truncate">{note.title || t("common.untitledMemo")}</span>
+                      <span className="truncate">{getMemoDisplayTitle(note.title, t("common.untitledMemo"))}</span>
                       <ArrowUpRight className="h-2.5 w-2.5 shrink-0 opacity-50" />
                     </button>
                     {note.excerpt ? (
@@ -63,7 +64,7 @@ export function CompanionActionCard({ action, busy, onApply, onDismiss, onOpenNo
                     className="group/note inline-flex max-w-full items-center gap-1.5 text-xs font-semibold text-slate-800 hover:text-slate-950  "
                   >
                     <FileText className="h-3.5 w-3.5 shrink-0 text-slate-400 group-hover/note:text-slate-950 " />
-                    <span className="truncate">{action.notes[0].title || t("common.untitledMemo")}</span>
+                    <span className="truncate">{getMemoDisplayTitle(action.notes[0].title, t("common.untitledMemo"))}</span>
                     <ArrowUpRight className="h-3 w-3 shrink-0 opacity-40 group-hover/note:opacity-100" />
                   </button>
                   {action.notes[0].excerpt ? (

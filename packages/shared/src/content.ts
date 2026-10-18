@@ -78,6 +78,15 @@ export type TiptapDoc = {
 
 export const DEFAULT_MEMO_TITLE = "无标题笔记";
 
+/**
+ * Title to show for a note. Untitled notes are stored with the zh-CN default
+ * title, so it is replaced by the reader's localized label like an empty one.
+ */
+export const getMemoDisplayTitle = (title: string | null | undefined, untitledLabel: string) => {
+  const trimmed = title?.trim() ?? "";
+  return trimmed && trimmed !== DEFAULT_MEMO_TITLE ? trimmed : untitledLabel;
+};
+
 export const resolveMergedMemoTitle = (
   inputTitle: string | null | undefined,
   sourceMemos: Array<{ title: string | null | undefined }>,

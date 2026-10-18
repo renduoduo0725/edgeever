@@ -920,7 +920,9 @@ const main = async () => {
     ...results.map(([store, result]) => `${store}: ${result.action}${result.reason ? ` — ${result.reason}` : ""}`),
     "Chrome and Edge use the same Chrome Web Store submission. Review still has to approve it.",
     "Firefox review still has to approve and sign the package.",
-    "waiting-review: no package was submitted to that store. After review completes, manually rerun Submit Web Clipper with the original release_tag and that platform.",
+    ...(results.some(([, result]) => result.action === "waiting-review")
+      ? ["waiting-review: no package was submitted to that store. After review completes, manually rerun Submit Web Clipper with the original release_tag and that platform."]
+      : []),
   ].join("\n"));
   if (failures.length > 0) {
     throw new Error(failures.join(" "));

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SharePasswordControls } from "./SharePasswordControls";
+import { ShareQrCode } from "./ShareQrCode";
 import { SHARE_DIALOG_PRIMARY_BUTTON_CLASS_NAME, SHARE_DIALOG_WIDTH_CLASS_NAME } from "./share-dialog-layout";
 import { api, getConfiguredDesktopApiBaseUrl } from "@/lib/api";
 import { copyTextToClipboard } from "@/lib/clipboard";
@@ -173,6 +174,10 @@ export const ShareMemoDialog = ({
               hideCopyBoth={true}
               onChange={(enabled) => passwordMutation.mutate(enabled)}
             />
+
+            {share.passwordProtected ? null : (
+              <ShareQrCode key={`qr-${share.token}`} url={shareUrl} hint={t("sharing.qrCodeHint")} />
+            )}
 
             <div className="flex items-center justify-between pt-2">
               <Button variant="danger" disabled={isWorking} onClick={() => revokeMutation.mutate()}>

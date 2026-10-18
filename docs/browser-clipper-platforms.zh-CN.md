@@ -2,7 +2,45 @@
 
 [English](browser-clipper-platforms.md)
 
-关联 [Issue #493](https://github.com/tianma-if/edgeever/issues/493) 和[实施方案](browser-clipper-platform-expansion-plan.zh-CN.md)。更新于 2026-10-15：Phase 1 已合并，Phase 2 与其余本次要求的平台适配已在本地实现；扩展商店发布和完整跨浏览器实站验收仍待完成。
+关联 [Issue #493](https://github.com/tianma-if/edgeever/issues/493) 和[实施方案](browser-clipper-platform-expansion-plan.zh-CN.md)。平台适配已通过 #505、#521、#578 合并；跨浏览器与登录态实站验收由 [Issue #588 验收矩阵](browser-clipper-acceptance-588.zh-CN.md)继续跟踪。以下各轮记录保留当时的代码、环境与验收边界。
+
+2026-10-18 续验已补齐指定的即刻 Web 信息流、LinkedIn 登录公司信息流、Bluesky 引用信息流和 Edge／Firefox 完整 Substack 文章；新增修复及剩余浏览器环境限制见上述矩阵。
+
+2026-10-18 第九轮补齐 Edge 登录雪球推荐列表、Facebook 展开列表、即刻 following 和 Bluesky 引用单卡，修复经典雪球类名定位；四条笔记及十三图来源阻断重开通过。轻微排版残留、构建边界和清理证据见验收记录。
+
+2026-10-18 第十轮补齐 Edge 豆瓣影评／乐评／日记／短评及 ego lite Medium 公开全文，修复中文加粗边界、Bluesky 角标及 Medium 正文外链预览卡遗漏；476 项扩展测试通过，真实保存、来源阻断重开与清理结果见验收记录。
+
+2026-10-18 整体复核修复即刻按钮媒体误删、即刻／Medium 可见后代被拒及 Medium 正文一级标题遗漏；完整非 E2E 3,743 项、扩展 481 项通过，1 个 Windows 专属用例按条件跳过。独立复审与构建边界见验收记录。
+
+## 2026-10-18 对照 #493 原始需求复核
+
+重新读取 [#493 正文及维护者结案说明](https://github.com/tianma-if/edgeever/issues/493#issuecomment-6208560808)，逐项对照当前代码、夹具、自动回归和实站记录。#505、#521、#578 的 GitHub 状态均为 MERGED。原文 15 组／17 个平台均有对应实现；原 Issue 以开发交付结案，不把商店／全浏览器／完整 BOSS 实站混为同一完成条件。以下“实站”只指已记录的指定样本，不表示全部版式。
+
+| 原要求 | 实现与证据 | 结论／边界 |
+| --- | --- | --- |
+| Facebook：单主帖全文、作者／组织、时间、图，排除交互／评论 | social-clip.ts；social-clip.test.mjs；Edge 登录列表展开三图 | 实现／对应样本实站已覆盖 |
+| Instagram：单帖／轮播、合并配文、Handle、时间 | social-clip.ts；三图及20媒体样本回归／实站 | 实现／对应样本实站已覆盖 |
+| LinkedIn：完整动态、see more、姓名／职务、时间、图 | social-clip.ts、capture-platform.ts；个人职务、公司列表、SDUI UGC 回归／实站 | 实现／对应样本实站已覆盖 |
+| Substack：正文、作者、时间、排版、Subscribe／付费界面过滤 | substack-content.ts、article-metadata.ts；文章三图、付费拒绝及可见选区 | 实现／对应样本实站已覆盖 |
+| Medium：正文、副标题、作者、代码块高亮、清理推荐 | medium-content.ts；capture-bundle.test.mjs 代码原文／结构；语言与高亮消费方受控探测 | 正文／副标题／两图实站通过；第十一／十二轮三浏览器 40 个真实代码块原文及高亮通过 |
+| Hacker News：Ask正文／Show外链、发布者、积分、提交时间 | hacker-news-clip.ts；platform-clip.test.mjs 正文／链接／UTC | 实现／对应样本实站已覆盖 |
+| Threads / Bluesky：单帖、作者、时间、引用、原图 | social-clip.ts；两站引用分支回归；Bluesky引用实站 | Edge 文字／含图引用、Firefox／ego lite 含图引用通过；其余指定样本有证据 |
+| BOSS直聘：岗位、薪资、城市、职责／任职要求、公司简介 | boss-clip.ts；vertical-clip.test.mjs 全字段、受限拒绝夹具 | 字段已实现；登录完整岗位持久化／重开按 #589 跟踪 |
+| 雪球：长帖／研报、作者、配图、投资／股票标签 | xueqiu-clip.ts；详情三图三股票、登录推荐卡八图 | 实现／对应样本实站已覆盖 |
+| 小宇宙：标题、Show Notes全文、时间轴、主播、节目名 | xiaoyuzhou-clip.ts；明确阿丁／毛毛、六节点及超过一小时的时间轴 | 实现；仅保留明确主播，不猜节目作者 |
+| 微信公众号：正文富文本、公众号／作者、头图／正文图、净化底栏 | article-clip.ts；代码组件／懒图／头图去重／底栏回归，21图实站 | 实现／对应样本实站已覆盖 |
+| 即刻：全文、展开、作者、时间、单图／九图高清 | jike-clip.ts、jike-web-state.ts；原图顺序／身份／展开及实站 | 实现；第十二轮已在三浏览器复验九图位置，Edge 8/9 归档且如实反馈 |
+| V2EX：主题正文及各条附言 Markdown | v2ex-clip.ts；两附言、各自时间、排除回复 | 实现／对应样本实站已覆盖 |
+| 少数派 / 掘金：正文、代码块、结构化大图 | article-clip.ts、platform-clip.ts；语言／缩进／表格，真实图片转存 | 实现；Edge 少数派8/9图时正确报部分外链 |
+| 豆瓣：书影音长评／短评、日记 | douban-clip.ts；长评／三主机短评定位／日记，Edge 四类补验 | 实现／对应样本实站已覆盖 |
+
+共同规范已核对保存消费方：专用平台通过 `background.ts` 的 `performPlatformSave` 写入统一标题、作者／职务、原发布时间、来源及平台 tags；Medium/Substack 通过 `createMemo` 写入 `web-clip` 和对应平台标签。图片都进入既有 `page-images` 下载／上传／地址改写，部分失败明确反馈，不等同于所有客户端冷启动离线验收。16 个新增平台菜单在 `zh_CN`、`en`、`ja` 的 message 均存在且非空。各平台均有对应提取／身份／保存回归；沿用刚完成的 3,743 项非 E2E 结果，不为纯只读核对重复跑整套测试。
+
+复核时确认两项定向实站缺口：Medium 含代码文章及 Threads 引用帖。既有受控代码／引用回归未覆盖它们的当前真实 DOM；后续第十一轮因此发现并修复 Medium 语言／换行丢失和 Threads 嵌套引用时间戳误拒绝，不能把此前受控通过视为实站通过。
+
+第十一轮已在保留登录的 Edge 原生扩展中补齐：公开 Medium 文章 `1a538c9389fe` 的 40 个代码块逐字符及换行一致，保留 38 个 JavaScript／2 个 XML 语言，屏蔽原站和 CDN 后重开仍有 551 个实际高亮片段；Threads `@mosseri/DeAlGo0I71T` 文字引用和 `@mkbhd/DehHSaCnEmU` 含图引用均保存／重开通过，主帖、引用正文、引用作者及原图保留。来源图片独立下载与实例附件逐字节一致。上述两个定向缺口已补齐；不扩报所有版式或其他浏览器的最新构建。详细风险、测试与清理见 [#588 第十一轮记录](browser-clipper-acceptance-588.zh-CN.md)。
+
+#493 的开发交付结案边界保留；#587 商店交付／更新、#588 跨浏览器及登录态、#589 BOSS 完整岗位仍分别跟踪。初次只读核查证据：`/private/tmp/edgeever-issue-493-audit-20261018`；本轮修复及实站证据：`/private/tmp/edgeever-issue-588-20261017-uz6mqhpj/evidence/eleventh`。未提交、推送、部署或回写 GitHub Issue。
 
 ## 2026-10-15 PR 提交验证
 
@@ -311,3 +349,15 @@ bunx playwright test tests/e2e/web-clipper-html-safety.spec.ts tests/e2e/web-cli
 本轮修复 Instagram 父级配文截断后遗漏后半正文的问题，保存已加载的全部逐张配文并保留独立父级文案；Meta 可读性检查和右键定位共用同一帖卡边界；拒绝隐藏的 Facebook／Bluesky／LinkedIn 正文；删除依据普通分数正文推测 Bluesky 图片数量的逻辑；已识别但不可读的 Medium／Substack 文章明确失败，不再退回整页采集。文章识别与 Markdown 转换复用共享能力。先前 Instagram 验证没有断言最后一张图片的文案，本轮回归及 Chromium 编辑器验证已补齐。
 
 端到端夹具测试覆盖全部 15 个样例，通过真实扩展、本地 API、图片转存及屏蔽来源后的编辑器重开，同时验证不可读／隐藏内容拒绝和清理。因本地开发代理间歇超时，扩展、API 断言及编辑器 API 请求均直连同一 workerd；这证明本地业务链路，不能视为代理故障已修复，也不代表所有实站 CDN 或浏览器均已验收。浏览器 HTML 安全检查通过。Firefox 仅完成构建与 lint，本轮未新增 Firefox 运行时验收。
+
+2026-10-18 补验：ego lite 用户手动触发原生工具栏，同篇 Substack 完整文章的两次保存及各 3/3 图片归档通过；两条笔记均在来源／CDN 被阻断后重开，正文一致、六图解码。测试数据及专用令牌已清理，原数据完整保留。详见 [#588 验收记录](browser-clipper-acceptance-588.zh-CN.md)。
+
+2026-10-18 第六轮补验：Firefox 新增 Instagram 20 项媒体及豆瓣影评、乐评、日记、短评单卡；Edge 新增 Instagram 20 项媒体及 Facebook 公开详情。七条笔记、52 个附件完成实际保存与来源阻断后重开。Edge Threads／LinkedIn 登录遮罩下正确拒绝，登录态待用户完成；Firefox Medium 访问验证受阻。测试数据、令牌、临时会话与工具已清理，原数据与产品构建摘要保留。详见 [#588 验收记录](browser-clipper-acceptance-588.zh-CN.md)。
+
+2026-10-18 第七轮补验：用户在原 Edge 窗口登录后，Threads 四图／短链详情及 LinkedIn SDUI UGC 八图详情通过原生工具栏保存、完整来源正文核对及来源阻断后重开。13 个附件按顺序匹配独立源下载；三条笔记、13 个资源及测试令牌已清理，原数据和网站登录保留。Edge Medium 仍在 Cloudflare 验证页等待用户处理。详见 [#588 验收记录](browser-clipper-acceptance-588.zh-CN.md)。
+
+2026-10-18 Medium 第八轮补验：用户分别通过 Edge／Firefox 的人机验证后，公开文章《Come to my Medium Day talk》完成两浏览器原生保存、16 个正文块／五项列表／末段核对、1/1 配图归档及来源阻断重开。原文章当前为会员预览，Edge 仅验证 11 个可见文本块及一张图，没有隐藏付费正文。三条笔记及三个资源和专用令牌已清理，原数据、网站登录及验证状态保留。详见 [#588 验收记录](browser-clipper-acceptance-588.zh-CN.md)。
+
+2026-10-18 第十二轮补齐最终构建在 Firefox／ego lite 的 Medium 40 块代码高亮和含图 Threads 引用，以及三浏览器即刻九图位置保留。Firefox／ego lite 各11图来源阻断重开通过；Edge 即刻8/9归档且如实提示外链，八图重开通过。七条笔记／30资源及令牌清理、原数据核对和 #588 六项完成条件逐项证据见[验收记录](browser-clipper-acceptance-588.zh-CN.md)。可提交维护者结案审阅，未回写 GitHub；保留自然卡片复用、未采样版式及 #587／#589 边界。
+
+2026-10-18 第十三轮整体复审修复 Medium 容器内代码与根 `pre` 段落身份的语言／换行遗漏，撤去无依据语言长度上限。完整非 E2E 3,746 项、扩展 484 项通过，独立复审收敛；本轮仅自动化验证，实站记录不追溯到新构建。详见[验收记录](browser-clipper-acceptance-588.zh-CN.md)。

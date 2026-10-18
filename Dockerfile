@@ -36,8 +36,17 @@ RUN bun run build:web && bun run build:self-hosted
 FROM oven/bun:1.3.14-alpine AS runtime
 WORKDIR /app
 ARG EDGE_EVER_BUILD_ID=unknown
+# Image build metadata for System information. Self-built images leave these
+# empty, which the instance reports as unknown. They describe how the image was
+# produced, not how it was deployed; set EDGE_EVER_DEPLOYMENT_* at runtime for that.
+ARG EDGE_EVER_BUILD_CREATED_AT=
+ARG EDGE_EVER_BUILD_TRIGGER=
+ARG EDGE_EVER_BUILD_METHOD=
 ENV NODE_ENV=production \
     EDGE_EVER_BUILD_ID=${EDGE_EVER_BUILD_ID} \
+    EDGE_EVER_BUILD_CREATED_AT=${EDGE_EVER_BUILD_CREATED_AT} \
+    EDGE_EVER_BUILD_TRIGGER=${EDGE_EVER_BUILD_TRIGGER} \
+    EDGE_EVER_BUILD_METHOD=${EDGE_EVER_BUILD_METHOD} \
     EDGE_EVER_DATA_DIR=/data \
     EDGE_EVER_WEB_DIR=/app/apps/web/dist \
     PORT=8787

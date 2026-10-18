@@ -51,14 +51,15 @@ export const normalizeInstanceUrl = (value: string) => {
   return withProtocol.replace(/\/+$/, "");
 };
 
-export const getInstanceOrigin = (instanceUrl: string) => {
+export const getInstancePermissionPattern = (instanceUrl: string) => {
   const url = new URL(normalizeInstanceUrl(instanceUrl));
-  return url.origin;
+  // Firefox match patterns do not support ports; requests retain the configured URL.
+  return `${url.protocol}//${url.hostname}/*`;
 };
 
 export const requestInstancePermission = async (instanceUrl: string) => {
-  const origin = getInstanceOrigin(instanceUrl);
-  const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
+  const pattern = getInstancePermissionPattern(instanceUrl);
+  const granted = await chrome.permissions.request({ origins: [pattern] });
   if (!granted) {
     throw new Error(t("instancePermissionRequired"));
   }

@@ -44,7 +44,7 @@ const paragraphs = (doc: Document, value: string) => {
 const plainSocialMarkdown = (doc: Document, value: string, base: string) =>
   platformHtmlMarkdown(paragraphs(doc,value),base);
 /** Normalize text newlines in a detached body before shared Markdown conversion. */
-const socialBodyMarkdown = (doc: Document, body: Element, base: string) => {
+export const socialBodyMarkdown = (doc: Document, body: Element, base: string) => {
   const visit = (node: Node) => {
     for (const child of Array.from(node.childNodes)) {
       if (child.nodeType !== 3) { visit(child); continue; }
@@ -116,15 +116,31 @@ export const linkedinCardTarget = (card: Element): PlatformTarget | null => {
   return null;
 };
 
+const facebookTargetIds = (doc: Document, target: PlatformTarget) => {
+  const ids = new Set([target.id]);
+  for (const item of pageRecords(doc, target.id)) {
+    if (text(item.post_id) === target.id) {
+      const alias = platformTarget(text(item.permalink_url || item.url));
+      if (alias?.platform === "facebook") ids.add(alias.id);
+    }
+    // The signed-in permalink dialog can declare a different pfbid for the same post.
+    if (item.canonicalRouteName !== "comet.fbweb.CometSinglePostDialogRoute"
+      || !sameTarget(safePlatformUrl(text(item.url), target.url), target)) continue;
+    const params = record(item.params);
+    const alias = platformTarget(`https://www.facebook.com/${text(params?.page_token)}/posts/${text(params?.story_token)}`);
+    if (alias?.platform === "facebook") ids.add(alias.id);
+  }
+  return ids;
+};
+
 export const socialPostCard = (doc: Document, target: PlatformTarget): Element | null => {
   if (target.platform === "facebook") {
-    const aliases=pageRecords(doc,target.id).filter((item)=>text(item.post_id) === target.id)
-      .map((item)=>platformTarget(text(item.permalink_url || item.url))?.id).filter(Boolean);
+    const ids = facebookTargetIds(doc, target);
     return Array.from(doc.querySelectorAll('[role="article"], article')).find((card) =>
       ownPostLinks(card,target.platform).some((a) => {
         const url=postLinkUrl(a,target.url);
         return a.closest('[role="article"], article') === card && !/[?&]comment_id=/.test(url)
-          && (sameTarget(url,target) || aliases.includes(platformTarget(url)?.id));
+          && ids.has(platformTarget(url)?.id || "");
       })) || null;
   }
   if (target.platform === "linkedin") {
@@ -172,8 +188,14 @@ export const readBluesky = (doc: Document, target: PlatformTarget): PlatformRead
   const content = bodyCopy?.textContent || "";
   if (!content.trim() && text(entry?.text).trim()) return {ok:false,reason:"unreadable"};
   const copy = post.cloneNode(true) as Element;
+  for (const button of Array.from(copy.querySelectorAll('button[aria-label]'))) {
+    if (!button.querySelector('img[src*="/img/feed_"][alt]')) continue;
+    const badge = button.nextElementSibling as HTMLElement | null;
+    if (badge?.style.position === "absolute" && /^(?:ALT|替代文本)$/.test(platformText(badge))
+      && !badge.querySelector('img,a,button')) badge.remove();
+  }
   copy.querySelectorAll('button, [data-testid="userAvatarImage"], svg').forEach((node)=> {
-    if(node.tagName.toLowerCase() === "button" && node.querySelector('img[src*="/img/feed_"]')) node.replaceWith(...Array.from(node.childNodes));
+    if(node.tagName.toLowerCase() === "button" && node.querySelector('img[src*="/img/feed_"]')) node.replaceWith(...Array.from(node.querySelectorAll('img[src*="/img/feed_"]')));
     else node.remove();
   });
   const parts = [bodyCopy ? socialBodyMarkdown(doc,bodyCopy,target.url)
@@ -189,6 +211,17 @@ export const readBluesky = (doc: Document, target: PlatformTarget): PlatformRead
   parts.push(...visibleImages);
   for (const quote of Array.from(copy.querySelectorAll(BLUESKY_QUOTE_SELECTOR))) {
     for (const img of Array.from(quote.querySelectorAll("img[src]"))) img.setAttribute("src",blueskyFullsizeUrl(img.getAttribute("src") || ""));
+    // Link previews wrap a block of image/title/description. Keep the image
+    // separately and the complete label inline so Markdown forms a real link.
+    for (const link of Array.from(quote.querySelectorAll("a[href]"))) {
+      if (!link.querySelector("div")) continue;
+      const labelCopy = link.cloneNode(true) as Element;
+      for (const block of Array.from(labelCopy.querySelectorAll("div,p"))) block.appendChild(doc.createTextNode(" "));
+      const label = platformText(labelCopy);
+      if (!label) continue;
+      for (const image of Array.from(link.querySelectorAll("img"))) link.parentNode!.insertBefore(image, link);
+      link.textContent = label;
+    }
     parts.push(platformHtmlMarkdown(quote,target.url));
   }
   const author = text(record(entry?.author)?.name) || Array.from(card.querySelectorAll('a[href]'))
@@ -207,10 +240,12 @@ export const metaPostCard = (link: Element, platform: string, base: string): Ele
   if (!link.querySelector("time[datetime]") || link.closest("[hidden], [aria-hidden='true'], script, style, template")) return null;
   const target = platformTarget(postLinkUrl(link,base));
   if (!target || target.platform !== platform) return null;
+  const pressable = platform === 'threads' ? link.closest('[data-pressable-container]') : null;
   let card = link.parentElement;
   for (let depth=0; card && depth<12; depth++,card=card.parentElement) {
     if (card.matches('main, [role="main"], [role="region"], [role="dialog"], body')) break;
     const timestamps = Array.from(card.querySelectorAll('a[href]')).filter((a)=>a.querySelector('time[datetime]')
+      && (!pressable || a.closest('[data-pressable-container]') === pressable)
       && (!a.closest('article, [role="article"]') || a.closest('article, [role="article"]') === card));
     if (timestamps.some((a)=> {
       const other=platformTarget(postLinkUrl(a,base));
@@ -235,9 +270,16 @@ const readableMetaCard = (doc: Document, target: PlatformTarget, captions: strin
     if (!card) continue;
     const copy=platformReadableCopy(card);
     copy.querySelectorAll("script, style, template, article, [role='article'], [hidden], [aria-hidden='true']").forEach((node)=>node.remove());
+    if (target.platform === 'threads') Array.from(copy.querySelectorAll('[data-pressable-container]')).forEach(node=>node.remove());
     // Threads shortens visible URL labels; its card's href retains the destination.
     if (target.platform === 'threads') for (const a of Array.from(copy.querySelectorAll('a[href]'))) {
-      const href=safePlatformUrl(a.getAttribute('href') || '',target.url);
+      let href=safePlatformUrl(a.getAttribute('href') || '',target.url);
+      if (href) {
+        const url=new URL(href);
+        if (url.origin === 'https://l.threads.com' && url.pathname === '/') {
+          href=safePlatformUrl(url.searchParams.get('u') || '',target.url);
+        }
+      }
       const label=[href,href.replace(/^https?:\/\//,'')].find((value)=>value && expected.some((caption)=>caption.includes(value)));
       if (label) a.textContent=label;
     }
@@ -328,11 +370,16 @@ export const readFacebook = (doc: Document, target: PlatformTarget): PlatformRea
   const liveBody=ownBody(liveCard);
   if (platformText(liveBody) && !platformText(body)) return {ok:false,reason:"unreadable"};
   if (body?.closest('[hidden], [aria-hidden="true"]')) return {ok:false,reason:"unreadable"};
-  const records = pageRecords(doc, target.id);
-  const story = records.find((item) => item.__typename === "Story" && (sameTarget(item.permalink_url || item.url, target) || text(item.post_id) === target.id));
+  const ids = facebookTargetIds(doc, target);
+  const records = [...ids].flatMap(id => pageRecords(doc, id));
+  const story = records.find((item) => item.__typename === "Story"
+    && (ids.has(platformTarget(text(item.permalink_url || item.url))?.id || "") || ids.has(text(item.post_id))));
   const contentStory=record(record(record(story?.comet_sections)?.content)?.story);
   if (!platformText(body) && text(record(contentStory?.message)?.text).trim()) return {ok:false,reason:"unreadable"};
   const cleanBody = body?.cloneNode(true) as Element | undefined;
+  for (const button of Array.from(cleanBody?.querySelectorAll('button, [role="button"]') || [])) {
+    if (/^(?:收起|See less)$/i.test(platformText(button))) button.remove();
+  }
   for (const emoji of Array.from(cleanBody?.querySelectorAll('img[src*="/images/emoji.php"]') || [])) emoji.replaceWith(doc.createTextNode(emoji.getAttribute("alt") || ""));
   const parts = [cleanBody ? socialBodyMarkdown(doc,cleanBody,target.url) : ""];
   const copy = card.cloneNode(true) as Element;
@@ -365,7 +412,7 @@ export const readFacebook = (doc: Document, target: PlatformTarget): PlatformRea
   const author = text(actor?.name) || platformText(card.querySelector('h2 a, h3 a, strong a'));
   const saved = result(target,parts.filter(Boolean).join("\n\n"),author,epochTime(story?.creation_time),platformText(cleanBody).slice(0,100) || author);
   if (saved.ok && !saved.clip.publishedAt) {
-    const link = ownPostLinks(card,target.platform).find((a)=>sameTarget(postLinkUrl(a,target.url),target));
+    const link = ownPostLinks(card,target.platform).find((a)=>ids.has(platformTarget(postLinkUrl(a,target.url))?.id || ""));
     saved.clip.publishedAt = publishedTime(link?.querySelector("time, abbr") || link || null);
   }
   return saved;

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { createDocument } from "@mixmark-io/domino";
 import { readArticle } from "./src/article-clip.ts";
-import { readJike } from "./src/jike-clip.ts";
+import { readJike, jikeExpandButton } from "./src/jike-clip.ts";
 import { readDouban, doubanCommentTarget } from "./src/douban-clip.ts";
 import { isPlatformClip, platformTarget, socialPlatform } from "./src/platform-clip.ts";
 import { markdownToDoc } from "../../packages/shared/src/content.ts";
@@ -318,4 +318,173 @@ test('Jike clickable image controls retain every confirmed original image',()=>{
 test('article metadata retains a visible relative publication value when no machine date exists',async()=>{
  const {mediumContent}=await import('./src/medium-content.ts'),d=fixture('medium-article');d.querySelector('script').remove();d.querySelector('[data-testid="storyPublishDate"]').textContent='2 days ago';
  expect(mediumContent(d,'https://scottbatson.dev/what-should-programmers-do-while-the-ai-writes-code-a2ce2e6de88e').publishedAt).toEqual({value:'2 days ago',precision:'relative'});
+});
+
+const jikeWebUrl='https://web.okjike.com/u/5e6497e7-a69f-422b-af6e-baf0fc07b512/post/64c9dd9a2edae6abdc610605';
+test('signed-in Jike Web detail keeps its full body, mention text and preview cover without avatars/comments',()=>{
+ const d=fixture('jike-web-detail');const r=readJike(d,jikeWebUrl);
+ expect(platformTarget(jikeWebUrl)).toEqual(platformTarget(urls['jike-long']));
+ expect(r.ok).toBe(true);expect(r.clip.author).toBe('泛函');expect(r.clip.publishedAt).toEqual({value:'2023-08-02',precision:'date'});
+ expect(r.clip.markdown).toContain('《世界尽头的咖啡馆》和《斯坦福大学人生设计课》');
+ expect(r.clip.markdown).toContain('凌空小鱼儿');expect(r.clip.markdown).not.toContain('Do not capture comments');
+ expect(r.clip.markdown.match(/!\[/g)).toHaveLength(1);expect(r.clip.markdown).not.toContain('!120x120');
+ expect(r.clip.markdown).toContain('https://m.okjike.com/originalPosts/61ed0f92c7f0e70011d194c0');
+ expect(r.clip.markdown).not.toContain('?s=');
+});
+for(const invalid of ['wrong-author','ambiguous-card','hidden-card','missing-body','wrong-post'])test(`signed-in Jike Web refuses ${invalid}`,()=>{
+ const d=fixture('jike-web-detail'),card=d.querySelector('[class*="_postCard_"]');
+ if(invalid==='wrong-author')for(const a of card.querySelectorAll('header a'))a.setAttribute('href','/u/other-user');
+ if(invalid==='ambiguous-card')card.parentElement.appendChild(card.cloneNode(true));
+ if(invalid==='hidden-card')card.setAttribute('hidden','');
+ if(invalid==='missing-body')card.querySelector('[class*="_contentWrapper_"]').remove();
+ const target=invalid==='wrong-post'?platformTarget(urls['jike-grid']):platformTarget(jikeWebUrl);
+ expect(readJike(d,jikeWebUrl,target)).toEqual({ok:false,reason:'unreadable'});
+});
+
+test('signed-in Jike Web gallery keeps all nine viewer-original images in order',()=>{
+ const d=fixture('jike-web-grid'),url='https://web.okjike.com/u/af47ed7e-38d4-4798-acd6-04e3cc8d131c/post/6715e824d9dc81724c2ec74d';
+ const expected=[...d.querySelectorAll('img[data-mode="grid-item"]')].map(i=>i.getAttribute('src').split('?')[0]);
+ const r=readJike(d,url);expect(r.ok).toBe(true);expect(r.clip.author).toBe('彗星咻咻咻');expect(r.clip.publishedAt).toEqual({value:'2024-10-21',precision:'date'});
+ expect(r.clip.markdown).not.toContain('Neighbor post');expect([...r.clip.markdown.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map(m=>m[1])).toEqual(expected);
+});
+
+test('Jike Web preview headers cannot impersonate the route author',()=>{
+ const d=fixture('jike-web-detail'),card=d.querySelector('[class*="_postCard_"]');
+ card.querySelector('header a').setAttribute('href','/u/other-user');
+ const nested=d.createElement('header');nested.innerHTML='<a href="/u/5e6497e7-a69f-422b-af6e-baf0fc07b512">泛函</a>';
+ card.querySelector('[class*="_contentWrapper_"]').appendChild(nested);
+ expect(readJike(d,jikeWebUrl)).toEqual({ok:false,reason:'unreadable'});
+});
+
+for(const hidden of ['hidden','aria-hidden','display']) {
+ const hide=node=>hidden==='display'?node.setAttribute('style','display:none'):node.setAttribute(hidden,hidden==='aria-hidden'?'true':'');
+ test(`Jike Web ignores ${hidden} identity links`,()=>{
+  const d=fixture('jike-web-detail'),link=d.querySelector('header a');
+  const visible=link.cloneNode(true);visible.setAttribute('href','/u/other-user');
+  link.parentElement.appendChild(visible);hide(link);
+  expect(readJike(d,jikeWebUrl)).toEqual({ok:false,reason:'unreadable'});
+ });
+ test(`Jike Web omits ${hidden} metadata and expansion controls`,()=>{
+  const d=fixture('jike-web-detail'),header=d.querySelector('header'),link=header.querySelector('a');
+  const stale=link.cloneNode(true);stale.textContent='Hidden author';hide(stale);link.parentElement.insertBefore(stale,link);
+  hide(header.querySelector('[class*="_descContainer_"]'));
+  const button=d.createElement('button');button.textContent='展开全文';hide(button);
+  d.querySelector('[class*="_contentWrapper_"]').appendChild(button);
+  expect(jikeExpandButton(d,d.querySelector('[class*="_postCard_"]'))).toBeNull();
+  const r=readJike(d,jikeWebUrl);expect(r.ok).toBe(true);
+  expect(r.clip.author).toBe('泛函');expect(r.clip.publishedAt).toBeUndefined();
+  expect(r.clip.markdown).toContain('《斯坦福大学人生设计课》');
+ });
+}
+
+const jikeWebFeedUrl='https://web.okjike.com/following';
+const jikeWebPosts=JSON.parse(readFileSync(new URL('./fixtures/platforms/jike-web-feed.posts.json',import.meta.url),'utf8'));
+const webFeed=async(name="jike-web-feed",pageUrl=jikeWebFeedUrl)=>{
+ const {readJikeWebStateInPage}=await import('./src/jike-web-state.ts');
+ const {runInNewContext}=await import('node:vm');const d=fixture(name),posts=JSON.parse(readFileSync(new URL(`./fixtures/platforms/${name}.posts.json`,import.meta.url),'utf8'));
+ const cards=[...d.querySelectorAll('[data-clickable-feedback]')].filter(c=>c.querySelector('header')&&c.querySelector('[class*="_contentWrapper_"]'));
+ cards.forEach((card,i)=>card.__reactProps$fixture={children:{props:{data:structuredClone(posts[i])}}});
+ const state=id=>runInNewContext(`(${readJikeWebStateInPage.toString()})(id)`,{document:d,location:{href:pageUrl},URL,id});
+ return{d,cards,state};
+};
+
+test('Jike Web feed reads the selected current host props without Fiber/alternate or body permalinks',async()=>{
+ const {d,cards,state}=await webFeed();cards[0].setAttribute('data-edgeever-jike-selected','');
+ cards[0].__reactFiber$fixture={memoizedProps:{data:jikeWebPosts[1]},alternate:{memoizedProps:{data:jikeWebPosts[1]}}};
+ const s=state();expect(s.post.id).toBe(jikeWebPosts[0].id);expect(Object.keys(s.post.user)).toEqual(['username']);
+ expect(Object.keys(s.post)).not.toContain('readTrackInfo');expect(s.post.id).not.toBe('6ad1c239141b85b29238482b');
+ const target=platformTarget('https://m.okjike.com/originalPosts/'+s.post.id);
+ expect(readJike(d,jikeWebFeedUrl,target,s)).toEqual({ok:false,reason:'incomplete'});
+ cards[0].querySelector('[class*="_expandButton_"]').remove();
+ const r=readJike(d,jikeWebFeedUrl,target,s);expect(r.ok).toBe(true);expect(r.clip.author).toBe('即刻资讯台');
+ expect(r.clip.markdown).toContain('感谢以上即友的创作与分享');expect(r.clip.markdown).not.toContain('2026年10月16日');
+ expect(r.clip.markdown).not.toContain('收起');expect(r.clip.markdown).not.toContain('查看更多');
+ const parsed=markdownToDoc(r.clip.markdown),links=[];let text='';
+ const visit=n=>{if(n.type==='text'){text+=n.text;if(n.marks?.some(m=>m.type==='link'))links.push(n.text)}for(const c of n.content||[])visit(c)};visit(parsed);
+ expect(links).toContain('牛村木木山');expect(links).toContain('一觉醒来发生了什么');expect(text).not.toContain('](https://');
+});
+
+for(const failure of ['missing-props','ambiguous-post','unsupported-type','hidden-card','recycled-id','changed-author','changed-body'])test(`Jike Web feed ${failure} refuses stale or unbound content`,async()=>{
+ const{d,cards,state}=await webFeed(),id=jikeWebPosts[0].id,target=platformTarget('https://m.okjike.com/originalPosts/'+id);cards[0].setAttribute('data-edgeever-jike-selected','');expect(state().post.id).toBe(id);
+ cards[0].querySelector('[class*="_expandButton_"]').remove();
+ if(failure==='missing-props')delete cards[0].__reactProps$fixture;
+ if(failure==='ambiguous-post')cards[0].__reactProps$fixture.children=[{props:{data:jikeWebPosts[0]}},{props:{data:jikeWebPosts[1]}}];
+ if(failure==='unsupported-type')cards[0].__reactProps$fixture.children.props.data.type='REPOST';
+ if(failure==='hidden-card')cards[0].setAttribute('hidden','');
+ if(failure==='recycled-id')cards[0].__reactProps$fixture.children.props.data.id='6715e824d9dc81724c2ec74d';
+ if(failure==='changed-author')cards[0].querySelector('header a[href]').setAttribute('href','/u/other');
+ if(failure==='changed-body')cards[0].querySelector('[class^="_content_93yof_"]').textContent='A different post';
+ const s=state(id);
+ if(['changed-author','changed-body'].includes(failure))expect(readJike(d,jikeWebFeedUrl,target,s).ok).toBe(false);
+ else expect(s).toBeNull();
+});
+
+test('Jike Web feed current props track a recycled card even when its DOM marker and content remain unchanged',async()=>{
+ const{cards,state}=await webFeed(),id=jikeWebPosts[0].id;cards[0].setAttribute('data-edgeever-jike-selected','');expect(state().post.id).toBe(id);
+ cards[0].__reactProps$fixture.children.props.data={...jikeWebPosts[0],id:'6715e824d9dc81724c2ec74d'};
+ expect(cards[0].getAttribute('data-edgeever-jike-id')).toBe(id);expect(state(id)).toBeNull();
+ expect(state().post.id).toBe('6715e824d9dc81724c2ec74d');
+});
+
+test('the Jike Web pointer listener selects one own card without guessing identity from body links',async()=>{
+ const{createWindow}=await import('@mixmark-io/domino'),{runInNewContext}=await import('node:vm'),{bundleTestScripts}=await import('./bundle-test-scripts.mjs');
+ const w=createWindow(readFileSync(new URL('./fixtures/platforms/jike-web-feed.html',import.meta.url),'utf8'),jikeWebFeedUrl);
+ runInNewContext(bundleTestScripts(['social-target'])[0],{document:w.document,location:w.location,URL,Element:w.Element,Node:w.Node});
+ const cards=[...w.document.querySelectorAll('[data-clickable-feedback]')].filter(c=>c.querySelector('header')&&c.querySelector('[class*="_contentWrapper_"]'));const event=w.document.createEvent('Event');event.initEvent('contextmenu',true,true);
+ cards[0].querySelector('[class*="_contentWrapper_"]').dispatchEvent(event);expect(cards[0].hasAttribute('data-edgeever-jike-selected')).toBe(true);expect(w.document.querySelectorAll('[data-edgeever-social-target]')).toHaveLength(0);
+ cards[1].querySelector('[class*="_contentWrapper_"]').dispatchEvent(event);expect(cards[0].hasAttribute('data-edgeever-jike-selected')).toBe(false);expect(cards[1].hasAttribute('data-edgeever-jike-selected')).toBe(true);
+});
+
+for(const mismatch of [false,true])test(`Jike Web single-image feed verifies gallery identity before using the declared original (mismatch=${mismatch})`,async()=>{
+ const url='https://web.okjike.com/topic/63579abb6724cc583b9bba9a/square',{d,cards,state}=await webFeed('jike-web-feed-image',url);cards[0].setAttribute('data-edgeever-jike-selected','');const s=state(),target=platformTarget('https://m.okjike.com/originalPosts/'+s.post.id);
+ if(mismatch)cards[0].querySelector('img[data-anonymous-gallery="true"]').setAttribute('src','https://cdnv2.ruguoapp.com/other.png?imageMogr2/thumbnail/400x');
+ const r=readJike(d,url,target,s);
+ if(mismatch)expect(r).toEqual({ok:false,reason:'incomplete'});
+ else{expect(r.ok).toBe(true);expect(r.clip.markdown).toContain(s.post.pictures[0].picUrl);expect(r.clip.markdown.match(/!\[/g)).toHaveLength(1);expect(r.clip.markdown).toContain('开启一个新的时代');}
+});
+
+test('Medium in-story preview keeps its label, destination and visible CSS cover in document order',async()=>{
+ const {mediumContent}=await import('./src/medium-content.ts'),{platformHtmlMarkdown}=await import('./src/platform-clip.ts');
+ const d=createDocument('<meta property="og:site_name" content="Medium"><article><h1 data-selectable-paragraph>Story</h1><p data-selectable-paragraph>Before preview.</p><a href="https://example.test/writer"><div><h2>Writer profile</h2><h3>Description of writing</h3><p>example.test</p></div><div style="background-image:url(https://example.test/cover.png)"></div></a><a href="https://example.test/hidden" style="display:none"><h2>Hidden card</h2><div style="background-image:url(https://example.test/hidden.png)"></div></a><p data-selectable-paragraph>After preview.</p></article><a href="https://example.test/outside"><h2>Outside recommendation</h2></a>');
+ const before=d.documentElement.outerHTML,r=mediumContent(d,'https://medium.com/@writer/story-abcdef123456'),md=platformHtmlMarkdown(r.body,'https://medium.com/@writer/story-abcdef123456'),doc=markdownToDoc(md),nodes=[];const walk=n=>{nodes.push(n);(n.content||[]).forEach(walk)};walk(doc);
+ const text=nodes.filter(n=>n.type==='text').map(n=>n.text).join('');expect(text).toContain('Before preview.Writer profile Description of writing example.testAfter preview.');expect(text).not.toContain('Hidden card');expect(text).not.toContain('Outside recommendation');expect(nodes.some(n=>n.marks?.some(m=>m.type==='link'&&m.attrs.href==='https://example.test/writer'))).toBe(true);expect(nodes.filter(n=>n.type==='image').map(n=>n.attrs.src)).toEqual(['https://example.test/cover.png']);expect(d.documentElement.outerHTML).toBe(before);
+});
+
+for (const wrapping of ['image-role','container-role','container-button']) test(`Jike Web keeps gallery media with ${wrapping} semantics`,()=>{
+ const d=fixture('jike-web-grid'),url='https://web.okjike.com/u/af47ed7e-38d4-4798-acd6-04e3cc8d131c/post/6715e824d9dc81724c2ec74d';
+ const images=[...d.querySelectorAll('img[data-mode="grid-item"]')],expected=images.map(i=>i.getAttribute('src').split('?')[0]);
+ if(wrapping==='image-role')images[0].setAttribute('role','button');
+ else {const wrapper=d.createElement(wrapping==='container-button'?'button':'div');wrapper.setAttribute('role','button');images[0].replaceWith(wrapper);wrapper.appendChild(images[0]);}
+ const before=d.body.innerHTML,r=readJike(d,url);expect(r.ok).toBe(true);expect([...r.clip.markdown.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)].map(m=>m[1])).toEqual(expected);expect(d.body.innerHTML).toBe(before);
+});
+
+test('Medium keeps explicitly visible descendants of a hidden story block and additional body h1',async()=>{
+ const {mediumContent}=await import('./src/medium-content.ts');
+ const d=createDocument('<meta property="og:site_name" content="Medium"><article><h1 data-selectable-paragraph>Story title</h1><p data-selectable-paragraph style="visibility:hidden">Hidden prefix<span style="visibility:visible">Visible body</span></p><h1 data-selectable-paragraph>Body heading</h1><p data-selectable-paragraph style="display:none">Hidden whole block</p></article>');
+ const before=d.body.innerHTML,r=mediumContent(d,'https://medium.com/@writer/story-abcdef123456');expect(r?.body.textContent).toContain('Visible body');expect(r.body.textContent).toContain('Body heading');expect(r.body.textContent).not.toContain('Hidden prefix');expect(r.body.textContent).not.toContain('Hidden whole block');expect(r.body.textContent).not.toContain('Story title');expect(d.body.innerHTML).toBe(before);
+});
+
+test('Jike Web retains visible body text and media restored inside a hidden wrapper',()=>{
+ const d=fixture('jike-web-detail'),body=d.querySelector('[class*="_contentWrapper_"]');body.style.visibility='hidden';
+ body.querySelector('[class^="_content_"]').style.visibility='visible';for(const img of Array.from(body.querySelectorAll('img')))img.style.visibility='visible';
+ const before=d.body.innerHTML,r=readJike(d,jikeWebUrl);expect(r.ok).toBe(true);expect(r.clip.markdown).toContain('《斯坦福大学人生设计课》');expect(r.clip.markdown.match(/!\[/g)).toHaveLength(1);expect(d.body.innerHTML).toBe(before);
+});
+
+test('Medium live-style code keeps br newlines and matching declared syntax language without reading hidden text',async()=>{
+ const {mediumContent}=await import('./src/medium-content.ts'),{platformHtmlMarkdown}=await import('./src/platform-clip.ts');
+ const state={a:{__typename:'Paragraph',type:'PRE',name:'code1',text:'const x = 1;\n\nconsole.log(x);',codeBlockMetadata:{lang:'javascript'}},b:{__typename:'Paragraph',type:'PRE',name:'code2',text:'Hidden replacement',codeBlockMetadata:{lang:'python'}}};
+ const d=createDocument('<meta property="og:site_name" content="Medium"><article><h1 data-selectable-paragraph>Story</h1><pre><span id="code1" data-selectable-paragraph><span class="hljs-keyword">const</span> x = 1;<br><br>console.log(x);</span></pre><pre><span id="code2" data-selectable-paragraph>Visible code</span></pre><pre style="display:none"><span data-selectable-paragraph>Hidden code</span></pre></article>');
+ const script=d.createElement('script');script.textContent='window.__APOLLO_STATE__ = '+JSON.stringify(state)+';';d.body.appendChild(script);
+ const before=d.documentElement.outerHTML,md=platformHtmlMarkdown(mediumContent(d,'https://medium.com/@writer/story-abcdef123456').body,'https://medium.com/@writer/story-abcdef123456');
+ expect(md).toContain('```javascript\nconst x = 1;\n\nconsole.log(x);\n```');expect(md).toContain('```\nVisible code\n```');expect(md).not.toContain('python');expect(md).not.toContain('Hidden');expect(d.documentElement.outerHTML).toBe(before);
+});
+
+test('Medium nested quote code and pre paragraph identity preserve language and line breaks',async()=>{
+ const {mediumContent}=await import('./src/medium-content.ts'),{platformHtmlMarkdown}=await import('./src/platform-clip.ts');
+ const code='const x = 1;\n\nconsole.log(x);',state={a:{__typename:'Paragraph',type:'PRE',name:'nested',text:code,codeBlockMetadata:{lang:'javascript'}},b:{__typename:'Paragraph',type:'PRE',name:'root',text:'print(1)\nprint(2)',codeBlockMetadata:{lang:'python'}}};
+ const d=createDocument('<meta property="og:site_name" content="Medium"><article><h1 data-selectable-paragraph>Story</h1><blockquote><p data-selectable-paragraph>Example:</p><pre><span data-selectable-paragraph id="nested">const x = 1;<br><br>console.log(x);</span></pre></blockquote><pre data-selectable-paragraph id="root">print(1)<br>print(2)</pre></article>');
+ const script=d.createElement('script');script.textContent='window.__APOLLO_STATE__ = '+JSON.stringify(state)+';';d.body.appendChild(script);
+ const before=d.documentElement.outerHTML,r=mediumContent(d,'https://medium.com/@writer/story-abcdef123456'),blocks=Array.from(r.body.querySelectorAll('pre'));
+ expect(blocks.map(n=>n.textContent)).toEqual([code,'print(1)\nprint(2)']);expect(blocks.map(n=>n.className)).toEqual(['language-javascript','language-python']);expect(d.documentElement.outerHTML).toBe(before);
+ const saved=[];const walk=n=>{if(n.type==='codeBlock')saved.push(n);for(const child of n.content||[])walk(child)};walk(markdownToDoc(platformHtmlMarkdown(r.body,'https://medium.com/@writer/story-abcdef123456')));expect(saved.map(n=>({language:n.attrs.language,text:n.content.map(c=>c.text).join('')}))).toEqual([{language:'javascript',text:code},{language:'python',text:'print(1)\nprint(2)'}]);
 });

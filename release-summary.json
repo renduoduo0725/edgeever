@@ -1,41 +1,41 @@
 {
-  "version": "1.121.0",
+  "version": "1.122.0",
   "changes": {
     "en-US": [
-      "Add a table context menu with copy and paste for faster editing.",
-      "Refresh note image sharing themes, remember sharing preferences across clients, and add cached fonts with live previews.",
-      "Unify the font catalog for note bodies and posters, improve font selection, and show loading status with retry on failure.",
-      "Open internal note links in the destination notebook so navigation stays consistent.",
-      "Restore desktop connections to WorkBuddy 5.8+ and show actionable reasons when local agent connections fail.",
-      "Fix clearing local desktop data when the app uses an account-specific data directory.",
-      "Keep Android automatic synchronization running after a sync pass fails to settle.",
-      "Prevent the diagram shape menu from blocking editing and create new diagram labels in the interface language.",
-      "Make save status explanations accessible from the keyboard and localize warnings for rejected suspicious overwrites.",
-      "Reduce desktop installation size by excluding development-only files from production packages."
+      "Use all 23 poster fonts across typography pickers and improve built-in poster font pairings.",
+      "Fix overlapping poster elements and preserve consistent card sections when switching templates.",
+      "Show QR codes for note and notebook share links. Thanks @dkoryto (#610).",
+      "Show Docker image build and deployment information in System information. Thanks @dkoryto (#602).",
+      "Localize untitled notes and diagrams on public share pages. Thanks @dkoryto (#605).",
+      "Keep public share and form links out of search indexes and shared caches, and prevent share tokens from leaking through referrers. Thanks @dkoryto (#608).",
+      "Improve browser clipping across supported platforms, including Jike, Medium and social posts. Thanks @sivdead (#611).",
+      "Fix empty note bodies when sharing posts to the iOS app (#601).",
+      "Prevent already handled Android shares from restarting clipping when returning to the app.",
+      "Clarify the manual Cloudflare deployment instructions on the website. Thanks @dkoryto (#604)."
     ],
     "zh-CN": [
-      "新增表格右键菜单，支持复制和粘贴，提升表格编辑效率。",
-      "优化笔记长图分享主题，跨客户端记住分享偏好，并提供带缓存和实时预览的字体选择。",
-      "统一笔记正文与海报字体目录，优化字体选择位置，并显示加载状态、支持失败重试。",
-      "修复笔记内部链接跳转，打开目标笔记时同步切换到所在笔记本。",
-      "恢复桌面端对 WorkBuddy 5.8+ 的连接，并在本地智能体连接失败时显示具体原因。",
-      "修复桌面端使用账户专属数据目录时无法清除本地数据的问题。",
-      "修复 Android 一轮同步收尾失败后自动同步可能停止的问题。",
-      "修复图形菜单阻挡编辑的问题，新建图表标签跟随界面语言。",
-      "保存状态提示支持键盘聚焦查看，并完善可疑覆盖保存被拒绝时的多语言提示。",
-      "桌面安装包排除仅开发时使用的文件，减少安装体积。"
+      "字体选择统一支持全部 23 款海报字体，并优化内置海报模板的字体搭配。",
+      "修复海报元素重叠，并在切换模板时保持卡片分区一致。",
+      "笔记和笔记本分享链接新增二维码。感谢 @dkoryto（#610）。",
+      "系统信息新增 Docker 镜像构建和部署信息。感谢 @dkoryto（#602）。",
+      "公开分享页面中的未命名笔记和图表跟随界面语言。感谢 @dkoryto（#605）。",
+      "为公开分享和表单链接添加禁止搜索收录与共享缓存策略，防止来源信息泄露分享令牌。感谢 @dkoryto（#608）。",
+      "改进即刻、Medium 和社交帖子等平台的浏览器剪藏。感谢 @sivdead（#611）。",
+      "修复向 iOS 应用分享帖子时笔记正文可能为空的问题（#601）。",
+      "修复返回 Android 应用时已处理的分享可能重复启动剪藏的问题。",
+      "完善官网的 Cloudflare 手动部署指引。感谢 @dkoryto（#604）。"
     ],
     "ja": [
-      "表の右クリックメニューでコピーと貼り付けが使えるようになりました。",
-      "ノート画像の共有テーマを改善し、端末間で共有設定を保持。フォントのキャッシュとプレビューに対応しました。",
-      "本文とポスターのフォント一覧を統一し、選択操作と読み込み状況の表示、失敗時の再試行を改善しました。",
-      "内部ノートリンクを開く際に、リンク先のノートブックへ正しく移動するよう修正しました。",
-      "デスクトップ版のWorkBuddy 5.8以降への接続を修正し、ローカルエージェントの接続失敗理由を表示します。",
-      "アカウント別のデータディレクトリを使用する場合に、デスクトップのローカルデータを消去できない問題を修正しました。",
-      "同期の終了処理が失敗した後もAndroidの自動同期が継続するよう修正しました。",
-      "図形メニューが編集を妨げる問題を修正し、新規図表のラベルを画面の言語に合わせます。",
-      "保存状況の説明をキーボードで確認できるようにし、不審な上書き保存の拒否メッセージを多言語化しました。",
-      "開発専用ファイルを除外し、デスクトップのインストール容量を削減しました。"
+      "文字設定で全23種類のポスターフォントを選択でき、標準テンプレートの組み合わせも改善しました。",
+      "ポスター要素の重なりを修正し、テンプレート切り替え時のカード構成を改善しました。",
+      "ノートとノートブックの共有リンクにQRコードを追加しました。@dkoryto (#610)。",
+      "システム情報にDockerイメージのビルドとデプロイ情報を表示します。@dkoryto (#602)。",
+      "公開共有ページの無題ノートと図表名を画面の言語に合わせます。@dkoryto (#605)。",
+      "公開共有とフォームの検索登録・共有キャッシュを抑制し、リファラー経由のトークン漏洩を防ぎます。@dkoryto (#608)。",
+      "即刻、Medium、SNS投稿などのブラウザークリップを改善しました。@sivdead (#611)。",
+      "iOSアプリに投稿を共有した際に本文が空になる問題を修正しました (#601)。",
+      "Androidでアプリに戻った際、処理済みの共有が再度クリップされる問題を修正しました。",
+      "公式サイトのCloudflare手動デプロイ手順を明確にしました。@dkoryto (#604)。"
     ]
   }
 }

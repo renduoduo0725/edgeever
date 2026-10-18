@@ -1,4 +1,5 @@
 import type { PublicNotebookShare } from "@edgeever/shared";
+import { getMemoDisplayTitle } from "@edgeever/shared";
 import {
   ArrowLeft,
   ArrowRight,
@@ -63,7 +64,7 @@ const NavigationNotes = ({
   return (
     <ul className="space-y-0.5">
       {memos.map((memo) => {
-        const title = memo.title?.trim() || t("common.untitledMemo");
+        const title = getMemoDisplayTitle(memo.title, t("common.untitledMemo"));
         return (
           <li key={memo.id}>
             <Tooltip>
@@ -144,7 +145,7 @@ const NoteTitle = ({ memo }: { memo: Memo }) => {
   const { t } = useTranslation();
   return (
     <span className="min-w-0 break-words">
-      {memo.title?.trim() || t("common.untitledMemo")}
+      {getMemoDisplayTitle(memo.title, t("common.untitledMemo"))}
     </span>
   );
 };
@@ -307,7 +308,7 @@ export const PublicNotebookSite = ({
   const matches = useMemo(
     () =>
       notes.filter(({ memo }) =>
-        (memo.title?.trim() || t("common.untitledMemo"))
+        getMemoDisplayTitle(memo.title, t("common.untitledMemo"))
           .toLocaleLowerCase()
           .includes(query),
       ),

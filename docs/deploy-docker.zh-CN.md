@@ -176,5 +176,42 @@ docker run --rm -p 8787:8787 \
   edgeever:local
 ```
 
+### 系统信息中的元数据
+
+**设置 → 系统信息** 会区分镜像如何构建与实例如何部署。官方镜像会填写构建字段；
+自行构建的镜像如未传入下列构建参数，这些字段显示为未知。
+
+| 字段 | 来源 | 含义 |
+| ---- | ---- | ---- |
+| 实例构建 | `--build-arg EDGE_EVER_BUILD_ID` | 构建镜像所用的提交 |
+| 镜像构建时间 | `--build-arg EDGE_EVER_BUILD_CREATED_AT`（ISO 8601） | 镜像的构建时间，而不是部署或启动时间 |
+| 镜像构建来源 | `--build-arg EDGE_EVER_BUILD_TRIGGER` / `EDGE_EVER_BUILD_METHOD` | 镜像的产出方式，例如官方正式版镜像为 `github_release` · `github_actions` |
+| 容器镜像来源 | 运行时 `EDGE_EVER_CONTAINER_IMAGE` | 镜像拉取自哪个仓库；官方 `compose.yaml` 会设置 |
+| 部署来源 | 运行时 `EDGE_EVER_DEPLOYMENT_TRIGGER` / `EDGE_EVER_DEPLOYMENT_METHOD` | 你如何部署此实例；未设置时为未知 |
+| 实例部署时间 | 仅 Cloudflare | Docker 不提供部署时间 |
+
+触发方式为 `github_release`、`main_push` 或 `manual`。`EDGE_EVER_DEPLOYMENT_METHOD=docker`
+表示容器部署，而 `github_actions`、`cloudflare_workers_builds` 和 `local_cli`
+表示执行构建或部署的机制。EdgeEver 不会自行推断 Docker 或镜像仓库，因为同一服务
+也可直接在 Bun 下运行，镜像也可能被复制到其他仓库。缺失或无效的值显示为未知。
+
+自行构建镜像时：
+
+```sh
+docker build \
+  --build-arg EDGE_EVER_BUILD_ID="$(git rev-parse HEAD)" \
+  --build-arg EDGE_EVER_BUILD_CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --build-arg EDGE_EVER_BUILD_TRIGGER=manual \
+  --build-arg EDGE_EVER_BUILD_METHOD=local_cli \
+  --tag edgeever:local .
+docker run --rm -p 8787:8787 \
+  -e EDGE_EVER_AUTH_PASSWORD='请替换为足够长的随机密码' \
+  -e EDGE_EVER_CONTAINER_IMAGE=edgeever:local \
+  -e EDGE_EVER_DEPLOYMENT_TRIGGER=manual \
+  -e EDGE_EVER_DEPLOYMENT_METHOD=docker \
+  -v edgeever-data:/data \
+  edgeever:local
+```
+
 Docker 首发版本不支持 PostgreSQL。它仍是未来的存储适配器，不会形成另一套
 业务代码分支。

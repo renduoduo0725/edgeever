@@ -51,7 +51,7 @@ export const manualDeploymentCopy = {
       },
       {
         title: "Build & Verify",
-        body: "Save and Deploy creates the Worker and starts a build. If it fails because the administrator Secret is missing, add the runtime Secret from step 4 and retry. The username defaults to admin; to use another, set the EDGE_EVER_AUTH_USERNAME Workers Builds variable before retrying. Once deployed, confirm /api/health returns 200, then log in with the configured username and password.",
+        body: "Save and Deploy creates the Worker and starts a build. The initial build primarily initializes the Worker instance; if it fails due to missing administrator Secret, this is expected behavior. Simply add the runtime Secret EDGE_EVER_AUTH_PASSWORD from Step 4 and click retry. The username defaults to admin; to use another, set EDGE_EVER_AUTH_USERNAME as a Workers Builds variable before retrying. Once deployed, confirm /api/health returns 200, then log in with the configured username and password.",
       },
       {
         title: "Enable Automatic Updates",
@@ -80,7 +80,7 @@ export const manualDeploymentCopy = {
       },
       {
         title: "首次构建与验证",
-        body: "保存并部署会创建 Worker 并启动构建。如因缺少管理员 Secret 而失败，添加第 4 步的运行时 Secret 后重试。管理员用户名默认为 admin；如需使用其他用户名，请在重试构建前设置 Workers Builds 构建变量 EDGE_EVER_AUTH_USERNAME。部署完成后访问 /api/health，确认返回 200，再用配置的管理员用户名和密码登录。",
+        body: "保存并部署会创建 Worker 并启动构建。首次构建主要用于初始化 Worker 实例，若因尚未配置管理员 Secret 而报错属于预期行为，只需在第 4 步添加运行时 Secret EDGE_EVER_AUTH_PASSWORD 后点击重试构建即可通过。管理员用户名默认为 admin；如需使用其他用户名，请在重试构建前设置 Workers Builds 构建变量 EDGE_EVER_AUTH_USERNAME。部署完成后访问 /api/health，确认返回 200，再用配置的管理员用户名和密码登录。",
       },
       {
         title: "启用自动更新",

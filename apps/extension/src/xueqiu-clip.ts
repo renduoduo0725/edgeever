@@ -1,7 +1,7 @@
 import { platformHtmlCopy, platformHtmlMarkdown, platformReadableCopy, platformTarget, platformText, publishedTime, safePlatformUrl, type PlatformRead, type PlatformTarget } from "./platform-clip";
 
-export const XUEQIU_CARD_SELECTOR = '.article__container, [class*="timeline__item__main_"]';
-const headerSelector = '.article__author, [class*="timeline__item__info_"]';
+export const XUEQIU_CARD_SELECTOR = '.article__container, .timeline__item__main, [class*="timeline__item__main_"]';
+const headerSelector = '.article__author, .timeline__item__info, [class*="timeline__item__info_"]';
 const ownHeader = (card: Element) => {
   const header = card.querySelector(headerSelector);
   return header?.closest(XUEQIU_CARD_SELECTOR) === card ? header : null;
@@ -10,7 +10,7 @@ const headerTargets = (card: Element): PlatformTarget[] => {
   const header = ownHeader(card);
   if (!header) return [];
   const targets = new Map<string, PlatformTarget>();
-  for (const link of Array.from(header.querySelectorAll('a.time[href], a[class*="date-and-source_"][href]'))) {
+  for (const link of Array.from(header.querySelectorAll('a.time[href], a.date-and-source[href], a[class*="date-and-source_"][href]'))) {
     if (!platformText(platformReadableCopy(link))) continue;
     const target = platformTarget(safePlatformUrl(link.getAttribute("href") || "", "https://xueqiu.com/"));
     if (target?.platform === "xueqiu") targets.set(target.url, target);
@@ -18,7 +18,7 @@ const headerTargets = (card: Element): PlatformTarget[] => {
   return [...targets.values()];
 };
 const profileOwner = (header: Element | null): string | undefined => {
-  const author = header?.querySelector('a.name[href], a[class*="user-name_"][href]');
+  const author = header?.querySelector('a.name[href], a.user-name[href], a[class*="user-name_"][href]');
   if (!author || !platformText(platformReadableCopy(author))) return;
   const href = safePlatformUrl(author.getAttribute("href") || "", "https://xueqiu.com/");
   if (!href) return;

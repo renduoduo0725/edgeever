@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
   countMemoCharacters,
+  DEFAULT_MEMO_TITLE,
+  getMemoDisplayTitle,
   docToMarkdown,
   docToText,
   markdownToDoc,
@@ -810,5 +812,18 @@ describe("plugin embed Markdown compatibility", () => {
     expect(parsed.content[0]).toMatchObject({ type: PLUGIN_EMBED_NODE_TYPE, attrs: attributes });
     expect(docToMarkdown(parsed)).toBe(markdown);
     expect(resolveMemoContentDoc(parsed, "fallback").content[0].type).toBe(PLUGIN_EMBED_NODE_TYPE);
+  });
+});
+
+describe("getMemoDisplayTitle", () => {
+  test("shows the localized label for empty and default untitled titles", () => {
+    expect(getMemoDisplayTitle("", "Untitled note")).toBe("Untitled note");
+    expect(getMemoDisplayTitle(null, "Untitled note")).toBe("Untitled note");
+    expect(getMemoDisplayTitle(` ${DEFAULT_MEMO_TITLE} `, "Notatka bez tytułu")).toBe("Notatka bez tytułu");
+  });
+
+  test("keeps real titles, including Chinese ones", () => {
+    expect(getMemoDisplayTitle("  Plan  ", "Untitled note")).toBe("Plan");
+    expect(getMemoDisplayTitle("会议记录", "Untitled note")).toBe("会议记录");
   });
 });

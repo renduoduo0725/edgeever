@@ -1,4 +1,5 @@
 import type { CompanionTodo, CompanionToolCall, CompanionToolEffect } from "@edgeever/shared";
+import { getMemoDisplayTitle } from "@edgeever/shared";
 import { Check, ChevronDown, Circle, FileText, Loader2, RotateCcw, Undo2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -61,7 +62,7 @@ function CompanionToolList({
                     <button type="button" disabled={busy} className="inline-flex max-w-full items-center gap-1 font-medium hover:text-slate-950 hover:underline"
                       onClick={() => onOpenNote(effect.memoId!, effect.notebookId || "")}>
                       <FileText className="h-3 w-3 shrink-0 text-slate-400" />
-                      <span className="truncate">{effect.title || t("common.untitledMemo")}</span>
+                      <span className="truncate">{getMemoDisplayTitle(effect.title, t("common.untitledMemo"))}</span>
                     </button>
                     {effect.kind === "trashed" ? (
                       <Button type="button" size="sm" variant="ghost" className="h-6 px-1.5 text-xs" disabled={busy || pending === key}

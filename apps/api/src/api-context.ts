@@ -12,6 +12,9 @@ export type Bindings = {
   EDGE_EVER_CONTAINER_IMAGE?: string;
   EDGE_EVER_DEPLOYMENT_TRIGGER?: string;
   EDGE_EVER_DEPLOYMENT_METHOD?: string;
+  EDGE_EVER_BUILD_CREATED_AT?: string;
+  EDGE_EVER_BUILD_TRIGGER?: string;
+  EDGE_EVER_BUILD_METHOD?: string;
   /** Creation time of the active deployment version, supplied by a runtime adapter. */
   deploymentVersionCreatedAt?: string;
   EDGE_EVER_AUTH_PASSWORD?: string;

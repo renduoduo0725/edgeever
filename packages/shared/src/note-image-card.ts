@@ -1,4 +1,4 @@
-import { CATALOG_FONT_STACKS } from "./font-catalog";
+import { CATALOG_FONT_STACKS, type RemoteNoteImageFont } from "./font-catalog";
 
 export type NoteImageFormat = "jpeg" | "png";
 export const NOTE_IMAGE_THEME_OPTIONS = ["gradient", "glass", "quote", "book", "memo", "bento", "black-sun", "frame", "handwritten", "code"] as const;
@@ -6,7 +6,7 @@ export type NoteImageActiveTheme = (typeof NOTE_IMAGE_THEME_OPTIONS)[number];
 type LegacyNoteImageTheme = "paper" | "press" | "highlight" | "slate" | "aurora" | "sunset" | "midnight" | "editorial" | "terminal" | "film" | "mint" | "lavender";
 export type NoteImageTheme = NoteImageActiveTheme | LegacyNoteImageTheme;
 export type NoteImageBackground = NoteImageTheme | "warm" | "notepad" | "xuan" | "polaroid";
-export type NoteImageFontStyle = "auto" | "sans" | "serif" | "mono" | "kai" | "smiley" | "wenkai" | "zhuque" | "heavy" | "puhui" | "puhui-heavy" | "youshe" | "shuhei";
+export type NoteImageFontStyle = "auto" | "sans" | "serif" | "mono" | "kai" | RemoteNoteImageFont;
 export type NoteImageFontSize = "sm" | "md" | "lg";
 export type NoteImageCardWidth = "compact" | "standard" | "wide";
 export const NOTE_IMAGE_EXPORT_WIDTH = 768;

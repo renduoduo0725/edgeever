@@ -4,18 +4,9 @@ import { watchEditorCatalogFont } from "./editor-catalog-fonts";
 export const EDITOR_BODY_FONT_STORAGE_KEY = "edgeever.editorBodyFont";
 export const EDITOR_BODY_FONT_CUSTOM_STORAGE_KEY = "edgeever.editorBodyFontCustom";
 
-export const EDITOR_BODY_FONT_CHOICES = [
-  "system",
-  "wenkai",
-  "wenkai-screen",
-  "zhuque",
-  "source-han-serif",
-  "neo-zhi-song",
-  "source-han-sans",
-  "source-serif",
-  ...FONT_IDS.filter(id => id !== "wenkai" && id !== "zhuque"),
-  "custom",
-] as const;
+// Legacy choices remain readable, but new selections use the common 23-font directory.
+export const LEGACY_EDITOR_BODY_FONT_CHOICES = ["wenkai-screen", "neo-zhi-song", "source-serif"] as const;
+export const EDITOR_BODY_FONT_CHOICES = ["system", ...FONT_IDS, ...LEGACY_EDITOR_BODY_FONT_CHOICES, "custom"] as const;
 
 export type EditorBodyFontChoice = (typeof EDITOR_BODY_FONT_CHOICES)[number];
 

@@ -81,13 +81,13 @@ const harness = (options = {}) => {
     }
     return options.failDownload || (options.requireDoubanImageRule && !doubanImageRule) || (options.requireSspaiImageRule && !sspaiImageRule) ? new Response("Forbidden", { status: 403 }) : new Response(png, { headers: { "content-type": "image/png" } });
   };
-  let pageContext, selectionContext;
+  let pageContext, selectionContext, onInstalled;
   const chrome = {
     i18n: { getMessage: (key, substitution) => key === "saveFailedWithReason" ? `${key}: ${substitution}` : key },
     runtime: {
       id: "extension-under-test",
       getURL: path=>`chrome-extension://extension-under-test/${path.replace(/^\/+/, '')}`,
-      onInstalled: { addListener() {} }, onMessage: { addListener(listener) { onMessage = listener; } },
+      onInstalled: { addListener(listener) { onInstalled = listener; } }, onMessage: { addListener(listener) { onMessage = listener; } },
       openOptionsPage: async () => {},
       sendMessage: async (message) => {
         if (options.spoofMessages && message.type === "pagePlatformRead") {
@@ -98,7 +98,7 @@ const harness = (options = {}) => {
           }
           onMessage({ ...message, requestId: "unrelated", result: { ok: false } }, { id: chrome.runtime.id, tab: { id: 7 }, frameId: 0, url: currentUrl }, () => {});
         }
-        onMessage(message, { id: chrome.runtime.id, tab: { id: 7 }, frameId: 0, url: currentUrl }, () => {});
+        onMessage(message, { id: chrome.runtime.id, tab: { id: 7 }, frameId: 0, url: options.senderUrl || currentUrl }, () => {});
       },
     },
     storage: { local: { get: async () => ({ instanceUrl: "https://edgeever.test", token: "test-token", notebookId: "" }) } },
@@ -113,6 +113,7 @@ const harness = (options = {}) => {
     windows: { onRemoved: { addListener() {} } },
     contextMenus: { onClicked: { addListener(listener) { onClick = listener; } } },
     scripting: { executeScript: async ({ func, args = [], files, target }) => {
+      if (args.some(value => value === undefined)) throw new Error("scripting.executeScript args must be JSON serializable");
       calls.injections.push({ files, target });
       const scriptContext = target.tabId === 8 ? selectionContext : pageContext;
       if (options.denyScripting) throw new Error("Cannot access contents of the page. Missing host permission.");
@@ -133,7 +134,7 @@ const harness = (options = {}) => {
     } },
     action: { setBadgeBackgroundColor: async () => {}, setBadgeText: async () => {} },
   };
-  pageContext = createContext({ window, document: window.document, location: { get href() { return currentUrl; } }, URL, chrome, setTimeout, clearTimeout, setInterval, clearInterval, fetch: fetchMock, AbortSignal, Blob, Uint8Array });
+  pageContext = createContext({ window, document: window.document, location: { get href() { return currentUrl; } }, URL, chrome, MutationObserver: window.MutationObserver, setTimeout, clearTimeout, setInterval, clearInterval, fetch: fetchMock, AbortSignal, Blob, Uint8Array });
   if (options.selectionWindow) {
     const selectedWindow = options.selectionWindow;
     selectedWindow.DOMParser = class { parseFromString(value) { return createDocument(value); } };
@@ -142,8 +143,13 @@ const harness = (options = {}) => {
     } } };
     selectionContext = createContext({ window: selectedWindow, document: selectedWindow.document, location: selectedWindow.location, URL, chrome: selectedChrome, setTimeout, clearTimeout, setInterval, clearInterval, fetch: fetchMock, AbortSignal, Blob, Uint8Array });
   }
+  if (options.withoutDesktopApis) {
+    delete chrome.contextMenus;
+    delete chrome.windows;
+  }
   runInContext(background, createContext({ chrome, fetch: fetchMock, URL, crypto, setTimeout:options.backgroundSetTimeout || setTimeout, clearTimeout, setInterval, clearInterval, AbortSignal, AbortController, Blob, File, FormData, Uint8Array, ArrayBuffer, Response }));
   return {
+    installed: () => onInstalled({ reason: "install" }),
     document: window.document,
     calls,
     toolbar: () => new Promise((resolve) => onMessage({ type: "captureCurrentPage" }, { id: chrome.runtime.id }, resolve)),
@@ -157,6 +163,15 @@ const harness = (options = {}) => {
     }),
   };
 };
+
+test("Android without desktop menu/window APIs can initialize and save from the popup", async () => {
+  const h = harness({ withoutDesktopApis: true });
+  expect(() => h.installed()).not.toThrow();
+  expect(await h.mode()).toEqual({ kind: "platform", platform: "Hacker News" });
+  expect(await h.toolbar()).toMatchObject({ ok: true });
+  expect(h.calls.creates).toHaveLength(1);
+  expect(h.calls.creates[0].contentMarkdown).toContain("news.ycombinator.com/item?id=40380738");
+});
 
 test("BOSS popup detects login preview through the serialized DOM probe without creating or expanding anything", async () => {
   const h = harness({ platform: "boss", prepare: (doc) => { doc.body.innerHTML = createWindow(readFileSync(new URL('./fixtures/platforms/boss-login-required.html', import.meta.url), 'utf8')).document.body.innerHTML; } });
@@ -386,6 +401,15 @@ for (const [option, message] of [["denyInstance", "instancePermissionRequired"],
   });
 }
 
+
+for (const navigate of [false, true]) test(`a stale sender URL after SPA navigation ${navigate ? "still cancels real navigation" : "does not reject the current post"}`, async () => {
+  const h = harness({ platform: "linkedin", senderUrl: "https://www.linkedin.com/posts/previous-activity-123-test", navigateDuringNotebookLookup: navigate });
+  const result = await h.toolbar();
+  expect(result.ok).toBe(!navigate);
+  expect(h.calls.creates).toHaveLength(navigate ? 0 : 1);
+  if (navigate) expect(result.message).toBe("platformPageChanged");
+  else expect(h.calls.creates[0].contentMarkdown).toContain("https://www.linkedin.com/feed/update/urn:li:activity:7497764718095323136/");
+});
 
 test("a pending saving toast cannot replace the already clicked post with a later right-click",async()=>{
  let release,started;const gate=new Promise(resolve=>release=resolve),shown=new Promise(resolve=>started=resolve);
@@ -759,4 +783,38 @@ test('stable rich selection preserves code blank lines and archives its selected
  const doc=markdownToDoc(h.calls.saves[0].contentMarkdown);
  expect(doc.content.find(node=>node.type==='codeBlock').content[0].text).toBe(code);
  expect(h.calls.uploads).toHaveLength(1);expect(JSON.stringify(doc)).toContain('/api/v1/resources/res_1/blob');
+});
+
+for(const navigate of [false,true])test(`current signed-in Jike Web detail ${navigate?'cancels navigation':'saves through the platform route'}`,async()=>{
+ const pageUrl='https://web.okjike.com/u/5e6497e7-a69f-422b-af6e-baf0fc07b512/post/64c9dd9a2edae6abdc610605';
+ const h=harness({platform:'jike',pageUrl,fixture:'jike-web-detail',navigateDuringNotebookLookup:navigate});
+ expect((await h.toolbar()).ok).toBe(!navigate);expect(h.calls.creates).toHaveLength(navigate?0:1);
+ if(!navigate){expect(h.calls.creates[0].contentMarkdown).toContain('https://m.okjike.com/originalPosts/64c9dd9a2edae6abdc610605');expect(h.calls.creates[0].contentMarkdown).not.toContain('Do not capture comments');expect(h.calls.uploads).toHaveLength(1);}
+});
+
+const webJikePosts=JSON.parse(readFileSync(new URL('./fixtures/platforms/jike-web-feed.posts.json',import.meta.url),'utf8'));
+const prepareWebJike=(doc,window)=>{
+ const cards=[...doc.querySelectorAll('[data-clickable-feedback]')].filter(c=>c.querySelector('header')&&c.querySelector('[class*="_contentWrapper_"]'));
+ cards.forEach((card,i)=>card.__reactProps$fixture={children:{props:{data:structuredClone(webJikePosts[i])}}});
+ cards[0].setAttribute('data-edgeever-jike-selected','');let notify=()=>{};
+ window.MutationObserver=class{constructor(fn){notify=fn;}observe(){}disconnect(){}};
+ cards[0].querySelector('[class*="_expandButton_"]').addEventListener('click',e=>{e.target.textContent='收起';notify();});
+ return cards;
+};
+
+test('native Jike Web feed menu resolves current props and expands only the selected original post',async()=>{
+ const h=harness({platform:'jike',fixture:'jike-web-feed',pageUrl:'https://web.okjike.com/following',prepare:prepareWebJike});
+ expect((await h.menu()).kind).toBe('success');expect(h.calls.creates).toHaveLength(1);
+ const md=h.calls.creates[0].contentMarkdown;expect(md).toContain('https://m.okjike.com/originalPosts/'+webJikePosts[0].id);
+ expect(md).toContain('感谢以上即友的创作与分享');expect(md).not.toContain('2026年10月16日');expect(md).not.toContain('收起');
+ expect(md).toContain('https://web.okjike.com/u/71b51e1e-ece6-4855-b1d9-98703b7c1507');
+ expect(h.calls.requests.every(url=>url.startsWith('https://edgeever.test/'))).toBe(true);
+});
+
+test('Jike Web card identity recycling during notebook lookup cancels before creating a memo',async()=>{
+ let cards,release,entered;const started=new Promise(r=>entered=r),gate=new Promise(r=>release=r);
+ const h=harness({platform:'jike',fixture:'jike-web-feed',pageUrl:'https://web.okjike.com/following',prepare:(d,w)=>{cards=prepareWebJike(d,w);cards[0].querySelector('[class*="_expandButton_"]').remove();},notebookRequested:entered,notebookGate:gate});
+ const pending=h.menu();await started;
+ cards[0].__reactProps$fixture.children.props.data.id='6715e824d9dc81724c2ec74d';release();
+ expect(await pending).toMatchObject({kind:'error',message:'platformPageChanged'});expect(h.calls.creates).toHaveLength(0);
 });

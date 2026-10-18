@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SharePasswordControls } from "./SharePasswordControls";
+import { ShareQrCode } from "./ShareQrCode";
 import { SHARE_DIALOG_PRIMARY_BUTTON_CLASS_NAME, SHARE_DIALOG_WIDTH_CLASS_NAME } from "./share-dialog-layout";
 import { Input } from "@/components/ui/input";
 import { api, getConfiguredDesktopApiBaseUrl } from "@/lib/api";
@@ -184,6 +185,10 @@ export const ShareNotebookDialog = ({
               hideCopyBoth={true}
               onChange={(enabled) => passwordMutation.mutate(enabled)}
             />
+
+            {share.passwordProtected ? null : (
+              <ShareQrCode key={`qr-${share.token}`} url={shareUrl} hint={t("sharing.qrCodeNotebookHint")} />
+            )}
 
             <div className="flex items-center justify-between pt-2">
               <Button

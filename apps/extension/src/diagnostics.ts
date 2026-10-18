@@ -1,4 +1,4 @@
-import type { ExtensionSettings } from "./extension";
+import { getInstancePermissionPattern, type ExtensionSettings } from "./extension";
 import { t } from "./i18n";
 
 export type DiagnosticInfo = {
@@ -37,7 +37,7 @@ export const getDiagnosticInfo = async (settings: ExtensionSettings): Promise<Di
   const instanceOrigin = getInstanceOrigin(settings.instanceUrl);
   let instancePermission = t("permissionNotConfigured");
   if (instanceOrigin.startsWith("http")) {
-    const granted = await chrome.permissions.contains({ origins: [`${instanceOrigin}/*`] });
+    const granted = await chrome.permissions.contains({ origins: [getInstancePermissionPattern(settings.instanceUrl)] });
     instancePermission = granted ? t("permissionGranted") : t("permissionNotGranted");
   }
 

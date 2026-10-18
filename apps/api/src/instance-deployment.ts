@@ -29,3 +29,24 @@ export const resolveDeploymentVersionCreatedAt = (
   if (!timestamp || !Number.isFinite(Date.parse(timestamp))) return null;
   return new Date(timestamp).toISOString();
 };
+
+const normalizeTimestamp = (value: string | undefined): string | null => {
+  const timestamp = value?.trim();
+  if (!timestamp || !Number.isFinite(Date.parse(timestamp))) return null;
+  return new Date(timestamp).toISOString();
+};
+
+/**
+ * How and when the container image was produced. This is separate from the
+ * instance deployment metadata: an image can be deployed long after it was
+ * built, and by a different mechanism.
+ */
+export const resolveImageBuildMetadata = (
+  environment: Pick<Bindings, "EDGE_EVER_BUILD_CREATED_AT" | "EDGE_EVER_BUILD_TRIGGER" | "EDGE_EVER_BUILD_METHOD">,
+): { buildCreatedAt: string | null; buildProvenance: DeploymentMetadata } => ({
+  buildCreatedAt: normalizeTimestamp(environment.EDGE_EVER_BUILD_CREATED_AT),
+  buildProvenance: {
+    trigger: resolveDeploymentTrigger(environment.EDGE_EVER_BUILD_TRIGGER?.trim()),
+    method: resolveDeploymentMethod(environment.EDGE_EVER_BUILD_METHOD?.trim()),
+  },
+});

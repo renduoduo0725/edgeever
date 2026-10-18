@@ -198,14 +198,9 @@ struct MemoDetailView: View {
                             Text(env.preferences.t("文艺衬线", en: "Serif", pl: "Szeryfowa")).tag("serif")
                             Text(env.preferences.t("现代无衬线", en: "Sans", pl: "Bezszeryfowa")).tag("sans")
                             Text(env.preferences.t("极客等宽", en: "Mono", pl: "Monospace")).tag("mono")
-                            Text(env.preferences.t("得意黑", en: "Smiley Sans", pl: "Smiley Sans")).tag("smiley")
-                            Text(env.preferences.t("霞鹜文楷", en: "LXGW WenKai", pl: "LXGW WenKai")).tag("wenkai")
-                            Text(env.preferences.t("朱雀仿宋", en: "Zhuque Fangsong", pl: "Zhuque Fangsong")).tag("zhuque")
-                            Text(env.preferences.t("思源黑体 Heavy", en: "Noto Sans SC Heavy", pl: "Noto Sans SC Heavy")).tag("heavy")
-                            Text(env.preferences.t("普惠体", en: "PuHuiTi", pl: "PuHuiTi")).tag("puhui")
-                            Text(env.preferences.t("普惠体 Heavy", en: "PuHuiTi Heavy", pl: "PuHuiTi Heavy")).tag("puhui-heavy")
-                            Text(env.preferences.t("优设标题黑", en: "YouShe Title", pl: "YouShe Title")).tag("youshe")
-                            Text(env.preferences.t("阿里妈妈数黑体", en: "Alimama ShuHei", pl: "Alimama ShuHei")).tag("shuhei")
+                            ForEach(NoteImageFontCatalog.choices, id: \.id) { font in
+                                Text(env.preferences.t(font.zh, en: font.en, pl: font.en)).tag(font.id)
+                            }
                         }
                         .pickerStyle(.menu)
                         Text(env.preferences.t(

@@ -37,36 +37,24 @@ non-user-facing commit with a concrete reason:
 --ignore-commit "89abcde:test-only coverage"
 ```
 
-The coverage audit runs before any local or GitHub mutation. Its mapping is
-stored in the tracking Issue, not in the public Release notes. Public notes
-contain user-visible changes, impact, necessary migration guidance, and optional
-contributor acknowledgments.
+The coverage audit runs before any local or GitHub mutation; its mapping is
+stored in the tracking Issue. Use `--dry-run` to preview commit coverage, the
+native rebuild plan, and Release notes.
 
-To thank contributors to this version, optionally append one `--contributor`
-per GitHub username to the release command:
+### External Contributor Credits
 
-```bash
---contributor alice --contributor "@bob"
-```
+- Changes completed by the maintainer need no attribution. Credit external
+  contributions with `@username` and the PR at the end of the corresponding item.
+- Multiple contributions by the same person may use consolidated credits instead.
+  The closing list only includes people not credited individually; omit it when empty.
+- GitHub generates its native Contributors avatar section from `@username`
+  mentions throughout the notes, including individual items.
 
-Review the list before publishing. Include code, translation, documentation, or
-issue-reporting contributions that helped this version; omit bots and avoid
-repeating the maintainer by default. Usernames may include a leading `@` and
-are deduplicated without regard to case, preserving the first spelling and order.
-The script appends `贡献者 / Contributors：@alice @bob` after the bilingual notes;
-omitting the option leaves the notes unchanged. GitHub uses the mentions to
-display its native Contributors avatar list. No accounts are inferred from commits
-or checked against GitHub. Preview the text with `--dry-run`. Resuming an existing
-Draft preserves its notes; edit that Draft directly if its acknowledgments need
-correction before publishing.
-
-Use `--dry-run` to inspect commit coverage, the native rebuild plan, and notes.
-After publication, the command does not download, install, or launch the macOS
-application. Existing macOS, Windows, and Linux installations receive new
-versions through the in-app automatic updater. Linux Preview releases must pass
-a real AppImage-to-AppImage transition through the cross-version gate. Pass
-`--install-desktop` explicitly only when the previous installation check is
-actually needed.
+Place individual credits in `--change-zh` / `--change-en`. For a consolidated
+list, repeat `--contributor alice`; the script appends
+`贡献者 / Contributors：@alice` after the bilingual notes. This option does not
+infer contributors automatically. Resuming an existing Draft preserves its
+notes; edit the Draft directly to adjust credits.
 
 ## EdgeEver-Specific Behavior
 
@@ -87,8 +75,8 @@ actually needed.
 - The script creates the tracking Issue and Draft Release, validates or reuses
   native assets, prepares and audits the multi-platform GHCR image, publishes,
   and closes the Issue without installing
-  the desktop application by default; installation remains available as an
-  explicit option.
+  the desktop application by default; installation checks require an explicit
+  `--install-desktop`.
   Demo deployment continues independently after its Actions URL is printed.
 - A separate workflow sends the same verified Git commit to CNB. CNB builds and
   audits the public Tencent TCR image inside Tencent Cloud after the formal

@@ -14,7 +14,7 @@ import { platformHtmlMarkdown, platformTarget, type PlatformLabels, type Platfor
 // Built as a standalone IIFE and injected only after a user action.
 (() => {
   const root = globalThis as typeof globalThis & {
-    __edgeeverPlatformClipPayload?: { requestId?: string; url?: string; selectionFirst?: boolean; selectionText?: string; sourceUrl?: string; xiaoyuzhouState?: unknown };
+    __edgeeverPlatformClipPayload?: { requestId?: string; url?: string; selectionFirst?: boolean; selectionText?: string; sourceUrl?: string; xiaoyuzhouState?: unknown; jikeState?: unknown };
   };
   const payload = root.__edgeeverPlatformClipPayload;
   delete root.__edgeeverPlatformClipPayload;
@@ -29,7 +29,11 @@ import { platformHtmlMarkdown, platformTarget, type PlatformLabels, type Platfor
     noShowNotes: t("platformNoShowNotes"), relativeTime: t("platformRelativeTimeLabel"),
   };
   const sourceUrl = payload.sourceUrl;
-  const samePage = () => location.href === sourceUrl;
+  // A cross-document navigation can start before location.href changes.
+  let leavingPage = false;
+  const onBeforeUnload = () => { leavingPage = true; };
+  window.addEventListener("beforeunload", onBeforeUnload);
+  const samePage = () => !leavingPage && location.href === sourceUrl;
   const read = (): PlatformRead => {
     if (!samePage()) return { ok: false, reason: "changed" };
     switch (expected.platform) {
@@ -39,7 +43,7 @@ import { platformHtmlMarkdown, platformTarget, type PlatformLabels, type Platfor
       case "boss": return readBoss(document, location.href);
       case "xueqiu": return readXueqiu(document, expected, location.href);
       case "wechat": case "sspai": case "juejin": return readArticle(document, location.href, t("platformOfficialAccountLabel"));
-      case "jike": return readJike(document, location.href, expected);
+      case "jike": return readJike(document, location.href, expected, payload.jikeState);
       case "douban": return readDouban(document, expected, location.href, t("platformListSourceLabel"));
       default: return readSocial(document, expected);
     }
@@ -107,5 +111,6 @@ import { platformHtmlMarkdown, platformTarget, type PlatformLabels, type Platfor
     });
   };
   void capture().then((result) => finish(samePage() ? result : { ok: false, reason: "changed" }))
-    .catch(() => finish({ ok: false, reason: "unreadable" }));
+    .catch(() => finish({ ok: false, reason: "unreadable" }))
+    .finally(() => window.removeEventListener("beforeunload", onBeforeUnload));
 })();

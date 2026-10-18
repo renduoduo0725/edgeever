@@ -191,3 +191,22 @@ for(const navigate of [false,true])test(`Jike expansion ${navigate?'navigation':
   }});
   expect(result).toEqual({ok:false,reason:navigate?'changed':'incomplete'});expect(calls.clicks).toBe(1);expect(calls.disconnected).toBe(true);
 });
+
+for (const leaving of [false, true]) test(`Facebook expansion ${leaving ? "cancels before a cross-document URL commits" : "still captures without navigation"}`, async () => {
+  const url = "https://www.facebook.com/NASA/posts/pfbid0dPToN66CzcAHGMoaNe3jszH4FfBKvqkE5gogCNJkTxXDPsSGYrGvcVwsLgByyMQQl";
+  const { result, calls } = await capture({ fixture: "facebook", url, prepare: ({ doc, window, changed }) => {
+    const body = doc.querySelector('[data-ad-preview="message"]');
+    const full = body.innerHTML;
+    body.innerHTML = '<p>Preview <button role="button">See more</button></p>';
+    body.querySelector('button').addEventListener('click', () => {
+      // During a real navigation the old URL remains until the response commits.
+      if (leaving) window.dispatchEvent(new window.Event('beforeunload'));
+      body.innerHTML = full;
+      changed();
+    });
+  } });
+  if (leaving) expect(result).toEqual({ ok: false, reason: "changed" });
+  else expect(result.ok).toBe(true);
+  expect(calls.messages).toHaveLength(1);
+  expect(calls.disconnected).toBe(true);
+});

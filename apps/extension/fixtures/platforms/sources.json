@@ -256,10 +256,43 @@
       "capturedOn": "2026-10-15",
       "state": "Same-origin public detail HTML for the second actual Ego feed card, sanitized as above.",
       "expected": "Keep full text through 把自己的真金白银押在别人的嘴上，早晚是要付出代价的。, one body image and explicitly linked 09992/NTES. Remove the source-app footer; never save the feed preview as complete."
+    },
+    {
+      "file": "jike-web-detail.html",
+      "url": "https://web.okjike.com/u/5e6497e7-a69f-422b-af6e-baf0fc07b512/post/64c9dd9a2edae6abdc610605",
+      "state": "Captured 2026-10-17 after QR sign-in. Current Web detail layout; only the public post card retained, plus a synthetic comment exclusion marker. No account sidebar or login data. Detail already displays the full long post.",
+      "expected": "Keep the complete long post through the final book links, author 泛函, date precision 2023-08-02, inline mention text and one preview cover. Exclude mention/avatar images and comments. Bind the sole visible detail card to the route author; reject ambiguous or mismatched cards."
+    },
+    {
+      "file": "jike-web-grid.html",
+      "url": "https://web.okjike.com/u/af47ed7e-38d4-4798-acd6-04e3cc8d131c/post/6715e824d9dc81724c2ec74d",
+      "state": "Captured 2026-10-17 signed in. Only public post card retained. Gallery viewer independently confirmed original CDN paths without thumbnail transforms. Synthetic neighbor exclusion marker.",
+      "expected": "Keep the caption, author 彗星咻咻咻, date 2024-10-21 and all nine gallery originals in order. No avatar, comments, or adjacent post."
+    },
+    {
+      "file": "jike-web-feed.html",
+      "url": "https://web.okjike.com/following",
+      "capturedOn": "2026-10-17",
+      "state": "Signed-in current Jike Web feed; two public original posts by 即刻资讯台. Cards have no own DOM permalink. Sanitized companion jike-web-feed.posts.json contains only public id/type/content/date/creator username/pictures from each own host DOM current __reactProps$ children, not Fiber/alternate or global account state.",
+      "expected": "Bind 6ad2adab709f50754cbd2921 independently of referenced post links and neighbor 6ad15c2977477d8a9f97733b. Click its actual 查看更多 div and retain the complete October 17 post, body link destinations, mentions, author and source. Reject changed current identity, ambiguous or hidden cards, mismatched author/body/images, and non-original posts; do not fetch authenticated APIs."
+    },
+    {
+      "file": "jike-web-feed-image.html",
+      "url": "https://web.okjike.com/topic/63579abb6724cc583b9bba9a/square",
+      "capturedOn": "2026-10-17",
+      "state": "Signed-in modern Web topic feed; public original post 6ad399f0141b85b29268b593. Sanitized own current host props in jike-web-feed-image.posts.json. Single gallery image has no data-mode attribute.",
+      "expected": "Keep 成思杨, 入坑了 / 开启一个新的时代 and one original PNG. Match the displayed gallery file to own picture metadata before using picUrl including its imageMogr2 meta-keep transform; reject another file or changed source identity. Preserve the topic/feed page while clipping."
+    },
+    {
+      "file": "bluesky-feed-preview.html",
+      "url": "https://bsky.app/profile/bsky.app",
+      "capturedOn": "2026-10-18",
+      "state": "Public signed-out profile feed in Ego Chromium. Only the current public 3mxzez2m7wk2r card HTML, including its quoted post and link preview; no account state.",
+      "expected": "Bind the own timestamp to bsky.app/3mxzez2m7wk2r; retain the full main and quoted text, preview title/description/destination and one original preview image. Parse the preview as a real link, without literal Markdown brackets."
     }
   ],
   "redaction": "Only relevant DOM containers and one comment excerpt remain. Controls, unrelated sections, scripts, event attributes and auth-bearing links were removed. Xiaoyuzhou JSON retains only query.id and episode eid/title/shownotes, used to verify identity and completeness. Tests derive synthetic boundary states from these real DOM fixtures; those variants are not live-site acceptance evidence. Phase 1 fixtures retain the actual target DOM and only post-relevant JSON records. Authentication, session, tracking and unrelated records are excluded. Reader and pointer tests use these structures; boundary mutations are synthetic. 2026-10-14 article/Jike/Douban samples retain only relevant rendered roots and public article metadata; computed hidden nodes are marked before styles are removed. Attribute allowlists exclude handlers, tracking fields and account/session state. Jike Next data retains only the selected public post identity/content/time and picUrl/middlePicUrl/thumbnailUrl. Douban list retains multiple real comments to verify exact pointer targeting and no neighbor capture.",
-  "updatedOn": "2026-10-15",
+  "updatedOn": "2026-10-17",
   "liveChecks": [
     {
       "url": "https://book.douban.com/review/16093028/",
