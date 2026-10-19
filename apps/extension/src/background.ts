@@ -1323,6 +1323,8 @@ const describePlatformError = (error: unknown) => {
 };
 
 const isJikeWebFeed = (url: string) => url.startsWith("https://web.okjike.com/") && !platformTarget(url);
+const usesJikeWebState = (url: string) => isJikeWebFeed(url)
+  || /^https:\/\/web\.okjike\.com\/u\/[^/]+\/post\/[a-f0-9]{24}\/?(?:[?#]|$)/.test(url);
 const readJikeWebState = async (tabId: number, id?: string) => (await chrome.scripting.executeScript({
   target: { tabId, frameIds: [0] }, world: "MAIN", func: readJikeWebStateInPage, args: id ? [id] : [],
 }))[0]?.result;
@@ -1343,7 +1345,7 @@ const readPlatformFromPage = async (tabId: number, target: PlatformTarget, selec
       const xiaoyuzhouState = target.platform === "xiaoyuzhou"
         ? (await chrome.scripting.executeScript({ target: { tabId, frameIds: [0] }, world: "MAIN", func: readXiaoyuzhouStateInPage }))[0]?.result
         : undefined;
-      const jikeState = target.platform === "jike" && isJikeWebFeed(sourceUrl) ? await readJikeWebState(tabId,target.id) : undefined;
+      const jikeState = target.platform === "jike" && usesJikeWebState(sourceUrl) ? await readJikeWebState(tabId,target.id) : undefined;
       await chrome.scripting.executeScript({
         target: { tabId, frameIds: [0] },
         func: (payload: unknown) => {
@@ -1387,7 +1389,7 @@ const performPlatformSave = async (tabId: number, pageUrl: string, selectionFirs
     "---", clip.markdown,
   ].filter(Boolean).join("\n\n") : toMarkdown(selection!);
   const notebookId = await notebookForClip(settings);
-  if (target.platform === "jike" && isJikeWebFeed(pageUrl) && clip) {
+  if (target.platform === "jike" && usesJikeWebState(pageUrl) && clip) {
     const live = await readJikeWebState(tabId,target.id);
     if (live?.pageUrl !== pageUrl || live.post.id !== target.id) throw new Error(t("platformPageChanged"));
   }

@@ -34,7 +34,10 @@ const bodyInCard = (card: Element) => Array.from(card.querySelectorAll(".text,.i
 const comparisonText = (body: Element, base: string) => {
   const comparison=body.cloneNode(true) as Element;
   for (const n of Array.from(comparison.querySelectorAll('button,[role="button"]'))) n.remove();
-  for (const mention of Array.from(comparison.querySelectorAll('[class*="_mentionUser_"]'))) mention.textContent = `@${platformText(mention)}`;
+  for (const mention of Array.from(comparison.querySelectorAll('[class*="_mentionUser_"]'))) {
+    const text=platformText(mention);
+    mention.textContent = text.startsWith("@") ? text : `@${text}`;
+  }
   // Share pages shorten URL labels to hostnames. Mentions remain source text.
   for (const link of Array.from(comparison.querySelectorAll("a[href]"))) {
     const href=safePlatformUrl(link.getAttribute("href") || "",base);
@@ -103,7 +106,7 @@ export const jikePostCard = (doc: Document, target: PlatformTarget, pageUrl: str
   return Array.from(doc.querySelectorAll(JIKE_CARD_SELECTOR)).find(card=>jikeCardTarget(card,pageUrl)?.id === target.id) || null;
 };
 
-/** Signed-in Web detail: bind the single visible post card to its route owner. */
+/** Read the identified Web card only when its visible body matches current public data. */
 const readWebDetail = (doc: Document, card: Element, target: PlatformTarget, post?: JikePost): PlatformRead => {
   const body = card.querySelector(WEB_BODY);
   if (!body) return {ok:false,reason:"unreadable"};
@@ -131,7 +134,7 @@ const readWebDetail = (doc: Document, card: Element, target: PlatformTarget, pos
   if (!text && !clean.querySelector("img")) return {ok:false,reason:"unreadable"};
   if (post) {
     const content = ownText(clean);
-    if (!content || typeof post.content !== "string" || normalizedText(comparisonText(content,target.url),target.url) !== normalizedText(post.content,target.url)) return {ok:false,reason:"incomplete"};
+    if (typeof post.content !== "string" || normalizedText(content ? comparisonText(content,target.url) : "",target.url) !== normalizedText(post.content,target.url)) return {ok:false,reason:"incomplete"};
     const images = Array.from(clean.querySelectorAll('img[data-anonymous-gallery="true"]'));
     if (!Array.isArray(post.pictures) || images.length !== post.pictures.length) return {ok:false,reason:"incomplete"};
     for (const [index,image] of images.entries()) {
@@ -166,12 +169,11 @@ const readWebDetail = (doc: Document, card: Element, target: PlatformTarget, pos
 export const readJike = (doc: Document, pageUrl: string, target: PlatformTarget | null = platformTarget(pageUrl), currentState?: unknown): PlatformRead => {
   if (target?.platform !== "jike") return {ok:false,reason:"not-target"};
   const card=jikePostCard(doc,target,pageUrl);
-  if (!platformTarget(pageUrl) && card && isJikeWebCard(card)) {
+  if (card && isJikeWebCard(card)) {
     const state=currentState as {pageUrl?: unknown;post?: JikePost} | undefined;
     if (state?.pageUrl !== pageUrl || state.post?.id !== target.id) return {ok:false,reason:"changed"};
     return readWebDetail(doc,card,target,state.post);
   }
-  if (card?.matches(WEB_DETAIL_CARD)) return readWebDetail(doc,card,target);
   const body=card && bodyInCard(card);
   if (!card || !body) return {ok:false,reason:"unreadable"};
   const state=pageData(doc), detail=platformTarget(pageUrl)?.platform === "jike";

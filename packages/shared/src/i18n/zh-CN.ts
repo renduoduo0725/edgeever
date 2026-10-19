@@ -2,7 +2,7 @@ import { memoTemplateSeedTranslations } from "../memo-template-seeds";
 
 // Shared by the PWA and native mobile clients.
 export const zhCN = {
-  fontLoad: {"loading": "字体加载中…", "ready": "字体已就绪", "error": "字体加载失败", "retry": "重试"},
+  fontLoad: {"templateLoading": "字体加载中…", "templateFallback": "暂时使用替代字体，加载成功后将自动恢复", "loading": "字体加载中…", "ready": "字体已就绪", "error": "字体加载失败", "retry": "重试"},
   noteProperties: {"heading": "笔记属性", "source": "显示 YAML 源码", "name": "属性名称", "type": "属性类型", "add": "添加属性", "remove": "删除 {{name}}", "invalidName": "请输入不重复且非系统保留的属性名称。", "invalidYaml": "请检查笔记属性：", "invalidNumber": "请输入有效数字。", "listHint": "每行一个值", "text": "文本", "list": "列表", "number": "数字", "checkbox": "复选框", "date": "日期"},
   poster: {
     design: {
@@ -2476,6 +2476,14 @@ export const zhCN = {
         warm: "暖色",
       },
       fontStyle: "字体风格",
+      templateFonts: {
+        puhui: "阿里巴巴普惠体",
+        misans: "MiSans",
+        mincho: "汇文明朝体",
+        song: "思源宋体",
+        longcang: "龙藏体",
+        geist: "Geist Mono",
+      },
       fontStyles: {
         "source-han-serif": "思源宋体",
         "anton": "Anton",

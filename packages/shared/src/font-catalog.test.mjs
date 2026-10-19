@@ -39,7 +39,7 @@ test("poster downloads reuse pinned assets and retain their integrity and licens
     const font = FONT_CATALOG[id];
     if (!font.path.startsWith("gh/")) continue;
     const name = font.path.split("/").at(-1);
-    const bytes = await readFile(new URL(`../../../apps/web/public/poster-fonts/${name}`, import.meta.url));
+    const bytes = await readFile(new URL(`./font-assets/poster/${name}`, import.meta.url));
     expect(bytes.byteLength).toBe(font.bytes);
     expect(createHash("sha256").update(bytes).digest("hex")).toBe(font.sha256);
     const urls = remoteFontUrls(remoteFontCssUrl(id));

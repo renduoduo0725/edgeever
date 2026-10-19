@@ -426,6 +426,8 @@ const SystemInfoCard = ({
       ? (english ? "Restart to apply" : "重启以应用")
       : updateKind === "ota"
         ? (english ? "Download update" : "下载更新")
+        : updateKind === "play"
+          ? (english ? "Update with Google Play" : "通过 Google Play 更新")
         : copy.openUpdate;
 
   const copySystemInfo = async () => {

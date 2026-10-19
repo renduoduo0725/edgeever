@@ -7,7 +7,7 @@ import {
 } from "./ai-direct-stream";
 
 import { createPluginCapabilities } from './plugin-capabilities';
-import { aiDirectTargetKey } from "@edgeever/shared";
+import { aiDirectTargetKey } from "@edgeever/shared/ai-generation";
 import type {
   CompanionMemory,
   CompanionDiscoverySettings,

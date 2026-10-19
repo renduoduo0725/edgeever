@@ -27,10 +27,18 @@ final class MobileUIParityTests: XCTestCase {
         XCTAssertEqual(PreferencesStore(defaults: defaults).noteImageShare, NoteImageSharePreferences())
     }
 
+    func testImageShareOldDefaultBecomesGlass() throws {
+        let raw = #"{"theme":"gradient","fontStyle":"serif","showTitle":false}"#
+        let settings = try JSONDecoder().decode(NoteImageSharePreferences.self, from: Data(raw.utf8))
+        XCTAssertEqual(settings.theme, "glass")
+        XCTAssertEqual(settings.fontStyle, "serif")
+        XCTAssertFalse(settings.showTitle)
+    }
+
     func testImageShareInvalidFieldsDoNotDiscardValidChoices() throws {
         let raw = #"{"theme":"removed","fontStyle":"serif","fontSize":12,"cardWidth":"compact","format":"svg","showTitle":false,"showNotebook":true,"showTags":"true","showUpdatedAt":false,"showBranding":false}"#
         let settings = try JSONDecoder().decode(NoteImageSharePreferences.self, from: Data(raw.utf8))
-        XCTAssertEqual(settings.theme, "gradient")
+        XCTAssertEqual(settings.theme, "glass")
         XCTAssertEqual(settings.fontStyle, "serif")
         XCTAssertEqual(settings.fontSize, "lg")
         XCTAssertEqual(settings.cardWidth, "compact")

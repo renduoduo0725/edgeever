@@ -2,7 +2,7 @@
 
 Card typography uses Alibaba PuHuiTi 3.0 Regular (Alibaba / Hanyi), MiSans Regular (Xiaomi / Hanyi), Source Han Serif CN SemiBold (Adobe), Huiwen Mingchao (天王帝廷), Long Cang (LongCang project authors), and Geist Mono (Vercel).
 
-The WOFF2 subsets are byte-for-byte copies of the public reference resources; their original copyright metadata and Unicode ranges are preserved in each `SOURCE.css`. The application only loads subsets covering the card's text. It does not modify the font outlines. MiSans is used in the memo card template.
+The WOFF2 subsets are byte-for-byte copies of the public reference resources; their original copyright metadata and Unicode ranges are preserved in each `SOURCE.css`. Only Geist Mono and a shared Noto Sans SC fallback are bundled in clients. Other template subsets are downloaded from immutable repository URLs when needed and cached locally; the application only requests subsets covering the card's text. Failed or slow downloads fall back to local fonts without changing the saved font choice. It does not modify the font outlines. MiSans is used in the memo card template.
 
 Sources and notices:
 

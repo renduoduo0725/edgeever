@@ -2,7 +2,7 @@ import { memoTemplateSeedTranslations } from "../memo-template-seeds";
 
 // Shared by the PWA and native mobile clients.
 export const pl = {
-  fontLoad: {"loading": "Ładowanie czcionki…", "ready": "Czcionka gotowa", "error": "Nie udało się załadować czcionki", "retry": "Ponów próbę"},
+  fontLoad: {"templateLoading": "Ładowanie czcionki…", "templateFallback": "Tymczasowo używane są czcionki zastępcze. Po załadowaniu oryginalne czcionki zostaną przywrócone automatycznie.", "loading": "Ładowanie czcionki…", "ready": "Czcionka gotowa", "error": "Nie udało się załadować czcionki", "retry": "Ponów próbę"},
   noteProperties: {"heading": "Właściwości notatki", "source": "Pokaż źródło YAML", "name": "Nazwa właściwości", "type": "Typ właściwości", "add": "Dodaj właściwość", "remove": "Usuń {{name}}", "invalidName": "Użyj unikalnej nazwy, która nie jest właściwością systemową.", "invalidYaml": "Sprawdź właściwości:", "invalidNumber": "Wprowadź poprawną liczbę.", "listHint": "Jedna wartość w wierszu", "text": "Tekst", "list": "Lista", "number": "Liczba", "checkbox": "Pole wyboru", "date": "Data"},
   poster: {
     design: {
@@ -2467,6 +2467,14 @@ export const pl = {
         warm: "Ciepłe",
       },
       fontStyle: "Typografia",
+      templateFonts: {
+        puhui: "Alibaba PuHuiTi",
+        misans: "MiSans",
+        mincho: "Huiwen Mincho",
+        song: "Source Han Serif",
+        longcang: "Long Cang",
+        geist: "Geist Mono",
+      },
       fontStyles: {
         "source-han-serif": "Noto Serif SC",
         "anton": "Anton",

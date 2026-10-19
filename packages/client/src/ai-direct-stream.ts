@@ -4,7 +4,7 @@ import {
   createAiGenerationStreamNormalizer,
   extractAiDirectStreamDelta,
   redactAiProviderError,
-} from "@edgeever/shared";
+} from "@edgeever/shared/ai-generation";
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === "object" ? value as Record<string, unknown> : null;

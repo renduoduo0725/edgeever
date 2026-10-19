@@ -2,7 +2,7 @@ import { memoTemplateSeedTranslations } from "../memo-template-seeds";
 
 // Shared by the PWA and native mobile clients.
 export const ja = {
-  fontLoad: {"loading": "フォントを読み込み中…", "ready": "フォントの準備完了", "error": "フォントを読み込めませんでした", "retry": "再試行"},
+  fontLoad: {"templateLoading": "フォントを読み込み中…", "templateFallback": "一時的に代替フォントを使用しています。読み込みが完了すると自動的に元に戻ります。", "loading": "フォントを読み込み中…", "ready": "フォントの準備完了", "error": "フォントを読み込めませんでした", "retry": "再試行"},
   noteProperties: {"heading": "ノートのプロパティ", "source": "YAML ソースを表示", "name": "プロパティ名", "type": "プロパティの種類", "add": "プロパティを追加", "remove": "{{name}} を削除", "invalidName": "重複しない、システム予約名以外の名前を入力してください。", "invalidYaml": "プロパティを確認してください：", "invalidNumber": "有効な数値を入力してください。", "listHint": "1 行に 1 つの値", "text": "テキスト", "list": "リスト", "number": "数値", "checkbox": "チェックボックス", "date": "日付"},
   poster: {
     design: {
@@ -2467,6 +2467,14 @@ export const ja = {
         warm: "あたたか",
       },
       fontStyle: "書体",
+      templateFonts: {
+        puhui: "Alibaba PuHuiTi",
+        misans: "MiSans",
+        mincho: "匯文明朝体",
+        song: "源ノ明朝",
+        longcang: "Long Cang",
+        geist: "Geist Mono",
+      },
       fontStyles: {
         "source-han-serif": "Noto Serif SC",
         "anton": "Anton",

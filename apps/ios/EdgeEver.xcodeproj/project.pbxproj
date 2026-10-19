@@ -35,6 +35,7 @@
 		4A2DD0673B81D32FA9E5F9DB /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86F590FE9371571DC7456154 /* Theme.swift */; };
 		4A771542C5AD2E6A907187AD /* OutboxFlusher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8720E0D6F00D1509B76A374B /* OutboxFlusher.swift */; };
 		4BA97CD264D0929B20ED19DB /* TipTapWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12DCA98C14CC6F28C22C41A1 /* TipTapWebView.swift */; };
+		4D26C62561A7690325E55210 /* NoteImageFontPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B6BCA279F8E8A4774A7C0A /* NoteImageFontPickerView.swift */; };
 		4EC901852EDA4BC001717747 /* TipTapContentSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A536119D29812EF11DAEAA8 /* TipTapContentSourceTests.swift */; };
 		4F3977342A76C352E95E14E7 /* MemoTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F36ACF8073C8A61AE397CD /* MemoTemplates.swift */; };
 		4F49C2894D3842B4DEAFAD5E /* WebClipper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13105CFE9131425A1C7E4BF0 /* WebClipper.swift */; };
@@ -48,6 +49,7 @@
 		5EEFDEEDC372725C7C7F22ED /* EdgeEverApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CEA2902CDE0D7C4137D173 /* EdgeEverApp.swift */; };
 		5F5EC9565A02FAFDD5D7B54C /* SyncProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12236E3A2F318CDEB17B80CB /* SyncProtocol.swift */; };
 		63D4B562B4EF6ED7291155F6 /* TemplatePickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA3D6859C4C6D9F65435671 /* TemplatePickerSheet.swift */; };
+		67DBD3C7748DE7F8BAD8E752 /* font-picker.html in Resources */ = {isa = PBXBuildFile; fileRef = 2D78B33F7B6D7E017F63E455 /* font-picker.html */; };
 		6A671BB702DA77A0548E6E29 /* URL+Normalize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A8662720DE42695E29F5741 /* URL+Normalize.swift */; };
 		6B2D55E0EA4D28EB7171A565 /* SystemImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17A2092411EFC3765B97DF88 /* SystemImagePicker.swift */; };
 		6E1459D0AA2E0217C517F973 /* WebClipperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D7D3262D1E3E40E38361E84 /* WebClipperTests.swift */; };
@@ -123,6 +125,7 @@
 /* Begin PBXFileReference section */
 		01D34117A78B1F5C367ACDBB /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = EdgeEver/Resources/EditorBundle/assets; sourceTree = SOURCE_ROOT; };
 		033565CE2E96EC2D23105188 /* ListActionsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListActionsSheet.swift; sourceTree = "<group>"; };
+		04B6BCA279F8E8A4774A7C0A /* NoteImageFontPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteImageFontPickerView.swift; sourceTree = "<group>"; };
 		0531FC6AA81DAF0A55B42362 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
 		0EF7E97C950002FA22EFB7C8 /* AiDirectStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiDirectStream.swift; sourceTree = "<group>"; };
 		12236E3A2F318CDEB17B80CB /* SyncProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncProtocol.swift; sourceTree = "<group>"; };
@@ -138,6 +141,7 @@
 		243811C4B4CBF13982976A56 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		2829CE5DF5C15ACF41CC17DA /* EditFabButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditFabButton.swift; sourceTree = "<group>"; };
 		2A8662720DE42695E29F5741 /* URL+Normalize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+Normalize.swift"; sourceTree = "<group>"; };
+		2D78B33F7B6D7E017F63E455 /* font-picker.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "font-picker.html"; sourceTree = "<group>"; };
 		328A2DAC7E7DC89F4782B5FB /* RevisionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevisionsView.swift; sourceTree = "<group>"; };
 		34A3C0399C910B150A02D06E /* ResourceCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceCache.swift; sourceTree = "<group>"; };
 		3674473015F8EB6863B69B0F /* MemoEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoEditView.swift; sourceTree = "<group>"; };
@@ -345,6 +349,7 @@
 			isa = PBXGroup;
 			children = (
 				01D34117A78B1F5C367ACDBB /* assets */,
+				2D78B33F7B6D7E017F63E455 /* font-picker.html */,
 				AB02424D0412FE36C4BCD116 /* index.html */,
 			);
 			path = EditorBundle;
@@ -420,6 +425,7 @@
 				3674473015F8EB6863B69B0F /* MemoEditView.swift */,
 				59C38DBB41BA706C678AB9BD /* MemoEditViewModel.swift */,
 				E3328D871910187ED827B6CE /* NotebookPickerSheet.swift */,
+				04B6BCA279F8E8A4774A7C0A /* NoteImageFontPickerView.swift */,
 				B30C95F4EABCD08555D97C6B /* NotesListView.swift */,
 				328A2DAC7E7DC89F4782B5FB /* RevisionsView.swift */,
 				B1D94BB61519CA2A345D99C1 /* SettingsView.swift */,
@@ -622,6 +628,7 @@
 				06D2661CAB0ADED27F322649 /* Localizable.xcstrings in Resources */,
 				C37DA99E090A783562506CDA /* PrivacyInfo.xcprivacy in Resources */,
 				8E1CB597E6534EBFAD4B43FE /* assets in Resources */,
+				67DBD3C7748DE7F8BAD8E752 /* font-picker.html in Resources */,
 				08D0159B8F194E04C02B69BF /* index.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -690,6 +697,7 @@
 				506702F1751945424AC4CB98 /* MobileUI.swift in Sources */,
 				90FFFFD00B2D19F96EA299C8 /* Models.swift in Sources */,
 				50800DF91A760DE7FB68DFB4 /* Motion.swift in Sources */,
+				4D26C62561A7690325E55210 /* NoteImageFontPickerView.swift in Sources */,
 				0614453E8E9EC13B212B5A2F /* NotebookPickerSheet.swift in Sources */,
 				B08E58823845817F84C52A52 /* NotesListView.swift in Sources */,
 				4A771542C5AD2E6A907187AD /* OutboxFlusher.swift in Sources */,
@@ -804,7 +812,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.122.0;
+				MARKETING_VERSION = 1.124.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -894,7 +902,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.122.0;
+				MARKETING_VERSION = 1.124.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

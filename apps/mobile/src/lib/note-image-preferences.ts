@@ -1,6 +1,7 @@
 import {
   DEFAULT_NOTE_IMAGE_PREFERENCES,
   parseNoteImagePreferences,
+  updateNoteImagePreference,
   type NoteImagePreferences,
 } from "@edgeever/shared/note-image-preferences";
 
@@ -34,7 +35,7 @@ export const createMobileNoteImagePreferenceStore = (storage: PreferenceStorage)
     update: <K extends keyof NoteImagePreferences>(key: K, value: NoteImagePreferences[K]) => {
       // The sheet stays in its loading state until hydration finishes.
       if (!snapshot) return;
-      snapshot = { ...snapshot, [key]: value };
+      snapshot = updateNoteImagePreference(snapshot, key, value);
       const raw = JSON.stringify(snapshot);
       notify();
       // Serialize writes so a slow earlier write cannot replace the latest choice.

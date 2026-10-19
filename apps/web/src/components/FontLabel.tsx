@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { FontLoadIcon } from "./FontLoadFeedback";
 import type { FontLoadStatus } from "@/lib/font-load-state";
 import { useTranslation } from "react-i18next";
-import { FONT_CATALOG, type RemoteNoteImageFont } from "@edgeever/shared/font-catalog";
-import { loadCatalogFont } from "@edgeever/shared/font-loader";
+import { FONT_CATALOG, isRemoteNoteImageFont } from "@edgeever/shared/font-catalog";
+import { LEGACY_BODY_FONTS } from "@edgeever/shared/font-resources";
+import { loadCatalogFont, loadBodyFont, type BodyFontId } from "@edgeever/shared/font-loader";
 
 /** Radix mounts hidden items too; previews only request fonts for visible menu rows. */
 export const FontLabel = ({ label, fontId, fontFamily, registrationFamily, enabled, visibleOnly = false, loadFont, status, onStatusChange, retryKey = 0 }: {
@@ -11,7 +12,7 @@ export const FontLabel = ({ label, fontId, fontFamily, registrationFamily, enabl
   status?: FontLoadStatus;
   retryKey?: number;
   label: string;
-  fontId?: RemoteNoteImageFont;
+  fontId?: BodyFontId;
   fontFamily?: string;
   registrationFamily?: string;
   enabled: boolean;
@@ -22,7 +23,7 @@ export const FontLabel = ({ label, fontId, fontFamily, registrationFamily, enabl
   const [progress, setProgress] = useState<{ key: string; status: FontLoadStatus }>({ key: "", status: "idle" });
   const ref = useRef<HTMLSpanElement>(null);
   const [readyKey, setReadyKey] = useState("");
-  const family = fontFamily ?? (fontId ? `"${registrationFamily ?? FONT_CATALOG[fontId].family}", sans-serif` : undefined);
+  const family = fontFamily ?? (fontId ? `"${registrationFamily ?? (isRemoteNoteImageFont(fontId) ? FONT_CATALOG[fontId].family : LEGACY_BODY_FONTS[fontId].family)}", "EdgeEver Offline Sans", sans-serif` : undefined);
   const key = `${fontId ?? ""}:${family ?? ""}:${label}:${retryKey}`;
   useEffect(() => {
     if (!enabled) return;
@@ -32,7 +33,7 @@ export const FontLabel = ({ label, fontId, fontFamily, registrationFamily, enabl
       if (started) return;
       started = true;
       setProgress({ key, status: "loading" });
-      const pending = fontId ? loadCatalogFont(fontId, label, { family: registrationFamily }) : loadFont?.(label) ?? Promise.resolve();
+      const pending = fontId ? registrationFamily && isRemoteNoteImageFont(fontId) ? loadCatalogFont(fontId, label, { family: registrationFamily }) : loadBodyFont(fontId, label) : loadFont?.(label) ?? Promise.resolve();
       void pending.then(() => { if (active) { setReadyKey(key); setProgress({ key, status: "ready" }); } }).catch(() => { if (active) setProgress({ key, status: "error" }); });
     };
     let observer: IntersectionObserver | undefined;

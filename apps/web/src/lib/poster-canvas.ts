@@ -87,6 +87,7 @@ export function makePosterGradient(
 export const posterObject = async (
   element: PosterElement,
   readResource: (id: string) => Promise<Blob>,
+  fontsPrepared = false,
 ): Promise<FabricObject> => {
   const options = {
     left: element.x,
@@ -118,12 +119,12 @@ export const posterObject = async (
       ? element.fill
       : undefined;
   if (element.type === "text") {
-    await loadPosterFont(element.fontFamily, element.text);
+    if (!fontsPrepared) await loadPosterFont(element.fontFamily, element.text).catch(() => { /* Local default keeps the canvas usable offline. */ });
     const textOptions = {
       ...options,
       width: element.width,
       fontSize: element.fontSize,
-      fontFamily: element.fontFamily,
+      fontFamily: `${element.fontFamily}, "EdgeEver Offline Sans", sans-serif`,
       fontWeight: element.fontWeight,
       fontStyle: element.fontStyle ?? "normal",
       underline: element.underline ?? false,

@@ -25,6 +25,7 @@ import {
   buildNoteImageCardMarkup,
   estimateReadingStats,
   generateCardCss,
+  prepareNoteImageContent,
 } from "@edgeever/shared/note-image-card";
 
 export {
@@ -73,6 +74,8 @@ export type DownloadNoteImageOptions = NoteHtmlExportMeta & {
 };
 
 export type PreparedNoteImage = {
+  fontFallback: boolean;
+  fontsReady?: Promise<unknown>;
   blob: Blob;
   filename: string;
   height: number;
@@ -221,9 +224,12 @@ export const createNoteImage = async ({
   const themeCfg = NOTE_IMAGE_THEMES[resolvedTheme];
 
   const prepared = await prepareNoteBodyHtmlForExport(bodyHtml);
+  const exportContent = document.createElement("div");
+  exportContent.innerHTML = prepared.bodyHtml;
+  prepareNoteImageContent(exportContent);
   onFontLoadStatus?.("loading");
   const assets = await prepareNoteImageAssets({ theme: resolvedTheme, fontStyle, text: [title, notebook, ...(tags || []), updatedAt, author, readingTimeText, prepared.bodyHtml].join(" "), urls: noteImageAssetUrls })
-    .then(result => { onFontLoadStatus?.("ready"); return result; })
+    .then(result => { onFontLoadStatus?.(result.fontFallback ? "error" : "ready"); return result; })
     .catch(error => { onFontLoadStatus?.("error"); throw error; });
   checkAborted(signal);
   const host = document.createElement("div");
@@ -250,7 +256,7 @@ export const createNoteImage = async ({
       notebook,
       tags,
       updatedAt,
-      bodyHtml: prepared.bodyHtml,
+      bodyHtml: exportContent.innerHTML,
       theme: resolvedTheme,
       fontStyle,
       showTitle,
@@ -280,6 +286,8 @@ export const createNoteImage = async ({
     const filename = `${basename}.${extension}`;
 
     return {
+      fontFallback: assets.fontFallback,
+      fontsReady: assets.fontsReady,
       blob: image.blob,
       filename,
       height: image.height,

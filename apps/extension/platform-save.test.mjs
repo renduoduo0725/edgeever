@@ -1,3 +1,4 @@
+import { prepareJikeWebDetail } from "./jike-web-test-state.mjs";
 import { clipDateTimeText } from "./src/clip-time.ts";
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
@@ -787,7 +788,7 @@ test('stable rich selection preserves code blank lines and archives its selected
 
 for(const navigate of [false,true])test(`current signed-in Jike Web detail ${navigate?'cancels navigation':'saves through the platform route'}`,async()=>{
  const pageUrl='https://web.okjike.com/u/5e6497e7-a69f-422b-af6e-baf0fc07b512/post/64c9dd9a2edae6abdc610605';
- const h=harness({platform:'jike',pageUrl,fixture:'jike-web-detail',navigateDuringNotebookLookup:navigate});
+ const h=harness({platform:'jike',pageUrl,fixture:'jike-web-detail',prepare:doc=>prepareJikeWebDetail(doc),navigateDuringNotebookLookup:navigate});
  expect((await h.toolbar()).ok).toBe(!navigate);expect(h.calls.creates).toHaveLength(navigate?0:1);
  if(!navigate){expect(h.calls.creates[0].contentMarkdown).toContain('https://m.okjike.com/originalPosts/64c9dd9a2edae6abdc610605');expect(h.calls.creates[0].contentMarkdown).not.toContain('Do not capture comments');expect(h.calls.uploads).toHaveLength(1);}
 });
@@ -817,4 +818,47 @@ test('Jike Web card identity recycling during notebook lookup cancels before cre
  const pending=h.menu();await started;
  cards[0].__reactProps$fixture.children.props.data.id='6715e824d9dc81724c2ec74d';release();
  expect(await pending).toMatchObject({kind:'error',message:'platformPageChanged'});expect(h.calls.creates).toHaveLength(0);
+});
+
+for(const stage of ['before-capture','during-notebook-lookup'])test(`Jike Web detail same-author post mismatch ${stage} creates no memo`,async()=>{
+ const a='64c9dd9a2edae6abdc610605',b='6715e824d9dc81724c2ec74d';
+ let card,release,entered;const started=new Promise(r=>entered=r),gate=new Promise(r=>release=r);
+ const h=harness({platform:'jike',fixture:'jike-web-detail',pageUrl:`https://web.okjike.com/u/5e6497e7-a69f-422b-af6e-baf0fc07b512/post/${stage==='before-capture'?b:a}`,
+ prepare:doc=>{card=prepareJikeWebDetail(doc);card.setAttribute('data-edgeever-jike-id',b);},
+ ...(stage==='during-notebook-lookup'?{notebookRequested:entered,notebookGate:gate}:{})});
+ const pending=h.toolbar();
+ if(stage==='during-notebook-lookup'){await started;card.__reactProps$fixture.children.props.data.id=b;release();}
+ expect(await pending).toMatchObject({ok:false,message:'platformPageChanged'});expect(h.calls.creates).toHaveLength(0);
+});
+
+test('legacy Jike Web share detail retains its H5 data identity checks',async()=>{
+ const h=harness({platform:'jike',fixture:'jike',pageUrl:'https://web.okjike.com/originalPost/66ac89b0314f5cced41012d3'});
+ expect((await h.toolbar()).ok).toBe(true);expect(h.calls.creates).toHaveLength(1);
+});
+
+test('Jike Web detail rejects DOM from another post even when current props match the route',async()=>{
+ const h=harness({platform:'jike',fixture:'jike-web-detail',pageUrl:'https://web.okjike.com/u/5e6497e7-a69f-422b-af6e-baf0fc07b512/post/64c9dd9a2edae6abdc610605',prepare:doc=>{
+ const card=prepareJikeWebDetail(doc);card.querySelector('[class*="_contentWrapper_"] [class^="_content_"]').textContent='Another post still being rendered';
+ }});
+ expect((await h.toolbar()).ok).toBe(false);expect(h.calls.creates).toHaveLength(0);
+});
+
+for(const variant of ['normal','images-only','changed-image'])test(`Jike Web gallery detail ${variant} verifies content and retains nine images`,async()=>{
+ const h=harness({platform:'jike',fixture:'jike-web-grid',pageUrl:'https://web.okjike.com/u/af47ed7e-38d4-4798-acd6-04e3cc8d131c/post/6715e824d9dc81724c2ec74d',prepare:doc=>{
+ const card=prepareJikeWebDetail(doc,'6715e824d9dc81724c2ec74d');
+ if(variant==='images-only'){card.querySelector('[class*="_contentWrapper_"] [class^="_content_"]').remove();card.__reactProps$fixture.children.props.data.content='';}
+ if(variant==='changed-image')card.querySelector('img[data-anonymous-gallery="true"]').setAttribute('src','https://cdnv2.ruguoapp.com/another-post.jpg');
+ }});
+ expect((await h.toolbar()).ok).toBe(variant!=='changed-image');expect(h.calls.creates).toHaveLength(variant==='changed-image'?0:1);
+ if(variant!=='changed-image')expect(h.calls.uploads).toHaveLength(9);
+});
+
+test('Jike Web detail expands its selected card before verifying the full public body',async()=>{
+ const h=harness({platform:'jike',fixture:'jike-web-detail',pageUrl:'https://web.okjike.com/u/5e6497e7-a69f-422b-af6e-baf0fc07b512/post/64c9dd9a2edae6abdc610605',prepare:(doc,window)=>{
+ const card=prepareJikeWebDetail(doc),body=card.querySelector('[class*="_contentWrapper_"]'),text=body.querySelector('[class^="_content_"]'),full=text.innerHTML;
+ text.textContent='我在即刻写东西的核心原则是…';const button=doc.createElement('button');button.textContent='展开全文';body.appendChild(button);
+ let notify=()=>{};window.MutationObserver=class{constructor(fn){notify=fn;}observe(){}disconnect(){}};
+ button.addEventListener('click',()=>{text.innerHTML=full;button.remove();notify();});
+ }});
+ expect((await h.toolbar()).ok).toBe(true);expect(h.calls.creates).toHaveLength(1);expect(h.calls.creates[0].contentMarkdown).toContain('《斯坦福大学人生设计课》');
 });

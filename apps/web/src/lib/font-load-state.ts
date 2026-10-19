@@ -14,7 +14,7 @@ export const createFontLoadState = () => {
     getSnapshot: () => status,
     subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     reset: () => { generation++; publish("idle"); },
-    async run<T>(load: () => Promise<T>): Promise<T> {
+    async run<T>(load: () => Promise<T>, recovery?: { pending: Promise<unknown>; onReady: () => void }): Promise<T> {
       const request = ++generation;
       publish("loading");
       try {
@@ -23,6 +23,11 @@ export const createFontLoadState = () => {
         return result;
       } catch (error) {
         if (request === generation) publish("error");
+        void recovery?.pending.then(() => {
+          if (request !== generation) return;
+          recovery.onReady();
+          publish("ready");
+        }, () => { /* Retain the fallback state until the user retries. */ });
         throw error;
       }
     },

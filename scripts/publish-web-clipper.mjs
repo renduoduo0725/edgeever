@@ -369,21 +369,89 @@ const runCommand = (command, args, options = {}) => {
   }
 };
 
-const errorDetail = async (response) => {
-  const text = await response.text();
-  if (!text) {
-    return `HTTP ${response.status}`;
-  }
+// Never log request bodies: Firefox approval notes contain private review credentials.
+export const redactDiagnostics = (value, env = process.env) => {
+  const sensitiveKey = /token|secret|password|authorization|private[_-]?key|approval[_-]?notes|assertion/i;
+  const clean = (item) => {
+    if (Array.isArray(item)) return item.map(clean);
+    if (item && typeof item === "object") return Object.fromEntries(
+      Object.entries(item).map(([key, entry]) => [key, sensitiveKey.test(key) ? "[REDACTED]" : clean(entry)]),
+    );
+    return item;
+  };
+  let text = typeof value === "string" ? value : JSON.stringify(clean(value), null, 2);
+  const secrets = Object.entries(env)
+    .filter(([key, entry]) => sensitiveKey.test(key) && typeof entry === "string" && entry)
+    .map(([, entry]) => entry);
   try {
-    const payload = JSON.parse(text);
-    const message = payload.error?.message || payload.detail || payload.message;
-    if (message) {
-      return `HTTP ${response.status}: ${message}`;
-    }
-    return `HTTP ${response.status}: ${JSON.stringify(payload).slice(0, 2000)}`;
-  } catch {
-    return `HTTP ${response.status}: ${text.slice(0, 2000)}`;
+    const account = JSON.parse(env.CHROME_WEB_STORE_SERVICE_ACCOUNT_JSON || "{}");
+    if (account.private_key) secrets.push(account.private_key);
+  } catch { /* Invalid credentials are reported by the authentication stage. */ }
+  for (const secret of secrets.sort((a, b) => b.length - a.length)) text = text.split(secret).join("[REDACTED]");
+  return text
+    .replace(/(?:Bearer|JWT)\s+[A-Za-z0-9._~+/=-]+/gi, "[REDACTED authorization]")
+    .replace(/-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g, "[REDACTED private key]");
+};
+
+const errorDetail = async (response) => {
+  const body = await response.text();
+  if (!body) return `HTTP ${response.status}`;
+  let detail;
+  try { detail = redactDiagnostics(JSON.parse(body)); }
+  catch { detail = redactDiagnostics(body); }
+  const limit = 20000;
+  return `HTTP ${response.status}\n${detail.slice(0, limit)}${detail.length > limit ? "\n[API response truncated after 20000 characters]" : ""}`;
+};
+
+export const runSubmissionStage = async (stage, operation) => {
+  try { return await operation(); }
+  catch (error) {
+    const failure = new Error(error instanceof Error ? error.message : String(error), { cause: error });
+    failure.stage = stage;
+    throw failure;
   }
+};
+
+const stagedClient = (store, client) => Object.fromEntries(
+  Object.entries(client).map(([method, operation]) => [method,
+    (...args) => runSubmissionStage(`${store}.${method}`, () => operation(...args)),
+  ]),
+);
+
+export const formatSubmissionReport = (version, results, env = process.env) => {
+  const lines = [`Web Clipper ${version}`, ""];
+  for (const [store, result] of results) {
+    let status = result.action === "failed"
+      ? "Submission incomplete or failed; publication unconfirmed (earlier steps may have succeeded)"
+      : "Not submitted; publication unconfirmed";
+    if (result.action === "already-published" || (store === "Chrome" && result.state === "PUBLISHED")) {
+      status = "Published (confirmed by store API)";
+    } else if (["submitted", "already-submitted"].includes(result.action)) {
+      status = result.state === "STAGED" || result.submittedState === "STAGED"
+        ? "Approved and staged; not yet published"
+        : "Submitted for review; publication unconfirmed";
+    }
+    lines.push(`${store}: ${result.action} — ${status}`);
+    if (result.published || result.version) lines.push(`Store version: ${result.published || result.version}`);
+    if (result.state || result.submittedState || result.status) lines.push(`API state: ${result.state || result.submittedState || result.status}`);
+    if (result.stage) lines.push(`Failure stage: ${result.stage}`);
+    if (result.reason) lines.push(`Reason / API response:\n${result.reason}`);
+    if (result.warnings) lines.push(`API warnings:\n${redactDiagnostics(result.warnings, env)}`);
+    if (result.recoveryError) lines.push(`Status recheck also failed:\n${result.recoveryError}`);
+    if (["Chrome", "Firefox"].includes(store) && (result.action === "failed" || result.action === "blocked")) {
+      lines.push(store === "Chrome"
+        ? `Dashboard: https://chrome.google.com/webstore/devconsole/${CHROME_PUBLISHER_ID}/${CHROME_EXTENSION_ID}/edit`
+        : `Dashboard: https://addons.mozilla.org/developers/addon/${FIREFOX_ADDON_SLUG}/versions`);
+      lines.push("Only API-returned diagnostics are available here; dashboard-only requirements must be checked in the developer dashboard.");
+    }
+    lines.push("");
+  }
+  lines.push("Submission success is not review approval or publication. This run does not wait for later store review.",
+    "Chrome and Edge share the Chrome Web Store item. waiting-review means no new package was submitted; retry that store after review completes.");
+  // A code block keeps untrusted API text literal in the Actions Summary.
+  const report = redactDiagnostics(lines.join("\n"), env);
+  const fence = "`".repeat(Math.max(3, ...Array.from(report.matchAll(/`+/g), (match) => match[0].length + 1)));
+  return `${fence}text\n${report}\n${fence}`;
 };
 
 const requestJson = async (fetchImpl, url, options) => {
@@ -445,7 +513,7 @@ const waitForChromeUpload = async (client) => {
     const status = await client.fetchStatus();
     const state = status.lastAsyncUploadState || "";
     if (state.includes("FAIL") || state === "NOT_FOUND") {
-      throw new Error(`Chrome rejected the package upload (${state}).`);
+      throw new Error(`Chrome rejected the package upload (${state}).\n${redactDiagnostics(status)}`);
     }
     if (!state.includes("PROGRESS")) {
       return status;
@@ -544,7 +612,7 @@ const waitForAmoUpload = async (client, uuid) => {
     const ready = amoUploadReady(upload);
     if (ready.done && !ready.ok) {
       const errors = amoValidationErrors(upload);
-      throw new Error(`Firefox rejected the package. ${errors.join(" ") || "Validation failed."}`);
+      throw new Error(`Firefox rejected the package. ${errors.join(" ") || "Validation failed."}\n${redactDiagnostics(upload)}`);
     }
     if (ready.done) {
       return upload;
@@ -761,50 +829,50 @@ const chromeAccessToken = async (env, fetchImpl) => {
 };
 
 export const submitChrome = async ({ version, chromiumZip, env, fetchImpl }) => {
-  const client = createChromeClient({
+  const client = stagedClient("chrome", createChromeClient({
     fetchImpl,
-    accessToken: await chromeAccessToken(env, fetchImpl),
-  });
+    accessToken: await runSubmissionStage("chrome.authenticate", () => chromeAccessToken(env, fetchImpl)),
+  }));
   const initial = chromeSubmissionPlan({
     packageVersion: version,
     status: await client.fetchStatus(),
   });
   if (initial.action !== "upload") {
-    return initial;
+    return initial.action === "blocked" ? { ...initial, stage: "chrome.submissionPlan" } : initial;
   }
 
   const uploaded = await client.upload(chromiumZip);
   const immediate = chromeUploadFinished(uploaded);
   if (immediate.done && !immediate.ok) {
-    throw new Error(`Chrome rejected the package upload (${immediate.state}).`);
+    await runSubmissionStage("chrome.validateUpload", () => { throw new Error(`Chrome rejected the package upload (${immediate.state}).\n${redactDiagnostics(uploaded)}`); });
   }
   if (!immediate.done) {
-    await waitForChromeUpload(client);
+    await runSubmissionStage("chrome.validateUpload", () => waitForChromeUpload(client));
   }
   try {
     const published = await client.publish();
     return {
       action: "submitted",
-      state: published.state ?? "PENDING_REVIEW",
+      state: published.state ?? "UNKNOWN",
+      warnings: published.warningInfo,
     };
   } catch (error) {
-    const after = chromeSubmissionPlan({
-      packageVersion: version,
-      status: await client.fetchStatus(),
-    });
-    if (after.action === "already-submitted") {
-      return after;
+    try {
+      const after = chromeSubmissionPlan({ packageVersion: version, status: await client.fetchStatus() });
+      if (after.action === "already-submitted" || after.action === "already-published") return after;
+    } catch (recoveryError) {
+      error.recoveryError = recoveryError.message;
     }
     throw error;
   }
 };
 
 export const submitFirefox = async ({ version, firefoxZip, sourceZip, releaseNotes, env, fetchImpl }) => {
-  const client = createFirefoxClient({
+  const client = stagedClient("firefox", createFirefoxClient({
     fetchImpl,
     issuer: env.AMO_JWT_ISSUER,
     secret: env.AMO_JWT_SECRET,
-  });
+  }));
   const approvalNotes = buildApprovalNotes({
     version,
     reviewInstanceUrl: env.EDGE_EVER_REVIEW_INSTANCE_URL,
@@ -815,7 +883,7 @@ export const submitFirefox = async ({ version, firefoxZip, sourceZip, releaseNot
     versions: await client.listVersions(),
   });
   if (plan.action !== "upload" && plan.action !== "attach-source") {
-    return plan;
+    return plan.action === "blocked" ? { ...plan, stage: "firefox.submissionPlan" } : plan;
   }
   if (plan.action === "attach-source") {
     await client.attachSource({
@@ -829,9 +897,9 @@ export const submitFirefox = async ({ version, firefoxZip, sourceZip, releaseNot
 
   const upload = await client.uploadPackage(firefoxZip);
   if (!upload.uuid) {
-    throw new Error("Firefox did not return an upload id.");
+    await runSubmissionStage("firefox.uploadPackage", () => { throw new Error("Firefox did not return an upload id."); });
   }
-  await waitForAmoUpload(client, upload.uuid);
+  await runSubmissionStage("firefox.validateUpload", () => waitForAmoUpload(client, upload.uuid));
   const created = await client.createVersion({
     uploadUuid: upload.uuid,
     releaseNotes,
@@ -866,7 +934,7 @@ const main = async () => {
     notesFile: options.notesFile,
     version,
   });
-  const packages = buildPackages(version);
+  const packages = await runSubmissionStage("build-packages-and-verify-source", () => buildPackages(version));
   writeGithubOutput(packages);
 
   if (options.dryRun) {
@@ -892,7 +960,7 @@ const main = async () => {
   for (const platform of selectedPlatforms(options.platform)) {
     const store = platform === "chrome" ? "Chrome" : "Firefox";
     try {
-      assertCredentials(platform, process.env);
+      await runSubmissionStage(`${platform}.credentials`, () => assertCredentials(platform, process.env));
       const result = platform === "chrome"
         ? await submitChrome({ ...packages, env: process.env, fetchImpl: fetch })
         : await submitFirefox({
@@ -910,28 +978,27 @@ const main = async () => {
       }
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      results.push([store, { action: "failed", reason }]);
+      results.push([store, { action: "failed", stage: error.stage ?? "unknown", reason, recoveryError: error.recoveryError }]);
       failures.push(reason);
     }
   }
 
-  writeStepSummary([
-    `Web Clipper ${version}`,
-    ...results.map(([store, result]) => `${store}: ${result.action}${result.reason ? ` — ${result.reason}` : ""}`),
-    "Chrome and Edge use the same Chrome Web Store submission. Review still has to approve it.",
-    "Firefox review still has to approve and sign the package.",
-    ...(results.some(([, result]) => result.action === "waiting-review")
-      ? ["waiting-review: no package was submitted to that store. After review completes, manually rerun Submit Web Clipper with the original release_tag and that platform."]
-      : []),
-  ].join("\n"));
+  writeStepSummary(formatSubmissionReport(version, results));
   if (failures.length > 0) {
-    throw new Error(failures.join(" "));
+    const error = new Error("One or more store submissions failed; see the report above.");
+    error.reported = true;
+    throw error;
   }
 };
 
 if (import.meta.main) {
   main().catch((error) => {
-    console.error(error instanceof Error ? error.message : error);
+    if (!error.reported) {
+      writeStepSummary(formatSubmissionReport("(preparation)", [["Preparation", {
+        action: "failed", stage: error.stage ?? "preparation", reason: error.message ?? String(error),
+      }]]));
+    }
+    console.error(redactDiagnostics(error instanceof Error ? error.message : String(error)));
     process.exitCode = 1;
   });
 }

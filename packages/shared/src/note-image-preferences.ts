@@ -24,10 +24,21 @@ export type NoteImagePreferences = {
 };
 
 export const DEFAULT_NOTE_IMAGE_PREFERENCES: NoteImagePreferences = {
-  theme: "gradient", fontStyle: "auto", fontSize: "lg", cardWidth: "wide", format: "png",
-  showTitle: true, showNotebook: false, showTags: false, showUpdatedAt: true,
+  theme: "glass", fontStyle: "auto", fontSize: "lg", cardWidth: "wide", format: "png",
+  showTitle: false, showNotebook: false, showTags: false, showUpdatedAt: true,
   showReadingTime: false, showAuthor: false, showBranding: true, author: "",
 };
+
+/** Selecting a template restores its typography; later font choices override it. */
+export const updateNoteImagePreference = <K extends keyof NoteImagePreferences>(
+  preferences: NoteImagePreferences,
+  key: K,
+  value: NoteImagePreferences[K],
+): NoteImagePreferences => ({
+  ...preferences,
+  [key]: value,
+  ...(key === "theme" ? { fontStyle: "auto" as const } : {}),
+});
 
 const choices = {
   theme: NOTE_IMAGE_THEME_OPTIONS,
@@ -44,6 +55,7 @@ export const resolveNoteImagePreferences = (
   const preferences = { ...fallback };
   if (!stored || typeof stored !== "object" || Array.isArray(stored)) return preferences;
   const values = stored as Record<string, unknown>;
+  if (values.theme === "gradient") preferences.theme = "glass";
   for (const key of Object.keys(choices) as Array<keyof typeof choices>) {
     const value = values[key];
     if (typeof value === "string" && (choices[key] as readonly string[]).includes(value)) {

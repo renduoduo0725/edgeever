@@ -4,7 +4,7 @@ import {
   type EdgeEverClientRequestContext,
 } from "@edgeever/client";
 import type { AuthSession } from "@edgeever/shared";
-import { normalizeInstanceUrl } from "@edgeever/shared";
+import { normalizeInstanceUrl } from "@edgeever/shared/public-demo";
 import { createClientUuid } from "./client-id";
 
 export { ApiRequestError };

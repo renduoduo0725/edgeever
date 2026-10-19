@@ -23,6 +23,8 @@ export const MobileUpdateCard = () => {
       ? (english ? "Restart to apply" : "重启以应用")
       : updateKind === "ota"
         ? (english ? "Download update" : "下载更新")
+        : updateKind === "play"
+          ? (english ? "Update with Google Play" : "通过 Google Play 更新")
         : (english ? "Choose update source" : "选择更新渠道");
 
   return (

@@ -288,6 +288,10 @@ EdgeEver コミュニティへようこそ。Vibe Coding や AI を探求する�
 
 👉 [EdgeEver の Telegram グループに参加](https://t.me/+wwUx1BYLrIdiZjY1)
 
+## 関連リンク
+
+- [LINUX DO](https://linux.do/) — 技術交流とオープンソースプロジェクトの共有コミュニティ。
+
 ## スポンサーと支援
 
 EdgeEver は無料のオープンソースプロジェクトです。クロスプラットフォームクライアント（macOS、Windows、Linux、iOS、Android）の継続的な開発、実機テスト、コード署名、複数ランタイムのエコシステム維持には、継続的な時間とリソースの投入が必要です。

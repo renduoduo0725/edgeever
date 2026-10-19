@@ -44,6 +44,7 @@ import {
   buildImageExportBasename,
   buildNoteImageCardMarkup,
   generateCardCss,
+  prepareNoteImageContent,
   planNativeNoteImageRender,
 } from "@edgeever/shared/note-image-card";
 import { createEdgeEverMathematics } from "@edgeever/shared/mathematics";
@@ -72,9 +73,12 @@ type BridgeMessage =
   | { type: "pickImage" }
   | { type: "searchResult"; count: number; index: number }
   | { type: "readerScroll"; collapsed: boolean }
+  | { type: "imageExportFontStatus"; requestId: string; status: "loading" | "fallback" | "ready" }
+  | { type: "imageExportFontsReady"; requestId: string }
   | { type: "imageExportChunk"; requestId: string; chunk: string }
   | {
       type: "imageExportComplete";
+      fontFallback: boolean;
       requestId: string;
       filename: string;
       mimeType: string;
@@ -1267,6 +1271,7 @@ async function exportNoteImage(request: ImageExportRequest) {
     if (element instanceof HTMLButtonElement) element.remove();
   });
 
+  prepareNoteImageContent(editorClone);
   const bodyHtml = editorClone.innerHTML;
 
   const host = document.createElement("div");
@@ -1282,7 +1287,7 @@ async function exportNoteImage(request: ImageExportRequest) {
     bodyHtml,
     theme: resolvedTheme,
     fontStyle,
-    showTitle: request.showTitle ?? true,
+    showTitle: request.showTitle ?? false,
     showNotebook: request.showNotebook ?? false,
     showTags: request.showTags ?? false,
     showUpdatedAt: request.showUpdatedAt ?? true,
@@ -1299,7 +1304,10 @@ async function exportNoteImage(request: ImageExportRequest) {
   document.body.appendChild(host);
 
   try {
+    post({ type: "imageExportFontStatus", requestId: request.requestId, status: "loading" });
     const assets = await prepareNoteImageAssets({ theme: resolvedTheme, fontStyle, text: [request.title, request.notebook, ...(request.tags || []), request.updatedAt, bodyHtml].join(" "), urls: noteImageAssetUrls });
+    post({ type: "imageExportFontStatus", requestId: request.requestId, status: assets.fontFallback ? "fallback" : "ready" });
+    void assets.fontsReady?.then(() => post({ type: "imageExportFontsReady", requestId: request.requestId }), () => {});
     style.textContent = assets.css + generateCardCss({ theme: resolvedTheme, fontStyle, fontSize, cardWidth });
     const images = Array.from(documentRoot.querySelectorAll<HTMLImageElement>("img"));
     await Promise.race([
@@ -1390,6 +1398,7 @@ async function exportNoteImage(request: ImageExportRequest) {
     }
     post({
       type: "imageExportComplete",
+      fontFallback: assets.fontFallback,
       requestId: request.requestId,
       filename,
       mimeType,

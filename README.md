@@ -289,6 +289,10 @@ Welcome to the EdgeEver community, bringing together developers and creators exp
 
 👉 [Join the EdgeEver Telegram group](https://t.me/+wwUx1BYLrIdiZjY1)
 
+## Friendly Links
+
+- [LINUX DO](https://linux.do/) — A community for sharing technology and open-source projects.
+
 ## Sponsor & Support
 
 EdgeEver is a free and open-source project. Sustaining cross-platform client development, continuous device testing, code signing, and multi-runtime ecosystem maintenance requires ongoing dedication and resources.

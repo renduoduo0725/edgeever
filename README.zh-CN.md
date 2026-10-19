@@ -293,6 +293,10 @@ content_text      全文搜索、摘要与快速索引使用
   <img src="assets/wechat-group-qr.jpg" alt="微信联系人二维码" width="260" />
 </p>
 
+## 友情链接
+
+- [LINUX DO](https://linux.do/) —— 技术交流与开源项目分享社区。
+
 ## 赞助与支持
 
 EdgeEver 是免费开源项目。保持跨平台客户端（macOS、Windows、Linux、iOS、Android）的持续演进、真机测试、证书签名以及多运行时生态建设，都需要长期的精力与资源投入。

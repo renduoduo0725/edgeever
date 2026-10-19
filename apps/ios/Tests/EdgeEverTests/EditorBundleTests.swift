@@ -5,6 +5,55 @@ import WebKit
 /// Ensures the TipTap editor HTML is actually shipped in the app (not the plain-text fallback).
 final class EditorBundleTests: XCTestCase {
     @MainActor
+    func testFontPickerLoadsBundledPreviewAndReturnsSelection() async throws {
+        let url = try XCTUnwrap(NoteImageFontPickerWebView.packagedHTMLURL())
+        let ready = expectation(description: "font picker ready")
+        let selected = expectation(description: "font picker selection")
+        final class Loader: NSObject, WKScriptMessageHandler {
+            let ready: XCTestExpectation
+            let selected: XCTestExpectation
+            var selection: String?
+            init(_ ready: XCTestExpectation, _ selected: XCTestExpectation) {
+                self.ready = ready
+                self.selected = selected
+            }
+            func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+                guard let body = message.body as? [String: String] else { return }
+                if body["type"] == "ready" { ready.fulfill() }
+                if body["type"] == "select" { selection = body["id"]; selected.fulfill() }
+            }
+        }
+        let loader = Loader(ready, selected)
+        let config = WKWebViewConfiguration()
+        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        config.userContentController.add(loader, name: "fontPicker")
+        config.userContentController.addUserScript(WKUserScript(source: """
+        window.EdgeEverFontPickerConfiguration = {
+          selected:'auto', theme:'code', dark:false, title:'Typography',
+          sample:'Capture a little inspiration', latinSample:'Capture a little inspiration',
+          loading:'Loading preview', unavailable:'Preview unavailable',
+          options:[{id:'auto',label:'Follow Theme'},{id:'sans',label:'Sans'},{id:'mono',label:'Mono'}]
+        };
+        """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        defer { config.userContentController.removeScriptMessageHandler(forName: "fontPicker") }
+        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
+        webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        await fulfillment(of: [ready], timeout: 15)
+        var previewReady = false
+        for _ in 0..<100 {
+            previewReady = (try await webView.evaluateJavaScript(#"document.querySelector('[data-font=auto] .font-sample') !== null && document.fonts.check('20px "Geist Mono Variable"')"#)) as? Bool == true
+            if previewReady { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertTrue(previewReady, "theme preview must load its actual bundled font without a network request")
+        let selectedID = try await webView.evaluateJavaScript("document.querySelector('[aria-checked=true]').dataset.font")
+        XCTAssertEqual(selectedID as? String, "auto")
+        _ = try await webView.evaluateJavaScript("document.querySelector('[data-font=sans]').click(); true")
+        await fulfillment(of: [selected], timeout: 5)
+        XCTAssertEqual(loader.selection, "sans")
+    }
+
+    @MainActor
     func testSharedFallbackSurvivesEditorConfigurationAndReuse() async throws {
         let url = try XCTUnwrap(TipTapWebView.Coordinator.packagedEditorHTMLURL())
         let loaded = expectation(description: "editor bridge ready")

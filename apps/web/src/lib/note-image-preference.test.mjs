@@ -32,14 +32,20 @@ test('migrates the existing title choice and signature without losing explicit f
 
 test('invalid fields fall back independently while valid false choices survive', () => {
   withStorage({ [key]: JSON.stringify({ theme: 'removed-theme', fontSize: 20, cardWidth: 'compact', format: 'svg', showTags: 'true', showUpdatedAt: false, showBranding: false, author: 12 }) }, () => {
-    expect(readNoteImagePreferences()).toMatchObject({ theme: 'gradient', fontSize: 'lg', cardWidth: 'compact', format: 'png', showTags: false, showUpdatedAt: false, showBranding: false, author: '' });
+    expect(readNoteImagePreferences()).toMatchObject({ theme: 'glass', fontSize: 'lg', cardWidth: 'compact', format: 'png', showTags: false, showUpdatedAt: false, showBranding: false, author: '' });
+  });
+});
+
+test('saved classic theme opens as glass while preserving custom typography and visibility', () => {
+  withStorage({ [key]: JSON.stringify({ theme: 'gradient', fontStyle: 'heavy', showTitle: false }) }, () => {
+    expect(readNoteImagePreferences()).toMatchObject({ theme: 'glass', fontStyle: 'heavy', showTitle: false });
   });
 });
 
 test('malformed JSON and non-object storage retain usable legacy defaults', () => {
   for (const stored of ['{broken', 'null', '[]', 'false', '"book"']) {
     withStorage({ [key]: stored, edgeever_share_image_show_title: 'false' }, () => {
-      expect(readNoteImagePreferences()).toMatchObject({ theme: 'gradient', showTitle: false });
+      expect(readNoteImagePreferences()).toMatchObject({ theme: 'glass', showTitle: false });
     });
   }
 });

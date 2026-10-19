@@ -2,6 +2,7 @@ import type { FontLoadStatus } from "@/lib/font-load-state";
 import { useFontPreviewStatus } from "@/lib/use-font-preview-status";
 import { FontLoadFeedback } from "@/components/FontLoadFeedback";
 import { FONT_CATALOG, FONT_IDS } from "@edgeever/shared/font-catalog";
+import { updateNoteImagePreference } from "@edgeever/shared/note-image-preferences";
 import { prepareNoteImageAssets } from "@edgeever/shared/note-image-fonts";
 import { noteImageAssetUrls } from "@edgeever/shared/note-image-assets";
 import { Check, Copy, Download, LoaderCircle, Palette, Share2, Type } from "lucide-react";
@@ -30,7 +31,7 @@ import {
   type NoteImageTheme,
   type PreparedNoteImage,
 } from "@/lib/note-image-export";
-import { NOTE_IMAGE_THEME_OPTIONS, buildNoteImageCardMarkup, escapeCardHtml, generateCardCss } from "@edgeever/shared/note-image-card";
+import { NOTE_IMAGE_BUNDLED_FONTS, NOTE_IMAGE_TEMPLATE_TYPOGRAPHY, resolveTheme, NOTE_IMAGE_THEME_OPTIONS, buildNoteImageCardMarkup, escapeCardHtml, generateCardCss } from "@edgeever/shared/note-image-card";
 import { getHtmlImageEmbedNoticeKind } from "@/lib/note-html-export";
 import { readNoteImagePreferences, writeNoteImagePreferences, type NoteImagePreferences } from "@/lib/note-image-preference";
 import { cn } from "@/lib/utils";
@@ -62,13 +63,14 @@ const WIDTH_OPTIONS: Array<{ id: NoteImageCardWidth; labelKey: string }> = [
 
 /** Use the export renderer itself so thumbnails show each theme's actual layout. */
 const NoteImageThemePreview = ({
-  theme, fontStyle, title, body, quote,
+  theme, fontStyle, title, body, quote, retryKey,
 }: {
   theme: NoteImageTheme;
   fontStyle: NoteImageFontStyle;
   title: string;
   body: string;
   quote: string;
+  retryKey: number;
 }) => {
   const containerRef = useRef<HTMLSpanElement>(null);
   const [scale, setScale] = useState(0.24);
@@ -77,10 +79,17 @@ const NoteImageThemePreview = ({
     let active = true;
     setAssetCss("");
     void prepareNoteImageAssets({ theme, fontStyle, text: `${title} ${body} ${quote}`, urls: noteImageAssetUrls })
-      .then(assets => { if (active) setAssetCss(assets.css); })
+      .then(assets => {
+        if (active) setAssetCss(assets.css);
+        void assets.fontsReady?.then(async () => {
+          if (!active) return;
+          const restored = await prepareNoteImageAssets({ theme, fontStyle, text: `${title} ${body} ${quote}`, urls: noteImageAssetUrls });
+          if (active) setAssetCss(restored.css);
+        }, () => {}).catch(() => {});
+      })
       .catch(() => { /* The full preview reports asset loading errors and offers retry. */ });
     return () => { active = false; };
-  }, [theme, fontStyle, title, body, quote]);
+  }, [theme, fontStyle, title, body, quote, retryKey]);
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -134,7 +143,7 @@ export const ShareNoteImageDialog = ({
     showUpdatedAt, showReadingTime, showAuthor, author, showBranding,
   } = preferences;
   const setPreference = <K extends keyof NoteImagePreferences>(key: K, value: NoteImagePreferences[K]) => {
-    setPreferences(current => ({ ...current, [key]: value }));
+    setPreferences(current => updateNoteImagePreference(current, key, value));
   };
 
   useEffect(() => {
@@ -147,6 +156,16 @@ export const ShareNoteImageDialog = ({
   const [retry, setRetry] = useState(0);
   const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "failed">("idle");
   const [contentFontStatus, setContentFontStatus] = useState<FontLoadStatus>("loading");
+  const themeFontLabel = NOTE_IMAGE_TEMPLATE_TYPOGRAPHY[resolveTheme(undefined, theme)].body
+    .map(font => t(NOTE_IMAGE_BUNDLED_FONTS[font].labelKey))
+    .join(" / ");
+  const selectedFontLabel = fontStyle === "auto"
+    ? themeFontLabel
+    : t(FONT_OPTIONS.find(item => item.id === fontStyle)!.labelKey);
+  const fontOptionLabel = (item: (typeof FONT_OPTIONS)[number]) => item.id === "auto"
+    ? `${t(item.labelKey)} (${themeFontLabel})`
+    : t(item.labelKey);
+
   const { status: selectedFontStatus, onPreviewStatus } = useFontPreviewStatus(`${fontStyle}:${theme}:${retry}`, contentFontStatus);
   const generationRef = useRef(0);
   const copyAttemptRef = useRef(0);
@@ -190,6 +209,10 @@ export const ShareNoteImageDialog = ({
             return URL.createObjectURL(result.blob);
           });
           setPrepared(result);
+          // Recovery is scoped to this render, so an older template cannot replace a newer one.
+          void result.fontsReady?.then(() => {
+            if (generation === generationRef.current) setRetry(value => value + 1);
+          }, () => { /* Keep the fallback preview and its retry action. */ });
         })
         .catch((reason: unknown) => {
           if (generation === generationRef.current) setError(reason instanceof Error && reason.message === "NOTE_IMAGE_FONT_UNAVAILABLE" ? "font" : true);
@@ -219,8 +242,14 @@ export const ShareNoteImageDialog = ({
     theme,
   ]);
 
+  useEffect(() => {
+    if (!open || contentFontStatus !== "error") return;
+    const retryFonts = () => setRetry(value => value + 1);
+    window.addEventListener("online", retryFonts);
+    return () => window.removeEventListener("online", retryFonts);
+  }, [open, contentFontStatus]);
+
   useEffect(() => () => {
-    generationRef.current += 1;
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
 
@@ -280,6 +309,7 @@ export const ShareNoteImageDialog = ({
         <div className="grid min-h-0 flex-1 gap-0 overflow-y-auto md:overflow-hidden md:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="relative flex min-h-72 flex-1 flex-col overflow-auto bg-[#e9e9e7] md:max-h-[72vh]">
             <div className="flex min-h-full w-full flex-col items-center justify-start p-4 sm:p-6">
+              <FontLoadFeedback template status={contentFontStatus} onRetry={() => setRetry(value => value + 1)} />
               {previewUrl && prepared ? (
                 <div className="my-auto flex w-full items-center justify-center">
                   <img
@@ -332,8 +362,9 @@ export const ShareNoteImageDialog = ({
                       onClick={() => setPreference("theme", id)}
                     >
                       <NoteImageThemePreview
+                        retryKey={retry}
                         theme={id}
-                        fontStyle={fontStyle}
+                        fontStyle="auto"
                         title={source.title || label}
                         body={t("editor.imageShare.previewBody")}
                         quote={t("editor.imageShare.previewQuote")}
@@ -357,18 +388,18 @@ export const ShareNoteImageDialog = ({
               <Select value={fontStyle} onOpenChange={setFontMenuOpen} onValueChange={(value) => setPreference("fontStyle", value as NoteImageFontStyle)}>
                 <SelectTrigger aria-label={t("editor.imageShare.fontStyle")} className="h-9 w-full text-xs font-normal">
                   <SelectValue>
-                    <NoteImageFontLabel label={t(FONT_OPTIONS.find(item => item.id === fontStyle)!.labelKey)} fontStyle={fontStyle} theme={theme} enabled={open} status={error === true ? undefined : selectedFontStatus} onStatusChange={onPreviewStatus} retryKey={retry} />
+                    <NoteImageFontLabel label={selectedFontLabel} fontStyle={fontStyle} theme={theme} enabled={open} status={error === true ? undefined : selectedFontStatus} onStatusChange={onPreviewStatus} retryKey={retry} />
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-80">
                   {FONT_OPTIONS.map((item) => (
-                    <SelectItem key={item.id} value={item.id} textValue={t(item.labelKey)}>
-                      <NoteImageFontLabel label={t(item.labelKey)} fontStyle={item.id} theme={theme} enabled={open && fontMenuOpen} visibleOnly />
+                    <SelectItem key={item.id} value={item.id} textValue={fontOptionLabel(item)}>
+                      <NoteImageFontLabel label={fontOptionLabel(item)} fontStyle={item.id} theme={theme} enabled={open && fontMenuOpen} visibleOnly />
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {error === true ? null : <FontLoadFeedback status={selectedFontStatus} onRetry={() => setRetry(value => value + 1)} />}
+              {error === true ? null : <FontLoadFeedback template={contentFontStatus === "error"} status={selectedFontStatus} onRetry={() => setRetry(value => value + 1)} />}
 
               {/* Font Size */}
               <div className="space-y-1.5 pt-1">

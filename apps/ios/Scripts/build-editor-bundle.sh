@@ -19,8 +19,8 @@ else
 fi
 
 # Ensure index.html exists at EditorBundle root for iOS resource load.
-if [[ ! -f "$OUT/index.html" ]]; then
-  echo "Editor bundle build did not produce index.html" >&2
+if [[ ! -f "$OUT/index.html" || ! -f "$OUT/font-picker.html" ]]; then
+  echo "Editor bundle build did not produce index.html and font-picker.html" >&2
   exit 1
 fi
 
@@ -28,6 +28,7 @@ fi
 RES_OUT="$ROOT/EdgeEver/Resources/EditorBundle"
 mkdir -p "$RES_OUT"
 cp -f "$OUT/index.html" "$RES_OUT/index.html"
+cp -f "$OUT/font-picker.html" "$RES_OUT/font-picker.html"
 if [[ -d "$OUT/assets" ]]; then
   mkdir -p "$RES_OUT/assets"
   rsync -a --delete "$OUT/assets/" "$RES_OUT/assets/"

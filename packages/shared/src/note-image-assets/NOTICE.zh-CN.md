@@ -2,7 +2,7 @@
 
 卡片使用阿里巴巴普惠体 3.0 Regular（阿里巴巴／汉仪）、MiSans Regular（小米／汉仪）、思源宋体 CN SemiBold（Adobe）、汇文明朝体（天王帝廷）、Long Cang（LongCang 项目作者）及 Geist Mono（Vercel）。
 
-WOFF2 字体分片保持公开参考资源的原始字节，各目录的 `SOURCE.css` 保留原版权元数据及 Unicode 范围。应用只加载卡片文字需要的分片，不修改字体轮廓。备忘录卡片使用 MiSans 字体。
+WOFF2 字体分片保持公开参考资源的原始字节，各目录的 `SOURCE.css` 保留原版权元数据及 Unicode 范围。客户端仅内置 Geist Mono 和共用的 Noto Sans SC 回退字体；其他模板分片按需从固定仓库版本下载并缓存到本地，应用只请求卡片文字需要的分片。下载失败或过慢时使用本地字体，不改写已保存的字体选项，也不修改字体轮廓。备忘录卡片使用 MiSans 字体。
 
 来源和声明：
 

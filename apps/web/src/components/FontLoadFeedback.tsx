@@ -10,13 +10,13 @@ export const FontLoadIcon = ({ status }: { status: FontLoadStatus }) => {
 };
 
 /** Kept outside SelectTrigger/SelectItem so retry is a real keyboard-accessible button. */
-export const FontLoadFeedback = ({ status, onRetry }: { status: FontLoadStatus; onRetry: () => void }) => {
+export const FontLoadFeedback = ({ status, onRetry, template = false }: { status: FontLoadStatus; onRetry: () => void; template?: boolean }) => {
   const { t } = useTranslation();
   if (status === "idle" || status === "ready") return null;
   return <div className="flex min-h-6 items-center gap-1.5 text-xs text-slate-500">
     <span role="status" aria-live="polite" className="flex items-center gap-1.5">
       <FontLoadIcon status={status} />
-      {t(`fontLoad.${status}`)}
+      {t(`fontLoad.${template ? status === "error" ? "templateFallback" : "templateLoading" : status}`)}
     </span>
     {status === "error" ? <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onRetry}>{t("fontLoad.retry")}</Button> : null}
   </div>;

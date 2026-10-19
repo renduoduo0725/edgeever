@@ -1,4 +1,6 @@
-import { FONT_IDS, isRemoteNoteImageFont, catalogFontStack } from "@edgeever/shared/font-catalog";
+import { FONT_IDS, isRemoteNoteImageFont, catalogFontStack } from "@edgeever/shared/font-catalog-data";
+import { LEGACY_BODY_FONTS } from "@edgeever/shared/font-defaults";
+import type { BodyFontId } from "@edgeever/shared/font-loader";
 import { watchEditorCatalogFont } from "./editor-catalog-fonts";
 
 export const EDITOR_BODY_FONT_STORAGE_KEY = "edgeever.editorBodyFont";
@@ -16,7 +18,7 @@ export type EditorBodyFontPreference = {
 };
 
 const CJK_FALLBACK =
-  '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif';
+  '"EdgeEver Offline Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif';
 
 export const BUNDLED_FONT_STACKS = {
   wenkai: `"EdgeEver Kai", ${CJK_FALLBACK}`,
@@ -92,7 +94,7 @@ export const writeEditorBodyFontPreference = (preference: EditorBodyFontPreferen
 
 export const applyEditorBodyFontPreference = (preference = readEditorBodyFontPreference()) => {
   if (typeof document === "undefined") return;
-  watchEditorCatalogFont(isRemoteNoteImageFont(preference.choice) ? preference.choice : undefined);
+  watchEditorCatalogFont(isRemoteNoteImageFont(preference.choice) || preference.choice in LEGACY_BODY_FONTS ? preference.choice as BodyFontId : undefined);
   const root = document.documentElement;
   const stack = resolveEditorBodyFontStack(preference);
   if (!stack) {

@@ -40,14 +40,20 @@ export function readJikeWebStateInPage(expectedId?: string) {
     return postsList.length === 1 && postsList[0].type === "ORIGINAL_POST" ? postsList[0] : null;
   };
   const matches = [];
-  const selector=expectedId ? `[data-edgeever-jike-id="${expectedId}"]` : '[data-edgeever-jike-selected]';
+  const url=new URL(location.href);
+  const route = /^(\/u\/[^/]+)\/post\/([a-f0-9]{24})\/?$/.exec(url.pathname);
+  if (route && expectedId && route[2] !== expectedId) return null;
+  const selector=route ? '[data-clickable-feedback][class*="_postCard_"]' : expectedId ? `[data-edgeever-jike-id="${expectedId}"]` : '[data-edgeever-jike-selected]';
   for (const card of Array.from(document.querySelectorAll(selector))) {
     const header = card.querySelector("header"), body = card.querySelector('[class*="_contentWrapper_"]');
     if (!card.matches('[data-clickable-feedback]') || !header || !body || body.contains(header) || header.closest('[data-clickable-feedback]') !== card || body.closest('[data-clickable-feedback]') !== card || !visible(card)) continue;
+    if (route && !Array.from(header.querySelectorAll('a[href]')).some(link => {
+      try { return visible(link) && new URL(link.getAttribute('href') || '',url.origin).href === `${url.origin}${route[1]}`; } catch { return false; }
+    })) continue;
     const post = read(card);
-    if (post && (!expectedId || post.id === expectedId)) matches.push({ card, post });
+    if (post && (!expectedId || post.id === expectedId) && (!route || post.id === route[2])) matches.push({ card, post });
   }
   if (matches.length !== 1) return null;
-  matches[0].card.setAttribute("data-edgeever-jike-id", matches[0].post.id);
+  if (!route) matches[0].card.setAttribute("data-edgeever-jike-id", matches[0].post.id);
   return { pageUrl: location.href, post: matches[0].post };
 }

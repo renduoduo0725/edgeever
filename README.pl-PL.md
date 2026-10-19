@@ -289,6 +289,10 @@ Zapraszamy do społeczności EdgeEver, skupiającej twórców i pasjonatów vibe
 
 👉 [Dołącz do grupy na Telegramie](https://t.me/+wwUx1BYLrIdiZjY1)
 
+## Przyjazne linki
+
+- [LINUX DO](https://linux.do/) — Społeczność wymiany wiedzy technicznej i projektów open source.
+
 ## Wsparcie projektu
 
 EdgeEver jest darmowym projektem o otwartym kodzie. Rozwijanie aplikacji na różne platformy, testy na urządzeniach, podpisywanie kodu i utrzymywanie kilku środowisk uruchomieniowych wymagają czasu i środków.

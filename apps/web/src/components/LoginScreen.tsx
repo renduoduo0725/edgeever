@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { LockKeyhole } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { normalizeInstanceUrl } from "@edgeever/shared";
+import { normalizeInstanceUrl } from "@edgeever/shared/public-demo";
 import { Button } from "@/components/ui/button";
 import { GitHubRepositoryLink } from "@/components/GitHubRepositoryLink";
 import { Input } from "@/components/ui/input";

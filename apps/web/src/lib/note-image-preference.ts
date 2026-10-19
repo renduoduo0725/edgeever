@@ -10,7 +10,7 @@ export const readNoteImagePreferences = (): NoteImagePreferences => {
   const preferences = { ...DEFAULT_NOTE_IMAGE_PREFERENCES };
   try {
     // Keep the title and signature choices saved by earlier versions.
-    preferences.showTitle = localStorage.getItem("edgeever_share_image_show_title") !== "false";
+    preferences.showTitle = localStorage.getItem("edgeever_share_image_show_title") === "true";
     preferences.author = (localStorage.getItem("edgeever_share_author_name") || "").slice(0, 32);
     preferences.showAuthor = Boolean(preferences.author);
     const stored: unknown = JSON.parse(localStorage.getItem(NOTE_IMAGE_PREFERENCES_STORAGE_KEY) || "null");

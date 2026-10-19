@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { createHmac, createVerify, generateKeyPairSync } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -20,6 +21,9 @@ import {
   createGoogleServiceAccountAssertion,
   credentialPresence,
   firefoxSubmissionPlan,
+  formatSubmissionReport,
+  redactDiagnostics,
+  runSubmissionStage,
   FIREFOX_LICENSE_SLUG,
   highestCrxVersion,
   OFFICIAL_REPOSITORY,
@@ -39,6 +43,92 @@ const workflow = readFileSync(
 );
 
 describe("web clipper store command", () => {
+  test("reports HTTP field errors, nested details and status without leaking credentials", async () => {
+    const client = createChromeClient({ accessToken: "private-access", fetchImpl: async () => ({
+      ok: false, status: 400, text: async () => JSON.stringify({ error: {
+        code: 400, status: "INVALID_ARGUMENT", message: "Requirements missing",
+        details: [{ fieldViolations: [{ field: "privacy", description: "Justify declarativeNetRequestWithHostAccess" }] }],
+        access_token: "private-access",
+      } }),
+    }) });
+    let failure;
+    try { await runSubmissionStage("chrome.publish", () => client.publish()); } catch (error) { failure = error; }
+    const report = formatSubmissionReport("0.2.0", [["Chrome", { action: "failed", stage: failure.stage, reason: failure.message }]]);
+    expect(report).toContain("HTTP 400");
+    expect(report).toContain("INVALID_ARGUMENT");
+    expect(report).toContain("Justify declarativeNetRequestWithHostAccess");
+    expect(report).toContain("Failure stage: chrome.publish");
+    expect(report).not.toContain("private-access");
+    expect(report).toContain("publication unconfirmed");
+  });
+
+  test("distinguishes pending, staged, published and blocked results in the shared report", () => {
+    for (const [result, expected] of [
+      [{ action: "submitted", state: "PENDING_REVIEW" }, "Submitted for review; publication unconfirmed"],
+      [{ action: "already-submitted", submittedState: "STAGED" }, "Approved and staged; not yet published"],
+      [{ action: "submitted", state: "PUBLISHED" }, "Published (confirmed by store API)"],
+      [{ action: "already-published", published: "0.2.1" }, "Store version: 0.2.1"],
+      [{ action: "waiting-review", reason: "Another version is pending" }, "Not submitted; publication unconfirmed"],
+    ]) expect(formatSubmissionReport("0.2.0", [["Chrome", result]])).toContain(expected);
+    expect(formatSubmissionReport("0.2.0", [["Firefox", { action: "submitted", sourceAttached: true }]]))
+      .toContain("Submitted for review; publication unconfirmed");
+  });
+
+  test("redacts private approval notes and environment secrets and renders API markup literally", () => {
+    expect(redactDiagnostics({ approval_notes: "private login", errors: ["bad field"] })).not.toContain("private login");
+    const report = formatSubmissionReport("0.2.0", [["Firefox", { action: "failed", reason: "secret-value ``` <script>" }]], { AMO_JWT_SECRET: "secret-value" });
+    expect(report).not.toContain("secret-value");
+    expect(report).toStartWith("````text\n");
+  });
+
+  test("preserves Chrome publish failure when the subsequent status check fails", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "edgeever-submit-diagnostics-"));
+    const zip = join(directory, "addon.zip");
+    writeFileSync(zip, "zip");
+    let statusCalls = 0;
+    const fetchImpl = async (url) => {
+      if (String(url).endsWith("/token")) return jsonResponse({ access_token: "token" });
+      if (String(url).endsWith(":fetchStatus")) {
+        if (++statusCalls > 1) throw new Error("Status unavailable");
+        return jsonResponse({});
+      }
+      if (String(url).endsWith(":upload")) return jsonResponse({ uploadState: "SUCCEEDED" });
+      return { ok: false, status: 400, text: async () => JSON.stringify({ error: { message: "Privacy requirement missing" } }) };
+    };
+    try {
+      let failure;
+      try { await submitChrome({ version: "0.2.0", chromiumZip: zip, env: {}, fetchImpl }); } catch (error) { failure = error; }
+      expect(failure.stage).toBe("chrome.publish");
+      expect(failure.message).toContain("Privacy requirement missing");
+      expect(failure.recoveryError).toBe("Status unavailable");
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
+  test("preserves Firefox field errors and non-JSON service errors", async () => {
+    const client = createFirefoxClient({ issuer: "test", secret: "test", fetchImpl: async () => ({
+      ok: false, status: 400, text: async () => JSON.stringify({ upload: ["Invalid package"], license: ["Required"] }),
+    }) });
+    await expect(client.createVersion({})).rejects.toThrow("Invalid package");
+    const chrome = createChromeClient({ accessToken: "test", fetchImpl: async () => ({
+      ok: false, status: 503, text: async () => "Service unavailable",
+    }) });
+    await expect(chrome.publish()).rejects.toThrow("HTTP 503\nService unavailable");
+  });
+
+  test("writes preparation failure details to Actions Summary and exits nonzero", () => {
+    const directory = mkdtempSync(join(tmpdir(), "edgeever-report-test-"));
+    const summary = join(directory, "summary.md");
+    try {
+      const result = spawnSync(process.execPath, [new URL("./publish-web-clipper.mjs", import.meta.url).pathname, "--invalid-option"], {
+        env: { ...process.env, GITHUB_STEP_SUMMARY: summary }, encoding: "utf8", stdio: "pipe",
+      });
+      expect(result.status).toBe(1);
+      const markdown = readFileSync(summary, "utf8");
+      expect(markdown).toContain("Failure stage: preparation");
+      expect(markdown).toContain("Unknown option: --invalid-option");
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
   test("defaults to both stores", () => {
     expect(parsePublishArgs([])).toMatchObject({
       platform: "both",

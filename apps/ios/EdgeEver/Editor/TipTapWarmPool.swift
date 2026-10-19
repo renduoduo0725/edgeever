@@ -738,7 +738,7 @@ final class SharedTipTapRuntime: NSObject, WKScriptMessageHandler, WKNavigationD
             guard slot == .viewer, let collapsed = (body["collapsed"] as? NSNumber)?.boolValue else { break }
             let cb = session?.onReaderScroll
             DispatchQueue.main.async { cb?(collapsed) }
-        case "imageExportChunk", "imageExportComplete", "imageExportError":
+        case "imageExportChunk", "imageExportComplete", "imageExportError", "imageExportFontStatus", "imageExportFontsReady":
             let cb = session?.onImageExportEvent
             DispatchQueue.main.async { cb?(body) }
         default:

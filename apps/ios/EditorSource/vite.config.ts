@@ -14,7 +14,7 @@ export default defineConfig({
     outDir: "../EditorBundle",
     emptyOutDir: true,
     // Keep large, on-demand card fonts out of the editor's initial HTML parse.
-    assetsInlineLimit: (path) => !path.includes("/note-image-assets/"),
+    assetsInlineLimit: (path) => !/[\/](?:note-image-assets|font-assets)[\/]/.test(path),
     cssCodeSplit: false,
     rollupOptions: {
       input: "index.html",

@@ -310,6 +310,10 @@ export default defineConfig({
         // Preserve initialization order when manual vendor groups form cycles.
         strictExecutionOrder: true,
         codeSplitting: {
+          // Groups own only matching modules. Recursive ownership lets optional
+          // editors capture shared utilities (clsx, tslib, React hooks), making
+          // a basic button or locale load the whole editor at startup.
+          includeDependenciesRecursively: false,
           groups: [
             {
               // Font coverage tables are static data used by image sharing.
@@ -422,7 +426,7 @@ export default defineConfig({
             },
             {
               name: "vendor-query",
-              test: /node_modules[\\/]@tanstack[\\/]react-query[\\/]/,
+              test: /node_modules[\\/]@tanstack[\\/](?:react-query|query-core)[\\/]/,
               priority: 25,
             },
             {
@@ -444,6 +448,7 @@ export default defineConfig({
               name: "vendor-icons",
               test: /node_modules[\\/]lucide-react[\\/]/,
               priority: 18,
+              entriesAware: true,
             },
             {
               name: "vendor-radix-slot",

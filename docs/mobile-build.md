@@ -15,6 +15,24 @@ bunx eas-cli update --channel production --environment production --message "Des
 
 The update runtime uses the app-version policy. Any native dependency, Expo SDK, native module, or native configuration change requires incrementing `expo.version` and shipping a new store build before publishing code that depends on that native change. EAS Update does not replace Google Play or App Store updates for native binaries.
 
+### Google Play Flexible Updates
+
+Android release builds first query Google's Play In-App Updates SDK. When Play offers a flexible update, the automatic check opens Google's native consent dialog. Downloads run in the background; the app asks before completing installation and restarting. Declining consent suppresses further automatic prompts for that version during the current app session, while the settings update action allows a manual retry. Manual checks discover the update without opening the consent dialog until the user selects the update action.
+
+Play download state is checked on every return to the foreground, including during the ordinary six-hour check cooldown. Downloaded updates remain available through **Restart to apply** if the user dismisses the restart prompt. Failed or unavailable Play flows retain the existing Google Play listing and GitHub update destinations; compatible EAS updates remain a separate fallback. Old binaries without the native SDK safely skip this integration when receiving compatible JavaScript.
+
+This native SDK addition requires a new Android binary and a new app runtime version at release time. Existing binaries cannot gain the native dialog through OTA alone. A GitHub release does not mean a Play update is available: Play decides eligibility using its own distribution state, account ownership, application ID, signing certificate, and higher version code. See [Google's testing requirements](https://developer.android.com/guide/playcore/in-app-updates/test).
+
+Before publishing this update-path change, validate on a USB-connected physical Android device using a Play test track or internal app sharing:
+
+1. Install an older build that already includes this SDK integration, then make a higher-version-code build available to the same account through Play. For internal app sharing, follow Google's link-opening procedure without installing the newer build from its listing.
+2. Confirm the native consent dialog, cancellation without repeated automatic prompts, and manual retry.
+3. Accept the flexible update and continue editing during download. Background and foreground the app, and restart the process to verify download recovery.
+4. Dismiss the ready prompt, then use **Restart to apply**. Confirm the new native version launches and existing notes and pending edits remain intact.
+5. Verify the existing manual destinations on a device/account without an eligible Play update, plus download/installation failure recovery and the older-native-binary OTA fallback.
+
+Compilation and automated state-machine tests do not replace this real old-to-new installation gate. Until these steps pass, Play installation, process recovery, signing compatibility, and data preservation across this update remain unverified.
+
 ## Main-Branch Android APK
 
 The `Build EdgeEver Mobile` workflow runs on GitHub Actions and produces a

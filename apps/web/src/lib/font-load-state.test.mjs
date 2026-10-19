@@ -51,3 +51,33 @@ describe("font loading feedback", () => {
     expect(combineFontLoadStatus("ready", "ready")).toBe("ready");
   });
 });
+
+
+test("a render deadline exposes fallback, then restores the same request after its download finishes", async () => {
+  const state = createFontLoadState();
+  const download = deferred();
+  let refreshed = 0;
+  await expect(state.run(() => Promise.reject(new Error("deadline")), {
+    pending: download.promise, onReady: () => refreshed++,
+  })).rejects.toThrow("deadline");
+  expect(state.getSnapshot()).toBe("error");
+  download.resolve(); await download.promise; await Promise.resolve();
+  expect(state.getSnapshot()).toBe("ready");
+  expect(refreshed).toBe(1);
+});
+
+test("a late recovery cannot repaint a newer template or a closed canvas", async () => {
+  for (const close of [false, true]) {
+    const state = createFontLoadState();
+    const old = deferred();
+    let refreshed = false;
+    await expect(state.run(() => Promise.reject(new Error("deadline")), {
+      pending: old.promise, onReady: () => { refreshed = true; },
+    })).rejects.toThrow();
+    if (close) state.reset();
+    else await expect(state.run(() => Promise.reject(new Error("new template offline")))).rejects.toThrow();
+    old.resolve(); await old.promise; await Promise.resolve();
+    expect(refreshed).toBe(false);
+    expect(state.getSnapshot()).toBe(close ? "idle" : "error");
+  }
+});

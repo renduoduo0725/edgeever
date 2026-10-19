@@ -1,41 +1,17 @@
 {
-  "version": "1.122.0",
+  "version": "1.124.0",
   "changes": {
     "en-US": [
-      "Use all 23 poster fonts across typography pickers and improve built-in poster font pairings.",
-      "Fix overlapping poster elements and preserve consistent card sections when switching templates.",
-      "Show QR codes for note and notebook share links. Thanks @dkoryto (#610).",
-      "Show Docker image build and deployment information in System information. Thanks @dkoryto (#602).",
-      "Localize untitled notes and diagrams on public share pages. Thanks @dkoryto (#605).",
-      "Keep public share and form links out of search indexes and shared caches, and prevent share tokens from leaking through referrers. Thanks @dkoryto (#608).",
-      "Improve browser clipping across supported platforms, including Jike, Medium and social posts. Thanks @sivdead (#611).",
-      "Fix empty note bodies when sharing posts to the iOS app (#601).",
-      "Prevent already handled Android shares from restarting clipping when returning to the app.",
-      "Clarify the manual Cloudflare deployment instructions on the website. Thanks @dkoryto (#604)."
+      "Android now supports Google Play in-app updates with background downloads and confirmation before installation, while keeping manual update options available.",
+      "Improve startup speed and reduce bundled font size. Optional fonts download when needed, with consistent loading and fallback messages and reliable font restoration after retrying."
     ],
     "zh-CN": [
-      "字体选择统一支持全部 23 款海报字体，并优化内置海报模板的字体搭配。",
-      "修复海报元素重叠，并在切换模板时保持卡片分区一致。",
-      "笔记和笔记本分享链接新增二维码。感谢 @dkoryto（#610）。",
-      "系统信息新增 Docker 镜像构建和部署信息。感谢 @dkoryto（#602）。",
-      "公开分享页面中的未命名笔记和图表跟随界面语言。感谢 @dkoryto（#605）。",
-      "为公开分享和表单链接添加禁止搜索收录与共享缓存策略，防止来源信息泄露分享令牌。感谢 @dkoryto（#608）。",
-      "改进即刻、Medium 和社交帖子等平台的浏览器剪藏。感谢 @sivdead（#611）。",
-      "修复向 iOS 应用分享帖子时笔记正文可能为空的问题（#601）。",
-      "修复返回 Android 应用时已处理的分享可能重复启动剪藏的问题。",
-      "完善官网的 Cloudflare 手动部署指引。感谢 @dkoryto（#604）。"
+      "Android 新增 Google Play 应用内更新，支持后台下载并在安装前确认，同时保留手动更新入口。",
+      "优化启动速度并缩减内置字体体积；可选字体按需下载，统一加载与回退提示，并修复重试后字体恢复及模板字体回退显示。"
     ],
     "ja": [
-      "文字設定で全23種類のポスターフォントを選択でき、標準テンプレートの組み合わせも改善しました。",
-      "ポスター要素の重なりを修正し、テンプレート切り替え時のカード構成を改善しました。",
-      "ノートとノートブックの共有リンクにQRコードを追加しました。@dkoryto (#610)。",
-      "システム情報にDockerイメージのビルドとデプロイ情報を表示します。@dkoryto (#602)。",
-      "公開共有ページの無題ノートと図表名を画面の言語に合わせます。@dkoryto (#605)。",
-      "公開共有とフォームの検索登録・共有キャッシュを抑制し、リファラー経由のトークン漏洩を防ぎます。@dkoryto (#608)。",
-      "即刻、Medium、SNS投稿などのブラウザークリップを改善しました。@sivdead (#611)。",
-      "iOSアプリに投稿を共有した際に本文が空になる問題を修正しました (#601)。",
-      "Androidでアプリに戻った際、処理済みの共有が再度クリップされる問題を修正しました。",
-      "公式サイトのCloudflare手動デプロイ手順を明確にしました。@dkoryto (#604)。"
+      "Android で Google Play のアプリ内更新に対応しました。バックグラウンドでダウンロードし、インストール前に確認できます。手動更新も引き続き利用できます。",
+      "起動を高速化し、同梱フォントの容量を削減しました。追加フォントは必要に応じてダウンロードされ、読み込みや代替フォントの案内を統一し、再試行後のフォント復元とテンプレートの代替表示を改善しました。"
     ]
   }
 }

@@ -27,6 +27,17 @@ enum NoteImageFontCatalog {
         (id: "spacegrotesk", zh: "Space Grotesk", en: "Space Grotesk"),
         (id: "jetbrains", zh: "JetBrains Mono", en: "JetBrains Mono"),
     ]
+    static let templateLabels: [String: (zh: String, en: String, ja: String, pl: String)] = [
+        "glass": (zh: "MiSans", en: "MiSans", ja: "MiSans", pl: "MiSans"),
+        "quote": (zh: "汇文明朝体", en: "Huiwen Mincho", ja: "匯文明朝体", pl: "Huiwen Mincho"),
+        "book": (zh: "思源宋体", en: "Source Han Serif", ja: "源ノ明朝", pl: "Source Han Serif"),
+        "memo": (zh: "MiSans", en: "MiSans", ja: "MiSans", pl: "MiSans"),
+        "bento": (zh: "MiSans", en: "MiSans", ja: "MiSans", pl: "MiSans"),
+        "black-sun": (zh: "Geist Mono / MiSans", en: "Geist Mono / MiSans", ja: "Geist Mono / MiSans", pl: "Geist Mono / MiSans"),
+        "frame": (zh: "思源宋体", en: "Source Han Serif", ja: "源ノ明朝", pl: "Source Han Serif"),
+        "handwritten": (zh: "龙藏体", en: "Long Cang", ja: "Long Cang", pl: "Long Cang"),
+        "code": (zh: "Geist Mono", en: "Geist Mono", ja: "Geist Mono", pl: "Geist Mono"),
+    ]
 }
 // END GENERATED FONT CATALOG
 import Observation
@@ -64,12 +75,12 @@ enum AppUILocale {
 
 /// Local image-share choices, independent of the current note or sheet lifetime.
 struct NoteImageSharePreferences: Codable, Equatable {
-    var theme: String = "gradient"
+    var theme: String = "glass"
     var fontStyle: String = "auto"
     var fontSize: String = "lg"
     var cardWidth: String = "wide"
     var format: String = "png"
-    var showTitle: Bool = true
+    var showTitle: Bool = false
     var showNotebook: Bool = false
     var showTags: Bool = false
     var showUpdatedAt: Bool = true
@@ -85,7 +96,7 @@ struct NoteImageSharePreferences: Codable, Equatable {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         if let value = try? values.decode(String.self, forKey: .theme),
            ["gradient", "glass", "quote", "book", "memo", "bento", "black-sun", "frame", "handwritten", "code"].contains(value) {
-            theme = value
+            theme = value == "gradient" ? "glass" : value
         }
         if let value = try? values.decode(String.self, forKey: .fontStyle),
            (["auto", "serif", "sans", "mono", "kai"] + NoteImageFontCatalog.choices.map(\.id)).contains(value) {
@@ -103,7 +114,7 @@ struct NoteImageSharePreferences: Codable, Equatable {
            ["png", "jpeg"].contains(value) {
             format = value
         }
-        showTitle = (try? values.decode(Bool.self, forKey: .showTitle)) ?? true
+        showTitle = (try? values.decode(Bool.self, forKey: .showTitle)) ?? false
         showNotebook = (try? values.decode(Bool.self, forKey: .showNotebook)) ?? false
         showTags = (try? values.decode(Bool.self, forKey: .showTags)) ?? false
         showUpdatedAt = (try? values.decode(Bool.self, forKey: .showUpdatedAt)) ?? true

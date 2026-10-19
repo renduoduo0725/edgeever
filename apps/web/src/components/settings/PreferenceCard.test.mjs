@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 
 describe("editor body font preference", () => {
-  test("is chosen from settings and offers the bundled faces", () => {
+  test("is chosen from settings and loads optional faces through the shared loader", () => {
     const preferenceCard = readFileSync(new URL("./PreferenceCard.tsx", import.meta.url), "utf8");
     const editorFonts = readFileSync(new URL("../../styles/editor-body-fonts.css", import.meta.url), "utf8");
     const fontFaces = readFileSync(new URL("../../lib/editor-body-font-faces.ts", import.meta.url), "utf8");
@@ -10,15 +10,11 @@ describe("editor body font preference", () => {
     expect(preferenceCard).toContain('t("settings.editorBodyFontTitle")');
     expect(preferenceCard).toContain('includeCatalog ? FONT_IDS : ["wenkai", "zhuque"]');
     expect(preferenceCard).toContain('value={id} textValue={t(FONT_CATALOG[id].labelKey)}');
-    expect(preferenceCard).toContain('value="source-han-serif"');
+    expect(preferenceCard).toContain('["source-han-serif", "sourceHanSerif"]');
     expect(preferenceCard).toContain('value="custom"');
-    expect(fontFaces).toContain('fontFace("EdgeEver Kai"');
-    expect(fontFaces).toContain('fontFace("EdgeEver Fangsong"');
-    expect(fontFaces).toContain('fontFace("EdgeEver Zhi Song"');
-    expect(fontFaces).toContain('fontFace("EdgeEver Song"');
-    expect(fontFaces).toContain("kai.woff2?url");
-    expect(fontFaces).toContain("fangsong.woff2?url");
-    expect(fontFaces).toContain("zhi-song.woff2?url");
+    expect(fontFaces).toContain("configureBundledFontAssets(noteImageAssetUrls)");
+    expect(fontFaces).not.toContain("loadOfflineFonts(");
+    expect(fontFaces).not.toContain("assets/fonts/editor-body/");
     expect(preferenceCard).toContain('t("settings.uiFontTitle")');
     expect(preferenceCard).toContain("applyUiFontPreference");
     expect(preferenceCard).toContain("getFontChoicePreviewStack");

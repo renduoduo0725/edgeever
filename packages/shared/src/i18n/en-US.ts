@@ -2,7 +2,7 @@ import { memoTemplateSeedTranslations } from "../memo-template-seeds";
 
 // Shared by the PWA and native mobile clients.
 export const enUS = {
-  fontLoad: {"loading": "Loading font…", "ready": "Font ready", "error": "Font could not load", "retry": "Retry"},
+  fontLoad: {"templateLoading": "Loading font…", "templateFallback": "Temporarily using substitute fonts. The original fonts will be restored automatically when loaded.", "loading": "Loading font…", "ready": "Font ready", "error": "Font could not load", "retry": "Retry"},
   noteProperties: {"heading": "Note properties", "source": "Show YAML source", "name": "Property name", "type": "Property type", "add": "Add property", "remove": "Remove {{name}}", "invalidName": "Use a unique name that is not a system property.", "invalidYaml": "Properties need attention:", "invalidNumber": "Enter a valid number.", "listHint": "One value per line", "text": "Text", "list": "List", "number": "Number", "checkbox": "Checkbox", "date": "Date"},
   poster: {
     design: {
@@ -2478,6 +2478,14 @@ export const enUS = {
         warm: "Warm",
       },
       fontStyle: "Typography",
+      templateFonts: {
+        puhui: "Alibaba PuHuiTi",
+        misans: "MiSans",
+        mincho: "Huiwen Mincho",
+        song: "Source Han Serif",
+        longcang: "Long Cang",
+        geist: "Geist Mono",
+      },
       fontStyles: {
         "source-han-serif": "Noto Serif SC",
         "anton": "Anton",
