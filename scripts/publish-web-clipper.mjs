@@ -37,6 +37,9 @@ const ROOT_SOURCE_FILES = [
   "tsconfig.json",
 ];
 export const SHARED_EXTENSION_SOURCE_FILES = [
+  "packages/shared/src/ai-generation.ts",
+  "packages/shared/src/provider-event-stream.ts",
+  "packages/shared/src/video-outline.ts",
   "apps/web/src/components/ui/button.tsx",
   "apps/web/src/components/ui/input.tsx",
   "apps/web/src/components/ui/button-tooltip.tsx",

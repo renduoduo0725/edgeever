@@ -1,4 +1,5 @@
 import {
+  resolveResourceUploadMimeType,
   parseTableDocument,
   PublicShareUnlockSchema,
   PublicTableFormSubmissionSchema,
@@ -301,7 +302,7 @@ export const registerPublicTableFormRoutes = (app: Hono<AppEnv>) => {
       workspaceId: form.workspace_id,
       memoId: form.memo_id,
       filename: file.name,
-      mimeType: file.type || "application/octet-stream",
+      mimeType: resolveResourceUploadMimeType(file.name, file.type),
       bytes: new Uint8Array(await file.arrayBuffer()),
       actor,
       metadata: { tableFormId: form.id, pending: 1 },

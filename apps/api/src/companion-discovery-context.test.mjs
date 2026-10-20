@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { MockLanguageModelV4 } from "ai/test";
 import { CompanionDiscoveryOutputSchema } from "@edgeever/shared";
 import { discoveryContext, discoveryInputHash } from "./companion-discovery-context.ts";
-import { generateCompanionDiscovery } from "./companion-discovery-runtime.ts";
+import { generateCompanionDiscovery } from "../../../packages/client/src/discovery-direct.ts";
 
 const candidates = Array.from({ length: 6 }, (_, i) => ({ id: `memo_00000000-0000-4000-8000-${String(i).padStart(12, "0")}`,
   title: `Idea ${i}`, contentMarkdown: `原文 ${i}: n1 is quoted data.\nKeep **formatting** and links.`, updatedAt: "2026-09-03T01:02:03.000Z", plainText: false }));

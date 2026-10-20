@@ -4,6 +4,59 @@ import XCTest
 /// Drives the shipped create-Done path (`MemoCreateCommit.commit`).
 /// Guards Android parity: after image materialize, Done must update — not second create.
 final class MemoCreateCommitTests: XCTestCase {
+    func testConsecutiveSharesKeepCurrentInputUntilCoverDismisses() throws {
+        var presentation = MemoCreatePresentation()
+        let article = MemoCreatePresentation.Request(
+            seed: CreateMemoSeed(title: "Zhihu thought", contentMarkdown: "First share", tagsText: "")
+        )
+        let image = ShareHandoffStore.SharedImage(
+            fileURL: URL(fileURLWithPath: "/tmp/second-share.jpg"),
+            filename: "second-share.jpg",
+            mimeType: "image/jpeg"
+        )
+        let next = MemoCreatePresentation.Request(
+            seed: CreateMemoSeed(title: "Shared image", contentMarkdown: "", tagsText: ""),
+            sharedImages: [image]
+        )
+        XCTAssertTrue(presentation.open(article))
+        XCTAssertFalse(presentation.shouldFinishForIncomingShare)
+        XCTAssertFalse(presentation.open(next))
+        // A pending share or failed save must not change the mounted editor's inputs.
+        XCTAssertEqual(presentation.current?.id, article.id)
+        XCTAssertEqual(presentation.current?.seed, article.seed)
+        XCTAssertEqual(presentation.current?.sharedImages, [])
+        XCTAssertTrue(presentation.shouldFinishForIncomingShare)
+        XCTAssertEqual(presentation.pending.count, 1)
+
+        XCTAssertTrue(presentation.didDismiss())
+        XCTAssertEqual(presentation.current?.id, next.id)
+        XCTAssertNotEqual(presentation.current?.id, article.id)
+        XCTAssertEqual(presentation.current?.sharedImages, [image])
+        XCTAssertEqual(presentation.current?.seed?.contentMarkdown, "")
+        XCTAssertFalse(presentation.shouldFinishForIncomingShare)
+        XCTAssertFalse(presentation.didDismiss())
+        XCTAssertNil(presentation.current)
+    }
+
+    func testAdditionalSharesArePresentedInOrderAfterEachDismissal() {
+        var presentation = MemoCreatePresentation()
+        let requests = (1...3).map { index in
+            MemoCreatePresentation.Request(
+                seed: CreateMemoSeed(title: "Share \(index)", contentMarkdown: "", tagsText: "")
+            )
+        }
+        XCTAssertTrue(presentation.open(requests[0]))
+        XCTAssertFalse(presentation.open(requests[1]))
+        XCTAssertFalse(presentation.open(requests[2]))
+        XCTAssertTrue(presentation.didDismiss())
+        XCTAssertEqual(presentation.current?.id, requests[1].id)
+        XCTAssertTrue(presentation.shouldFinishForIncomingShare)
+        XCTAssertTrue(presentation.didDismiss())
+        XCTAssertEqual(presentation.current?.id, requests[2].id)
+        XCTAssertFalse(presentation.shouldFinishForIncomingShare)
+        XCTAssertFalse(presentation.didDismiss())
+    }
+
     private var mirror: LocalMirrorRepository!
     private var outbox: SyncOutboxRepository!
     private var drafts: DraftRepository!

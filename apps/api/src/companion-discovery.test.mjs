@@ -7,7 +7,7 @@ import { createMemoRecord, getMemoDetail, updateMemoRecord } from "./memo-servic
 import { applyCompanionAction, getCompanionAction } from "./companion-actions.ts";
 import { CompanionDiscoverySettingsInputSchema } from "@edgeever/shared";
 import { MockLanguageModelV4 } from "ai/test";
-import { generateCompanionDiscovery } from "./companion-discovery-runtime.ts";
+import { generateCompanionDiscovery } from "../../../packages/client/src/discovery-direct.ts";
 import { clearCompanionHistory, listCompanionTurns } from "./companion-service.ts";
 
 const databases = [];

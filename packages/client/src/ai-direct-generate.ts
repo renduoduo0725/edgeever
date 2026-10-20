@@ -84,6 +84,7 @@ export const generateDirectAiText = async (
 ) => {
   const { generateText } = await import("ai");
   const result = await generateText({
+    maxRetries: 0,
     model: createClientAiModel({
       provider: prepared.provider,
       baseUrl: prepared.baseUrl,

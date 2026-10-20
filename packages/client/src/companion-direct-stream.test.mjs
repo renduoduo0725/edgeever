@@ -104,42 +104,43 @@ describe("direct companion client", () => {
     expect(events.some((event) => event.type === "start")).toBe(true);
   });
 
-  test("probes CORS and stays on the instance proxy without downloading the API key", async () => {
-    const urls = [];
+  test("browser companion reports network failure without instance fallback", async () => {
+    const paths = [];
+    const completions = [];
+    const events = [];
+    let calls = 0;
     const client = createEdgeEverClient({
-      baseUrl: "https://notes.example",
-      tryDirectAiGeneration: true,
       fetch: async (url, init) => {
-        urls.push({ url: String(url), method: init?.method ?? "GET" });
-        if (String(url).endsWith("/direct-target")) {
-          return new Response(JSON.stringify({
-            provider: "openai-compatible",
-            baseUrl: "https://integrate.api.nvidia.com/v1",
-            modelId: "meta/llama",
-          }), { headers: { "content-type": "application/json" } });
+        paths.push(String(url));
+        if (String(url).endsWith("/prepare")) return Response.json(preparedTurn);
+        if (String(url).endsWith("/complete")) {
+          const completion = JSON.parse(init.body);
+          completions.push(completion);
+          return Response.json({ turn: { ...preparedTurn.turn, ...completion } });
         }
-        if (String(url).includes("integrate.api.nvidia.com")) {
-          expect(init?.method).toBe("POST");
-          expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer edgeever-cors-probe");
-          throw new TypeError("Failed to fetch");
-        }
-        return new Response("data: {\"type\":\"text-delta\",\"text\":\"proxied\"}\n\n", {
-          headers: { "content-type": "text/event-stream" },
-        });
+        throw new Error(`Unexpected instance request: ${url}`);
+      },
+      providerFetch: async () => {
+        calls++;
+        throw new TypeError("Failed to fetch");
       },
     });
-    const events = [];
     await client.streamCompanion(
-      { id: preparedTurn.turn.id, threadId: preparedTurn.turn.threadId, message: "hi" },
-      { onEvent: (event) => events.push(event) },
+      { id: preparedTurn.turn.id, message: "hi" },
+      { onEvent: event => events.push(event) },
     );
-    expect(urls.map((call) => call.url)).toEqual([
-      "https://notes.example/api/v1/ai/direct-target",
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      "https://notes.example/api/v1/companion/turns",
+    expect(paths).toEqual([
+      "/api/v1/companion/turns/prepare",
+      `/api/v1/companion/turns/${preparedTurn.turn.id}/complete`,
     ]);
-    expect(urls.some((call) => call.url.endsWith("/prepare"))).toBe(false);
-    expect(events).toEqual([{ type: "text-delta", text: "proxied" }]);
+    expect(calls).toBe(1);
+    expect(completions).toHaveLength(1);
+    expect(completions[0].status).toBe("failed");
+    expect(events.at(-1)).toEqual({
+      type: "error",
+      code: "companion_generation_failed",
+      diagnostics: { reason: "network" },
+    });
   });
 });
 
@@ -163,4 +164,31 @@ test("direct provider rejection includes safe diagnostics and completes the fail
     expect(JSON.stringify(events)).not.toContain("private-note");
     expect(log).not.toHaveBeenCalled();
   } finally { log.mockRestore(); }
+});
+
+test("browser fallback continues the same prepared turn and completes the streamed reply", async () => {
+  const paths = []; const events = []; let providerCalls = 0;
+  const client = createEdgeEverClient({
+    allowAiServerFallback: true,
+    fetch: async (url, init) => {
+      const path = String(url); paths.push(path);
+      if (path.endsWith("/prepare")) return Response.json(preparedTurn);
+      if (path.endsWith("/provider-relay")) {
+        expect(new Headers(init.headers).get("x-edgeever-ai-target")).toBe(preparedTurn.baseUrl + "/chat/completions");
+        return new Response('data: {"choices":[{"delta":{"content":"Relayed reply"}}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n', { headers: { "content-type": "text/event-stream" } });
+      }
+      if (path.endsWith("/complete")) {
+        const body = JSON.parse(init.body);
+        expect(body.status).toBe("completed"); expect(body.response).toBe("Relayed reply");
+        return Response.json({ turn: { ...preparedTurn.turn, ...body } });
+      }
+      throw Error("Unexpected instance request");
+    },
+    providerFetch: async () => { providerCalls++; throw new TypeError("Failed to fetch"); },
+  });
+  await client.streamCompanion({ id: preparedTurn.turn.id, message: "hi" }, { onEvent: event => events.push(event) });
+  expect(paths).toEqual(["/api/v1/companion/turns/prepare", "/api/v1/ai/provider-relay", `/api/v1/companion/turns/${preparedTurn.turn.id}/complete`]);
+  expect(providerCalls).toBe(1);
+  expect(events).toContainEqual({ type: "text-delta", text: "Relayed reply" });
+  expect(events.at(-1)).toMatchObject({ type: "done", turn: { id: preparedTurn.turn.id, status: "completed" } });
 });

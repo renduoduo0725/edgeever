@@ -1,20 +1,18 @@
-import { nodePublicFetch } from "@edgeever/public-network/node";
-import { validatePublicUrl } from "@edgeever/public-network/policy";
-
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
 const MAX_AUDIO_REQUEST_BYTES = 25_000_000;
 const MAX_CONCURRENT = 2;
 
+// AI endpoints are user-configured and may be on the client's private network.
+// Keep this separate from the public-only policy used by plugin requests.
 export const validateAiProviderUrl = (value) => {
-  const url = validatePublicUrl(value);
-  if (url.protocol !== "https:" || url.username || url.password || url.hash) {
-    throw new Error("AI provider requests must use HTTPS without credentials.");
+  const url = new URL(value);
+  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.hash) {
+    throw new Error("AI provider requests must use HTTP or HTTPS without URL credentials or fragments.");
   }
-  if (url.port && url.port !== "443") throw new Error("AI provider requests must use port 443.");
   return url;
 };
 
-export const createAiDirectRuntime = ({ fetchImpl = nodePublicFetch, maxConcurrent = MAX_CONCURRENT } = {}) => {
+export const createAiDirectRuntime = ({ fetchImpl = globalThis.fetch, maxConcurrent = MAX_CONCURRENT } = {}) => {
   const active = new Map();
   return {
     async open(requestId, input, { onData, onEnd, onError }) {
@@ -22,7 +20,8 @@ export const createAiDirectRuntime = ({ fetchImpl = nodePublicFetch, maxConcurre
         throw new Error("Invalid AI provider request.");
       }
       if (!input || typeof input !== "object") throw new Error("Invalid AI provider request.");
-      if ((input.method ?? "POST") !== "POST") throw new Error("AI provider requests must use POST.");
+      const method = input.method ?? "POST";
+      if (method !== "POST" && !(method === "GET" && new URL(input.url).pathname.endsWith("/models"))) throw new Error("AI provider requests must use POST, or GET for model discovery.");
       const binaryBody = input.bodyBytes instanceof Uint8Array
         ? input.bodyBytes
         : input.bodyBytes instanceof ArrayBuffer ? new Uint8Array(input.bodyBytes) : null;
@@ -58,9 +57,9 @@ export const createAiDirectRuntime = ({ fetchImpl = nodePublicFetch, maxConcurre
       active.set(requestId, controller);
       try {
         const response = await fetchImpl(url.href, {
-          method: "POST",
+          method,
           headers,
-          body: binaryBody ?? input.body,
+          body: method === "GET" ? undefined : binaryBody ?? input.body,
           redirect: "error",
           signal: controller.signal,
         });

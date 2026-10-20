@@ -12,6 +12,11 @@ const diagnosticFields = [
 ] as const;
 const selectStyle = "h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-500 disabled:opacity-50";
 export function Options() {
+  const requestedOrigin = new URLSearchParams(window.location.search).get("modelOrigin");
+  const modelOrigin = requestedOrigin && /^https?:\/\/[^/]+\/\*$/.test(requestedOrigin) ? requestedOrigin : null;
+  const [modelAccess, setModelAccess] = useState(false);
+  const [modelBusy, setModelBusy] = useState(false);
+  const [modelFeedback, setModelFeedback] = useState<Feedback>({ message: "" });
   const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
   const [ready, setReady] = useState(false);
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
@@ -68,6 +73,18 @@ export function Options() {
   const field = (key: keyof ExtensionSettings, value: string) => setSettings(current => ({ ...current, [key]: value }));
   return <main className="mx-auto max-w-[640px] px-6 py-8">
     <h1 className="text-[22px] font-semibold">{t("extensionName")}</h1>
+    {modelOrigin && <section className="mt-4 rounded-xl border border-border p-4">
+      <p className="mb-3 text-sm">{t("modelDirectPermission", modelOrigin)}</p>
+      <Button disabled={modelAccess || modelBusy} onClick={() => {
+        if (modelAccess || modelBusy) return;
+        setModelBusy(true);
+        void chrome.permissions.request({ origins: [modelOrigin] }).then((granted: boolean) => {
+          setModelAccess(granted);
+          setModelFeedback({ message: t(granted ? "modelDirectReady" : "modelDirectDenied"), kind: granted ? "success" : "error" });
+        }).catch(() => setModelFeedback({ message: t("modelDirectDenied"), kind: "error" })).finally(() => setModelBusy(false));
+      }}>{t("modelDirectAllow")}</Button>
+      <Status {...modelFeedback} />
+    </section>}
     <form id="settings-form" onSubmit={event => void save(event)} className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-[22px]">
       <fieldset disabled={!ready || busy} className="space-y-4">
         <label className="grid gap-2 text-[13px] font-semibold" htmlFor="instance-url">{t("instanceAddress")}<Input id="instance-url" type="url" placeholder="https://notes.example.com" required value={settings.instanceUrl} onChange={event => field("instanceUrl", event.target.value)} /></label>

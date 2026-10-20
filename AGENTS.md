@@ -56,6 +56,7 @@ Related Issue: #<issue-number>
 
 ## 环境、部署与组件约束
 
+- **AI 模型 API 优先客户端直连**：所有平台、所有功能的 AI 模型 API 请求优先由客户端直接调用模型服务；Web 端遇到浏览器网络或 CORS 限制时，允许通过 EdgeEver 后端兜底。桌面端及原生移动端保持直连；已有 HTTP 响应或开始接收流式结果后，不得因错误自动切换到后端重复调用。
 - **Cloudflare 部署**：严格按 `docs/agent-deploy-cloudflare.md` 执行。
 - **跨运行时架构**：项目未来将正式支持 Docker 自托管；实现新功能时必须保持业务逻辑与 Cloudflare 解耦，并为其他运行时预留扩展边界。Cloudflare 与 Docker 必须共用同一套业务代码，仅允许保留薄且稳定、不包含业务判断的运行入口和基础设施驱动适配器。
 - **数据库 Migration**：数据库或种子变化时，在 `migrations/` 下新增递增编号 SQL，禁止修改已执行的旧 Migration。

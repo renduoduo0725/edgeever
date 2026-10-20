@@ -435,3 +435,23 @@ describe("resource route contracts", () => {
     expect(batches).toBe(0);
   });
 });
+
+
+test("SVG image and legacy attachment responses are sandboxed without changing original bytes", async () => {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
+  for (const kind of ["image", "attachment"]) {
+    const environment = createEnvironment();
+    environment.storage.resources = {
+      get: async () => ({ body: new Blob([svg]).stream(), writeHttpMetadata: () => {} }),
+    };
+    const response = await createApp(agentAuth, async () => ({
+      ...resourceRow, kind, mime_type: "image/svg+xml", filename: "diagram.svg",
+      byte_size: new TextEncoder().encode(svg).length, storage_config_id: null,
+    })).request("/api/v1/resources/res_1/blob", {}, environment);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("image/svg+xml");
+    expect(response.headers.get("content-security-policy")).toBe("default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; sandbox");
+    expect(response.headers.get("content-disposition")).toStartWith(kind === "image" ? "inline;" : "attachment;");
+    expect(await response.text()).toBe(svg);
+  }
+});

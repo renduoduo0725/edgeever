@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
+import { createAiDirectRuntime } from "../../../desktop/src/main/ai-direct.mjs";
 
 const storage = new Map();
 const calls = [];
@@ -6,6 +7,8 @@ const events = [];
 let completeSave;
 let secureSessionToken = "";
 let failSecureSessionWrite = false;
+let aiRuntime;
+const aiStreamListeners = new Set();
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
 const originalFetch = Object.getOwnPropertyDescriptor(globalThis, "fetch");
 
@@ -15,6 +18,16 @@ globalThis.window = {
   edgeeverDesktop: {
     isAvailable: true,
     apiBaseUrl: "",
+    openAiProviderStream: (requestId, input) => aiRuntime.open(requestId, input, {
+      onData: bytes => { for (const listener of aiStreamListeners) listener(requestId, { type: "data", bytes }); },
+      onEnd: () => { for (const listener of aiStreamListeners) listener(requestId, { type: "end" }); },
+      onError: error => { for (const listener of aiStreamListeners) listener(requestId, { type: "error", message: error.message }); },
+    }),
+    onAiProviderStreamChunk: listener => {
+      aiStreamListeners.add(listener);
+      return () => aiStreamListeners.delete(listener);
+    },
+    cancelAiProviderStream: requestId => aiRuntime.cancel(requestId),
     setApiBaseUrl: async (value) => {
       calls.push(["bridge:start", value]);
       if (!value) {
@@ -67,16 +80,185 @@ afterAll(() => {
   }
 });
 
+// Other test files may have imported the browser client before this desktop bridge.
 const {
   ApiRequestError,
   DESKTOP_API_BASE_URL_STORAGE_KEY,
   api,
+  directProviderFetch,
   cacheDesktopSession,
   clearCachedDesktopSession,
   getConfiguredDesktopApiBaseUrl,
   getCachedDesktopSession,
   saveDesktopApiBaseUrl,
-} = await import("./api.ts");
+} = await import("./api.ts?desktop-ai-routing-test");
+
+describe("desktop AI routing", () => {
+  test("an already cancelled generation does not prepare or contact the provider", async () => {
+    const paths = [];
+    globalThis.fetch = async url => { paths.push(String(url)); throw new Error("Unexpected request"); };
+    await expect(api.streamCompanion({ id: crypto.randomUUID(), message: "hi" }, {
+      signal: AbortSignal.abort(), onEvent() {},
+    })).rejects.toThrow();
+    expect(paths).toEqual([]);
+  });
+
+  test("cancelling a desktop provider stream rejects a pending read and releases the transport", async () => {
+    const controller = new AbortController();
+    let providerSignal;
+    aiRuntime = createAiDirectRuntime({ fetchImpl: async (_url, init) => {
+      providerSignal = init.signal;
+      return new Response(new ReadableStream({
+        start(stream) {
+          init.signal.addEventListener("abort", () => stream.error(init.signal.reason), { once: true });
+        },
+      }));
+    } });
+    const response = await directProviderFetch("http://127.0.0.1:11434/v1/chat/completions", {
+      method: "POST", body: "{}", signal: controller.signal,
+    });
+    const reader = response.body.getReader();
+    const reading = reader.read();
+    controller.abort();
+    await expect(reading).rejects.toMatchObject({ name: "AbortError" });
+    expect(providerSignal.aborted).toBe(true);
+    expect(aiRuntime.activeCount).toBe(0);
+    expect(aiStreamListeners.size).toBe(0);
+  });
+
+  for (const baseUrl of [
+    "http://192.168.1.20:11434/v1", "https://192.168.1.20/v1",
+    "https://127.0.0.1/v1", "http://[::1]:11434/v1", "https://model.lan/v1",
+    "https://model.example.com:8443/v1", "https://model.intranet.example.com/v1",
+    "https://provider.example.com/v1",
+  ]) for (const operation of ["new", "resume"]) for (const status of [200, 401, "network", "stream-network"]) {
+    test(`${operation} calls ${baseUrl} directly with ${status}, without instance generation`, async () => {
+      const paths = [];
+      const providerAuth = [];
+      const completed = [];
+      const turn = { id: crypto.randomUUID(), threadId: crypto.randomUUID(), response: "", process: "", tools: [], todos: [], questions: [] };
+      const preparePath = operation === "new" ? "/api/v1/companion/turns/prepare" : `/api/v1/companion/turns/${turn.id}/resume/prepare`;
+      aiRuntime = createAiDirectRuntime({ fetchImpl: async (url, init) => {
+        expect(url).toBe(`${baseUrl}/chat/completions`);
+        const auth = new Headers(init.headers).get("Authorization");
+        providerAuth.push(auth);
+        if (status === "network") throw new TypeError("NetworkError during provider request");
+        if (status === "stream-network") return new Response(new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"partial reply"}}]}\n\n'));
+            setTimeout(() => controller.error(new TypeError("NetworkError during provider stream")), 10);
+          },
+        }), { headers: { "Content-Type": "text/event-stream" } });
+        if (status !== 200) return Response.json({ error: { message: "Unauthorized" } }, { status });
+        return new Response([
+          'data: {"choices":[{"delta":{"content":"direct reply"}}]}',
+          'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}',
+          'data: [DONE]',
+          '',
+        ].join("\n\n"), { headers: { "Content-Type": "text/event-stream" } });
+      } });
+      globalThis.fetch = async (url, init) => {
+        const path = new URL(String(url), "https://notes.example.com").pathname;
+        paths.push(path);
+        if (path === preparePath) {
+          return Response.json({
+            turn, provider: "openai-compatible", baseUrl, modelId: "public-model", apiKey: "provider-key",
+            instructions: "Reply briefly", messages: [{ role: "user", content: "hi" }], tools: [], maxSteps: 1, maxOutputTokens: 32,
+          });
+        }
+        if (path === `/api/v1/companion/turns/${turn.id}/complete`) {
+          const body = JSON.parse(init.body);
+          completed.push(body);
+          return Response.json({ turn: { ...turn, ...body } });
+        }
+        throw new Error(`Unexpected request: ${path}`);
+      };
+      const received = [];
+      const streamOptions = { onEvent: event => received.push(event) };
+      const generation = operation === "new"
+        ? api.streamCompanion({ id: turn.id, message: "hi" }, streamOptions)
+        : api.resumeCompanionTurn(turn.id, { answers: [] }, streamOptions);
+      await generation;
+      expect(paths).toEqual([
+        preparePath,
+        `/api/v1/companion/turns/${turn.id}/complete`,
+      ]);
+      expect(providerAuth).toEqual(["Bearer provider-key"]);
+      expect(completed).toHaveLength(1);
+      expect(completed[0].status).toBe(status === 200 ? "completed" : "failed");
+      if (status === 200) expect(received).toContainEqual({ type: "text-delta", text: "direct reply" });
+      else if (status === "stream-network") expect(received).toContainEqual({ type: "text-delta", text: "partial reply" });
+      else if (status === 401) expect(received.at(-1)).toMatchObject({ type: "error", code: "ai_credentials_rejected" });
+      expect(aiStreamListeners.size).toBe(0);
+    });
+  }
+
+  for (const operation of ["companion", "resume", "generate", "tags", "plugin", "discovery"]) {
+    test(`${operation} fails on old instances without falling back to server generation`, async () => {
+      const paths = [];
+      globalThis.fetch = async url => {
+        paths.push(new URL(String(url), "https://notes.example.com").pathname);
+        return new Response("{}", { status: 404 });
+      };
+      const streamOptions = { onEvent() {} };
+      const turnId = crypto.randomUUID();
+      const [preparePath, invoke] = {
+        companion: ["/api/v1/companion/turns/prepare", () => api.streamCompanion({ id: turnId, message: "hi" }, streamOptions)],
+        resume: [`/api/v1/companion/turns/${turnId}/resume/prepare`, () => api.resumeCompanionTurn(turnId, {}, streamOptions)],
+        generate: ["/api/v1/ai/generate/prepare", () => api.streamAiGeneration({ action: "summarize", title: "Note", contentMarkdown: "Body" }, streamOptions)],
+        tags: ["/api/v1/ai/tag-suggestions/prepare", () => api.suggestAiTags({ title: "Note", contentMarkdown: "Body", currentTags: [] })],
+        plugin: ["/api/v1/plugins/ai/generate/prepare", () => api.pluginAi.generate({ prompt: "hello", maxOutputTokens: 32 })],
+        discovery: ["/api/v1/companion/discovery/check/prepare", () => api.checkCompanionDiscoveries("en")],
+      }[operation];
+      await expect(invoke()).rejects.toMatchObject({ code: "ai_direct_unavailable" });
+      expect(paths).toEqual([preparePath]);
+    });
+  }
+
+  for (const operation of ["generate", "tags", "plugin"]) {
+    test(`${operation} uses the desktop bridge for a private HTTP model`, async () => {
+      const paths = [];
+      const providerRequests = [];
+      const baseUrl = "http://10.20.30.40:11434/v1";
+      const boundary = { start: "<edgeever-result-x>", end: "</edgeever-result-x>" };
+      aiRuntime = createAiDirectRuntime({ fetchImpl: async (url, init) => {
+        providerRequests.push({ url, auth: new Headers(init.headers).get("Authorization") });
+        if (operation === "generate") return new Response([
+          `data: ${JSON.stringify({ choices: [{ delta: { content: `${boundary.start}\nlocal reply${boundary.end}` } }] })}`,
+          'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}', 'data: [DONE]', '',
+        ].join("\n\n"), { headers: { "content-type": "text/event-stream" } });
+        return Response.json({ choices: [{ message: { content: operation === "tags" ? "<edgeever-tags>\nReact\n</edgeever-tags>" : "local reply" }, finish_reason: "stop" }] });
+      } });
+      const preparePath = {
+        generate: "/api/v1/ai/generate/prepare",
+        tags: "/api/v1/ai/tag-suggestions/prepare",
+        plugin: "/api/v1/plugins/ai/generate/prepare",
+      }[operation];
+      globalThis.fetch = async url => {
+        const path = new URL(String(url), "https://notes.example.com").pathname;
+        paths.push(path);
+        if (path !== preparePath) throw new Error(`Unexpected instance generation: ${path}`);
+        return Response.json({ provider: "openai-compatible", baseUrl, modelId: "local-model", apiKey: "local-key",
+          system: "Reply briefly", prompt: "hello", maxOutputTokens: 32, resultBoundary: boundary,
+          currentTags: [], canonicalTags: { react: "React" },
+        });
+      };
+      if (operation === "generate") {
+        const events = [];
+        await api.streamAiGeneration({ action: "summarize", title: "Note", contentMarkdown: "Body" }, { onEvent: event => events.push(event) });
+        expect(events.filter(event => event.type === "text-delta").map(event => event.text).join("")).toBe("local reply");
+      } else if (operation === "tags") {
+        expect((await api.suggestAiTags({ title: "Note", contentMarkdown: "Body", currentTags: [] })).suggestions).toEqual([{ name: "React", existing: true }]);
+      } else {
+        expect(await api.pluginAi.generate({ prompt: "hello", maxOutputTokens: 32 })).toEqual({ text: "local reply" });
+      }
+      expect(paths).toEqual([preparePath]);
+      expect(providerRequests).toEqual([{ url: `${baseUrl}/chat/completions`, auth: "Bearer local-key" }]);
+      expect(aiStreamListeners.size).toBe(0);
+    });
+  }
+
+});
 
 describe("desktop instance setup", () => {
   test("can retry with a valid URL after invalid input", async () => {
@@ -470,41 +652,5 @@ describe("desktop instance setup", () => {
     }
   });
 
-  test("does not opt the web proxy into AI streaming", async () => {
-    const requestBodies = [];
-    globalThis.fetch = async (url, init) => {
-      if (String(url).includes("/api/v1/ai/direct-target")) {
-        return new Response("{}", { status: 404 });
-      }
-      requestBodies.push(JSON.parse(String(init?.body)));
-      return new Response('data: {"type":"finish"}\n\n', {
-        headers: { "Content-Type": "text/event-stream" },
-      });
-    };
-
-    await api.streamAiGeneration(
-      { action: "summarize", title: "Note", contentMarkdown: "Body" },
-      { onEvent: () => {} },
-    );
-
-    expect(requestBodies).toHaveLength(1);
-    expect(requestBodies[0].stream).toBeUndefined();
-  });
-
-  test("streams infographic agent tool events through the authenticated client", async () => {
-    let requestPath = "";
-    let requestBody;
-    globalThis.fetch = async (url, init) => {
-      requestPath = String(url);
-      requestBody = JSON.parse(String(init?.body));
-      return new Response('data: {"type":"proposal","template":"list-grid-simple","data":{"title":"示例","lists":[{"label":"A"}]},"explanation":"已创建"}\n\ndata: {"type":"finish"}\n\n', {
-        headers: { "Content-Type": "text/event-stream" },
-      });
-    };
-    const received = [];
-    await api.streamInfographicAgent({ prompt: "做个列表", currentContent: "", candidates: ["list-grid-simple"], history: [] }, { onEvent: (event) => received.push(event) });
-    expect(requestPath).toContain("/api/v1/ai/infographic-agent");
-    expect(requestBody.prompt).toBe("做个列表");
-    expect(received.map((event) => event.type)).toEqual(["proposal", "finish"]);
-  });
+  test("infographic authentication errors never invoke instance generation",async()=>{const paths=[];globalThis.fetch=async url=>{paths.push(String(url));return Response.json({error:{code:"unauthorized",message:"Sign in"}},{status:401});};await expect(api.streamInfographicAgent({prompt:"Make a list",currentContent:"",candidates:["list-grid-simple"],history:[]},{onEvent(){}})).rejects.toMatchObject({status:401});expect(paths.filter(path=>path.includes("/ai/"))).toHaveLength(1);expect(paths[0]).toContain("/api/v1/ai/infographic-agent/prepare");});
 });

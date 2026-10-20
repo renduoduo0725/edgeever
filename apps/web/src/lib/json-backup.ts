@@ -737,7 +737,13 @@ export const parseEdgeEverZip = async (
     }
     memos.push(memoResult.data as JsonBackupMemo);
   }
-  const markdownCount = [...entrySizes.keys()].filter((path) => /^notes\/.+\.md$/.test(path)).length;
+  const resources = memos.flatMap((memo) => memo.resources);
+  const resourcePaths = new Set(resources.map((resource) => resource.archivePath));
+  // Markdown attachments live under notes/ too. Only count readable note copies,
+  // excluding the exact resource paths recorded in the recovery metadata.
+  const markdownCount = [...entrySizes.keys()].filter((path) => (
+    /^notes\/.+\.md$/.test(path) && !resourcePaths.has(path)
+  )).length;
 
   if (
     manifest.counts.notebooks !== notebooks.length
@@ -748,8 +754,6 @@ export const parseEdgeEverZip = async (
     throw new EdgeEverZipImportError("incompleteData");
   }
 
-  const resources = memos.flatMap((memo) => memo.resources);
-  const resourcePaths = new Set(resources.map((resource) => resource.archivePath));
   const revisionCount = memos.reduce((count, memo) => count + memo.revisions.length, 0);
   if (manifest.counts.revisions !== revisionCount) {
     throw new EdgeEverZipImportError("incompleteData");

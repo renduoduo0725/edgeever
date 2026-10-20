@@ -827,6 +827,7 @@ function AiSidebarSession({
     const code = cause instanceof ApiRequestError ? cause.code : "";
     if (code === "companion_attachment_unsupported") return t("aiAssistant.sidebar.attachmentUnsupported");
     if (code === "companion_attachment_expired") return t("aiAssistant.sidebar.attachmentExpired");
+    if (code === "ai_client_required" || code === "ai_direct_unavailable") return t("companion.clientUpdateRequired");
     if (code === "ai_not_configured") return t("companion.configureModel");
     if (code === "ai_credentials_rejected") return t("companion.credentialsRejected");
     if (code === "ai_provider_payment_required") return t("companion.providerPaymentRequired");

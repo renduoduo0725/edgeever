@@ -566,7 +566,7 @@ test("still writes the transcript when the outline is refused, unconfigured, inv
   const settings = { instanceUrl: "https://notes.example", token: "token" };
   const respond = (status, payload) => withPage(() => {
     globalThis.fetch = async (url) => {
-      expect(String(url)).toBe("https://notes.example/api/v1/ai/video-outline");
+      expect(String(url)).toBe("https://notes.example/api/v1/ai/video-outline/prepare");
       return Response.json(payload, { status });
     };
   }, () => postVideoOutline(settings, videoOutlineRequestBody({
@@ -750,4 +750,24 @@ test("ships the video-note phrases in the extension locales", () => {
       expect(catalog[key].message.length).toBeGreaterThan(0);
     }
   }
+});
+
+test("video summaries call the model directly after preparing context", async () => {
+  await withPage(() => {}, async () => {
+    const paths = [];
+    const model = { provider: "openai-compatible", baseUrl: "https://model.example/v1", apiKey: "model-key", modelId: "local", system: "Summarize", prompt: "Transcript", maxOutputTokens: 1200 };
+    globalThis.fetch = async (url, init) => {
+      paths.push(String(url));
+      if (String(url).endsWith("/video-outline/prepare")) return Response.json(model);
+      expect(String(url)).toBe("https://model.example/v1/chat/completions");
+      expect(new Headers(init.headers).get("Authorization")).toBe("Bearer model-key");
+      expect(init.redirect).toBe("error");
+      const text = JSON.stringify({ tldr: "Summary", sections: [{ start: 0, text: "Opening" }], takeaways: ["One point"] });
+      return new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`);
+    };
+    const body = { platform: "youtube", title: "Video", author: "Channel", duration: 60, hasChapters: false, blocks: [{ start: 0, text: "Transcript" }] };
+    const result = await postVideoOutline({ instanceUrl: "https://notes.example", token: "token" }, body);
+    expect(result).toMatchObject({ ok: true, outline: { tldr: "Summary" } });
+    expect(paths).toEqual(["https://notes.example/api/v1/ai/video-outline/prepare", "https://model.example/v1/chat/completions"]);
+  });
 });

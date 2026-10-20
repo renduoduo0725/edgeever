@@ -1,8 +1,8 @@
 import { ToolLoopAgent, Output, type LanguageModel } from "ai";
 import { CompanionDiscoveryOutputSchema } from "@edgeever/shared";
-import { discoveryContext, type DiscoveryContextInput } from "./companion-discovery-context";
+import { discoveryContext, type DiscoveryContextInput } from "@edgeever/shared/companion-discovery-context";
 
-export type { DiscoveryCandidate } from "./companion-discovery-context";
+export type { DiscoveryCandidate } from "@edgeever/shared/companion-discovery-context";
 export async function generateCompanionDiscovery(args: DiscoveryContextInput & {
   model: LanguageModel; signal: AbortSignal;
 }) {

@@ -1,3 +1,4 @@
+const OLD_AI_GENERATION_PATHS = ["/api/v1/ai/generate", "/api/v1/ai/infographic-agent", "/api/v1/ai/providers/:providerConfigId/discover-models", "/api/v1/ai/providers/:providerConfigId/test", "/api/v1/ai/tag-suggestions", "/api/v1/ai/video-outline"];
 import {
   AiDefaultModelUpdateSchema,
   AiGenerateSchema,
@@ -13,7 +14,6 @@ import {
   AiTagSuggestionsRequestSchema,
   buildAiTagSuggestionRequest,
   getDefaultAiTagSuggestionPrompt,
-  finalizeAiTagSuggestions,
   promptNeedsTargetLanguage,
   promptNeedsTone,
   type AiAction,
@@ -28,20 +28,13 @@ import { AppError } from "./app-error";
 import { auditStatement } from "./audit";
 import { getAiPromptTemplate, resolveWorkspaceActionInstruction } from "./ai-prompt-service";
 import {
-  createAiGenerationResultBoundary,
-  createAiGenerationStreamNormalizer,
   decryptAiCredential,
-  discoverAiModels,
   getAiModelConfig,
   getAiProviderConfig,
   getAiSettings,
   getDefaultAiModelId,
-  generateAiGeneration,
-  generateAiTagSuggestions,
   getDefaultAiDirectTarget,
-  loadDefaultAiModel,
   loadDefaultAiModelCredentials,
-  normalizeAiGenerationText,
   normalizeAiBaseUrl,
   prepareAiGeneration,
   aiTranscriptionDefaultStatement,
@@ -50,8 +43,6 @@ import {
   getAiTranscriptionSettings,
   getDefaultAiTranscriptionModelId,
   resolvePrimaryAiCredentialEncryptionKey,
-  streamAiGeneration,
-  testAiModel,
 } from "./ai-service";
 import { createId, isoNow } from "./entity-utils";
 import { apiError, forbidden, notFound } from "./http-errors";
@@ -61,18 +52,16 @@ import {
   VIDEO_OUTLINE_SYSTEM_PROMPT,
   VideoOutlineRequestSchema,
   buildVideoOutlineUserPrompt,
-  generateVideoOutlineText,
-  normalizeVideoOutline,
-  parseVideoOutlineModelText,
   videoOutlineInputChars,
 } from "./video-outline";
 import { encryptSecret } from "./secret-encryption";
 import { listTagSummaries } from "./tag-service";
 import { prepareNoteResourceTranscription } from "./resource-transcription";
+import { registerAiProviderRelay } from "./ai-provider-relay";
 
 type AiRouteDependencies = {
   isDemoMode: (environment: Bindings) => boolean;
-  testConnection?: (config: Parameters<typeof testAiModel>[0]) => Promise<{ text: string }>;
+  testConnection?: (config: { provider: string; baseUrl: string; apiKey: string; modelId: string }) => Promise<{ text: string }>;
   suggestTags?: (input: {
     title: string;
     contentMarkdown: string;
@@ -162,19 +151,6 @@ const requireEncryptionKey = (context: AppContext) => {
   return key;
 };
 
-const getSavedProviderApiKey = async (context: AppContext, providerConfigId: string) => {
-  const row = await getAiProviderConfig(
-    context.env.storage.db,
-    getWorkspaceId(context),
-    providerConfigId,
-  );
-  if (!row) throw new AppError("ai_provider_not_found", "AI provider not found.", 404);
-  return {
-    row,
-    apiKey: await decryptAiCredential(row.api_key_encrypted, context.env),
-  };
-};
-
 const withAiError = (context: AppContext, error: unknown, fallbackCode: string) => {
   if (error instanceof AppError) {
     return apiError(context, error.code, error.message, error.status);
@@ -240,6 +216,7 @@ const resolveAiGenerateFields = async (context: AppContext, input: {
 };
 
 export const registerAiRoutes = (app: Hono<AppEnv>, dependencies: AiRouteDependencies) => {
+  registerAiProviderRelay(app);
   app.get("/api/v1/ai/settings", async (context) => {
     const denied = requireUser(context);
     if (denied) return denied;
@@ -713,54 +690,6 @@ export const registerAiRoutes = (app: Hono<AppEnv>, dependencies: AiRouteDepende
   });
 
   app.post(
-    "/api/v1/ai/providers/:providerConfigId/test",
-    zValidator("json", AiProviderConnectionTestSchema),
-    async (context) => {
-      const denied = requireUser(context);
-      if (denied) return denied;
-      try {
-        const input = context.req.valid("json");
-        const row = await getAiProviderConfig(
-          context.env.storage.db,
-          getWorkspaceId(context),
-          context.req.param("providerConfigId"),
-        );
-        if (!row) throw new AppError("ai_provider_not_found", "AI provider not found.", 404);
-        const apiKey = input.apiKey ?? await decryptAiCredential(row.api_key_encrypted, context.env);
-        const result = await (dependencies.testConnection ?? testAiModel)({
-          provider: input.provider ?? row.provider,
-          baseUrl: input.baseUrl ? normalizeAiBaseUrl(input.baseUrl) : row.base_url,
-          apiKey,
-          modelId: input.modelId,
-        });
-        return context.json({ ok: true, response: result.text.trim() });
-      } catch (error) {
-        return withAiError(context, error, "ai_connection_failed");
-      }
-    },
-  );
-
-  app.post("/api/v1/ai/providers/:providerConfigId/discover-models", async (context) => {
-    const denied = requireUser(context);
-    if (denied) return denied;
-    try {
-      const { row, apiKey } = await getSavedProviderApiKey(
-        context,
-        context.req.param("providerConfigId"),
-      );
-      return context.json({
-        models: await discoverAiModels({
-          provider: row.provider,
-          baseUrl: row.base_url,
-          apiKey,
-        }),
-      });
-    } catch (error) {
-      return withAiError(context, error, "ai_model_discovery_failed");
-    }
-  });
-
-  app.post(
     "/api/v1/ai/providers/:providerConfigId/models",
     zValidator("json", AiModelConfigCreateSchema),
     async (context) => {
@@ -941,44 +870,6 @@ export const registerAiRoutes = (app: Hono<AppEnv>, dependencies: AiRouteDepende
     },
   );
 
-  app.post(
-    "/api/v1/ai/tag-suggestions",
-    zValidator("json", AiTagSuggestionsRequestSchema),
-    async (context) => {
-      const denied = requireUser(context);
-      if (denied) return denied;
-      try {
-        const input = context.req.valid("json");
-        const workspaceId = getWorkspaceId(context);
-        const tagSummaries = await listTagSummaries(context.env.storage.db, workspaceId);
-        const allCanonicalTags = new Map(
-          tagSummaries.map((tag) => [tag.name.toLocaleLowerCase(), tag.name]),
-        );
-        const popularTags = [...tagSummaries]
-          .sort((left, right) => right.memoCount - left.memoCount || left.name.localeCompare(right.name))
-          .slice(0, 200)
-          .map((tag) => tag.name);
-        const existingTags = Array.from(new Set([
-          ...input.currentTags.map((tag) => allCanonicalTags.get(tag.toLocaleLowerCase()) ?? tag),
-          ...popularTags,
-        ]));
-        const canonicalTags = Object.fromEntries(allCanonicalTags);
-        const rawSuggestions = dependencies.suggestTags
-          ? await dependencies.suggestTags({ ...input, existingTags })
-          : await generateAiTagSuggestions({
-            ...input,
-            existingTags,
-            instruction: getDefaultAiTagSuggestionPrompt(input.locale),
-            model: await loadDefaultAiModel(context.env.storage.db, workspaceId, context.env),
-            abortSignal: context.req.raw.signal,
-          });
-        return context.json({ suggestions: finalizeAiTagSuggestions(rawSuggestions, input.currentTags, canonicalTags) });
-      } catch (error) {
-        return withAiError(context, error, "ai_tag_suggestions_failed");
-      }
-    },
-  );
-
   app.get(
     "/api/v1/ai/direct-target",
     async (context) => {
@@ -1017,156 +908,34 @@ export const registerAiRoutes = (app: Hono<AppEnv>, dependencies: AiRouteDepende
     },
   );
 
-  app.post(
-    "/api/v1/ai/infographic-agent",
-    zValidator("json", InfographicAgentRequestSchema),
-    async (context) => {
-      const denied = requireUser(context);
-      if (denied) return denied;
-      try {
-        const input = context.req.valid("json");
-        const model = await loadDefaultAiModel(context.env.storage.db, getWorkspaceId(context), context.env);
-        const encoder = new TextEncoder();
-        const stream = new ReadableStream<Uint8Array>({
-          async start(controller) {
-            const send = (event: import("@edgeever/shared").InfographicAgentEvent) => {
-              try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`)); }
-              catch { /* The client may have disconnected. */ }
-            };
-            send({ type: "start" });
-            try {
-              const { runInfographicAgent } = await import("./infographic-agent");
-              await runInfographicAgent({ input, model, signal: context.req.raw.signal, onEvent: send });
-            } catch (error) {
-              send({ type: "error", message: providerErrorMessage(error) });
-            } finally {
-              try { controller.close(); } catch { /* The client may have disconnected. */ }
-            }
-          },
-        });
-        return new Response(stream, { headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-store" } });
-      } catch (error) {
-        return withAiError(context, error, "ai_generation_failed");
-      }
-    },
-  );
 
-  app.post(
-    "/api/v1/ai/generate",
-    validateAiGeneration,
-    async (context) => {
-      const denied = requireUser(context);
-      if (denied) return denied;
-      try {
-        const input = context.req.valid("json");
-        const fields = await resolveAiGenerateFields(context, input);
-        const model = await loadDefaultAiModel(
-          context.env.storage.db,
-          getWorkspaceId(context),
-          context.env,
-        );
-        const resultBoundary = createAiGenerationResultBoundary();
-        const generationInput = {
-          ...input,
-          ...fields,
-          model,
-          resultBoundary,
-          abortSignal: context.req.raw.signal,
-        };
-        const encoder = new TextEncoder();
-        const stream = new ReadableStream<Uint8Array>({
-          async start(controller) {
-            const send = (event: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
-            send({ type: "start" });
-            try {
-              if (input.stream) {
-                const result = await streamAiGeneration(generationInput);
-                const normalizer = createAiGenerationStreamNormalizer(resultBoundary);
-                let hasContent = false;
-                for await (const part of result.stream) {
-                  if (part.type === "error") throw part.error;
-                  if (part.type !== "text-delta") continue;
-                  const text = normalizer.push(part.text);
-                  if (!text) continue;
-                  hasContent ||= Boolean(text.trim());
-                  send({ type: "text-delta", text });
-                }
-                const trailingText = normalizer.finish();
-                if (trailingText) {
-                  hasContent ||= Boolean(trailingText.trim());
-                  send({ type: "text-delta", text: trailingText });
-                }
-                if (!hasContent) throw new Error("The AI did not return a note result.");
-                const [usage, finishReason] = await Promise.all([result.usage, result.finishReason]);
-                send({
-                  type: "finish",
-                  finishReason,
-                  inputTokens: usage.inputTokens,
-                  outputTokens: usage.outputTokens,
-                });
-                return;
-              }
-
-              const result = await generateAiGeneration(generationInput);
-              const contentMarkdown = normalizeAiGenerationText(result.text, resultBoundary);
-              if (!contentMarkdown) throw new Error("The AI did not return a note result.");
-              send({ type: "text-delta", text: contentMarkdown });
-              send({
-                type: "finish",
-                finishReason: result.finishReason,
-                inputTokens: result.usage.inputTokens,
-                outputTokens: result.usage.outputTokens,
-              });
-            } catch (error) {
-              send({ type: "error", code: "ai_generation_failed", message: providerErrorMessage(error) });
-            } finally {
-              controller.close();
-            }
-          },
-        });
-        return new Response(stream, {
-          headers: {
-            "Content-Type": "text/event-stream; charset=utf-8",
-            "Cache-Control": "no-cache, no-transform",
-            "X-Accel-Buffering": "no",
-          },
-        });
-      } catch (error) {
-        return withAiError(context, error, "ai_generation_failed");
-      }
-    },
-  );
-
-  app.post(
-    "/api/v1/ai/video-outline",
-    zValidator("json", VideoOutlineRequestSchema),
-    async (context) => {
-      const denied = requireScopes(context, "ai:generate");
-      if (denied) return denied;
-      const input = context.req.valid("json");
-      if (videoOutlineInputChars(input) > VIDEO_OUTLINE_MAX_CHARS) {
-        return apiError(
-          context,
-          "video_outline_too_long",
-          "This transcript is too long to summarize.",
-          413,
-        );
-      }
-      try {
-        const system = VIDEO_OUTLINE_SYSTEM_PROMPT;
-        const prompt = buildVideoOutlineUserPrompt(input);
-        const text = dependencies.generateVideoOutline
-          ? await dependencies.generateVideoOutline({ system, prompt, abortSignal: context.req.raw.signal })
-          : await generateVideoOutlineText({
-            model: await loadDefaultAiModel(context.env.storage.db, getWorkspaceId(context), context.env),
-            system,
-            prompt,
-            abortSignal: context.req.raw.signal,
-          });
-        return context.json(normalizeVideoOutline(parseVideoOutlineModelText(text), input));
-      } catch (error) {
-        return withAiError(context, error, "video_outline_invalid");
-      }
-    },
-  );
+  app.post("/api/v1/ai/providers/:providerConfigId/direct-credential", async context => {
+    const denied = requireUser(context); if (denied) return denied;
+    try {
+      const raw = await context.req.json();
+      const input = AiProviderConnectionTestSchema.partial().parse(raw);
+      const row = await getAiProviderConfig(context.env.storage.db, getWorkspaceId(context), context.req.param("providerConfigId"));
+      if (!row) return notFound(context, "AI provider not found.");
+      return context.json({ provider: input.provider ?? row.provider,
+        baseUrl: input.baseUrl ? normalizeAiBaseUrl(input.baseUrl) : row.base_url,
+        apiKey: input.apiKey ?? await decryptAiCredential(row.api_key_encrypted, context.env), modelId: input.modelId ?? "" });
+    } catch (error) { return withAiError(context, error, "ai_credential_failed"); }
+  });
+  app.post("/api/v1/ai/infographic-agent/prepare", zValidator("json", InfographicAgentRequestSchema), async context => {
+    const denied = requireUser(context); if (denied) return denied;
+    try { return context.json(await loadDefaultAiModelCredentials(context.env.storage.db, getWorkspaceId(context), context.env)); }
+    catch (error) { return withAiError(context, error, "ai_generation_failed"); }
+  });
+  app.post("/api/v1/ai/video-outline/prepare", zValidator("json", VideoOutlineRequestSchema), async context => {
+    const denied = requireScopes(context, "ai:generate"); if (denied) return denied;
+    const input = context.req.valid("json");
+    if (videoOutlineInputChars(input) > VIDEO_OUTLINE_MAX_CHARS) return apiError(context, "video_outline_too_long", "This transcript is too long to summarize.", 413);
+    try { return context.json({ ...await loadDefaultAiModelCredentials(context.env.storage.db, getWorkspaceId(context), context.env),
+      system: VIDEO_OUTLINE_SYSTEM_PROMPT, prompt: buildVideoOutlineUserPrompt(input), maxOutputTokens: 1200 }); }
+    catch (error) { return withAiError(context, error, "ai_generation_failed"); }
+  });
+  for (const path of OLD_AI_GENERATION_PATHS) app.post(path, context => {
+    const denied = requireScopes(context, "ai:generate"); if (denied) return denied;
+    return apiError(context, "ai_client_required", "Update the client to use prepared AI requests.", 410);
+  });
 };

@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useLayoutEffect,
   useRef,
   useState,
   type MutableRefObject,
@@ -41,8 +42,19 @@ export const useEditorMarkdownMode = ({
   const markdownSourceEditorRef = useRef<MarkdownSourceEditorRef | null>(null);
   const markdownModeSnapshotRef = useRef<MarkdownModeSnapshot | null>(null);
   const pendingSourceSelectionRef = useRef<{ memoId: string; from: number; to: number } | null>(null);
+  const pendingRichFocusMemoIdRef = useRef<string | null>(null);
   const getMemoIdRef = useRef(getMemoId);
   getMemoIdRef.current = getMemoId;
+
+  // Schedule Tiptap's deferred focus after the rich EditorContent has mounted.
+  useLayoutEffect(() => {
+    if (isMarkdownMode) return;
+    const memoId = pendingRichFocusMemoIdRef.current;
+    pendingRichFocusMemoIdRef.current = null;
+    if (memoId && getMemoIdRef.current() === memoId && isEditorReady(editor)) {
+      editor.commands.focus(null, { scrollIntoView: false });
+    }
+  }, [editor, isMarkdownMode]);
 
   const setMarkdownSource = useCallback((next: string | ((current: string) => string)): boolean => {
     const value = typeof next === "function" ? next(markdownSourceRef.current) : next;
@@ -120,11 +132,9 @@ export const useEditorMarkdownMode = ({
     markdownModeSnapshotRef.current = currentMemoId
       ? createMarkdownModeSnapshot(currentMemoId, content, markdownSourceRef.current)
       : null;
+    pendingRichFocusMemoIdRef.current = currentMemoId ?? null;
     setIsMarkdownMode(false);
     if (!hasMappedSelection) restoreScrollAfterModeChange("rich", scrollProgress);
-    window.requestAnimationFrame(() => {
-      if (getMemoId() === currentMemoId && !markdownSourceEditorRef.current) editor.view.focus();
-    });
     window.setTimeout(() => {
       hydratingRef.current = false;
     }, 0);
@@ -188,6 +198,7 @@ export const useEditorMarkdownMode = ({
   const resetMarkdownMode = useCallback(() => {
     markdownModeSnapshotRef.current = null;
     pendingSourceSelectionRef.current = null;
+    pendingRichFocusMemoIdRef.current = null;
     setMarkdownSourceState("");
     markdownSourceRef.current = "";
     onUnsafeRichTableEdit(false);

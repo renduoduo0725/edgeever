@@ -290,6 +290,20 @@ test('article metadata retains source date precision and normalized own headline
  const d=fixture('substack-article'),s=d.querySelector('script'),v=JSON.parse(s.textContent);v.headline='The  Dot and the Swarm';d.querySelector('h1').textContent=v.headline;s.textContent=JSON.stringify(v);
  expect(substackContent(d,'https://www.oneusefulthing.org/p/the-dot-and-the-swarm').author).toBe('Ethan Mollick');
 });
+test('Substack image cleanup preserves captions and ordinary or labelled links without changing the source',async()=>{
+ const {substackContent}=await import('./src/substack-content.ts'),{platformHtmlMarkdown}=await import('./src/platform-clip.ts');
+ const d=fixture('substack-article'),body=d.querySelector('.body.markup'),url='https://www.oneusefulthing.org/p/the-dot-and-the-swarm';
+ body.innerHTML='<p>Before <a href="https://example.test/source">source</a></p><figure><a class="image-link image2" href="https://example.test/full.png"><div><picture><img src="https://example.test/preview.png" alt="Chart"></picture></div></a><figcaption>Chart caption</figcaption></figure><p><a class="image-link" href="https://example.test/book"><img src="https://example.test/book.png">Read the book</a></p><p><a class="image-link" href="https://example.test/more">More reading</a></p><p><a href="https://example.test/other"><img src="https://example.test/other.png" alt="Other"></a></p><p>After</p>';
+ const before=d.documentElement.outerHTML,article=substackContent(d,url),markdown=platformHtmlMarkdown(article.body,url),nodes=[];
+ const walk=node=>{nodes.push(node);(node.content || []).forEach(walk);};walk(markdownToDoc(markdown));
+ expect(nodes.filter(node=>node.type==='image').map(node=>node.attrs.src)).toEqual(['https://example.test/preview.png','https://example.test/book.png','https://example.test/other.png']);
+ const text=nodes.filter(node=>node.type==='text').map(node=>node.text).join('');
+ expect(text).toContain('Before sourceChart captionRead the bookMore reading');expect(text).toContain('After');expect(text).not.toContain('full.png');
+ for(const [label,href] of [['source','source'],['Read the book','book'],['More reading','more']]) expect(nodes.some(node=>node.text===label && node.marks?.some(mark=>mark.type==='link' && mark.attrs.href===`https://example.test/${href}`))).toBe(true);
+ expect(markdown).toContain('[![Other](https://example.test/other.png)](https://example.test/other)');
+ expect(d.documentElement.outerHTML).toBe(before);
+});
+
 test('only a visible real Substack paywall blocks whole-article extraction',async()=>{
  const {substackContent}=await import('./src/substack-content.ts'),{substackPaywall}=await import('./src/article-platform.ts'),d=fixture('substack-paywall'),url='https://www.lennysnewsletter.com/p/how-to-build-ai-product-sense';
  expect(substackPaywall(d)).toBe(true);expect(substackContent(d,url)).toBeNull();d.querySelector('.paywall').style.display='none';expect(substackPaywall(d)).toBe(false);expect(substackContent(d,url)).not.toBeNull();

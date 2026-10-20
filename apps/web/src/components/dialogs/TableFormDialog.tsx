@@ -199,11 +199,14 @@ export const TableFormDialog = ({
       setDraft(null);
       publishedRef.current = false;
     }
-    if (!formQuery.isFetched || hydratedFor.current === memoId) return;
+    if (!formQuery.isFetched || formQuery.isFetching || hydratedFor.current === memoId) return;
     hydratedFor.current = memoId;
     draftMemoIdRef.current = memoId;
     const nextSaved = formQuery.data?.form ?? null;
     const next = draftFromSaved(nextSaved, fieldsRef.current, memoTitleRef.current);
+    // Opening collection is the publish action for a new form. Keep an existing
+    // form's state, and never publish when reading its settings failed.
+    if (!nextSaved && !formQuery.isError) next.enabled = true;
     publishedRef.current = Boolean(nextSaved);
     serverEnabledRef.current = nextSaved?.enabled ?? false;
     serverPasswordRef.current = nextSaved?.passwordProtected ?? false;
@@ -213,7 +216,8 @@ export const TableFormDialog = ({
     setSaving(pendingSaves.current > 0);
     setConfirmed(false);
     setCopied(false);
-  }, [open, formQuery.isFetched, formQuery.data, formQuery.error, memoId]);
+    if (!nextSaved && !formQuery.isError) persistRef.current(next);
+  }, [open, formQuery.isFetched, formQuery.isFetching, formQuery.isError, formQuery.data, formQuery.error, memoId]);
 
   useEffect(() => () => {
     if (textTimer.current === null) return;

@@ -144,6 +144,7 @@ export const CreateMemoModal = ({
   client: clientProp,
   dataScope,
   defaultNotebookId,
+  finishForIncomingShare = false,
   imageCompressionEnabled,
   initialDraft,
   initialSharedImages = [],
@@ -156,6 +157,7 @@ export const CreateMemoModal = ({
   client?: ReturnType<typeof useSession>["client"];
   dataScope: string;
   defaultNotebookId: string;
+  finishForIncomingShare?: boolean;
   imageCompressionEnabled: boolean;
   initialDraft?: MobileCreateMemoSeed | MobileWebClipDraft | null;
   initialSharedImages?: MobileSharedImage[];
@@ -200,6 +202,9 @@ export const CreateMemoModal = ({
   const [imageOperation, setImageOperation] = useState<"idle" | "creating" | "uploading">("idle");
   const imageOperationRef = useRef(imageOperation);
   const sharedImagesHandledRef = useRef(false);
+  const [importingSharedImages, setImportingSharedImages] = useState(initialSharedImages.length > 0);
+  const [sharedImageImportFailed, setSharedImageImportFailed] = useState(false);
+  const shareHandoffStartedRef = useRef(false);
   const createPendingRef = useRef(false);
   const submitStartedRef = useRef(false);
   const [submitStarted, setSubmitStarted] = useState(false);
@@ -566,8 +571,14 @@ export const CreateMemoModal = ({
     }
     sharedImagesHandledRef.current = true;
     void (async () => {
-      for (const image of initialSharedImages) {
-        await uploadImageAsset(image);
+      try {
+        for (const image of initialSharedImages) {
+          if (await uploadImageAsset(image) === undefined) {
+            setSharedImageImportFailed(true);
+          }
+        }
+      } finally {
+        setImportingSharedImages(false);
       }
     })();
   }, [editorReady, initialSharedImages]);
@@ -602,6 +613,21 @@ export const CreateMemoModal = ({
   };
 
   const requestClose = () => submitCreateMemo();
+
+  useEffect(() => {
+    if (!finishForIncomingShare) {
+      shareHandoffStartedRef.current = false;
+      return;
+    }
+    if (!draftLoaded || !editorReady || importingSharedImages || sharedImageImportFailed || imageOperation !== "idle" || submitStarted || shareHandoffStartedRef.current) {
+      return;
+    }
+    // Save through the normal close path, including editor flush and queued
+    // writes. On failure keep both this editor and the next share intact;
+    // the user can retry saving without an automatic retry loop.
+    shareHandoffStartedRef.current = true;
+    void submitCreateMemo();
+  }, [finishForIncomingShare, draftLoaded, editorReady, importingSharedImages, sharedImageImportFailed, imageOperation, submitStarted, submitCreateMemo]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {

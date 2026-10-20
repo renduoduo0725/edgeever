@@ -770,5 +770,22 @@
   },
   "pageCaptureRestrictedHint": {
     "message": "当前页面只有受限预览。请先在网站取得完整阅读权限并刷新，或选中可见段落后保存。"
+  },
+  "modelDirectPermission": {
+    "message": "视频摘要需要直接访问模型服务 $HOST$。请授权后重新剪藏。",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "modelDirectAllow": {
+    "message": "允许访问模型服务"
+  },
+  "modelDirectReady": {
+    "message": "已授权，请重新剪藏视频。"
+  },
+  "modelDirectDenied": {
+    "message": "未获得模型访问权限。"
   }
 }

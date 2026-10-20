@@ -1,5 +1,5 @@
 import { posterPatchInputSchema, posterOperationsInputSchema } from "./mcp-poster-schema";
-import { ARCHITECTURE_RESOURCE_ICONS, INFOGRAPHIC_NOTE_TEMPLATES, POSTER_FORMATS, POSTER_TEMPLATES, TABLE_FIELD_TYPES } from "@edgeever/shared";
+import { ARCHITECTURE_RESOURCE_ICONS, INFOGRAPHIC_NOTE_TEMPLATES, POSTER_FORMATS, POSTER_TEMPLATES, POSTER_TEMPLATE_SELECTION_INSTRUCTION, TABLE_FIELD_TYPES } from "@edgeever/shared";
 
 const DIAGRAM_IR_NODE_TYPES = [
   "topic",
@@ -368,7 +368,7 @@ const MCP_TOOL_DEFINITIONS = [
   },
   {
     name: "create_poster_memo",
-    description: "Create an editable poster note (海报笔记). Use this when asked to generate a poster, not create_memo or update_memo with poster-style prose. First plan the takeaway and content hierarchy. For explanatory topics (industry layouts, knowledge summaries, comparisons or guides), supply 3–6 concise sections with heading/body and choose layout=grid for categories or layout=list for steps. Do not reduce an informative topic to a title and generic subtitle. Use supplied note content when referenced; do not invent statistics, sources or brand relationships. For quotes, slogans or an explicitly minimal cover, omit sections. Choose template deliberately (bold/minimal for technology or business, editorial/quote for literary copy); optional badge/footer require sections. EdgeEver compiles editable elements and fits text to the selected format. Do not inspect other notes or local files to reverse-engineer the poster format. If this tool fails, report the error; never silently substitute an ordinary Markdown note. Use get_poster then update_poster only for subsequent edits.",
+    description: POSTER_TEMPLATE_SELECTION_INSTRUCTION + " Create an editable poster note (海报笔记). Use this when asked to generate a poster, not create_memo or update_memo with poster-style prose. First plan the takeaway and content hierarchy. For explanatory topics (industry layouts, knowledge summaries, comparisons or guides), supply 3–6 concise sections with heading/body and choose layout=grid for categories or layout=list for steps. Do not reduce an informative topic to a title and generic subtitle. Use supplied note content when referenced; do not invent statistics, sources or brand relationships. For quotes, slogans or an explicitly minimal cover, omit sections. Optional badge/footer require sections. EdgeEver compiles editable elements and fits text to the selected format. Do not inspect other notes or local files to reverse-engineer the poster format. If this tool fails, report the error; never silently substitute an ordinary Markdown note. Use get_poster then update_poster only for subsequent edits.",
     inputSchema: {
       type: "object", required: ["notebookId", "title", "heading"], additionalProperties: false,
       properties: {
@@ -378,7 +378,7 @@ const MCP_TOOL_DEFINITIONS = [
         badge: { type: "string", maxLength: 24, description: "Optional short topic label; requires sections." },
         footer: { type: "string", maxLength: 100, description: "Optional takeaway or supplied source; requires sections. Never invent attribution." },
         sections: { type: "array", minItems: 2, maxItems: 6, description: "Main content for informative posters. Each section must convey a distinct useful point, not repeat the subtitle.", items: { type: "object", additionalProperties: false, required: ["heading", "body"], properties: { heading: { type: "string", minLength: 1, maxLength: 32 }, body: { type: "string", minLength: 1, maxLength: 120 } } } },
-        template: { type: "string", enum: [...POSTER_TEMPLATES] },
+        template: { type: "string", enum: [...POSTER_TEMPLATES], description: "Basic server style ID from templates in get_poster_capabilities; select using its zhUse/enUse. Full browser designs use request_poster_render.templateId." },
         format: { type: "string", enum: POSTER_FORMATS.map(format => format.id) },
         tags: { type: "array", maxItems: 100, items: { type: "string" } },
       },
@@ -386,7 +386,7 @@ const MCP_TOOL_DEFINITIONS = [
   },
   {
     name: "request_poster_render",
-    description: "Queue a fresh PNG preview on an online desktop/Web client. Read get_poster and pass expectedRevision. Optional templateId applies a full browser design template, preserving additional decorations; use only for an explicit template change. Requires write:memos and write:resources. Returns a job, not an image. No online client means pending; query get_poster_render_job and only claim rendered after completed, then get_poster_preview. Pending expires after 10 minutes; rendering after 2 minutes. Do not busy-poll.",
+    description: "Queue a fresh PNG preview on an online desktop/Web client. Read get_poster and pass expectedRevision. Optional templateId applies a full browser design template, preserving additional decorations; use for the initial design of a new poster, or an explicitly requested template change to an existing poster. Requires write:memos and write:resources. Returns a job, not an image. No online client means pending; query get_poster_render_job and only claim rendered after completed, then get_poster_preview. Pending expires after 10 minutes; rendering after 2 minutes. Do not busy-poll.",
     inputSchema: { type: "object", required: ["memoId", "expectedRevision"], additionalProperties: false, properties: { memoId: { type: "string", minLength: 1 }, expectedRevision: { type: "integer", minimum: 0 }, templateId: { type: "string", description: "ID from browserDesignTemplates in get_poster_capabilities" } } },
   },
   {
@@ -396,7 +396,7 @@ const MCP_TOOL_DEFINITIONS = [
   },
   {
     name: "get_poster_capabilities",
-    description: "Discover supported poster templates, fonts, platform dimensions, limits, detailed editing fields, operations and rendering/export availability. Read before designing or guessing parameter values.",
+    description: "Read before creating a poster. Discover supported poster templates with bilingual zhUse/enUse descriptions and recommended platform IDs (fit), fonts, platform dimensions, limits, detailed editing fields, operations and rendering/export availability. Read before designing or guessing parameter values.",
     inputSchema: { type: "object", additionalProperties: false, properties: {} },
   },
   {
@@ -686,7 +686,7 @@ const MCP_TOOL_DEFINITIONS = [
       properties: {
         memoId: { type: "string" },
         filename: { type: "string" },
-        mimeType: { type: "string", enum: ["image/png", "image/jpeg", "image/gif", "image/webp", "image/avif"] },
+        mimeType: { type: "string", enum: ["image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/svg+xml"] },
         dataBase64: { type: "string" },
         alt: { type: "string" },
       },

@@ -4,6 +4,8 @@
 
 Updated: 2026-10-18. Tracks [#588](https://github.com/tianma-if/edgeever/issues/588). This is an in-progress record, not a claim of complete cross-browser acceptance.
 
+2026-10-19 addendum: Store-installed testing for [#587](https://github.com/tianma-if/edgeever/issues/587) found stray brackets and original image URLs around Substack images. The local and store capture scripts are identical, and the existing article fixture reproduces the problem; earlier text and image readback did not check the surrounding formatting. `0.2.1` removes only Substack's textless image-viewer link wrappers, retaining images, captions, and prose links, with regression assertions on the archived document. This does not claim store publication of the fix or expand historical acceptance for other platforms.
+
 ## Environment and baseline
 
 - Code: upstream `67f627cc3c702c9cf2fa3fab9fabc67c70206888`; local `main` sync commit `7bd005ec`, with the instance-permission, SPA-message, Facebook alias/UI-text, current Jike Web detail, Android initialization and cross-document cancellation fixes applied on top.

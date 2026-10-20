@@ -48,11 +48,45 @@ enum AiDirectStream {
                 ],
             ]
         }
+        request.httpShouldHandleCookies = false
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         return request
+    }
+
+    static func tagSuggestions(_ text: String, currentTags: [String], canonicalTags: [String: String]) -> [AiTagSuggestion] {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        var names: [String] = []
+        var structured = false
+        if let first = trimmed.firstIndex(where: { $0 == "[" || $0 == "{" }),
+           let last = trimmed.lastIndex(where: { $0 == "]" || $0 == "}" }), first <= last,
+           let data = String(trimmed[first...last]).data(using: .utf8),
+           let value = try? JSONSerialization.jsonObject(with: data) {
+            structured = true
+            let record = value as? [String: Any]
+            let list = value as? [Any] ?? record?["suggestions"] as? [Any] ?? record?["tags"] as? [Any] ?? []
+            names = list.compactMap { item in
+                if let name = item as? String { return name }
+                let item = item as? [String: Any]
+                return item?["name"] as? String ?? item?["tag"] as? String
+            }
+        }
+        if !structured {
+            let content = trimmed.components(separatedBy: "<edgeever-tags>").last?.components(separatedBy: "</edgeever-tags>").first ?? trimmed
+            names = content.components(separatedBy: .newlines)
+        }
+        var seen = Set(currentTags.map { $0.lowercased() })
+        var result: [AiTagSuggestion] = []
+        for line in names {
+            let name = line.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "#-*• "))
+            let key = name.lowercased()
+            guard !name.isEmpty, seen.insert(key).inserted else { continue }
+            result.append(AiTagSuggestion(name: canonicalTags[key] ?? name, existing: canonicalTags[key] != nil))
+            if result.count == 3 { break }
+        }
+        return result
     }
 
     static func extractDelta(provider: String, payload: [String: Any]) -> (text: String, finishReason: String?, inputTokens: Int?, outputTokens: Int?) {

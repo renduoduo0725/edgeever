@@ -26,6 +26,7 @@ import { getMobileNoteImageFontLabel } from "../lib/note-image-font-options";
 import { MobileResourceActions } from "../components/MobileResourceActions";
 import { ZoomableImagePreview } from "../components/ZoomableImagePreview";
 import type { ImageSize } from "../lib/mobile-image-zoom";
+import { encodeMobileNoteImageFileUri } from "../lib/mobile-note-image-export";
 import { SAFE_DOM_WEBVIEW_PROPS } from "../lib/mobile-dom";
 import { getNextMobileNoteSearchIndex } from "../lib/mobile-note-search";
 import { hasMobilePoster, hasMobileInfographic, hasMobileStructuredTable, hasMobileVisualDiagram, resolveMobileMemoViewerContent } from "../lib/mobile-diagram";
@@ -972,7 +973,7 @@ export const MemoDetailModal = ({
       // earlier export when different notes share the same download filename.
       const directory = new Directory(Paths.cache, "edgeever-note-exports", event.requestId);
       if (!directory.exists) directory.create({ idempotent: true, intermediates: true });
-      const file = new File(directory, event.filename);
+      const file = new File(encodeMobileNoteImageFileUri(Paths.join(directory, event.filename)));
       if (file.exists) file.delete();
       file.create({ overwrite: true, intermediates: true });
       file.write(decodeBase64Chunks(imageExportChunksRef.current));

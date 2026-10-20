@@ -23,6 +23,19 @@ test("distinguishes stream validation, network, empty output, and output limit",
   expect(companionFailureDiagnostics(new Error("Response limit exceeded."))).toEqual({ reason: "responseLimit" });
 });
 
+test("distinguishes gateway timeouts and server failures from rejected requests", () => {
+  for (const status of [408, 504]) {
+    expect(companionFailureDiagnostics({ statusCode: status, responseBody: "private upstream response" }))
+      .toEqual({ reason: "timeout", status });
+  }
+  for (const status of [500, 502, 503]) {
+    expect(companionFailureDiagnostics({ status })).toEqual({ reason: "server", status });
+  }
+  for (const status of [400, 401, 403, 404, 429]) {
+    expect(companionFailureDiagnostics({ status })).toEqual({ reason: "http", status });
+  }
+});
+
 
 test("classifies wrapped network errors without exposing cause data or looping", () => {
   expect(companionFailureDiagnostics({ name: "AI_APICallError", cause: new TypeError("fetch failed") })).toEqual({ reason: "network" });

@@ -154,9 +154,11 @@ diff --git a/android/src/main/java/expo/modules/sharing/dataParsers/SimpleShareI
 diff --git a/src/useIncomingShare.ts b/src/useIncomingShare.ts
 --- a/src/useIncomingShare.ts
 +++ b/src/useIncomingShare.ts
-@@ -2,7 +2,7 @@
+@@ -1,8 +1,8 @@
+ import { useEffect, useState, useCallback, useRef } from 'react';
  import type { AppStateStatus } from 'react-native';
- import { AppState } from 'react-native';
+-import { AppState } from 'react-native';
++import { AppState, Linking } from 'react-native';
  
 -import { clearSharedPayloads, getResolvedSharedPayloadsAsync, getSharedPayloads } from './Sharing';
 +import { clearSharedPayloads as clearNativeSharedPayloads, getResolvedSharedPayloadsAsync, getSharedPayloads } from './Sharing';
@@ -212,6 +214,27 @@ diff --git a/src/useIncomingShare.ts b/src/useIncomingShare.ts
          }
        }
      } catch (e) {
+@@ -83,7 +100,20 @@
+       }
+     });
+
++    // A warm share may arrive after the activity is already active. Android
++    // emits this URL after storing the intent, so AppState alone is insufficient.
++    const shareSubscription = Linking.addEventListener('url', ({ url }) => {
++      try {
++        if (new URL(url).hostname === 'expo-sharing') {
++          void refreshSharePayloads();
++        }
++      } catch {
++        // Ignore unrelated malformed deep links.
++      }
++    });
++
+     return () => {
++      shareSubscription.remove();
+       subscription.remove();
+     };
+   }, [refreshSharePayloads]);
 diff --git a/android/src/main/java/expo/modules/sharing/SharingModule.kt b/android/src/main/java/expo/modules/sharing/SharingModule.kt
 --- a/android/src/main/java/expo/modules/sharing/SharingModule.kt
 +++ b/android/src/main/java/expo/modules/sharing/SharingModule.kt
@@ -233,3 +256,86 @@ diff --git a/android/src/main/java/expo/modules/sharing/SharingModule.kt b/andro
      }
  
      OnActivityResult { _, (requestCode) ->
+diff --git a/build/useIncomingShare.js b/build/useIncomingShare.js
+--- a/build/useIncomingShare.js
++++ b/build/useIncomingShare.js
+@@ -1,6 +1,6 @@
+ import { useEffect, useState, useCallback, useRef } from 'react';
+-import { AppState } from 'react-native';
+-import { clearSharedPayloads, getResolvedSharedPayloadsAsync, getSharedPayloads } from './Sharing';
++import { AppState, Linking } from 'react-native';
++import { clearSharedPayloads as clearNativeSharedPayloads, getResolvedSharedPayloadsAsync, getSharedPayloads } from './Sharing';
+ function sharePayloadsAreEqual(a, b) {
+     if (a.length !== b.length) {
+         return false;
+@@ -30,6 +30,16 @@
+     const [isResolving, setIsResolving] = useState(false);
+     const [error, setError] = useState(null);
+     const currentSharedDataRef = useRef([]);
++    const resolutionVersionRef = useRef(0);
++    const clearSharedPayloads = useCallback(() => {
++        clearNativeSharedPayloads();
++        resolutionVersionRef.current += 1;
++        currentSharedDataRef.current = [];
++        setSharedPayloads([]);
++        setResolvedSharedPayloads([]);
++        setError(null);
++        setIsResolving(false);
++    }, []);
+     const refreshSharePayloads = useCallback(async () => {
+         try {
+             const newSharedData = getSharedPayloads();
+@@ -37,21 +47,30 @@
+             if (sharePayloadsAreEqual(newSharedData, currentSharedDataRef.current)) {
+                 return;
+             }
++            const version = ++resolutionVersionRef.current;
+             currentSharedDataRef.current = newSharedData;
+             setSharedPayloads(newSharedData);
+             setResolvedSharedPayloads([]);
+             setError(null);
++            setIsResolving(newSharedData.length > 0);
+             if (newSharedData.length > 0) {
+-                setIsResolving(true);
+                 try {
+                     const resolved = await getResolvedSharedPayloadsAsync();
++                    if (version !== resolutionVersionRef.current)
++                        return;
++                    if (resolved.length === 0) {
++                        throw new Error('Shared content could not be resolved');
++                    }
+                     setResolvedSharedPayloads(resolved);
+                 }
+                 catch (e) {
++                    if (version !== resolutionVersionRef.current)
++                        return;
+                     setError(e instanceof Error ? e : new Error('Unknown error during shared payload resolution'));
+                 }
+                 finally {
+-                    setIsResolving(false);
++                    if (version === resolutionVersionRef.current)
++                        setIsResolving(false);
+                 }
+             }
+         }
+@@ -66,7 +85,20 @@
+                 refreshSharePayloads();
+             }
+         });
++        // A warm share may arrive after the activity is already active. Android
++        // emits this URL after storing the intent, so AppState alone is insufficient.
++        const shareSubscription = Linking.addEventListener('url', ({ url }) => {
++            try {
++                if (new URL(url).hostname === 'expo-sharing') {
++                    void refreshSharePayloads();
++                }
++            }
++            catch {
++                // Ignore unrelated malformed deep links.
++            }
++        });
+         return () => {
++            shareSubscription.remove();
+             subscription.remove();
+         };
+     }, [refreshSharePayloads]);

@@ -1848,8 +1848,6 @@ export default function PosterEditorPane({
             <div className="min-h-0 flex-1 overflow-y-auto">
               {leftTab === "templates" ? (
                 <PosterTemplatePanel
-                  width={document.width}
-                  height={document.height}
                   platformId={platform?.id}
                   templateId={document.templateId}
                   zh={zh}

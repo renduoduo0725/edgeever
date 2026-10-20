@@ -1,4 +1,4 @@
-import type { ResourceListItem, TiptapDoc } from "@edgeever/shared";
+import { resolveResourceUploadMimeType, type ResourceListItem, type TiptapDoc } from "@edgeever/shared";
 import { getConfiguredDesktopApiBaseUrl } from "@/lib/api";
 
 export const isDesktopResourceRuntime = () => Boolean(typeof window !== "undefined" && window.edgeeverDesktop?.isAvailable);
@@ -68,7 +68,7 @@ export const stageDesktopResource = async (memoId: string, file: File) => {
   const staged = await bridge.beginStagedResource({
     memoId,
     name: file.name,
-    type: file.type,
+    type: resolveResourceUploadMimeType(file.name, file.type),
     size: file.size,
   });
   try {

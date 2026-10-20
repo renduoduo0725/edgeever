@@ -8,24 +8,10 @@ const jsonResponse = (body, init = {}) => new Response(JSON.stringify(body), {
 });
 
 describe("EdgeEver client HTTP contract", () => {
-  test("companion streaming handles split UTF-8 frames, authenticates and does not retry", async () => {
-    const expected = [{ type: "start", id: "request" }, { type: "text-delta", text: "你好" }, { type: "error", code: "failed" }];
-    const bytes = new TextEncoder().encode(expected.map(event => `data: ${JSON.stringify(event)}`).join("\n\n"));
-    let calls = 0;
-    const client = createEdgeEverClient({ baseUrl: "https://notes.example", token: "test-token", fetch: async (url, init) => {
-      calls++;
-      expect(url).toBe("https://notes.example/api/v1/companion/turns");
-      expect(new Headers(init.headers).get("Authorization")).toBe("Bearer test-token");
-      return new Response(new ReadableStream({ start(controller) {
-        for (const byte of bytes) controller.enqueue(new Uint8Array([byte]));
-        controller.close();
-      } }));
-    } });
-    const actual = [];
-    await client.streamCompanion({ id: "request", message: "hi" }, { onEvent: event => actual.push(event) });
-    expect(actual).toEqual(expected);
-    expect(calls).toBe(1);
-  });
+  test("companion prepare errors authenticate and never retry on a server generation endpoint", async()=>{
+ const paths=[];const client=createEdgeEverClient({baseUrl:"https://notes.example",token:"test-token",fetch:async(url,init)=>{paths.push(url);expect(new Headers(init.headers).get("Authorization")).toBe("Bearer test-token");return Response.json({error:{code:"ai_not_configured",message:"Choose a model"}},{status:409});}});
+ await expect(client.streamCompanion({id:"request",message:"hi"},{onEvent(){}})).rejects.toMatchObject({code:"ai_not_configured"});expect(paths).toEqual(["https://notes.example/api/v1/companion/turns/prepare"]);
+});
 
   test("reads public instance diagnostics through the configured base URL", async () => {
     const calls = [];
@@ -432,32 +418,11 @@ describe("EdgeEver client HTTP contract", () => {
     expect(bodies).toEqual(["abcd", "efgh", "i"]);
   });
 
-  test("sends unsaved note content to the AI tag suggestion endpoint", async () => {
-    let call;
-    const client = createEdgeEverClient({
-      fetch: async (input, init) => {
-        call = { input: String(input), init };
-        return jsonResponse({ suggestions: [{ name: "existing", existing: true }] });
-      },
-    });
-
-    const result = await client.suggestAiTags({
-      title: "Draft title",
-      contentMarkdown: "Draft body",
-      currentTags: ["current"],
-      locale: "en-US",
-    });
-
-    expect(call.input).toBe("/api/v1/ai/tag-suggestions");
-    expect(call.init.method).toBe("POST");
-    expect(JSON.parse(call.init.body)).toEqual({
-      title: "Draft title",
-      contentMarkdown: "Draft body",
-      currentTags: ["current"],
-      locale: "en-US",
-    });
-    expect(result.suggestions).toEqual([{ name: "existing", existing: true }]);
-  });
+  test("sends unsaved note content only to the tag preparation endpoint", async()=>{
+ let received;const client=createEdgeEverClient({fetch:async(url,init)=>{received={url,body:JSON.parse(init.body)};return new Response("{}",{status:404});}});
+ await expect(client.suggestAiTags({title:"Draft title",contentMarkdown:"Draft body",currentTags:["current"],locale:"en-US"})).rejects.toMatchObject({code:"ai_direct_unavailable"});
+ expect(received).toEqual({url:"/api/v1/ai/tag-suggestions/prepare",body:{title:"Draft title",contentMarkdown:"Draft body",currentTags:["current"],locale:"en-US"}});
+});
 
   test("sends an exact tag constraint when listing memos", async () => {
     let requestUrl;

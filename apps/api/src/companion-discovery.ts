@@ -1,6 +1,6 @@
 import { learnCompanionPreferences, refreshCompanionPreferences, applicableMemories } from "./companion-learning";
 import { selectCompanionMemories } from "./companion-memory-context";
-import { CompanionDiscoveryOutputSchema, type CompanionDiscoveryItem, type CompanionDiscoverySettings,
+import { CompanionDiscoveryOutputSchema, type CompanionDiscoveryOutput, type CompanionDiscoveryItem, type CompanionDiscoverySettings,
   type CompanionDiscoverySettingsInput, type MemoDetail } from "@edgeever/shared";
 import type { DatabaseAdapter } from "./storage-contract";
 import type { CompanionScope } from "./companion-service";
@@ -9,8 +9,8 @@ import { AppError } from "./app-error";
 import { getMemoDetail, searchMemoSummaries } from "./memo-service";
 import { companionWorkspaceCursor, proposeCompanionToolAction, workspaceCursorSql } from "./companion-tool-actions";
 import { getCompanionAction } from "./companion-actions";
-import type { loadDefaultAiModel } from "./ai-service";
-import type { generateCompanionDiscovery } from "./companion-discovery-runtime";
+type DiscoveryModel = { modelId: string };
+
 import { discoveryContext, discoveryInputHash, type DiscoveryContextInput } from "./companion-discovery-context";
 
 type SettingsRow = { learning_enabled: number; recall_enabled: number; last_memory_revision: number; enabled: number; version: number; last_cursor: number;
@@ -355,10 +355,10 @@ export async function completeDiscoveryGeneration(db: DatabaseAdapter, scope: Co
 }
 
 export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScope, options: {
-  locale: string; signal: AbortSignal; loadModel: () => ReturnType<typeof loadDefaultAiModel>;
-  generate?: typeof generateCompanionDiscovery;
+  locale: string; signal: AbortSignal; loadModel: () => Promise<DiscoveryModel>;
+  generate?: (input: DiscoveryContextInput & { model: DiscoveryModel; signal: AbortSignal }) => Promise<CompanionDiscoveryOutput>;
 }) {
-  let model: Awaited<ReturnType<typeof loadDefaultAiModel>> | undefined;
+  let model: Awaited<Promise<DiscoveryModel>> | undefined;
   const started = await startDiscoveryCheck(db, scope, {
     locale: options.locale, signal: options.signal,
     loadModelId: async () => {
@@ -368,7 +368,8 @@ export async function checkDiscoveries(db: DatabaseAdapter, scope: CompanionScop
   });
   if (!started || !model) return;
   try {
-    const generate = options.generate ?? (await import("./companion-discovery-runtime")).generateCompanionDiscovery;
+    const generate = options.generate;
+    if (!generate) throw new Error("Discovery generation must run on the client.");
     const output = await generate({ ...started.generationInput, model, signal: options.signal });
     await completeDiscoveryGeneration(db, scope, started.turnId, output, options.signal);
   } catch (error) {

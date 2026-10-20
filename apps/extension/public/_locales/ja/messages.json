@@ -770,5 +770,22 @@
   },
   "pageCaptureRestrictedHint": {
     "message": "現在のページは制限付きプレビューです。サイトで全文の閲覧権限を取得して再読み込みするか、表示されている文章を選択して保存してください。"
+  },
+  "modelDirectPermission": {
+    "message": "Video summaries need direct access to $HOST$. Grant access, then clip the video again.",
+    "placeholders": {
+      "host": {
+        "content": "$1"
+      }
+    }
+  },
+  "modelDirectAllow": {
+    "message": "Allow model access"
+  },
+  "modelDirectReady": {
+    "message": "Access granted. Please clip the video again."
+  },
+  "modelDirectDenied": {
+    "message": "Model access was not granted."
   }
 }

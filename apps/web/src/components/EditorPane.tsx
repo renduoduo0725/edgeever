@@ -126,6 +126,7 @@ import {
 } from "@/lib/editor-reading-gutter";
 import { EDITOR_CONTENT_MAX_WIDTH, EDITOR_OUTLINE_WIDTH } from "@/lib/workspace-ui";
 import {
+  resolveResourceUploadMimeType,
   countMemoCharacters,
   createEdgeEverDocumentExtensions,
   getFrontMatterSource,
@@ -993,6 +994,8 @@ const RichEditorPane = ({
   }, [focusMobileInputTarget, isMobileViewport, memo?.id, mobileDefaultEditMemoId, onMobileDefaultEditConsumed, readOnly]);
 
   const uploadEditorResource = useCallback(async (targetMemoId: string, uploadFile: File, isImage: boolean) => {
+    const mimeType = resolveResourceUploadMimeType(uploadFile.name, uploadFile.type);
+    if (mimeType !== uploadFile.type) uploadFile = new File([uploadFile], uploadFile.name, { type: mimeType, lastModified: uploadFile.lastModified });
     if (isImage && shouldUploadWithPicGo()) {
       const instanceKey = editorInstanceMemoIdentityRef.current.instanceKey;
       const external = await uploadImageWithPicGo(uploadFile, {
@@ -1087,7 +1090,7 @@ const RichEditorPane = ({
         const imageReadiness: Promise<void>[] = [];
 
         const results = await processFileUploadBatch(files, async (file) => {
-          const isImage = SUPPORTED_PASTE_IMAGE_TYPES.has(file.type);
+          const isImage = SUPPORTED_PASTE_IMAGE_TYPES.has(resolveResourceUploadMimeType(file.name, file.type));
           const shouldCompress = isImage && imageCompressionEnabledRef.current;
           const placeholder = placeholderByFile.get(file);
           if (placeholder) updateImageUploadPlaceholder(editorRef.current, placeholder,
@@ -1100,7 +1103,7 @@ const RichEditorPane = ({
         }, async (uploadFile, file) => {
           const targetMemoId = resolveTargetMemoId();
           if (!targetMemoId) throw new Error("The active note changed during attachment upload");
-          const isImage = SUPPORTED_PASTE_IMAGE_TYPES.has(file.type);
+          const isImage = SUPPORTED_PASTE_IMAGE_TYPES.has(resolveResourceUploadMimeType(file.name, file.type));
           const placeholder = placeholderByFile.get(file);
           setImageUploadState("uploading");
           if (placeholder) updateImageUploadPlaceholder(editorRef.current, placeholder,
@@ -1465,14 +1468,14 @@ const RichEditorPane = ({
     if (!targetMemoId || effectiveReadOnly) return "";
     setImageUploadState("uploading");
     const results = await processFileUploadBatch(files, async (file) => {
-      const shouldCompress = SUPPORTED_PASTE_IMAGE_TYPES.has(file.type) && imageCompressionEnabledRef.current;
+      const shouldCompress = SUPPORTED_PASTE_IMAGE_TYPES.has(resolveResourceUploadMimeType(file.name, file.type)) && imageCompressionEnabledRef.current;
       if (!shouldCompress) return file;
       setImageUploadState("compressing");
       return (await compressImageForUpload(file)).file;
     }, async (uploadFile, file) => {
       if (memoRef.current?.id !== targetMemoId) throw new Error("The active note changed during upload");
       setImageUploadState("uploading");
-      return uploadEditorResource(targetMemoId, uploadFile, SUPPORTED_PASTE_IMAGE_TYPES.has(file.type));
+      return uploadEditorResource(targetMemoId, uploadFile, SUPPORTED_PASTE_IMAGE_TYPES.has(resolveResourceUploadMimeType(file.name, file.type)));
     });
     if (results.some((result) => result.status === "fulfilled")) {
       void queryClient.invalidateQueries({ queryKey: ["resources"] });

@@ -75,6 +75,31 @@ describe("resource upload integration", () => {
         .toEqual(Buffer.from(await smallImage.arrayBuffer()));
     }
 
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60"><rect width="100" height="60" fill="#07130b"/></svg>';
+    // Include file pickers that provide no type or a generic binary type.
+    for (const type of ["image/svg+xml", "", "application/octet-stream"]) {
+      const { resource } = await client.uploadMemoResource(memo.memo.id, new File([svg], "diagram.SVG", { type }));
+      expect(resource).toMatchObject({ kind: "image", mimeType: "image/svg+xml", filename: "diagram.SVG" });
+      const response = await fetchEdgeEverApp(new Request(`http://edgeever.test${resource.url}`), environment,
+        { waitUntil: () => undefined, passThroughOnException: () => undefined });
+      expect(response.headers.get("content-disposition")).toStartWith("inline;");
+      expect(response.headers.get("content-security-policy")).toContain("sandbox");
+      expect(await response.text()).toBe(svg);
+    }
+    const svgUpload = await requestJson(environment, `/api/v1/memos/${memo.memo.id}/resource-uploads`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: "diagram.svg", mimeType: "application/octet-stream", byteSize: svg.length }),
+    });
+    await requestJson(environment, `/api/v1/resource-uploads/${svgUpload.upload.id}/parts/1`, {
+      method: "PUT", headers: { "Content-Type": "application/octet-stream", "Content-Length": String(svg.length) }, body: svg,
+    });
+    const multipartSvg = await requestJson(environment, `/api/v1/resource-uploads/${svgUpload.upload.id}/complete`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+    });
+    expect(multipartSvg.resource).toMatchObject({ kind: "image", mimeType: "image/svg+xml", filename: "diagram.svg" });
+    const svgRow = database.query("SELECT object_key FROM resources WHERE id = ?").get(multipartSvg.resource.id);
+    expect(await readFile(join(resourcesDirectory, svgRow.object_key), "utf8")).toBe(svg);
+
     const file = new Uint8Array(8 * 1024 * 1024 + 3);
     file.fill(7);
     file.set([1, 2, 3], file.byteLength - 3);

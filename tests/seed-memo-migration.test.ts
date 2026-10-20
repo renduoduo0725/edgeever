@@ -9,7 +9,7 @@ describe("seed memo migrations", () => {
     const db = new Database(":memory:");
     const migrations = globSync("migrations/*.sql").sort();
 
-    for (const migration of migrations.filter((path) => !path.endsWith("0014_repair_seed_memo_content_hash.sql"))) {
+    for (const migration of migrations.filter((path) => path < "migrations/0014_repair_seed_memo_content_hash.sql")) {
       db.exec(readFileSync(migration, "utf8"));
     }
 

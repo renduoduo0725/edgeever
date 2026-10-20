@@ -51,110 +51,21 @@ describe("direct AI generation client", () => {
     expect(events.at(-1)).toMatchObject({ type: "finish", outputTokens: 2 });
   });
 
-  test("probes CORS and stays on the instance proxy without downloading the API key", async () => {
-    const urls = [];
-    const client = createEdgeEverClient({
-      baseUrl: "https://notes.example",
-      tryDirectAiGeneration: true,
-      fetch: async (url, init) => {
-        urls.push({
-          url: String(url),
-          method: init?.method ?? "GET",
-          auth: new Headers(init?.headers).get("Authorization"),
-        });
-        if (String(url).endsWith("/direct-target")) {
-          return new Response(JSON.stringify({
-            provider: "openai-compatible",
-            baseUrl: "https://integrate.api.nvidia.com/v1",
-            modelId: "meta/llama",
-          }), { headers: { "content-type": "application/json" } });
-        }
-        if (String(url).includes("integrate.api.nvidia.com")) {
-          expect(init?.method).toBe("POST");
-          expect(new Headers(init?.headers).get("Authorization")).toBe("Bearer edgeever-cors-probe");
-          throw new TypeError("Failed to fetch");
-        }
-        return new Response("data: {\"type\":\"text-delta\",\"text\":\"proxied\"}\n\n", {
-          headers: { "content-type": "text/event-stream" },
-        });
-      },
-    });
-    const events = [];
-    await client.streamAiGeneration(
-      { action: "summarize", title: "Note", contentMarkdown: "Body" },
-      { onEvent: (event) => events.push(event) },
-    );
-    expect(urls).toEqual([
-      { url: "https://notes.example/api/v1/ai/direct-target", method: "GET", auth: null },
-      { url: "https://integrate.api.nvidia.com/v1/chat/completions", method: "POST", auth: "Bearer edgeever-cors-probe" },
-      { url: "https://notes.example/api/v1/ai/generate", method: "POST", auth: null },
-    ]);
-    expect(urls.some((call) => call.url.endsWith("/prepare"))).toBe(false);
-    expect(events).toEqual([{ type: "text-delta", text: "proxied" }]);
-  });
+  test("browser network failures never call instance generation or probe the model twice", async () => {
+ const paths=[];let modelCalls=0;
+ const client=createEdgeEverClient({tryDirectAiGeneration:true,fetch:async url=>{paths.push(String(url));return Response.json({provider:"openai-compatible",baseUrl:"https://model.example/v1",apiKey:"key",modelId:"model",system:"Summarize",prompt:"Body",maxOutputTokens:32,resultBoundary:{start:"<r>",end:"</r>"}});},providerFetch:async()=>{modelCalls++;throw new TypeError("Failed to fetch");}});
+ await expect(client.streamAiGeneration({action:"summarize",title:"Note",contentMarkdown:"Body"},{onEvent(){}})).rejects.toThrow("Failed to fetch");
+ expect(paths).toEqual(["/api/v1/ai/generate/prepare"]);expect(modelCalls).toBe(1);
+});
 
-  test("direct-connects from the browser after a successful CORS probe", async () => {
-    const calls = [];
-    const client = createEdgeEverClient({
-      baseUrl: "https://notes.example",
-      token: "user-token",
-      tryDirectAiGeneration: true,
-      fetch: async (url, init) => {
-        const headers = new Headers(init?.headers);
-        calls.push({
-          url: String(url),
-          method: init?.method ?? "GET",
-          auth: headers.get("Authorization"),
-        });
-        if (String(url).endsWith("/direct-target")) {
-          return new Response(JSON.stringify({
-            provider: "openai-compatible",
-            baseUrl: "https://openrouter.ai/api/v1",
-            modelId: "openai/gpt-4o-mini",
-          }), { headers: { "content-type": "application/json" } });
-        }
-        if (String(url).includes("openrouter.ai")) {
-          if (headers.get("Authorization") === "Bearer edgeever-cors-probe") {
-            return new Response("{}", { status: 401 });
-          }
-          expect(headers.get("Authorization")).toBe("Bearer or-key");
-          return new Response([
-            `data: {"choices":[{"delta":{"content":"<edgeever-result-x>\\nHello"}}]}`,
-            `data: {"choices":[{"delta":{"content":"</edgeever-result-x>"},"finish_reason":"stop"}]}`,
-            "data: [DONE]",
-            "",
-          ].join("\n\n"), { headers: { "content-type": "text/event-stream" } });
-        }
-        if (String(url).endsWith("/prepare")) {
-          return new Response(JSON.stringify({
-            provider: "openai-compatible",
-            baseUrl: "https://openrouter.ai/api/v1",
-            apiKey: "or-key",
-            modelId: "openai/gpt-4o-mini",
-            system: "System",
-            prompt: "Note content",
-            maxOutputTokens: 4096,
-            resultBoundary: { start: "<edgeever-result-x>", end: "</edgeever-result-x>" },
-          }), { headers: { "content-type": "application/json" } });
-        }
-        throw new Error(`unexpected ${url}`);
-      },
-    });
-    const events = [];
-    await client.streamAiGeneration(
-      { action: "summarize", title: "Note", contentMarkdown: "Body" },
-      { onEvent: (event) => events.push(event) },
-    );
-    expect(calls).toEqual([
-      { url: "https://notes.example/api/v1/ai/direct-target", method: "GET", auth: "Bearer user-token" },
-      { url: "https://openrouter.ai/api/v1/chat/completions", method: "POST", auth: "Bearer edgeever-cors-probe" },
-      { url: "https://notes.example/api/v1/ai/generate/prepare", method: "POST", auth: "Bearer user-token" },
-      { url: "https://openrouter.ai/api/v1/chat/completions", method: "POST", auth: "Bearer or-key" },
-    ]);
-    expect(events.filter((event) => event.type === "text-delta").map((event) => event.text).join("")).toBe("Hello");
-  });
+  test("browser clients directly generate without a CORS probe", async () => {
+ let calls=0;const paths=[];
+ const client=createEdgeEverClient({fetch:async url=>{paths.push(String(url));return Response.json({provider:"openai-compatible",baseUrl:"https://model.example/v1",apiKey:"key",modelId:"model",system:"Summarize",prompt:"Body",maxOutputTokens:32,resultBoundary:{start:"<r>",end:"</r>"}});},providerFetch:async (_url,init)=>{calls++;expect(new Headers(init.headers).get("Authorization")).toBe("Bearer key");return new Response('data: {"choices":[{"delta":{"content":"<r>Hello</r>"}}]}\n\ndata: [DONE]\n\n');}});
+ const events=[];await client.streamAiGeneration({action:"summarize",title:"Note",contentMarkdown:"Body"},{onEvent:e=>events.push(e)});
+ expect(events.some(e=>e.type==="text-delta"&&e.text==="Hello")).toBe(true);expect(paths).toEqual(["/api/v1/ai/generate/prepare"]);expect(calls).toBe(1);
+});
 
-  test("falls back to the instance proxy when prepare is missing", async () => {
+  test("fails without instance generation when direct prepare is missing", async () => {
     const urls = [];
     const client = createEdgeEverClient({
       baseUrl: "https://notes.example",
@@ -168,15 +79,12 @@ describe("direct AI generation client", () => {
       },
     });
     const events = [];
-    await client.streamAiGeneration(
+    await expect(client.streamAiGeneration(
       { action: "summarize", title: "Note", contentMarkdown: "Body" },
       { onEvent: (event) => events.push(event) },
-    );
-    expect(urls).toEqual([
-      "https://notes.example/api/v1/ai/generate/prepare",
-      "https://notes.example/api/v1/ai/generate",
-    ]);
-    expect(events).toEqual([{ type: "text-delta", text: "proxied" }]);
+    )).rejects.toMatchObject({ code: "ai_direct_unavailable" });
+    expect(urls).toEqual(["https://notes.example/api/v1/ai/generate/prepare"]);
+    expect(events).toEqual([]);
   });
 });
 

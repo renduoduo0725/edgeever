@@ -63,3 +63,14 @@ test("terminates the worker when posting fails and retains a usable original", a
   expect((await compressImageForUpload(file)).file).toBe(file);
   expect(terminated).toBe(true);
 });
+
+
+test("preserves SVG bytes and filename without starting raster compression", async () => {
+  globalThis.Worker = class { constructor() { throw new Error("must not start"); } };
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60"><rect width="100" height="60"/></svg>';
+  const file = new File([svg], "diagram.svg", { type: "image/svg+xml" });
+  const result = await compressImageForUpload(file);
+  expect(result.file).toBe(file);
+  expect(result.compressed).toBe(false);
+  expect(await result.file.text()).toBe(svg);
+});

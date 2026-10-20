@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { MockLanguageModelV4 } from "ai/test";
 import { simulateReadableStream } from "ai";
-import { runInfographicAgent } from "./infographic-agent.ts";
+import { runInfographicAgent } from "../../../packages/client/src/infographic-direct.ts";
 
 const finish = {
   type: "finish",

@@ -8,7 +8,7 @@ import { createSelfHostedStorageAdapter } from "./self-hosted-storage-adapter.ts
 import { registerCompanionRoutes } from "./companion-routes.ts";
 import { beginCompanionTurn, checkpointCompanionTurn, getCompanionTurn, listCompanionTurns, mapCompanionTurn } from "./companion-service.ts";
 import { prepareCompanionTurn } from "./companion-prepare.ts";
-import { streamCompanion } from "./companion-runtime.ts";
+import { streamCompanion } from "./test-support/companion-model.ts";
 import { bindCompanionTurnAttachments, loadCompanionAttachmentParts, storeCompanionAttachment } from "./companion-attachments.ts";
 import { parsePreparedCompanion } from "../../../packages/client/src/companion-direct-stream.ts";
 
@@ -118,7 +118,7 @@ describe("companion attachments", () => {
     const uploaded = await (await f.request("attachments", {
       filename: "brief.pdf", mediaType: "application/pdf", base64Data: Buffer.from("%PDF-1.4").toString("base64"),
     })).json();
-    const response = await f.request("turns", f.turnInput("Read the pdf", { attachmentIds: [uploaded.attachment.id] }));
+    const response = await f.request("turns/prepare", f.turnInput("Read the pdf", { attachmentIds: [uploaded.attachment.id] }));
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({ error: { code: "companion_attachment_unsupported" } });
     expect(f.modelLoads()).toBe(0);
@@ -166,7 +166,7 @@ describe("companion attachments", () => {
       filename: "again.txt", mediaType: "text/plain", base64Data: Buffer.from("later").toString("base64"),
     });
     f.sqlite.query("UPDATE companion_turn_attachments SET expires_at = '2000-01-01T00:00:00.000Z' WHERE id = ?").run(stale.attachment.id);
-    const routed = await f.request("turns", f.turnInput("again", { attachmentIds: [stale.attachment.id] }));
+    const routed = await f.request("turns/prepare", f.turnInput("again", { attachmentIds: [stale.attachment.id] }));
     expect(routed.status).toBe(409);
     expect(await routed.json()).toMatchObject({ error: { code: "companion_attachment_expired" } });
     expect(f.sqlite.query("SELECT status FROM companion_turns WHERE message = 'again'").get().status).toBe("cancelled");

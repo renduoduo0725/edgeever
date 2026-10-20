@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { Database } from "bun:sqlite";
 import { globSync, readFileSync } from "node:fs";
-import { WELCOME_MEMO_SEED_CONTENT_HASH } from "@edgeever/shared/default-workspace-seeds";
+import { WELCOME_MEMO_REPAIRED_CONTENT_HASH, WELCOME_MEMO_SEED_CONTENT_HASH } from "@edgeever/shared/default-workspace-seeds";
 import { createSelfHostedStorageAdapter } from "./self-hosted-storage-adapter.ts";
 import { updateMemoRecord } from "./memo-service.ts";
 import {
@@ -35,9 +35,9 @@ const freshInstallation = () => {
 // An installation that ran every migration before this change, then upgraded.
 const upgradedInstallation = (prepare) => {
   const database = openDatabase();
-  migrate(database.sqlite, (file) => !file.endsWith(LOCALIZATION_MIGRATION));
+  migrate(database.sqlite, (file) => file < `migrations/${LOCALIZATION_MIGRATION}`);
   prepare(database.sqlite);
-  database.sqlite.exec(readFileSync(`migrations/${LOCALIZATION_MIGRATION}`, "utf8"));
+  migrate(database.sqlite, (file) => file >= `migrations/${LOCALIZATION_MIGRATION}`);
   return database;
 };
 
@@ -119,7 +119,7 @@ describe("fresh installation", () => {
       content: [{ type: "text", text: "Witaj w EdgeEver" }],
     });
     expect(note.content_hash).not.toBe(WELCOME_MEMO_SEED_CONTENT_HASH);
-    expect(note.revision).toBe(1);
+    expect(note.revision).toBe(2);
     expect(searchMatches(sqlite, "Witaj")).toEqual(["memo_welcome"]);
     expect(templateNames(sqlite, DEFAULT_WORKSPACE_ID)).not.toContain("灵感速记");
     expect(searchMatches(sqlite, "Skrzynka")).toEqual([]);
@@ -240,7 +240,7 @@ describe("fresh installation", () => {
     );
     expect(edited.error).toBeUndefined();
     const before = welcome(sqlite);
-    expect(before.content_hash).toBe(WELCOME_MEMO_SEED_CONTENT_HASH);
+    expect(before.content_hash).toBe(WELCOME_MEMO_REPAIRED_CONTENT_HASH);
     expect(pendingWorkspaces(sqlite)).toEqual([DEFAULT_WORKSPACE_ID]);
 
     await ensureUserWorkspace(db, "usr_owner", "admin", "en-US");

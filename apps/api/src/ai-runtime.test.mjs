@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { openaiCompatibleHeaders, parseAiTagSuggestionNames } from "./ai-runtime.ts";
+import { openaiCompatibleHeaders } from "../../../packages/client/src/ai-model.ts";
+import { parseAiTagSuggestionNames } from "@edgeever/shared";
 
 describe("OpenAI-compatible provider headers", () => {
   test("identifies OpenRouter so rankings and tool routes stay attributed", () => {

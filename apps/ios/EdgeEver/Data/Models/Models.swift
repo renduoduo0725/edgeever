@@ -194,6 +194,18 @@ struct AiPreparedGeneration: Decodable, Sendable {
     var resultBoundary: AiGenerationResultBoundary
 }
 
+struct AiPreparedTagSuggestions: Decodable, Sendable {
+    var provider: String
+    var baseUrl: String
+    var apiKey: String
+    var modelId: String
+    var system: String
+    var prompt: String
+    var maxOutputTokens: Int
+    var currentTags: [String]
+    var canonicalTags: [String: String]
+}
+
 struct AiTagSuggestionsInput: Encodable, Sendable {
     var title: String
     var contentMarkdown: String

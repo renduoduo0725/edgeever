@@ -12,7 +12,6 @@ import type {
 } from "@edgeever/shared";
 import type { ModelMessage } from "ai";
 import { companionFailureDiagnostics, sealCompanionProcess } from "@edgeever/shared";
-import { isAiCorsFailure } from "./ai-direct-stream";
 import { createClientAiModel } from "./ai-model";
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
@@ -256,7 +255,6 @@ export const streamDirectCompanion = async (
       await finish("interrupted");
       return;
     }
-    if (isAiCorsFailure(error)) throw error;
     await finish("failed", undefined, error);
   }
 };

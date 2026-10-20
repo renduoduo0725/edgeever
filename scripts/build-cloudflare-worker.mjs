@@ -70,8 +70,8 @@ export const buildCloudflareWorker = async () => {
     Array.from(dynamicImportPaths).some((path) =>
       normalizePath(module.path).endsWith(normalizePath(path))));
   const sharedModules = modules.filter((module) => !lazyModules.includes(module));
-  if (!entry || lazyModules.length === 0) {
-    throw new Error("Cloudflare Worker build must produce one entrypoint and at least one on-demand module.");
+  if (!entry) {
+    throw new Error("Cloudflare Worker build must produce an entrypoint.");
   }
 
   console.log([

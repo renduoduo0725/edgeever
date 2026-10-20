@@ -12,6 +12,13 @@ export const substackContent = (doc: Document, pageUrl: string): ArticleContent 
   if (!title?.textContent?.trim() || !content || content.closest('[hidden], [aria-hidden="true"]')) return null;
   const body = content.cloneNode(true) as Element;
   body.querySelectorAll('.subscribe-widget, .button-wrapper, .header-anchor-parent, .image-link-expand, script, style, svg, button, form, input, iframe, video, audio, source, [hidden], [aria-hidden="true"]').forEach((node)=>node.remove());
+  // Substack wraps zoomable images in links containing block elements. Those
+  // blocks split the Markdown link across blank lines, leaving visible syntax.
+  for (const link of Array.from(body.querySelectorAll('a.image-link'))) {
+    if (!link.querySelector('img') || platformText(link)) continue;
+    while (link.firstChild) link.parentNode!.insertBefore(link.firstChild, link);
+    link.remove();
+  }
   const subtitle = article?.querySelector('.subtitle');
   if (subtitle?.textContent?.trim() && !subtitle.closest('[hidden], [aria-hidden="true"]')) {
     const paragraph = doc.createElement('p');

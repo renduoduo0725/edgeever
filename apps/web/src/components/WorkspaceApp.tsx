@@ -3002,8 +3002,20 @@ export const WorkspaceApp = ({
       }
     };
 
+    const handleEditorModeShortcutCapture = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || getShortcutActionForEvent(event, shortcutSettings) !== "toggleEditorMode") return;
+      // Consume the configured mode shortcut before either editor handles it
+      // (CodeMirror otherwise uses Mod-/ to comment out the current line).
+      handleWorkspaceShortcut(event);
+      if (event.defaultPrevented) event.stopPropagation();
+    };
+
+    window.addEventListener("keydown", handleEditorModeShortcutCapture, true);
     window.addEventListener("keydown", handleWorkspaceShortcut);
-    return () => window.removeEventListener("keydown", handleWorkspaceShortcut);
+    return () => {
+      window.removeEventListener("keydown", handleEditorModeShortcutCapture, true);
+      window.removeEventListener("keydown", handleWorkspaceShortcut);
+    };
   }, [
     rightView,
     appNoticeDialog,

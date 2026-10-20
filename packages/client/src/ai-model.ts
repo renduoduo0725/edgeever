@@ -23,7 +23,7 @@ export const createClientAiModel = (config: {
 }) => {
   switch (config.provider) {
     case "anthropic":
-      return createAnthropic({ baseURL: config.baseUrl, apiKey: config.apiKey, fetch: config.fetch })(config.modelId);
+      return createAnthropic({ baseURL: config.baseUrl, apiKey: config.apiKey, fetch: config.fetch, headers: { "anthropic-dangerous-direct-browser-access": "true" } })(config.modelId);
     case "google":
       return createGoogle({ baseURL: config.baseUrl, apiKey: config.apiKey, fetch: config.fetch })(config.modelId);
     default:

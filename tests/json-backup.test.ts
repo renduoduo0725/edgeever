@@ -187,6 +187,69 @@ describe("EdgeEver ZIP", () => {
     expect(backup.prompts).toEqual([]);
   });
 
+  test("imports Markdown attachments without counting them as notes in v1 and v2 backups", async () => {
+    const attachment = strToU8("# Attached Markdown\n");
+    const blob = await createEdgeEverZip({
+      listNotebooks: async () => ({ notebooks: [notebook("nb_child", "Child")] }),
+      listPrompts: async () => ({ prompts: [] }),
+      getPage: async () => ({
+        memos: [memo],
+        resources: [{
+          ...resource,
+          kind: "attachment",
+          mimeType: "text/markdown",
+          filename: "reference.md",
+          byteSize: attachment.byteLength,
+          sha256: null,
+        }],
+        revisions: [],
+        totalCount: 1,
+        nextOffset: null,
+      }),
+      getResourceResponse: async () => new Response(attachment),
+    }, { edgeeverVersion: "1.125.0", buildId: "markdown-attachment" });
+    const files = unzipSync(new Uint8Array(await blob.arrayBuffer()));
+    const manifest = JSON.parse(strFromU8(files["manifest.json"]));
+    const attachmentPath = "notes/Child/Backup note.assets/reference.md";
+    expect(files[attachmentPath]).toEqual(attachment);
+
+    for (const formatVersion of [1, 2]) {
+      const archiveFiles = { ...files };
+      archiveFiles["manifest.json"] = strToU8(JSON.stringify({ ...manifest, formatVersion }));
+      if (formatVersion === 1) delete archiveFiles["prompts.json"];
+      const backup = await parseEdgeEverZip(new Blob([zipSync(archiveFiles)]));
+      expect(backup.memos).toHaveLength(1);
+      expect(backup.memos[0].resources[0].archivePath).toBe(attachmentPath);
+      const restored: Uint8Array[] = [];
+      await restoreEdgeEverZip(backup, {
+        restoreNotebooks: async () => {},
+        restoreMemos: async () => {},
+        restorePrompts: async () => {},
+        createResourceRestoreSink: async () => ({
+          write: async (chunk) => { restored.push(new Uint8Array(chunk)); },
+          close: async () => {},
+          abort: async () => {},
+        }),
+      });
+      expect(restored).toEqual([attachment]);
+
+      for (const missingPath of ["memos/memo_backup.json", "notes/Child/Backup note.md", attachmentPath]) {
+        const incomplete = { ...archiveFiles };
+        delete incomplete[missingPath];
+        await expect(parseEdgeEverZip(new Blob([zipSync(incomplete)]))).rejects.toEqual(
+          expect.objectContaining({ code: missingPath === attachmentPath ? "incompleteResources" : "incompleteData" }),
+        );
+      }
+      const missingRevision = { ...archiveFiles };
+      missingRevision["manifest.json"] = strToU8(JSON.stringify({
+        ...manifest, formatVersion, counts: { ...manifest.counts, revisions: 1 },
+      }));
+      await expect(parseEdgeEverZip(new Blob([zipSync(missingRevision)]))).rejects.toEqual(
+        expect.objectContaining({ code: "incompleteData" }),
+      );
+    }
+  });
+
   test("reads large archives by bounded ranges instead of buffering the ZIP", async () => {
     const manifest = {
       format: "edgeever-zip",

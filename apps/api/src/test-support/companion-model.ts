@@ -1,13 +1,14 @@
+// Mock-model harness for database/tool tests; never imported by production routes.
 import { isStepCount, jsonSchema, tool, streamText, type LanguageModel, type ModelMessage } from "ai";
 import type {
   AiProvider, CompanionAnswer, CompanionMemory, CompanionModelContentPart, CompanionPreparedMessage,
   CompanionSource, CompanionTurnInput,
 } from "@edgeever/shared";
-import type { DatabaseAdapter } from "./storage-contract";
-import type { CompanionScope, TurnRow } from "./companion-service";
-import type { AppContext } from "./api-context";
-import { companionToolDefinitions, createCompanionTools } from "./companion-agent-tools";
-import { posterToolImage } from "./poster-tool-output";
+import type { DatabaseAdapter } from "../storage-contract";
+import type { CompanionScope, TurnRow } from "../companion-service";
+import type { AppContext } from "../api-context";
+import { companionToolDefinitions, createCompanionTools } from "../companion-agent-tools";
+import { posterToolImage } from "../poster-tool-output";
 import {
   companionAgentInstructions,
   companionExecutionReceipts,
@@ -15,7 +16,7 @@ import {
   COMPANION_MAX_OUTPUT_TOKENS,
   COMPANION_MAX_STEPS,
   type CompanionRunState,
-} from "./companion-prepare";
+} from "../companion-prepare";
 
 export {
   COMPANION_IDENTITY_VERSION,
@@ -31,7 +32,7 @@ export {
   prepareCompanionTurn,
   selectCompanionMemories,
   type CompanionRunState,
-} from "./companion-prepare";
+} from "../companion-prepare";
 
 const toModelMessages = (messages: CompanionPreparedMessage[]): ModelMessage[] => messages.map((message): ModelMessage => {
   if (message.role === "assistant") {

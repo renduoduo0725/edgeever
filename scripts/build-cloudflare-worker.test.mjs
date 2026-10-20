@@ -48,7 +48,7 @@ test("a lazy facade may share its implementation with another lazy entry without
   expect(reachableOutputs(outputs, "agent").has("runtime")).toBe(true);
 });
 
-test("keeps AI runtimes and SDKs out of the entire Cloudflare Worker startup graph", () => {
+test("keeps model runtimes and SDKs out of the entire Cloudflare Worker build", () => {
   // Keep esbuild's service isolated from Bun's test process, as in the CLI build.
   const directory = mkdtempSync(resolve(tmpdir(), "edgeever-worker-graph-"));
   const metadataPath = resolve(directory, "metadata.json");
@@ -92,14 +92,8 @@ test("keeps AI runtimes and SDKs out of the entire Cloudflare Worker startup gra
   expect(inputsFor(startup).filter(isAiInput)).toEqual([]);
   // Ensure a passing startup check cannot be explained by dropping AI from the build.
   const allInputs = inputsFor(all);
-  for (const source of runtimeSources) {
-    expect(allInputs).toContain(source);
-    const output = Object.entries(metafile.outputs).find(([, metadata]) => metadata.entryPoint === source);
-    expect(output).toBeDefined();
-    expect(startup.has(output[0])).toBe(false);
-    expect(all.has(output[0])).toBe(true);
-  }
+  for (const source of runtimeSources) expect(allInputs).not.toContain(source);
   for (const sdk of ["ai", "@ai-sdk/anthropic", "@ai-sdk/google", "@ai-sdk/openai-compatible"]) {
-    expect(allInputs.some(path => `/${path}`.includes(`/node_modules/${sdk}/`))).toBe(true);
+    expect(allInputs.some(path => `/${path}`.includes(`/node_modules/${sdk}/`))).toBe(false);
   }
 });

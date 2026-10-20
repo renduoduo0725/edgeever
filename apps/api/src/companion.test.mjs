@@ -9,7 +9,7 @@ import { registerCompanionRoutes } from "./companion-routes.ts";
 import { beginCompanionTurn, checkpointCompanionTurn, clearCompanionHistory, companionRevision, forgetCompanionMemory,
   getCompanionTurn, importCompanionMemories, listCompanionMemories, listCompanionTurns, saveCompanionMemory } from "./companion-service.ts";
 import { parseCompanionMentionQuery } from "@edgeever/shared";
-import { COMPANION_INSTRUCTIONS, companionAgentInstructions, companionMessages, companionTurnInstructions, companionUserContent, selectCompanionMemories, streamCompanion } from "./companion-runtime.ts";
+import { COMPANION_INSTRUCTIONS, companionAgentInstructions, companionMessages, companionTurnInstructions, companionUserContent, selectCompanionMemories, streamCompanion } from "./test-support/companion-model.ts";
 import { applyCompanionAction, proposeCompanionAction, listCompanionActions, dismissCompanionAction } from "./companion-actions.ts";
 import { createMemoRecord, getMemoDetail, updateMemoRecord } from "./memo-service.ts";
 import { COMPANION_MCP_TOOLS } from "./companion-tool-catalog.ts";
@@ -35,14 +35,14 @@ function fixture(options = {}) {
   });
   registerCompanionRoutes(app, { isDemoMode: () => options.demo ?? false,
     loadModel: options.loadModel ?? (async () => ({ modelId: "test-model" })),
-    loadCredentials: options.loadCredentials, stream: options.stream });
+    loadCredentials: options.loadCredentials ?? options.loadModel, stream: options.stream });
   const request = (path, method = "GET", body, headers = {}) => app.request(`/api/v1/companion/${path}`, {
     method, headers: { "Content-Type": "application/json", ...headers }, ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   }, { storage });
   const context = { env: { storage }, get: () => ({ kind: "user", actorType: "user", actorId: scope.ownerId, workspaceId: scope.workspaceId, role: "member", scopes: [] }) };
   return { sqlite, db: storage.db, request, context };
 }
-const parseEvents = text => text.split("\n\n").filter(Boolean).map(frame => JSON.parse(frame.slice(6)));
+const _parseEvents = text => text.split("\n\n").filter(Boolean).map(frame => JSON.parse(frame.slice(6)));
 const finish = { type: "finish", finishReason: { unified: "stop" }, usage: {
   inputTokens: { total: 12 }, outputTokens: { total: 8 },
 } };
@@ -358,7 +358,7 @@ describe("companion HTTP contracts", () => {
   test("validates payloads, sanitizes provider errors and scopes export", async () => {
     const { request, db } = fixture({ loadModel: async () => { throw new Error("API-KEY-secret"); } });
     expect((await request("memories", "POST", { content: "x".repeat(501) })).status).toBe(400);
-    const failure = await request("turns", "POST", input());
+    const failure = await request("turns/prepare", "POST", input());
     expect(failure.status).toBe(503);
     expect(await failure.text()).not.toContain("API-KEY-secret");
     await saveCompanionMemory(db, scope, { content: "private" });
@@ -366,131 +366,7 @@ describe("companion HTTP contracts", () => {
     expect((await exported.json()).memories).toEqual([]);
     expect(exported.headers.get("cache-control")).toBe("no-store");
   });
-  test("persists displayed chunks and usage, recovers by ID without duplicate model calls", async () => {
-    let calls = 0;
-    const { request, db } = fixture({ stream: async args => {
-      calls++;
-      return { totalUsage: Promise.resolve({ inputTokens: 12, outputTokens: 8 }),
-        fullStream: (async function* () {
-          yield { type: "text-delta", text: "a".repeat(320) };
-          expect((await getCompanionTurn(db, scope, args.input.id)).response).toHaveLength(320);
-          yield { type: "text-delta", text: " done" };
-        })() };
-    } });
-    const payload = input();
-    const response = await request("turns", "POST", payload);
-    const events = parseEvents(await response.text());
-    expect(events.at(-1)).toMatchObject({ type: "done", turn: { status: "completed", inputTokens: 12, outputTokens: 8 } });
-    expect((await request(`turns/${payload.id}`)).status).toBe(200);
-    expect((await request(`turns/${payload.id}`, "GET", undefined, { "x-test-other": "1" })).status).toBe(404);
-    expect((await request("turns", "POST", payload)).status).toBe(409);
-    expect(calls).toBe(1);
-  });
-  test("stream failure preserves prefix but does not disclose provider details", async () => {
-    const { request, db } = fixture({ stream: async () => ({ totalUsage: Promise.resolve({}), fullStream: (async function* () {
-      yield { type: "text-delta", text: "partial response" };
-      throw new Error("provider-secret");
-    })() }) });
-    const payload = input();
-    const result = await (await request("turns", "POST", payload)).text();
-    expect(result).not.toContain("provider-secret");
-    expect(parseEvents(result).some(event => event.type === "error" && event.code === "companion_generation_failed")).toBe(true);
-    expect((await getCompanionTurn(db, scope, payload.id))).toMatchObject({ status: "failed", response: "partial response" });
-  });
-  test("maps provider HTTP 400 without leaking the response body", async () => {
-    // oxlint-disable-next-line require-yield -- the provider stream fails before its first chunk
-    const { request } = fixture({ stream: async () => ({ totalUsage: Promise.resolve({}), fullStream: (async function* () {
-      const error = new Error("Invalid schema sk-secret");
-      error.statusCode = 400;
-      throw error;
-    })() }) });
-    const result = await (await request("turns", "POST", input())).text();
-    expect(result).not.toContain("sk-secret");
-    expect(parseEvents(result).find(event => event.type === "error").diagnostics).toEqual({ reason: "http", status: 400 });
-    expect(parseEvents(result).some(event => event.type === "error" && event.code === "ai_provider_request_rejected")).toBe(true);
-  });
-  test("concurrent memory change prevents final outdated output", async () => {
-    const { request, db } = fixture({ stream: async () => ({ totalUsage: Promise.resolve({}), fullStream: (async function* () {
-      yield { type: "text-delta", text: "a".repeat(300) };
-      await saveCompanionMemory(db, scope, { content: "new preference" });
-      yield { type: "text-delta", text: "outdated final" };
-    })() }) });
-    const payload = input();
-    const result = await (await request("turns", "POST", payload)).text();
-    expect(result).not.toContain("outdated final");
-    expect((await getCompanionTurn(db, scope, payload.id)).status).toBe("cancelled");
-    expect(parseEvents(result).some(event => event.type === "error")).toBe(true);
-  });
-  test("text before a tool is sealed as process, later text is the answer", async () => {
-    const { request } = fixture({ stream: async args => ({
-      totalUsage: Promise.resolve({}),
-      fullStream: (async function* () {
-        yield { type: "text-delta", text: "Let me read the note." };
-        args.run?.tools.push({ id: "tool-1", name: "get_memo", status: "done", effects: [] });
-        await args.run?.onProgress?.();
-        yield { type: "text-delta", text: "Created the map." };
-      })(),
-    }) });
-    const events = parseEvents(await (await request("turns", "POST", input({ allowNotes: true }))).text());
-    expect(events.some(event => event.type === "process" && event.text.includes("Let me read the note."))).toBe(true);
-    expect(events.at(-1).turn.process).toContain("Let me read the note.");
-    expect(events.at(-1).turn.response).toBe("Created the map.");
-  });
-  test("tool-only runs complete without assistant text and persist the timeline", async () => {
-    const { request, db } = fixture({ stream: async args => {
-      args.run?.tools.push({ id: "tool-1", name: "create_memo", status: "done", effects: [{ kind: "created", memoId: "memo_1", title: "New" }] });
-      await args.run?.onProgress?.();
-      return { totalUsage: Promise.resolve({ inputTokens: 4, outputTokens: 0 }), fullStream: (async function* () {})() };
-    } });
-    const payload = input({ allowNotes: true });
-    const events = parseEvents(await (await request("turns", "POST", payload)).text());
-    expect(events.some(event => event.type === "tools" && event.tools[0]?.name === "create_memo")).toBe(true);
-    expect(events.at(-1)).toMatchObject({ type: "done", turn: { status: "completed", tools: [{ name: "create_memo" }] } });
-    expect((await getCompanionTurn(db, scope, payload.id)).tools_json).toContain("create_memo");
-  });
-  test("asking the user pauses the turn until answers resume it", async () => {
-    let calls = 0;
-    const { request, db } = fixture({ stream: async args => {
-      calls++;
-      if (calls === 1) {
-        args.run?.questions.push({ id: "notebook", prompt: "Which notebook?", inputType: "single_select", options: [{ id: "a", label: "A" }, { id: "b", label: "B" }] });
-        args.run.pause.ask = true;
-        await args.run?.onProgress?.();
-      }
-      return { totalUsage: Promise.resolve({}), fullStream: (async function* () {
-        yield { type: "text-delta", text: calls === 1 ? "Need a notebook." : " Using A." };
-      })() };
-    } });
-    const payload = input({ allowNotes: true });
-    const events = parseEvents(await (await request("turns", "POST", payload)).text());
-    expect(events.at(-1).turn.status).toBe("interrupted");
-    expect(events.at(-1).turn.questions[0].id).toBe("notebook");
-    expect((await request(`turns/${payload.id}/resume`, "POST", {})).status).toBe(400);
-    const resumed = parseEvents(await (await request(`turns/${payload.id}/resume`, "POST", { answers: [{ questionId: "notebook", optionIds: ["a"] }] })).text());
-    expect(resumed.at(-1).turn.status).toBe("completed");
-    expect((await getCompanionTurn(db, scope, payload.id)).answers_json).toContain("notebook");
-  });
-  test("interrupted runs can resume on the same turn", async () => {
-    let calls = 0;
-    const { request, db } = fixture({ stream: async () => {
-      calls++;
-      return { totalUsage: Promise.resolve({}), fullStream: (async function* () {
-        if (calls === 1) {
-          yield { type: "text-delta", text: "working" };
-          throw new Error("timeout-like");
-        }
-        yield { type: "text-delta", text: " continued" };
-      })() };
-    } });
-    const payload = input({ allowNotes: true });
-    await (await request("turns", "POST", payload)).text();
-    expect((await getCompanionTurn(db, scope, payload.id)).status).toBe("failed");
-    await db.prepare("UPDATE companion_turns SET status = 'interrupted' WHERE id = ?").bind(payload.id).run();
-    const events = parseEvents(await (await request(`turns/${payload.id}/resume`, "POST", {})).text());
-    expect(calls).toBe(2);
-    expect(events.at(-1).turn.response).toContain("continued");
-    expect(events.at(-1).turn.status).toBe("completed");
-  });
+  test("retired conversation endpoints never load or call a model",async()=>{let calls=0;const {request}=fixture({stream:async()=>{calls++;throw new Error("must not call");}});for(const path of ["turns","turns/turn_12345678/resume","turns/turn_12345678/proxy","discovery/check","discovery/check/proxy"]){expect((await request(path,"POST",{})).status).toBe(410);}expect(calls).toBe(0);});
 });
 
 describe("companion client-direct HTTP contracts", () => {
@@ -500,7 +376,7 @@ describe("companion client-direct HTTP contracts", () => {
     apiKey: "direct-key",
     modelId: "direct-model",
   };
-  const directFixture = () => fixture({
+  const _directFixture = () => fixture({
     stream: async () => ({ totalUsage: Promise.resolve({}), fullStream: (async function* () {
       yield { type: "text-delta", text: "proxied" };
     })() }),
@@ -558,14 +434,6 @@ describe("companion client-direct HTTP contracts", () => {
     expect((await getCompanionTurn(setup.db, scope, payload.id)).status).toBe("completed");
   });
 
-  test("proxy streams an already prepared running turn", async () => {
-    const { request } = directFixture();
-    const payload = input();
-    expect((await request("turns/prepare", "POST", payload)).status).toBe(200);
-    const events = parseEvents(await (await request(`turns/${payload.id}/proxy`, "POST", {})).text());
-    expect(events.some(event => event.type === "text-delta" && event.text === "proxied")).toBe(true);
-    expect(events.at(-1)).toMatchObject({ type: "done", turn: { status: "completed" } });
-  });
 });
 
 describe("actual AI SDK companion runtime", () => {

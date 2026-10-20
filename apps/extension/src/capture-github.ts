@@ -28,7 +28,7 @@
       if (chunks.length >= 4) break;
     }
 
-    const about = document.querySelector('[class*="SidebarAbout-module__description"]');
+    const about = document.querySelector('[class*="SidebarAbout-module__description"], [class*="sidebarSection"] p[class*="description"], .repository-content .BorderGrid-cell p.f4');
     const website = document.querySelector('[class*="website"] a[href^="http"], a[class*="website"][href^="http"]');
     const topics: string[] = [];
     for (const link of document.querySelectorAll('a[class*="TopicTag"], a[href^="/topics/"]')) {
@@ -83,6 +83,7 @@
       ok: true,
       source: {
         pageUrl: location.href,
+        repositoryNwo: metaContent('meta[name="octolytics-dimension-repository_nwo"]'),
         openGraphDescription: metaContent('meta[property="og:description"]'),
         embeddedJsonChunks: chunks,
         aboutText: text(about),

@@ -1,4 +1,5 @@
 import {
+  resolveResourceUploadMimeType,
   JsonBackupResourceMetadataSchema,
   type JsonBackupResource,
   type Resource,
@@ -108,6 +109,7 @@ export const initiateResourceUpload = async (
   input: { memoId: string; filename: string; mimeType: string; byteSize: number },
 ) => {
   await cleanupExpiredResourceUploads(context);
+  input = { ...input, mimeType: resolveResourceUploadMimeType(input.filename, input.mimeType) };
   const kind = SUPPORTED_IMAGE_MIME_TYPES.has(input.mimeType) ? "image" : "attachment";
   if (kind === "image") validateImageUpload(input.mimeType, input.byteSize);
   else validateAttachmentUpload(input.byteSize);

@@ -65,15 +65,7 @@ test('generic AI prepare returns credentials without invoking the provider', asy
   expect(generated).toBe(0);
 });
 
-test('generic AI validates ordinary prompts, returns text, and redacts provider errors', async () => {
-  const call = fixture();
-  expect(await (await call('ai/status')).json()).toEqual({ configured: true, modelName: 'Test model' });
-  expect(await (await call('ai/generate', { system: 'Translate', prompt: 'hello', maxOutputTokens: 100 })).json()).toEqual({ text: 'HELLO' });
-  expect((await call('ai/generate', { system: '', prompt: 'hello', source: 'github' })).status).toBe(400);
-  expect((await call('ai/generate', { system: '', prompt: 'x'.repeat(90001) })).status).toBe(400);
-  const failed = fixture({ generate: async () => { throw new Error('Bearer dummy-provider-secret'); } });
-  const response = await failed('ai/generate', { system: '', prompt: 'hello' }); expect(response.status).toBe(502); expect(await response.text()).not.toContain('dummy-provider-secret');
-});
+test('generic AI retired generation endpoint never invokes the server generator',async()=>{let calls=0;const call=fixture({generate:async()=>{calls++;return {text:"no"};}});const res=await call('ai/generate',{prompt:'hello'});expect(res.status).toBe(410);expect(await res.json()).toMatchObject({error:{code:'ai_client_required'}});expect(calls).toBe(0);});
 
 test('generic AI leaves output limits to the provider while requiring a positive integer', async () => {
   const call = fixture({
@@ -81,10 +73,10 @@ test('generic AI leaves output limits to the provider while requiring a positive
     loadCredentials: async () => ({ provider: 'openai-compatible', baseUrl: 'https://api.example/v1', apiKey: 'plugin-key', modelId: 'model-a' }),
   });
   const input = { system: '', prompt: 'hello', maxOutputTokens: 1000000 };
-  expect(await (await call('ai/generate', input)).json()).toEqual({ text: '1000000' });
+  expect((await call('ai/generate', input)).status).toBe(410);
   expect((await call('ai/generate/prepare', input)).status).toBe(200);
   for (const maxOutputTokens of [0, -1, 1.5, '100']) {
-    expect((await call('ai/generate', { ...input, maxOutputTokens })).status).toBe(400);
+    expect((await call('ai/generate', { ...input, maxOutputTokens })).status).toBe(410);
     expect((await call('ai/generate/prepare', { ...input, maxOutputTokens })).status).toBe(400);
   }
 });

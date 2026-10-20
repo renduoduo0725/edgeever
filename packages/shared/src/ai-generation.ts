@@ -209,6 +209,7 @@ export const buildAiDirectProviderRequest = (
         accept: "text/event-stream",
         "x-api-key": prepared.apiKey,
         "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
         model: prepared.modelId,

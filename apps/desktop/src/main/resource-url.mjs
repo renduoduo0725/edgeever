@@ -3,7 +3,7 @@ export const isSafeResourceId = (value) =>
 
 const INLINE_RESOURCE_TYPES = new Set([
   "image/png", "image/jpeg", "image/gif", "image/webp", "image/avif", "image/bmp",
-  "image/x-icon", "application/pdf", "audio/mpeg", "audio/mp4", "audio/ogg",
+  "image/x-icon", "image/svg+xml", "application/pdf", "audio/mpeg", "audio/mp4", "audio/ogg",
   "audio/wav", "audio/webm", "video/mp4", "video/webm", "video/ogg",
 ]);
 
@@ -14,7 +14,9 @@ export const resourceResponseHeaders = (contentType, disposition = null) => {
     "Cache-Control": "no-store",
     "Content-Type": inline ? type : "application/octet-stream",
     "X-Content-Type-Options": "nosniff",
-    "Content-Security-Policy": "default-src 'none'; sandbox",
+    "Content-Security-Policy": type === "image/svg+xml"
+      ? "default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; sandbox"
+      : "default-src 'none'; sandbox",
   });
   if (disposition || !inline) headers.set("Content-Disposition", disposition || "attachment");
   return headers;

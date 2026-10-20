@@ -1213,6 +1213,7 @@ const isGithubRepoSource = (value: unknown): value is GithubRepoPageSource => {
   const strings = (items: unknown): items is string[] =>
     Array.isArray(items) && items.every((item) => typeof item === "string");
   return typeof record.pageUrl === "string"
+    && (record.repositoryNwo === undefined || typeof record.repositoryNwo === "string")
     && typeof record.openGraphDescription === "string"
     && strings(record.embeddedJsonChunks)
     && typeof record.aboutText === "string"

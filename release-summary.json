@@ -1,17 +1,17 @@
 {
-  "version": "1.124.0",
+  "version": "2.0.1",
   "changes": {
     "en-US": [
-      "Android now supports Google Play in-app updates with background downloads and confirmation before installation, while keeping manual update options available.",
-      "Improve startup speed and reduce bundled font size. Optional fonts download when needed, with consistent loading and fallback messages and reliable font restoration after retrying."
+      "Restore server fallback when Web model requests fail because of browser network or CORS restrictions; desktop and native mobile clients continue to connect directly.",
+      "Show clearer AI companion errors for model timeouts and service failures instead of describing them as rejected requests."
     ],
     "zh-CN": [
-      "Android 新增 Google Play 应用内更新，支持后台下载并在安装前确认，同时保留手动更新入口。",
-      "优化启动速度并缩减内置字体体积；可选字体按需下载，统一加载与回退提示，并修复重试后字体恢复及模板字体回退显示。"
+      "修复 Web 端因浏览器网络或 CORS 限制导致模型请求失败时的后端兜底；桌面端及原生移动端继续直连模型服务。",
+      "优化 AI 伙伴错误提示，准确区分模型超时、服务异常与请求被拒绝。"
     ],
     "ja": [
-      "Android で Google Play のアプリ内更新に対応しました。バックグラウンドでダウンロードし、インストール前に確認できます。手動更新も引き続き利用できます。",
-      "起動を高速化し、同梱フォントの容量を削減しました。追加フォントは必要に応じてダウンロードされ、読み込みや代替フォントの案内を統一し、再試行後のフォント復元とテンプレートの代替表示を改善しました。"
+      "Web のモデルリクエストがブラウザーのネットワークまたは CORS 制限で失敗した際のサーバーフォールバックを修復しました。デスクトップとネイティブモバイルは引き続き直接接続します。",
+      "AI コンパニオンのエラー表示を改善し、モデルのタイムアウト、サービス障害、リクエスト拒否を区別します。"
     ]
   }
 }

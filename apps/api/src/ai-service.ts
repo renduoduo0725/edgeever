@@ -1,7 +1,6 @@
 import type {
   AiAction,
   AiAttachmentInput,
-  AiDiscoveredModel,
   AiGenerationResultBoundary,
   AiModelConfig,
   AiPreparedGeneration,
@@ -419,21 +418,6 @@ export const prepareAiTranscriptionCredentials = async (
   }
 };
 
-const loadAiRuntime = () => import("./ai-runtime");
-
-export const createAiModel = async (config: {
-  provider: AiProvider;
-  baseUrl: string;
-  apiKey: string;
-  modelId: string;
-}) => {
-  const runtime = await loadAiRuntime();
-  return runtime.createAiModel({
-    ...config,
-    baseUrl: normalizeAiBaseUrl(config.baseUrl),
-  });
-};
-
 export const loadDefaultAiModelCredentials = async (
   db: DatabaseAdapter,
   workspaceId: string,
@@ -475,12 +459,6 @@ export const loadDefaultAiModelCredentials = async (
   };
 };
 
-export const loadDefaultAiModel = async (
-  db: DatabaseAdapter,
-  workspaceId: string,
-  environment: AiCredentialEnvironment,
-) => createAiModel(await loadDefaultAiModelCredentials(db, workspaceId, environment));
-
 export const getDefaultAiDirectTarget = async (
   db: DatabaseAdapter,
   workspaceId: string,
@@ -492,93 +470,6 @@ export const getDefaultAiDirectTarget = async (
     baseUrl: credentials.baseUrl,
     modelId: credentials.modelId,
   };
-};
-
-type AiModelDiscoveryFetch = typeof fetch;
-
-const asRecord = (value: unknown): Record<string, unknown> | null =>
-  value && typeof value === "object" ? value as Record<string, unknown> : null;
-
-export const discoverAiModels = async (
-  config: {
-    provider: AiProvider;
-    baseUrl: string;
-    apiKey: string;
-  },
-  fetchImpl: AiModelDiscoveryFetch = fetch,
-): Promise<AiDiscoveredModel[]> => {
-  const url = `${normalizeAiBaseUrl(config.baseUrl)}/models`;
-  const headers = new Headers({ Accept: "application/json" });
-  if (config.provider === "anthropic") {
-    headers.set("x-api-key", config.apiKey);
-    headers.set("anthropic-version", "2023-06-01");
-  } else if (config.provider === "google") {
-    headers.set("x-goog-api-key", config.apiKey);
-  } else {
-    headers.set("Authorization", `Bearer ${config.apiKey}`);
-  }
-
-  const response = await fetchImpl(url, {
-    headers,
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!response.ok) {
-    throw new AppError(
-      "ai_model_discovery_failed",
-      `The model list endpoint responded with HTTP ${response.status}.`,
-      400,
-    );
-  }
-
-  const body = asRecord(await response.json());
-  const rawModels = Array.isArray(body?.data)
-    ? body.data
-    : Array.isArray(body?.models)
-      ? body.models
-      : [];
-  const discovered = new Map<string, AiDiscoveredModel>();
-
-  for (const item of rawModels.slice(0, 2_000)) {
-    const record = asRecord(item);
-    if (!record) continue;
-    const rawId = typeof record.id === "string"
-      ? record.id
-      : typeof record.name === "string"
-        ? record.name
-        : "";
-    const modelId = config.provider === "google" ? rawId.replace(/^models\//, "") : rawId;
-    if (!modelId || discovered.has(modelId)) continue;
-    const displayName = typeof record.display_name === "string"
-      ? record.display_name
-      : typeof record.displayName === "string"
-        ? record.displayName
-        : typeof record.name === "string" && config.provider !== "google"
-          ? record.name
-          : modelId;
-    discovered.set(modelId, { modelId, displayName });
-  }
-
-  return Array.from(discovered.values()).sort((left, right) =>
-    left.displayName.localeCompare(right.displayName));
-};
-
-export const testAiModel = async (config: {
-  provider: AiProvider;
-  baseUrl: string;
-  apiKey: string;
-  modelId: string;
-}) => {
-  const runtime = await loadAiRuntime();
-  return runtime.generateAiText({
-    model: runtime.createAiModel({
-      ...config,
-      baseUrl: normalizeAiBaseUrl(config.baseUrl),
-    }),
-    system: "You are responding to an API connectivity check. Follow the user instruction exactly.",
-    prompt: "Reply with only: OK",
-    maxOutputTokens: 16,
-    abortSignal: AbortSignal.timeout(20_000),
-  });
 };
 
 /**
@@ -653,19 +544,6 @@ export const buildAiGenerationPrompt = (input: {
   input.instruction ? `User instruction (highest priority):\n${input.instruction}` : undefined,
 ].filter(Boolean).join("\n\n");
 
-type AiGenerationRequest = {
-  model: Awaited<ReturnType<typeof createAiModel>>;
-  action: AiAction;
-  title: string;
-  contentMarkdown: string;
-  targetLanguage?: AiTargetLanguage;
-  tone?: AiTone;
-  instruction?: string;
-  attachments?: AiAttachmentInput[];
-  resultBoundary: AiGenerationResultBoundary;
-  abortSignal?: AbortSignal;
-};
-
 const decodeBase64Text = (base64Data: string) => {
   const binary = atob(base64Data);
   const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
@@ -693,24 +571,6 @@ export const buildAiGenerationMessages = (
     });
   }
   return [{ role: "user", content }];
-};
-
-const buildAiGenerationRequest = (input: AiGenerationRequest) => {
-  const prompt = buildAiGenerationPrompt({
-    contentMarkdown: input.contentMarkdown,
-    targetLanguage: input.targetLanguage,
-    tone: input.tone,
-    instruction: input.instruction,
-  });
-  const common = {
-    model: input.model,
-    system: resolveAiGenerationSystemInstruction(input),
-    maxOutputTokens: AI_GENERATION_MAX_OUTPUT_TOKENS,
-    abortSignal: input.abortSignal,
-  };
-  return input.attachments?.length
-    ? { ...common, messages: buildAiGenerationMessages(prompt, input.attachments) }
-    : { ...common, prompt };
 };
 
 export const prepareAiGeneration = (input: {
@@ -741,28 +601,4 @@ export const prepareAiGeneration = (input: {
     maxOutputTokens: AI_GENERATION_MAX_OUTPUT_TOKENS,
     resultBoundary,
   };
-};
-
-export const generateAiGeneration = async (input: AiGenerationRequest) => {
-  const runtime = await loadAiRuntime();
-  return runtime.generateAiText(buildAiGenerationRequest(input));
-};
-
-export const streamAiGeneration = async (input: AiGenerationRequest) => {
-  const runtime = await loadAiRuntime();
-  return runtime.streamAiText(buildAiGenerationRequest(input));
-};
-
-export const generateAiTagSuggestions = async (input: {
-  model: Awaited<ReturnType<typeof createAiModel>>;
-  instruction: string;
-  title: string;
-  contentMarkdown: string;
-  currentTags: string[];
-  existingTags: string[];
-  locale?: string;
-  abortSignal?: AbortSignal;
-}) => {
-  const runtime = await loadAiRuntime();
-  return runtime.generateAiTagSuggestionNames(input);
 };

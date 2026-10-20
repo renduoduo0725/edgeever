@@ -17,14 +17,47 @@ private struct SelectionSharePayload: Identifiable {
     let url: URL
 }
 
+/// Keep each create editor's input fixed until its save and cover dismissal finish.
+struct MemoCreatePresentation {
+    struct Request: Identifiable {
+        let id = UUID()
+        let seed: CreateMemoSeed?
+        let sharedImages: [ShareHandoffStore.SharedImage]
+
+        init(seed: CreateMemoSeed?, sharedImages: [ShareHandoffStore.SharedImage] = []) {
+            self.seed = seed
+            self.sharedImages = sharedImages
+        }
+    }
+
+    private(set) var current: Request?
+    private(set) var pending: [Request] = []
+    var shouldFinishForIncomingShare: Bool { !pending.isEmpty }
+
+    /// Returns true only when a new cover can be presented immediately.
+    mutating func open(_ request: Request) -> Bool {
+        guard current == nil else {
+            pending.append(request)
+            return false
+        }
+        current = request
+        return true
+    }
+
+    /// Called by fullScreenCover's onDismiss, after the old editor has gone away.
+    mutating func didDismiss() -> Bool {
+        current = pending.isEmpty ? nil : pending.removeFirst()
+        return current != nil
+    }
+}
+
 struct WorkspaceView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var store = WorkspaceStore()
     @State private var path = NavigationPath()
     @State private var showSettings = false
     @State private var showNewNote = false
-    @State private var createSeed: CreateMemoSeed?
-    @State private var createSharedImages: [ShareHandoffStore.SharedImage] = []
+    @State private var createPresentation = MemoCreatePresentation()
     @State private var showCreateChoice = false
     @State private var showTemplatePicker = false
     @State private var createLongPressConsumed = false
@@ -92,23 +125,22 @@ struct WorkspaceView: View {
                 memoDetail(for: route.memoId, shareImage: true)
             }
             // Android CreateMemoModal is fullScreen — not a half sheet / Form.
-            .fullScreenCover(isPresented: $showNewNote) {
+            .fullScreenCover(isPresented: $showNewNote, onDismiss: {
+                showNewNote = createPresentation.didDismiss()
+                store.reload(env: env)
+            }) {
                 MemoEditView(
                     mode: .create(
                         notebookId: store.selectedNotebookId ?? store.notebooks.first?.id ?? "",
-                        seed: createSeed
+                        seed: createPresentation.current?.seed
                     ),
-                    initialSharedImages: createSharedImages,
+                    initialSharedImages: createPresentation.current?.sharedImages ?? [],
+                    finishForIncomingShare: createPresentation.shouldFinishForIncomingShare,
                     onCreateFinished: { _ in
                         store.reload(env: env)
                     }
                 )
-                .onDisappear {
-                    createSeed = nil
-                    createSharedImages = []
-                    // Safety refresh if create finished without callback (e.g. swipe-dismiss empty).
-                    store.reload(env: env)
-                }
+                .id(createPresentation.current?.id)
             }
             .sheet(isPresented: $showCreateChoice) {
                 CreateChoiceSheet(
@@ -776,9 +808,9 @@ struct WorkspaceView: View {
         sharedImages: [ShareHandoffStore.SharedImage] = []
     ) {
         guard !store.notebooks.isEmpty else { return }
-        createSeed = seed
-        createSharedImages = sharedImages
-        showNewNote = true
+        if createPresentation.open(.init(seed: seed, sharedImages: sharedImages)) {
+            showNewNote = true
+        }
     }
 
     private func openCreateFromTemplate() {

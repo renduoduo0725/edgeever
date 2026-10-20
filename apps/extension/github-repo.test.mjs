@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { createWindow } from "@mixmark-io/domino";
+import { createContext, runInContext } from "node:vm";
+import { bundleTestScripts } from "./bundle-test-scripts.mjs";
 import {
   cleanRepoDescription,
   githubRepoFactsFromSource,
@@ -71,6 +74,38 @@ describe("github repository addresses", () => {
 });
 
 describe("github repository card", () => {
+  test("captures rendered repository facts when initial JSON is missing or too large", () => {
+    const [script] = bundleTestScripts(["capture-github"]);
+    for (const json of ["", JSON.stringify({ ownerLogin: "tianma-if", readme: "x".repeat(500_000) })]) {
+      const window = createWindow(`
+        <meta name="octolytics-dimension-repository_nwo" content="tianma-if/edgeever">
+        <script type="application/json">${json}</script>
+        <div class="sidebarSection__oqw6Y8">
+          <h2>About</h2><p class="description__ej4leF">A portable notes workspace.</p>
+          <div class="websiteRow__c4vvco"><a href="https://edgeever.org">edgeever.org</a></div>
+          <a href="/topics/notes">notes</a>
+          <a href="#license"><svg class="octicon-law"></svg>AGPL-3.0 license</a>
+        </div>`, "https://github.com/tianma-if/edgeever/tree/main");
+      Object.getPrototypeOf(window.document.querySelectorAll("span"))[Symbol.iterator] ??= Array.prototype[Symbol.iterator];
+      let result;
+      runInContext(script, createContext({
+        document: window.document,
+        location: window.location,
+        __edgeeverGithubClipPayload: { requestId: "regression" },
+        chrome: { runtime: { sendMessage: (message) => { result = message.result; } } },
+      }));
+      expect(result?.ok).toBe(true);
+      expect(result.source.embeddedJsonChunks).toEqual([]);
+      expect(githubRepoFactsFromSource(result.source)).toMatchObject({
+        owner: "tianma-if", name: "edgeever", intro: "A portable notes workspace.",
+        homepage: "https://edgeever.org/", topics: ["notes"], license: "AGPL-3.0",
+      });
+      expect(githubRepoFactsFromSource({ ...result.source, repositoryNwo: "other/repo" })).toBeNull();
+      expect(githubRepoFactsFromSource({ ...result.source, repositoryNwo: undefined })).toBeNull();
+      expect(githubRepoFactsFromSource({ ...result.source, pageUrl: "https://github.com/features/copilot" })).toBeNull();
+    }
+  });
+
   test("drops GitHub's generated description and the repository suffix", () => {
     expect(cleanRepoDescription(
       "Open-source notes. - tianma-if/edgeever",

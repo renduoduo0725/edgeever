@@ -9,6 +9,7 @@ import { createWindow, createDocument } from "@mixmark-io/domino";
 import { bundleTestScripts } from "./bundle-test-scripts.mjs";
 import { fileURLToPath } from "node:url";
 import { markdownToDoc } from "../../packages/shared/src/content.ts";
+import { pageImageRefs, replacePageImageUrls } from "./src/page-images.ts";
 
 test('whole-page and selection captures share table conversion and preserve code blank lines',async()=>{
   const [source]=bundleTestScripts(['capture']);
@@ -91,6 +92,13 @@ test('Substack article capture retains sections and images on custom domains wit
   const unrelated=createDocument(html),schema=unrelated.querySelector('script'),data=JSON.parse(schema.textContent);data.url='https://www.oneusefulthing.org/p/other';schema.textContent=JSON.stringify(data);expect(capture(unrelated.documentElement.outerHTML,url).author).toBeUndefined();
   for(const content of ['Benefitting from the Bitter Lesson','Nope.','# Dots and Muse','# Swarms','# A Not-Entirely-Bitter Lesson','very cool pre-order bonus'])expect(page.markdown).toContain(content);
   expect(page.markdown.match(/!\[/g)).toHaveLength(3);
+  const uploaded=pageImageRefs(page.markdown,url).map((image,index)=>({...image,resourceId:`substack-${index}`}));
+  const stored=markdownToDoc(replacePageImageUrls(page.markdown,uploaded)),nodes=[];
+  const walk=node=>{nodes.push(node);(node.content || []).forEach(walk);};walk(stored);
+  expect(nodes.filter(node=>node.type==='image').map(node=>node.attrs.src)).toEqual(uploaded.map(image=>`/api/v1/resources/${image.resourceId}/blob`));
+  const text=nodes.filter(node=>node.type==='text').map(node=>node.text).join('');
+  expect(text).not.toContain('substackcdn.com/image/');
+  expect(nodes.some(node=>node.type==='text' && node.text==='[')).toBe(false);
   for(const noise of ['Subscribe','Share','Comments and recommendations','One Useful Thing'])expect(page.markdown).not.toContain(noise);
   expect(capture(html,url,true).markdown).toBe('Selected paragraph');
   expect(capture(html,'https://oneusefulthing.substack.com/p/the-dot-and-the-swarm').markdown).toBe(page.markdown);

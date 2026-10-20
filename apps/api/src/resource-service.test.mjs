@@ -67,12 +67,14 @@ describe("resource service contracts", () => {
   test("infers normalized image extensions", () => {
     expect(inferImageExtension("photo.JPEG", "application/octet-stream")).toBe(".jpg");
     expect(inferImageExtension("photo", "image/avif")).toBe(".avif");
+    expect(inferImageExtension("diagram.SVG", "image/svg+xml")).toBe(".svg");
   });
 
   test("enforces upload type and size boundaries", () => {
     expect(() => validateImageUpload("image/png", MAX_IMAGE_UPLOAD_BYTES)).not.toThrow();
     expect(() => validateAttachmentUpload(MAX_ATTACHMENT_UPLOAD_BYTES)).not.toThrow();
-    expect(() => validateImageUpload("image/svg+xml", 128)).toThrow();
+    expect(() => validateImageUpload("image/svg+xml", 128)).not.toThrow();
+    expect(() => validateImageUpload("text/html", 128)).toThrow();
     expect(() => validateAttachmentUpload(MAX_ATTACHMENT_UPLOAD_BYTES + 1)).toThrow();
   });
 

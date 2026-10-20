@@ -629,3 +629,24 @@ describe("one-step memo sharing", () => {
     sqlite.close();
   });
 });
+
+
+test("public SVG previews use the same sandbox and preserve the original", async () => {
+  const { sqlite, environment } = createDatabaseEnvironment();
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 10"><script>alert(1)</script></svg>';
+  sqlite.query(`INSERT INTO resources (id, memo_id, object_key, kind, mime_type, filename, byte_size)
+    VALUES (?, ?, ?, 'image', 'image/svg+xml', 'diagram.svg', ?)`)
+    .run("res_svg", "memo_source", "svg-key", svg.length);
+  environment.storage.resources = { get: async () => ({
+    body: new Blob([svg]).stream(), writeHttpMetadata: () => {},
+  }) };
+  const app = new Hono();
+  registerPublicShareRoutes(app);
+  const response = await app.request(`/api/public/shares/${sourceToken}/resources/res_svg/blob`, {}, environment);
+  expect(response.status).toBe(200);
+  expect(response.headers.get("content-type")).toBe("image/svg+xml");
+  expect(response.headers.get("content-disposition")).toStartWith("inline;");
+  expect(response.headers.get("content-security-policy")).toBe("default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; sandbox");
+  expect(await response.text()).toBe(svg);
+  sqlite.close();
+});

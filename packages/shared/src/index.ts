@@ -74,3 +74,5 @@ export * from "./table-operations";
 export * from "./poster-content-layout";
 export * from "./poster-operations";
 export * from "./infographic-operations";
+
+export * from "./resource-media";

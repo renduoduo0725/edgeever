@@ -221,46 +221,34 @@ actor APIClient {
     }
 
     func suggestAiTags(_ input: AiTagSuggestionsInput) async throws -> AiTagSuggestionsResponse {
-        try await request(
-            path: "/api/v1/ai/tag-suggestions",
-            method: "POST",
-            body: input
-        )
+        let prepared: AiPreparedTagSuggestions = try await request(path: "/api/v1/ai/tag-suggestions/prepare", method: "POST", body: input)
+        let generation = AiPreparedGeneration(provider: prepared.provider, baseUrl: prepared.baseUrl, apiKey: prepared.apiKey,
+            modelId: prepared.modelId, system: prepared.system, prompt: prepared.prompt, maxOutputTokens: prepared.maxOutputTokens,
+            resultBoundary: AiGenerationResultBoundary(start: "", end: ""))
+        let providerRequest = try AiDirectStream.providerRequest(for: generation)
+        let (bytes, response) = try await session.bytes(for: providerRequest)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw APIError(status: (response as? HTTPURLResponse)?.statusCode ?? 502, code: "ai_tag_suggestions_failed", message: "The model request failed.")
+        }
+        var text = ""
+        for try await line in bytes.lines {
+            try Task.checkCancellation()
+            guard line.hasPrefix("data:"), let data = line.dropFirst(5).trimmingCharacters(in: .whitespaces).data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
+            text += AiDirectStream.extractDelta(provider: prepared.provider, payload: json).text
+        }
+        return AiTagSuggestionsResponse(suggestions: AiDirectStream.tagSuggestions(text, currentTags: prepared.currentTags, canonicalTags: prepared.canonicalTags))
     }
 
     func streamAiGeneration(_ input: AiGenerateInput) -> AsyncThrowingStream<AiStreamEvent, Error> {
         let session = self.session
-        let unauthorized = onUnauthorized
-        let sessionToken = token
-        let generateURL = makeURL(path: "/api/v1/ai/generate")
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    do {
-                        let prepared: AiPreparedGeneration = try await self.request(
-                            path: "/api/v1/ai/generate/prepare",
-                            method: "POST",
-                            body: input
-                        )
-                        try await Self.streamDirectProvider(
-                            prepared,
-                            session: session,
-                            continuation: continuation
-                        )
-                    } catch let apiError as APIError where apiError.status == 404 {
-                        try await Self.streamEdgeEverGenerate(
-                            input: input,
-                            url: generateURL,
-                            token: sessionToken,
-                            session: session,
-                            unauthorized: unauthorized,
-                            continuation: continuation
-                        )
-                    }
+                    let prepared: AiPreparedGeneration = try await self.request(path: "/api/v1/ai/generate/prepare", method: "POST", body: input)
+                    try await Self.streamDirectProvider(prepared, session: session, continuation: continuation)
                     continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
+                } catch { continuation.finish(throwing: error) }
             }
             continuation.onTermination = { _ in task.cancel() }
         }
@@ -314,49 +302,6 @@ actor APIClient {
             return
         }
         continuation.yield(AiStreamEvent(type: "finish", text: nil, code: nil, message: nil, finishReason: finishReason, inputTokens: inputTokens, outputTokens: outputTokens))
-    }
-
-    private static func streamEdgeEverGenerate(
-        input: AiGenerateInput,
-        url: URL,
-        token: String?,
-        session: URLSession,
-        unauthorized: (@Sendable () -> Void)?,
-        continuation: AsyncThrowingStream<AiStreamEvent, Error>.Continuation
-    ) async throws {
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        request.httpBody = try EdgeEverJSON.encoder.encode(input)
-        let (bytes, response) = try await session.bytes(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw APIError(status: -1, code: nil, message: "Invalid response")
-        }
-        if http.statusCode == 401 {
-            unauthorized?()
-        }
-        guard (200 ..< 300).contains(http.statusCode) else {
-            var data = Data()
-            for try await byte in bytes { data.append(byte) }
-            let message = Self.parseErrorMessage(data: data)
-                ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
-            throw APIError(
-                status: http.statusCode,
-                code: Self.parseErrorCode(data: data),
-                message: message
-            )
-        }
-        for try await line in bytes.lines {
-            try Task.checkCancellation()
-            guard line.hasPrefix("data: ") else { continue }
-            let payload = String(line.dropFirst(6))
-            guard let data = payload.data(using: .utf8) else { continue }
-            continuation.yield(try EdgeEverJSON.decoder.decode(AiStreamEvent.self, from: data))
-        }
     }
 
     // MARK: - Templates

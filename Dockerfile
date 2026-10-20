@@ -24,12 +24,16 @@ RUN bun install --frozen-lockfile \
   --filter @edgeever/web
 
 FROM dependencies AS build
+# Only stale template previews need the build browser; it stays out of runtime.
+RUN apk add --no-cache chromium nodejs
+ENV EDGE_EVER_POSTER_CHROME_EXECUTABLE=/usr/bin/chromium
 COPY apps/api apps/api
 COPY apps/web apps/web
 COPY packages packages
 COPY docs docs
 COPY release-summary.json release-summary.json
-COPY scripts/self-hosted-config.mjs scripts/self-hosted-secrets.mjs scripts/self-hosted-server.mjs scripts/
+COPY scripts/self-hosted-config.mjs scripts/self-hosted-secrets.mjs scripts/self-hosted-server.mjs scripts/prepare-poster-thumbnails.mjs scripts/prepare-poster-thumbnails.d.mts scripts/
+COPY tests/browser/poster-thumbnail-generator.html tests/browser/poster-thumbnail-generator.ts tests/browser/
 COPY tsconfig.json ./
 RUN bun run build:web && bun run build:self-hosted
 

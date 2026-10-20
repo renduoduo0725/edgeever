@@ -1,4 +1,4 @@
-import { isPdfAttachment, resolvePlayableMediaMimeType, ResourceUpdateSchema, type MemoDetail, type Resource } from "@edgeever/shared";
+import { resolveResourceUploadMimeType, setSvgResourceSecurityHeaders, isPdfAttachment, resolvePlayableMediaMimeType, ResourceUpdateSchema, type MemoDetail, type Resource } from "@edgeever/shared";
 import { zValidator } from "@hono/zod-validator";
 import type { Hono } from "hono";
 import { auditStatement } from "./audit";
@@ -166,7 +166,7 @@ export const registerResourceRoutes = (
     const input = {
       memoId,
       filename: file.name,
-      mimeType: file.type || "application/octet-stream",
+      mimeType: resolveResourceUploadMimeType(file.name, file.type),
       bytes: new Uint8Array(await file.arrayBuffer()),
       actor: getAuditActor(context),
     };
@@ -320,6 +320,7 @@ export const registerResourceRoutes = (
         : contentDispositionAttachment(resource.filename),
     );
     headers.set("X-Content-Type-Options", "nosniff");
+    setSvgResourceSecurityHeaders(headers);
     return new Response(object.body, { headers, status: byteRange.kind === "range" ? 206 : 200 });
   });
 

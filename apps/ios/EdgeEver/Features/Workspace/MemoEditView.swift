@@ -29,6 +29,7 @@ struct MemoEditView: View {
     let mode: MemoEditMode
     var initialFocus: MemoEditInitialFocus = .body
     var initialSharedImages: [ShareHandoffStore.SharedImage] = []
+    var finishForIncomingShare = false
     /// When set (edit-from-detail), close by popping to the list under the cover first —
     /// never `dismiss()` onto a still-pushed detail page.
     var onLeaveToList: (() -> Void)? = nil
@@ -58,6 +59,8 @@ struct MemoEditView: View {
     @State private var showEmptyAiSelectionAlert = false
     @State private var aiUndoToken: UUID?
     @State private var didImportSharedImages = false
+    @State private var initialShareImportFinished = false
+    @State private var shareHandoffStarted = false
     @State private var isSuggestingTags = false
     @State private var smartTagsAdded = false
     @State private var showSmartTagAlert = false
@@ -312,6 +315,14 @@ struct MemoEditView: View {
                 }
             }
             await importInitialSharedImagesIfNeeded()
+            initialShareImportFinished = true
+        }
+        .onChange(of: canFinishForIncomingShare, initial: true) { _, ready in
+            guard ready else { return }
+            // Use the normal flush/commit path. Failure keeps the current cover
+            // and queued shares intact; manual Done/Back can retry the save.
+            shareHandoffStarted = true
+            Task { await handleDone() }
         }
         .onDisappear {
             smartTagTask?.cancel()
@@ -329,6 +340,13 @@ struct MemoEditView: View {
     }
 
     // MARK: - Header (createMemoHeader)
+
+    private var canFinishForIncomingShare: Bool {
+        isCreate && finishForIncomingShare && !shareHandoffStarted
+            && contentHydrated && editorReady && initialShareImportFinished
+            && !isUploading && !isMaterializing && !isCreating && !isSaving
+            && error == nil && !showUploadError
+    }
 
     private var createHeader: some View {
         HStack(spacing: 8) {
@@ -1244,6 +1262,7 @@ struct MemoEditView: View {
         let succeeded = await viewModel.performUpload {
             NSLog("MemoEditView insertImageData: start bytes=%d name=%@", data.count, filename)
             let compress = env.preferences.useCompression
+                && TipTapResourceLoader.sniffImageMime(data) != "image/svg+xml"
             let prepared = compress
                 ? ImageCompressor.compressIfNeeded(data) // Android parity: WebP @ 0.82, max edge 2560
                 : Self.preparedUpload(from: data, preferredName: filename)
@@ -1355,6 +1374,7 @@ struct MemoEditView: View {
         case "image/png": ext = "png"
         case "image/gif": ext = "gif"
         case "image/webp": ext = "webp"
+        case "image/svg+xml": ext = "svg"
         default: ext = "jpg"
         }
         let base = (preferredName as NSString).deletingPathExtension

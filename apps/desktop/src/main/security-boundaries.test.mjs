@@ -98,8 +98,8 @@ test("stored ACP programs are revalidated before the runtime can execute them", 
   expect(executed).toBe(false);
 });
 
-test("resource responses never inline active documents, including MIME variants", () => {
-  for (const type of ["text/html", "Text/HTML; charset=utf-8", "image/svg+xml", "application/xhtml+xml", "text/plain", "application/octet-stream"]) {
+test("resource responses never inline HTML documents, including MIME variants", () => {
+  for (const type of ["text/html", "Text/HTML; charset=utf-8", "application/xhtml+xml", "text/plain", "application/octet-stream"]) {
     const headers = resourceResponseHeaders(type);
     expect(headers.get("content-type")).toBe("application/octet-stream");
     expect(headers.get("content-disposition")).toBe("attachment");
@@ -123,9 +123,9 @@ test("legacy credentials migrate to an origin-bound record and cannot follow an 
   expect(decodeSessionCredential('{"version":99}', previous.origin).token).toBe("");
 });
 
-test("AI transport rejects mapped IPv6, trailing-dot names and non-public hostnames", async () => {
+test("AI accepts configured private endpoints while plugin DNS remains public-only", async () => {
   for (const host of ["[::ffff:127.0.0.1]", "[::ffff:169.254.169.254]", "[::ffff:10.0.0.5]", "localhost.", "service.internal", "service.local", "localhost", "127.0.0.1"]) {
-    expect(() => validateAiProviderUrl(`https://${host}/v1`)).toThrow();
+    expect(validateAiProviderUrl(`https://${host}/v1`).protocol).toBe("https:");
   }
   const lookup = createPublicLookup((_host, _options, callback) => callback(null, [{ address: "127.0.0.1", family: 4 }]));
   await expect(new Promise((resolve, reject) => lookup("provider.example.org", {}, (error, address) => error ? reject(error) : resolve(address))))
@@ -142,4 +142,16 @@ test("custom ACP executables cannot be anchored in renderer-writable client stor
     await writeFile(filename, "test", { mode: 0o700 });
     await expect(validateTrustedAcpPath(filename, { excludedRoot: directory })).rejects.toThrow(/client data directory/);
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+
+test("SVG previews retain MIME and sandbox scripts and external resources", () => {
+  for (const type of ["image/svg+xml", "IMAGE/SVG+XML; charset=utf-8"]) {
+    const headers = resourceResponseHeaders(type);
+    expect(headers.get("content-type")).toBe("image/svg+xml");
+    expect(headers.get("content-disposition")).toBeNull();
+    expect(headers.get("content-security-policy")).toBe("default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; sandbox");
+    expect(headers.get("x-content-type-options")).toBe("nosniff");
+    expect(resourceResponseHeaders(type, 'attachment; filename="original.svg"').get("content-disposition")).toContain("original.svg");
+  }
 });

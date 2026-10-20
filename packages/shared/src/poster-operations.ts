@@ -1,8 +1,8 @@
 import { PLATFORMS } from "./poster-platforms";
 import { POSTER_FONTS } from "./poster-fonts";
-import { POSTER_DESIGN_TEMPLATES } from "./poster-design-catalog";
+import { POSTER_DESIGN_TEMPLATES, POSTER_TEMPLATE_SELECTION_INSTRUCTION } from "./poster-design-catalog";
 import { z } from "zod";
-import { createPosterDocument, POSTER_FORMATS, POSTER_TEMPLATES, PosterDocumentSchema, PosterGradientSchema, PosterElementSchema, PosterPaintGradientSchema, resizePosterDocument, type PosterDocument } from "./poster";
+import { createPosterDocument, POSTER_FORMATS, POSTER_TEMPLATES, POSTER_TEMPLATE_DESCRIPTIONS, PosterDocumentSchema, PosterGradientSchema, PosterElementSchema, PosterPaintGradientSchema, resizePosterDocument, type PosterDocument } from "./poster";
 import { StructuredNoteError } from "./structured-note-error";
 import { layoutPosterContent } from "./poster-content-layout";
 
@@ -223,8 +223,9 @@ export function applyPosterEdits(input: unknown, current: PosterDocument) {
 
 export function posterCapabilities() {
   return {
-    templates: POSTER_TEMPLATES.map(id => ({ id, sourceBuilder: "server", imageRenderer: "client" })),
+    templates: POSTER_TEMPLATES.map(id => ({ id, ...POSTER_TEMPLATE_DESCRIPTIONS[id], sourceBuilder: "server", imageRenderer: "client" })),
     browserDesignTemplates: POSTER_DESIGN_TEMPLATES.filter(template => template.available).map(template => ({ ...template, renderer: "browser", instruction: "Use request_poster_render with templateId and expectedRevision. This ID is not a server apply_template ID." })),
+    templateSelection: POSTER_TEMPLATE_SELECTION_INSTRUCTION,
     contentLayouts: { layouts: ["auto", "grid", "list"], sections: { min: 2, max: 6, headingMaxLength: 32, bodyMaxLength: 120 }, instruction: "For explanatory posters, plan 3–6 concise sections before creating. Use grid for categories/comparison, list for steps/ranked points. badge and footer are optional. Auto adapts columns to the aspect ratio. Headline-only posters may omit sections." },
     formats: POSTER_FORMATS,
     platforms: PLATFORMS,

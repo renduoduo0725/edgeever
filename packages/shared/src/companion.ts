@@ -375,7 +375,7 @@ export const CompanionMemoryImportSchema = z.object({
 /** Only fixed categories and HTTP status cross the UI boundary. Never forward SDK
  * messages, request bodies, response bodies, URLs, headers, or credentials. */
 export type CompanionFailureDiagnostics = {
-  reason: "http" | "network" | "invalidResponse" | "emptyResponse" | "responseLimit";
+  reason: "http" | "timeout" | "server" | "network" | "invalidResponse" | "emptyResponse" | "responseLimit";
   status?: number;
 };
 
@@ -384,6 +384,8 @@ export const companionFailureDiagnostics = (error: unknown, depth = 0): Companio
   const record = error as { statusCode?: unknown; status?: unknown; name?: unknown; message?: unknown; cause?: unknown };
   const status = record.statusCode ?? record.status;
   if (typeof status === "number" && Number.isInteger(status) && status >= 400 && status <= 599) {
+    if (status === 408 || status === 504) return { reason: "timeout", status };
+    if (status >= 500) return { reason: "server", status };
     return { reason: "http", status };
   }
   if (record.name === "AI_InvalidResponseDataError" || record.name === "AI_JSONParseError"
