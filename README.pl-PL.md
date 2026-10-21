@@ -90,7 +90,7 @@ Wszechstronny obszar roboczy łączący zbieranie inspiracji, głębokie tworzen
 | **AI i ekosystem** | • Asystent AI w panelu bocznym do streszczeń, korekty, tłumaczeń i redakcji<br>• Własne klucze API (BYOK): zgodność z OpenAI, Claude, Gemini i serwerami proxy | • **Protokoły MCP i ACP**: Wbudowany MCP do odczytu/zapisu przez agentów zewnętrznych; ACP w aplikacji desktopowej do współpracy z lokalnymi agentami<br>• **Inteligentne podsumowania RSS AI**: Agregacja źródeł, filtrowanie szumu i generowanie zwięzłych podsumowań<br>• API tworzenia wtyczek do rozbudowy funkcji |
 | **Synchronizacja i fundament** | • Natychmiastowa synchronizacja bez opóźnień na komputerach, telefonach i w sieci bez limitu urządzeń<br>• Oficjalne aplikacje na Web, macOS, Windows, Linux, iOS i Android<br>• Architektura offline-first i kolejka synchronizacji: płynne pisanie bez sieci, automatyczna synchronizacja po połączeniu<br>• Standardowa baza SQLite, bezstratny eksport/import archiwów ZIP i Markdown | • **Zero kosztów serwera na zawsze**: 100% działania w darmowym planie Cloudflare (~150 tys. notatek i ~50 tys. obrazów)<br>• **Elastyczny hosting Docker**: Wdrożenie na VPS, NAS lub domowym serwerze dla milionów notatek z natychmiastową synchronizacją<br>• Ochrona serwera przed atakami brute-force i bezpieczna izolacja |
 
-👉 Wszystkie 17 scenariuszy ze zrzutami ekranu opisuje [pełny przewodnik po funkcjach i zastosowaniach](docs/best-practices.md).
+👉 Wszystkie 18 scenariuszy ze zrzutami ekranu opisuje [pełny przewodnik po funkcjach i zastosowaniach](docs/best-practices.md).
 
 ## Wdrożenie
 

@@ -7,7 +7,7 @@ import type {
   DesktopRpcParams,
   DesktopRpcResponses,
 } from "@edgeever/shared";
-import { docToMarkdown, docToText, type MemoDetail } from "@edgeever/shared";
+import { docToMarkdown, docToText, markdownToDoc, type MemoDetail } from "@edgeever/shared";
 import { localizeDefaultMemoTemplate } from "@edgeever/shared/memo-template-seeds";
 import type { EdgeEverRepository } from "@/lib/repository";
 import { api, getConfiguredDesktopApiBaseUrl } from "@/lib/api";
@@ -312,10 +312,14 @@ export const createDesktopRepository = (): EdgeEverRepository => ({
   },
 
   createMemo: (input) => {
+    // The sidecar fallback wraps raw lines as paragraphs; parse Markdown here
+    // with the same schema used by the editor before persisting a new note.
+    const contentJson = input.contentJson ?? markdownToDoc(input.contentMarkdown ?? "");
     const rpcParams: DesktopMemoCreateParams = {
       ...input,
+      contentJson,
       contentMarkdown: mapMarkdownResourceUrls(input.contentMarkdown, toApiResourceUrl),
-      contentText: input.contentJson ? docToText(input.contentJson) : undefined,
+      contentText: docToText(contentJson),
     };
     return request("memo.create", rpcParams).then((result) => {
       window.dispatchEvent(new CustomEvent("edgeever:sync-queue-changed"));

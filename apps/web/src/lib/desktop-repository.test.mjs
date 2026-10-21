@@ -294,3 +294,26 @@ describe("desktop note duplication", () => {
     });
   });
 });
+
+
+describe("desktop Markdown note creation", () => {
+  test("parses imported Markdown before sending it to the sidecar", async () => {
+    const markdown = "### 项目经历\n\n**项目亮点：**\n\n* 使用 `Next.js`\n* [文档](https://example.com)";
+    await createDesktopRepository().createMemo({ notebookId: "nb", title: "简历", contentMarkdown: markdown, tags: [] });
+    expect(lastRequest.method).toBe("memo.create");
+    expect(lastRequest.params.contentMarkdown).toBe(markdown);
+    const nodes = lastRequest.params.contentJson.content;
+    expect(nodes[0]).toMatchObject({ type: "heading", attrs: { level: 3 } });
+    expect(nodes[1].content[0].marks).toContainEqual({ type: "bold" });
+    expect(nodes[2].type).toBe("bulletList");
+    expect(lastRequest.params.contentText).not.toContain("###");
+    expect(lastRequest.params.contentText).not.toContain("**");
+  });
+
+  test("preserves an explicitly supplied rich document", async () => {
+    const contentJson = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "**literal**" }] }] };
+    await createDesktopRepository().createMemo({ notebookId: "nb", title: "Rich", contentJson, contentMarkdown: "different", tags: [] });
+    expect(lastRequest.params.contentJson).toEqual(contentJson);
+    expect(lastRequest.params.contentText).toBe("**literal**");
+  });
+});

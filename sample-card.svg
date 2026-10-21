@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" width="100%" height="100%">
+  <defs>
+    <!-- 背景渐变 -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+
+    <!-- 辉光渐变 1 -->
+    <radialGradient id="glow-cyan" cx="30%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- 辉光渐变 2 -->
+    <radialGradient id="glow-purple" cx="70%" cy="70%" r="60%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#a855f7" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- 图标渐变 -->
+    <linearGradient id="icon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+
+    <!-- 装饰线条渐变 -->
+    <linearGradient id="line-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0" />
+      <stop offset="50%" stop-color="#818cf8" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#c084fc" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- 卡片边框与阴影 -->
+    <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <style>
+    .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif; font-weight: 700; fill: #ffffff; font-size: 24px; letter-spacing: -0.5px; }
+    .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif; font-weight: 400; fill: #94a3b8; font-size: 14px; }
+    .tag { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-weight: 600; fill: #38bdf8; font-size: 12px; letter-spacing: 1px; }
+  </style>
+
+  <!-- 主卡片背景 -->
+  <g filter="url(#card-shadow)">
+    <rect x="20" y="20" width="560" height="320" rx="24" fill="url(#bg-grad)" stroke="#334155" stroke-width="1" stroke-opacity="0.6" />
+  </g>
+
+  <!-- 背景弥散光晕 -->
+  <circle cx="160" cy="120" r="160" fill="url(#glow-cyan)" />
+  <circle cx="440" cy="220" r="180" fill="url(#glow-purple)" />
+
+  <!-- 顶部标签药丸 -->
+  <rect x="52" y="52" width="104" height="26" rx="13" fill="#0369a1" fill-opacity="0.25" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.4" />
+  <circle cx="65" cy="65" r="3.5" fill="#38bdf8" />
+  <text x="76" y="69" class="tag">INSIGHT</text>
+
+  <!-- 核心图标（发光几何体与星星） -->
+  <g transform="translate(420, 80)">
+    <!-- 旋转的背景框 -->
+    <rect x="-35" y="-35" width="70" height="70" rx="18" fill="none" stroke="url(#icon-grad)" stroke-width="2" stroke-opacity="0.4" transform="rotate(25)" />
+    <!-- 实体微光卡片 -->
+    <rect x="-30" y="-30" width="60" height="60" rx="16" fill="url(#icon-grad)" />
+    <!-- 内部星形图标 -->
+    <path d="M0 -15 L4.5 -4.5 L15 0 L4.5 4.5 L0 15 L-4.5 4.5 L-15 0 L-4.5 -4.5 Z" fill="#ffffff" />
+    <!-- 伴生小光点 -->
+    <circle cx="36" cy="-28" r="3" fill="#38bdf8" />
+    <circle cx="-32" cy="38" r="2" fill="#c084fc" />
+  </g>
+
+  <!-- 主标题与副标题 -->
+  <text x="52" y="126" class="title">捕捉灵感与思考的火花</text>
+  <text x="52" y="160" class="subtitle">这是一段用于笔记渲染验证的矢量 SVG 示例卡片。</text>
+  <text x="52" y="184" class="subtitle">具备自适应渐变、平滑圆角投影与现代毛玻璃视觉效果。</text>
+
+  <!-- 分割线 -->
+  <line x1="52" y1="228" x2="548" y2="228" stroke="url(#line-grad)" stroke-width="1.5" />
+
+  <!-- 底部数据/标签项 -->
+  <g transform="translate(52, 260)">
+    <!-- 标签 1 -->
+    <g transform="translate(0, 0)">
+      <circle cx="6" cy="6" r="4" fill="#22c55e" />
+      <text x="20" y="10" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#cbd5e1">矢量保真</text>
+      <text x="20" y="28" font-family="-apple-system, sans-serif" font-size="11" fill="#64748b">无限放大不失真</text>
+    </g>
+
+    <!-- 标签 2 -->
+    <g transform="translate(180, 0)">
+      <circle cx="6" cy="6" r="4" fill="#38bdf8" />
+      <text x="20" y="10" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#cbd5e1">深色适配</text>
+      <text x="20" y="28" font-family="-apple-system, sans-serif" font-size="11" fill="#64748b">Dark Mode 友好</text>
+    </g>
+
+    <!-- 标签 3 -->
+    <g transform="translate(360, 0)">
+      <circle cx="6" cy="6" r="4" fill="#a855f7" />
+      <text x="20" y="10" font-family="-apple-system, sans-serif" font-size="13" font-weight="500" fill="#cbd5e1">轻量高效</text>
+      <text x="20" y="28" font-family="-apple-system, sans-serif" font-size="11" fill="#64748b">&lt; 3KB 代码尺寸</text>
+    </g>
+  </g>
+</svg>
