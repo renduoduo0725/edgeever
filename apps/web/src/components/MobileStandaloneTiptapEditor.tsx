@@ -14,6 +14,7 @@ import { insertUploadedResources } from "@/lib/resource-insertion";
 import { getResourceInsertionTarget } from "@/lib/resource-insertion-target";
 import { clearMobileEditorUndoHistory, getMobileEditorInputAttributes, getMobileEditorPlaceholder } from "@edgeever/shared/mobile-editor";
 import { EdgeEverLink } from "@edgeever/shared/editor-link";
+import { activateHeadingAnchorClick } from "@/lib/editor-heading-anchor";
 import { createInlineFieldExtension } from "@/components/editor/InlineField";
 import {
   MobileEditorFallback,
@@ -1037,7 +1038,12 @@ export const MobileStandaloneTiptapEditor = ({
           />
         )}
 
-        <div className="edgeever-mobile-tiptap-editor">
+        <div
+          className="edgeever-mobile-tiptap-editor"
+          onClickCapture={(event) => {
+            activateHeadingAnchorClick(event, editor && !editor.isDestroyed ? editor.view : null);
+          }}
+        >
           <EditorContent editor={editor} />
         </div>
 

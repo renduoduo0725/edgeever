@@ -1,17 +1,26 @@
 {
-  "version": "2.0.3",
+  "version": "2.2.0",
   "changes": {
     "en-US": [
-      "Fix AI generation failing with “undefined is not a function” on Android. Thanks @yulei666 for #630.",
-      "Fix Markdown formatting when importing notes on desktop."
+      "Public notebook sites now include an outline for long notes, full-text search, and per-site settings for the address alias, home note, appearance, and search indexing. Authors can exclude individual notes from a site. Existing share links, passwords, and live updates stay in place. Self-hosted instances apply the database migration on startup, so back up before upgrading. Thanks @sivdead for #634.",
+      "Note lists can sort titles from Z to A on the web, Android, iOS, and desktop. Pinned notes stay first, and notes that share a title keep their previous order.",
+      "A local agent keeps its thinking visible until the answer starts.",
+      "Follow-up messages in a desktop sidebar chat stay on the local agent that is already running, instead of starting a new process and session each time.",
+      "Resuming an interrupted companion chat no longer asks questions that were already answered. Thanks @yulei666 for #638."
     ],
     "zh-CN": [
-      "修复 Android 上 AI 生成立即报错“undefined is not a function”的问题。感谢 @yulei666 的贡献（#630）。",
-      "修复桌面端导入 Markdown 笔记时格式未正确解析的问题。"
+      "公开笔记本站点现在可以显示长文目录、搜索正文，并按站点设置访问别名、首页、外观和是否允许收录。作者可以把单篇笔记从某个站点排除。原有分享链接、密码和实时更新保持不变。自托管实例会在启动时自动迁移数据库，升级前请先备份。感谢 @sivdead 的贡献（#634）。",
+      "笔记列表可以按标题从 Z 到 A 排序，Web、Android、iOS 和桌面端都可用。置顶笔记仍在最前，标题相同的笔记保持原来的次序。",
+      "本机 Agent 会一直显示思考过程，直到回答开始。",
+      "在桌面端侧栏里继续和同一个本机 Agent 对话时，会沿用已经启动的进程，不用每次重新打开会话。",
+      "中断后继续的随身助手对话，不会再弹出已经回答过的问题。感谢 @yulei666 的贡献（#638）。"
     ],
     "ja": [
-      "Android で AI 生成時に「undefined is not a function」と表示される問題を修正しました。@yulei666 さんの貢献（#630）に感謝します。",
-      "デスクトップ版でノートをインポートする際に Markdown の書式が正しく反映されない問題を修正しました。"
+      "公開ノートブックサイトに、長文の見出しナビ、本文検索、サイトごとのアドレス別名・ホーム・外観・検索インデックス設定を追加しました。サイトごとに個別のノートを除外できます。既存の共有リンク、パスワード、リアルタイム更新はそのままです。セルフホスト版は起動時にデータベースを移行するので、アップグレード前にバックアップしてください。@sivdead さんの貢献（#634）に感謝します。",
+      "ノート一覧をタイトルの Z から A の順に並べられるようになりました。Web、Android、iOS、デスクトップで使えます。ピン留めしたノートは先頭のまま、同じタイトルの順序も従来どおりです。",
+      "ローカル Agent は、回答が始まるまで思考過程を表示し続けます。",
+      "デスクトップのサイドバーで同じローカル Agent に続けて送るメッセージは、起動済みのプロセスを使い、毎回新しいセッションを開かなくなりました。",
+      "中断したコンパニオンの会話を再開しても、すでに回答した質問は再度表示されません。@yulei666 さんの貢献（#638）に感謝します。"
     ]
   }
 }

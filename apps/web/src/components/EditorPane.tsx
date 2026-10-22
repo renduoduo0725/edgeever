@@ -209,6 +209,7 @@ import {
   shouldShowEditorLinkOpenHint,
   type EditorLinkOpenMode,
 } from "@/lib/editor-link-click";
+import { activateHeadingAnchorClick, parseHeadingAnchorHref } from "@/lib/editor-heading-anchor";
 import {
   formatMarkdownLink,
   insertMarkdownSnippet,
@@ -1358,6 +1359,11 @@ const RichEditorPane = ({
           return false;
         }
 
+        // In-note `#heading` links scroll inside this note. They must not open a new window.
+        if (activateHeadingAnchorClick(event, _view)) {
+          return true;
+        }
+
         // Read preference/viewport at click time so settings changes apply without remounting the editor.
         const isMobile =
           typeof window !== "undefined" && window.matchMedia(MOBILE_EDITOR_QUERY).matches;
@@ -1793,7 +1799,8 @@ const RichEditorPane = ({
 
   const showEditorLinkOpenHint = useCallback((target: EventTarget | null) => {
     const link = getEditorNavigableLinkFromEventTarget(target);
-    if (parseMemoLinkHref(link?.getAttribute("href"))) {
+    const href = link?.getAttribute("href");
+    if (parseMemoLinkHref(href) || parseHeadingAnchorHref(href)) {
       setNoteLinkHintPosition(null);
       return;
     }
@@ -1837,6 +1844,11 @@ const RichEditorPane = ({
       event.stopPropagation();
       setNoteLinkHintPosition(null);
       onOpenMemo?.(memoId as string);
+      return;
+    }
+
+    if (activateHeadingAnchorClick(event, editor && !editor.isDestroyed ? editor.view : null)) {
+      setNoteLinkHintPosition(null);
       return;
     }
 
