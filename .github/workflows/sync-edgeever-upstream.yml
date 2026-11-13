@@ -119,6 +119,11 @@ jobs:
           target_is_ancestor_of_head=false
           if git merge-base --is-ancestor "${target_commit}" HEAD 2>/dev/null; then
             target_is_ancestor_of_head=true
+          else
+            recorded_upstream="$(git log -1 --grep='^EdgeEver-Upstream-Commit: ' --format=%B HEAD | sed -n 's/^EdgeEver-Upstream-Commit:[[:space:]]*\([^[:space:]]*\)[[:space:]]*$/\1/p' | head -n 1)"
+            if [ -n "${recorded_upstream}" ] && git merge-base --is-ancestor "${target_commit}" "${recorded_upstream}" 2>/dev/null; then
+              target_is_ancestor_of_head=true
+            fi
           fi
 
           planner_path="${RUNNER_TEMP}/upstream-sync-plan.mjs"
@@ -237,14 +242,33 @@ jobs:
       - name: Set up Bun
         if: steps.upstream.outputs.align_mode == 'merge'
         uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
 
       - name: Verify customized merge
         if: steps.upstream.outputs.align_mode == 'merge'
+        env:
+          TARGET_COMMIT: ${{ steps.upstream.outputs.target_commit }}
         run: |
           set -euo pipefail
-          bun install --frozen-lockfile
+          fork_workflow="${RUNNER_TEMP}/fork-sync-edgeever-upstream.yml"
+          cp .github/workflows/sync-edgeever-upstream.yml "${fork_workflow}"
+          restore_protected_workflows() {
+            rm -rf .github/workflows
+            git checkout HEAD -- .github/workflows
+          }
+          trap restore_protected_workflows EXIT
+          rm -rf .github/workflows
+          git archive "${TARGET_COMMIT}" .github/workflows | tar -x
+          cp "${fork_workflow}" .github/workflows/sync-edgeever-upstream.yml
+
+          for attempt in 1 2 3; do
+            if bun install --frozen-lockfile; then
+              break
+            fi
+            if [[ "$attempt" = "3" ]]; then
+              exit 1
+            fi
+            sleep "$((15 * attempt))"
+          done
           bun run db:migrate:local
           if ! bun run test; then
             echo "::warning::Test suite failed once; retrying to rule out cross-file test isolation flakiness."
