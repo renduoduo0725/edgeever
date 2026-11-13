@@ -339,6 +339,9 @@ const runtimeVars = {
   // demo stays auth-free; remote deployments always fail closed.
   EDGE_EVER_ALLOW_UNAUTHENTICATED: isLocalCommand ? String(envValue("LOCAL_DEMO_SEED") === "true") : undefined,
   EDGE_EVER_COMMUNITY_REGISTRY_URL: envValue("COMMUNITY_REGISTRY_URL"),
+  EDGE_EVER_WEBHOOK_URL: envValue("WEBHOOK_URL"),
+  EDGE_EVER_WEBHOOK_EVENTS: envValue("WEBHOOK_EVENTS"),
+  EDGE_EVER_WEBHOOK_IGNORE_ACTOR_IDS: envValue("WEBHOOK_IGNORE_ACTOR_IDS"),
 };
 const runtimeVarLines = Object.entries(runtimeVars)
   .filter(([, value]) => Boolean(value))
@@ -430,9 +433,14 @@ const hasSecretsFileArg = wranglerArgs.some((arg) => arg === "--secrets-file" ||
 const hasEnvFileArg = wranglerArgs.some((arg) => arg === "--env-file" || arg.startsWith("--env-file="));
 const authPassword = envValue("AUTH_PASSWORD");
 const authPasswordHash = envValue("AUTH_PASSWORD_HASH");
+const webhookSecret = envValue("WEBHOOK_SECRET");
 const authSecrets = {
   ...(authPassword ? { EDGE_EVER_AUTH_PASSWORD: authPassword } : {}),
   ...(authPasswordHash ? { EDGE_EVER_AUTH_PASSWORD_HASH: authPasswordHash } : {}),
+};
+const managedSecrets = {
+  ...authSecrets,
+  ...(webhookSecret ? { EDGE_EVER_WEBHOOK_SECRET: webhookSecret } : {}),
 };
 const finalWranglerArgs = [...wranglerArgs];
 const useExistingAuthSecret = process.env.EDGE_EVER_USE_EXISTING_AUTH_SECRET?.trim().toLowerCase() === "true";
@@ -459,8 +467,8 @@ if (isLocalDevCommand && !hasEnvFileArg) {
   finalWranglerArgs.push("--env-file", generatedLocalDevEnvPath);
 }
 
-if (isDeployCommand && Object.keys(authSecrets).length > 0 && !hasSecretsFileArg) {
-  writeFileSync(generatedSecretsPath, `${JSON.stringify(authSecrets, null, 2)}\n`);
+if (isDeployCommand && Object.keys(managedSecrets).length > 0 && !hasSecretsFileArg) {
+  writeFileSync(generatedSecretsPath, `${JSON.stringify(managedSecrets, null, 2)}\n`);
   finalWranglerArgs.push("--secrets-file", generatedSecretsPath);
 }
 
@@ -487,7 +495,7 @@ if (captureDeploymentTargets) {
 }
 
 if (result.status === 0 && isDeployCommand) {
-  for (const [secretName, secretValue] of Object.entries(authSecrets)) {
+  for (const [secretName, secretValue] of Object.entries(managedSecrets)) {
     const secretResult = runWranglerSync(["--config", configPath, "secret", "put", secretName], {
       cwd: resolve("."),
       env: process.env,

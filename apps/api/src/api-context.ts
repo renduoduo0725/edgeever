@@ -5,6 +5,8 @@ import type { StorageAdapter } from "./storage-contract";
 export type Bindings = {
   /** Runtime driver for public-only egress; no platform-specific business logic. */
   publicNetworkFetch?: (input: string, init: RequestInit) => Promise<Response>;
+  /** Optional runtime override for outbound webhook delivery. */
+  webhookFetch?: typeof fetch;
   /** The only persistence dependency exposed to application code. */
   storage: StorageAdapter;
   EDGE_EVER_AUTH_USERNAME?: string;
@@ -36,9 +38,14 @@ export type Bindings = {
   EDGE_EVER_ALLOW_UNAUTHENTICATED?: string;
   /** HTTPS URL of the signed community registry. Unset disables the catalog. */
   EDGE_EVER_COMMUNITY_REGISTRY_URL?: string;
+  /** Optional outbound webhook endpoint and filtering/signing settings. */
+  EDGE_EVER_WEBHOOK_URL?: string;
+  EDGE_EVER_WEBHOOK_SECRET?: string;
+  EDGE_EVER_WEBHOOK_EVENTS?: string;
+  EDGE_EVER_WEBHOOK_IGNORE_ACTOR_IDS?: string;
 };
 
-export type WorkerBindings = Omit<Bindings, "storage" | "publicNetworkFetch" | "deploymentVersionCreatedAt"> & CloudflareStorageBindings & {
+export type WorkerBindings = Omit<Bindings, "storage" | "publicNetworkFetch" | "webhookFetch" | "deploymentVersionCreatedAt"> & CloudflareStorageBindings & {
   ASSETS: Fetcher;
   CF_VERSION_METADATA?: { timestamp?: string };
 };

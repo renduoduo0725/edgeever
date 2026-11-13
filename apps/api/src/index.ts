@@ -102,6 +102,10 @@ import { registerBackupRoutes } from "./backup-routes";
 import { registerMcpRoutes } from "./mcp-routes";
 import { executeWorkspaceTool } from "./mcp-tool-executor";
 import {
+  createOutboundWebhookSession,
+  OUTBOUND_WEBHOOK_SUPPRESS_HEADER,
+} from "./outbound-webhook";
+import {
   createMemoEditSession,
   createMemoRecord,
   deleteMemoRecord,
@@ -167,7 +171,7 @@ app.use(
   "/api/*",
   cors({
     origin: API_CORS_ORIGINS,
-    allowHeaders: ["Content-Type", "Authorization", "x-edgeever-import-context"],
+    allowHeaders: ["Content-Type", "Authorization", "x-edgeever-import-context", OUTBOUND_WEBHOOK_SUPPRESS_HEADER],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   })
@@ -177,7 +181,7 @@ app.use(
   "/mcp",
   cors({
     origin: API_CORS_ORIGINS,
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", OUTBOUND_WEBHOOK_SUPPRESS_HEADER],
     allowMethods: ["GET", "POST", "OPTIONS"],
     credentials: true,
   })
@@ -471,7 +475,10 @@ export const fetchEdgeEverApp = async (
       await ensureLocalDemoSeed(runtimeEnv);
     }
 
-    return app.fetch(request, runtimeEnv, ctx);
+    const webhookSession = createOutboundWebhookSession(request, runtimeEnv);
+    const response = await app.fetch(request, webhookSession.env, ctx);
+    webhookSession.flush(ctx, response.status);
+    return response;
 };
 
 const worker = {
