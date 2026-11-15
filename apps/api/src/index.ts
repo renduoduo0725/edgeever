@@ -132,6 +132,7 @@ import { isNotebookSitePagePath, renderNotebookSitePage } from "./notebook-site-
 import { isPublicMemoSharePagePath, renderPublicMemoSharePage } from "./share-page";
 import { registerMemoShareRoutes, registerPublicShareRoutes } from "./share-routes";
 import { registerPublicTableFormRoutes, registerTableFormRoutes } from "./table-form-routes";
+import { registerPublicPendingResourceRoutes } from "./pending-resource-routes";
 import {
   deleteStoredObjects,
   getActiveObjectStorageConfig,
@@ -271,6 +272,7 @@ app.get("/api/openapi.json", (c) => c.json(apiProbe));
 registerPublicShareRoutes(app);
 registerPublicNotebookShareRoutes(app);
 registerPublicTableFormRoutes(app);
+registerPublicPendingResourceRoutes(app);
 
 registerAuthRoutes(app, {
   authenticateRequest: (...args) => authenticateRequest(...args),
@@ -970,8 +972,13 @@ const resetDemoData = async (
     );
     const resourceRows = await db.prepare(`SELECT object_key, storage_config_id FROM resources`).all<{ object_key: string; storage_config_id: string }>();
     await deleteStoredObjects(env, resourceRows.results);
+    const pendingRows = await db.prepare(
+      `SELECT object_key, storage_config_id FROM pending_resources WHERE storage_config_id IS NOT NULL`,
+    ).all<{ object_key: string; storage_config_id: string }>();
+    await deleteStoredObjects(env, pendingRows.results);
 
     const resetStatements: D1PreparedStatement[] = [
+      db.prepare(`DELETE FROM pending_resources`),
       db.prepare(`DELETE FROM mobile_sync_changes`),
       db.prepare(`DELETE FROM memo_search_documents`),
       db.prepare(`DELETE FROM resources`),
