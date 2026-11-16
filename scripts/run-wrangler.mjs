@@ -181,6 +181,19 @@ if (workerName) {
   config = replaceTomlValue(config, "name", workerName);
 }
 
+// Allow outbound webhooks (and other public-only fetches) to reach sibling
+// Workers hosted on the same *.workers.dev subdomain without Error 1042.
+if (
+  /^compatibility_date\s*=\s*"[^"]+"/m.test(config)
+  && !/^compatibility_flags\s*=/m.test(config)
+) {
+  changed = true;
+  config = config.replace(
+    /^(compatibility_date\s*=\s*"[^"]+")/m,
+    '$1\ncompatibility_flags = ["global_fetch_strictly_public"]',
+  );
+}
+
 const workersDev = envValue("WORKERS_DEV");
 if (workersDev) {
   const normalized = workersDev.toLowerCase();
