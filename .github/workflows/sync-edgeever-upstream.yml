@@ -432,6 +432,10 @@ jobs:
           TARGET_REF: ${{ steps.upstream.outputs.target_ref || 'unknown' }}
         run: |
           set -euo pipefail
+          if [ "$(gh api "repos/${GITHUB_REPOSITORY}" --jq '.has_issues' 2>/dev/null || echo false)" != "true" ]; then
+            echo "::warning::Repository issues are disabled on ${GITHUB_REPOSITORY}; skipping failure issue creation."
+            exit 0
+          fi
           title="EdgeEver automatic update requires attention"
           existing="$(gh issue list --state open --search "${title} in:title" --json number --jq '.[0].number // empty')"
           if [ -z "${existing}" ]; then

@@ -446,14 +446,9 @@ const hasSecretsFileArg = wranglerArgs.some((arg) => arg === "--secrets-file" ||
 const hasEnvFileArg = wranglerArgs.some((arg) => arg === "--env-file" || arg.startsWith("--env-file="));
 const authPassword = envValue("AUTH_PASSWORD");
 const authPasswordHash = envValue("AUTH_PASSWORD_HASH");
-const webhookSecret = envValue("WEBHOOK_SECRET");
 const authSecrets = {
   ...(authPassword ? { EDGE_EVER_AUTH_PASSWORD: authPassword } : {}),
   ...(authPasswordHash ? { EDGE_EVER_AUTH_PASSWORD_HASH: authPasswordHash } : {}),
-};
-const managedSecrets = {
-  ...authSecrets,
-  ...(webhookSecret ? { EDGE_EVER_WEBHOOK_SECRET: webhookSecret } : {}),
 };
 const finalWranglerArgs = [...wranglerArgs];
 const useExistingAuthSecret = process.env.EDGE_EVER_USE_EXISTING_AUTH_SECRET?.trim().toLowerCase() === "true";
@@ -480,8 +475,8 @@ if (isLocalDevCommand && !hasEnvFileArg) {
   finalWranglerArgs.push("--env-file", generatedLocalDevEnvPath);
 }
 
-if (isDeployCommand && Object.keys(managedSecrets).length > 0 && !hasSecretsFileArg) {
-  writeFileSync(generatedSecretsPath, `${JSON.stringify(managedSecrets, null, 2)}\n`);
+if (isDeployCommand && Object.keys(authSecrets).length > 0 && !hasSecretsFileArg) {
+  writeFileSync(generatedSecretsPath, `${JSON.stringify(authSecrets, null, 2)}\n`);
   finalWranglerArgs.push("--secrets-file", generatedSecretsPath);
 }
 
@@ -508,7 +503,7 @@ if (captureDeploymentTargets) {
 }
 
 if (result.status === 0 && isDeployCommand) {
-  for (const [secretName, secretValue] of Object.entries(managedSecrets)) {
+  for (const [secretName, secretValue] of Object.entries(authSecrets)) {
     const secretResult = runWranglerSync(["--config", configPath, "secret", "put", secretName], {
       cwd: resolve("."),
       env: process.env,
